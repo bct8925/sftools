@@ -1,0 +1,4 @@
+_metadata/
+node_modules/
+dist/
+**/.DS_Store

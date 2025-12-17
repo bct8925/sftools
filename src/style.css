@@ -1,0 +1,205 @@
+/* --- Base Variables & Reset --- */
+:root {
+    --primary-color: #0070d2;
+    --primary-hover: #005fb2;
+    --bg-color: #f3f3f3;
+    --card-bg: #ffffff;
+    --text-main: #16325c;
+    --text-muted: #54698d;
+    --border-color: #dddbda;
+    --nav-bg: #ffffff;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    margin: 0;
+    padding: 0;
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Layout Shell --- */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 100%;
+}
+
+/* --- Tab Navigation --- */
+.tab-nav {
+    display: flex;
+    align-items: center;
+    background: var(--nav-bg);
+    border-bottom: 2px solid var(--border-color);
+    padding: 0 20px;
+    height: 50px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.nav-brand {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--primary-color);
+    margin-right: 30px;
+    letter-spacing: -0.5px;
+}
+
+.tab-link {
+    background: none;
+    border: none;
+    padding: 0 15px;
+    height: 50px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    margin-right: 5px;
+}
+
+.tab-link:hover {
+    color: var(--primary-color);
+}
+
+.tab-link.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* --- Content Area --- */
+.content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    max-width: 900px; /* Constrain width for readability like the reference */
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0.95; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Component Styles (From Reference) --- */
+.page-header {
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.page-header h1 {
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    background-color: #f8f9fa;
+}
+
+.card-header-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.card-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.card-body {
+    padding: 15px;
+}
+
+.form-element {
+    margin-bottom: 15px;
+}
+
+.form-element label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input, .select, .textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+    color: var(--text-main);
+    background-color: #fff;
+    font-family: inherit;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+    outline: 0;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color) inset;
+}
+
+.button-brand {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: 1px solid var(--primary-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    font-size: 14px;
+}
+
+.button-brand:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.m-top_small { margin-top: 10px; }

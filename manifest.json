@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Salesforce Dev Tools",
+  "version": "1.0",
+  "description": "Developer tools for Salesforce, combining API testing, dev console, and Aura debugging.",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["dist/*", "app.html", "callback.html"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; font-src 'self'"
+  },
+  "oauth2": {
+    "client_id": "3MVG99OxTyEMCQ3ipt3qRQgxCzFjNU7JCZDeTf2Mq_rIFVPgASjAq9r4E.2yUKcVx0isUR08zZQ3q45UGjQlX",
+    "scopes": []
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw2fxfvA9VwQTWyxe982sa/xAN21ykZz482Gzhcxbr2mgjKPETyT09shzBAb5TMgXTR6ZXXuaQOQ1ipnRRG2SccUgTylaO2zpSVPM6kFrhB/nT25Hl38fLvVIuMDcIc+yheZp0n3WZt3K24X8j/9hc4Bhg32fIN60EyooFyqquGAoet/p4Vi/T7CZpNy6qO2vsh9MoLCDeS8/WJXQiVlpkMySflFetZiycVrlgYuYDkChnDDnZCttRTonQYxjHMgw59De9NcUR/fFEq0Fzn6Jp5nRytqSrka/NbvIKw6S/V1HY+UeORzaosT88RLfE7PLbYaQAXZCOJyn3RPEeq5iPtQIDAQAB"
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sftools</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <div class="app-container">
+        
+        <nav class="tab-nav">
+            <div class="nav-brand">sftools</div>
+            <button class="tab-link active" data-tab="rest-api">REST API</button>
+            <button class="tab-link" data-tab="limits">Org Limits</button>
+            <button class="tab-link" data-tab="settings">Settings</button>
+        </nav>
+
+        <main class="content-area">
+            
+            <div id="rest-api" class="tab-content active">
+                <header class="page-header">
+                    <h1>Salesforce API Tester</h1>
+                </header>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon">R</div>
+                        <h2>Request Details</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-element">
+                            <label for="api-url">API URL (Relative to Instance)</label>
+                            <input type="text" id="api-url" placeholder="/services/data/v65.0/limits" value="/services/data/v65.0/limits" class="input">
+                        </div>
+                        
+                        <div class="form-element">
+                            <label for="method-select">HTTP Method</label>
+                            <div class="select-container">
+                                <select id="method-select" class="select">
+                                    <option value="GET">GET</option>
+                                    <option value="POST">POST</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-element" id="body-container">
+                            <label for="request-body">Request Body (JSON)</label>
+                            <textarea id="request-body" placeholder='{"Name": "Test Account"}' class="textarea" rows="5"></textarea>
+                        </div>
+                        
+                        <div class="m-top_small">
+                            <button class="button-brand" id="send-btn">Send Request</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon">✓</div>
+                        <h2>API Response</h2>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Status:</strong> <span id="response-status">--</span></p>
+                        <div class="form-element m-top_small">
+                            <label for="response-body">Response Body</label>
+                            <textarea id="response-body" class="textarea" rows="10" readonly>Results will appear here.</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="limits" class="tab-content">
+                <header class="page-header">
+                    <h1>Org Limits</h1>
+                </header>
+                <div class="card">
+                    <div class="card-body">
+                        <p>Placeholder for Tool 2...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="settings" class="tab-content">
+                <header class="page-header">
+                    <h1>Settings</h1>
+                </header>
+                <div class="card">
+                    <div class="card-body">
+                        <p>Placeholder for Settings...</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

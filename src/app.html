@@ -12,83 +12,138 @@
         
         <nav class="tab-nav">
             <div class="nav-brand">sftools</div>
-            <button class="tab-link active" data-tab="rest-api">REST API</button>
-            <button class="tab-link" data-tab="limits">Org Limits</button>
-            <button class="tab-link" data-tab="settings">Settings</button>
+            <div class="tab-scroll-container">
+                <button class="tab-link" data-tab="query">Query</button>
+                <button class="tab-link" data-tab="apex">Apex</button>
+                <button class="tab-link" data-tab="events">Platform Events</button>
+                <button class="tab-link active" data-tab="rest-api">REST API</button>
+                <button class="tab-link" data-tab="aura">Aura</button>
+                <button class="tab-link" data-tab="console">Dev Console</button>
+            </div>
         </nav>
 
         <main class="content-area">
-            
+            <div id="query" class="tab-content">
+                <header class="page-header">
+                    <h1>SOQL Query Editor</h1>
+                </header>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background-color: #4bca81;">Q</div>
+                        <h2>Execute Query</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-element">
+                            <label>SOQL Query</label>
+                            <div id="query-editor" class="monaco-placeholder">SELECT Id, Name FROM Account LIMIT 10</div>
+                        </div>
+                        <button class="button-brand">Execute</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="apex" class="tab-content">
+                <header class="page-header">
+                    <h1>Execute Anonymous Apex</h1>
+                </header>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background-color: #6a67ce;">A</div>
+                        <h2>Apex Script</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-element">
+                            <label>Apex Code</label>
+                            <div id="apex-editor" class="monaco-placeholder">System.debug('Hello Salesforce');</div>
+                        </div>
+                        <button class="button-brand">Execute Apex</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="events" class="tab-content">
+                <header class="page-header">
+                    <h1>Platform Events</h1>
+                </header>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background-color: #e96d63;">E</div>
+                        <h2>Event Subscriber</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-element">
+                            <label>Event Channel (e.g., /event/My_Event__e)</label>
+                            <div class="grid-row" style="display: grid; grid-template-columns: 1fr auto; gap: 10px;">
+                                <input type="text" class="input" placeholder="/event/YourEventName__e">
+                                <button class="button-brand" style="width: auto;">Subscribe</button>
+                            </div>
+                        </div>
+                        <div class="form-element">
+                            <label>Event Stream</label>
+                            <div class="textarea font-mono text-sm" style="height: 150px; background: #1e1e1e; color: #d4d4d4; overflow-y: auto; padding: 10px;">
+                                [Waiting for events...]
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background-color: #706e6b;">P</div>
+                        <h2>Publish Test Event</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-element">
+                            <label>JSON Payload</label>
+                            <div id="event-publish-editor" class="monaco-placeholder">{ "Field__c": "Value" }</div>
+                        </div>
+                        <button class="button-brand">Publish Event</button>
+                    </div>
+                </div>
+            </div>
+
             <div id="rest-api" class="tab-content active">
                 <header class="page-header">
                     <h1>Salesforce API Tester</h1>
                 </header>
-
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-header-icon">R</div>
-                        <h2>Request Details</h2>
+                        <div class="card-header-icon" style="background-color: #0070d2;">R</div>
+                        <h2>REST Explorer</h2>
                     </div>
                     <div class="card-body">
-                        <div class="form-element">
-                            <label for="api-url">API URL (Relative to Instance)</label>
-                            <input type="text" id="api-url" placeholder="/services/data/v65.0/limits" value="/services/data/v65.0/limits" class="input">
-                        </div>
-                        
-                        <div class="form-element">
-                            <label for="method-select">HTTP Method</label>
-                            <div class="select-container">
-                                <select id="method-select" class="select">
-                                    <option value="GET">GET</option>
-                                    <option value="POST">POST</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="form-element" id="body-container">
-                            <label for="request-body">Request Body (JSON)</label>
-                            <textarea id="request-body" placeholder='{"Name": "Test Account"}' class="textarea" rows="5"></textarea>
-                        </div>
-                        
-                        <div class="m-top_small">
-                            <button class="button-brand" id="send-btn">Send Request</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-header-icon">✓</div>
-                        <h2>API Response</h2>
-                    </div>
-                    <div class="card-body">
-                        <p><strong>Status:</strong> <span id="response-status">--</span></p>
-                        <div class="form-element m-top_small">
-                            <label for="response-body">Response Body</label>
-                            <textarea id="response-body" class="textarea" rows="10" readonly>Results will appear here.</textarea>
-                        </div>
+                        <p class="text-muted">Use the REST API to interact with Salesforce resources.</p>
                     </div>
                 </div>
             </div>
 
-            <div id="limits" class="tab-content">
+            <div id="aura" class="tab-content">
                 <header class="page-header">
-                    <h1>Org Limits</h1>
+                    <h1>Aura Component Inspector</h1>
                 </header>
                 <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background-color: #f39e58;">C</div>
+                        <h2>Component Library</h2>
+                    </div>
                     <div class="card-body">
-                        <p>Placeholder for Tool 2...</p>
+                        <p class="text-muted">Analyzing Aura components in the current DOM...</p>
                     </div>
                 </div>
             </div>
 
-            <div id="settings" class="tab-content">
+            <div id="console" class="tab-content">
                 <header class="page-header">
-                    <h1>Settings</h1>
+                    <h1>Developer Console Log View</h1>
                 </header>
                 <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background-color: #3ba755;">L</div>
+                        <h2>Debug Logs</h2>
+                    </div>
                     <div class="card-body">
-                        <p>Placeholder for Settings...</p>
+                        <p class="text-muted">Fetch and view real-time debug logs.</p>
                     </div>
                 </div>
             </div>

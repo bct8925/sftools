@@ -12,10 +12,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .then(response => {
                 const status = response.status;
                 const statusText = response.statusText;
+                // Extract headers to a plain object
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key.toLowerCase()] = value;
+                });
                 return response.text().then(data => ({
                     success: response.ok,
                     status,
                     statusText,
+                    headers,
                     data
                 }));
             })

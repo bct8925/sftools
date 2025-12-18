@@ -30,14 +30,31 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #4bca81;">Q</div>
-                        <h2>Execute Query</h2>
+                        <h2>Query Results</h2>
+                    </div>
+                    <div class="card-body query-card-body">
+                        <div id="query-tabs" class="query-tabs">
+                            <div class="query-tabs-empty">Run a query to see results</div>
+                        </div>
+                        <div id="query-results" class="query-results">
+                            <div class="query-results-empty">No query results to display</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background-color: #0070d2;">S</div>
+                        <h2>SOQL Query</h2>
                     </div>
                     <div class="card-body">
                         <div class="form-element">
-                            <label>SOQL Query</label>
-                            <div id="query-editor" class="monaco-placeholder">SELECT Id, Name FROM Account LIMIT 10</div>
+                            <label>Enter SOQL Query (Ctrl/Cmd+Enter to execute)</label>
+                            <textarea id="query-input" class="textarea query-input" placeholder="SELECT Id, Name FROM Account LIMIT 10"></textarea>
                         </div>
-                        <button class="button-brand">Execute</button>
+                        <div class="m-top_small">
+                            <button class="button-brand" id="query-execute-btn">Execute Query</button>
+                            <span id="query-status" class="status-badge"></span>
+                        </div>
                     </div>
                 </div>
             </div>

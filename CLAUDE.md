@@ -33,15 +33,17 @@ src/
 │   ├── monaco.js         # Monaco editor setup and helpers
 │   └── utils.js          # Shared utilities (auth, extensionFetch)
 ├── background/
-│   └── background.js     # Service worker (fetch proxy)
+│   └── background.js     # Service worker (fetch proxy, returns headers)
 ├── popup/
 │   ├── popup.html        # Extension popup UI
 │   └── popup.js          # OAuth authorization logic
 ├── callback/
 │   ├── callback.html     # OAuth callback page
 │   └── callback.js       # Token extraction and storage
-└── rest-api/
-    └── rest-api.js       # REST API tab module
+├── rest-api/
+│   └── rest-api.js       # REST API tab module
+└── apex/
+    └── apex.js           # Anonymous Apex execution tab module
 ```
 
 Root files:
@@ -51,12 +53,12 @@ Root files:
 
 ## Tool Tabs
 
-Current:
+Implemented:
 - **REST API** - Salesforce REST API explorer with Monaco editors
+- **Apex** - Anonymous Apex execution with debug log retrieval
 
 Planned:
 - **Query** - SOQL query editor
-- **Apex** - Anonymous Apex execution
 - **Platform Events** - CometD subscription/publishing
 - **Aura** - Aura component inspector
 - **Dev Console** - Debug log viewer
@@ -103,6 +105,16 @@ import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from 
 - Uses external callback URL: `https://sftools.bri64.dev/sftools-callback`
 - Stores `accessToken` and `instanceUrl` in `chrome.storage.local`
 - Client ID configured in `manifest.json` `oauth2.client_id`
+
+## Apex Tab Implementation
+
+The Apex tab uses the REST Tooling API for anonymous Apex execution:
+
+1. **Trace Flag Setup** - Ensures a `TraceFlag` exists for the current user with a `DebugLevel` named `SFTOOLS_DEBUG`. Optimized to skip API calls if already configured correctly.
+2. **Execute Anonymous** - Calls `/services/data/vXX/tooling/executeAnonymous/`
+3. **Fetch Debug Log** - Queries `ApexLog WHERE Operation LIKE '%executeAnonymous/'` and fetches the log body
+
+Monaco editor markers are used to highlight compilation errors with line/column info. SOAP API implementation is stubbed for potential future single-call debug log retrieval.
 
 ## Styling Conventions
 

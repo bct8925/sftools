@@ -4,7 +4,7 @@
   "version": "1.0",
   "description": "Developer tools for Salesforce, combining API testing, dev console, and Aura debugging.",
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "src/popup/popup.html"
   },
   "permissions": [
     "storage",
@@ -26,11 +26,11 @@
     ]
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "src/background/background.js"
   },
   "web_accessible_resources": [
     {
-      "resources": ["dist/*", "app.html", "callback.html"],
+      "resources": ["dist/*", "src/callback/*"],
       "matches": ["<all_urls>"]
     }
   ],
@@ -41,5 +41,5 @@
     "client_id": "3MVG99OxTyEMCQ3ipt3qRQgxCzFjNU7JCZDeTf2Mq_rIFVPgASjAq9r4E.2yUKcVx0isUR08zZQ3q45UGjQlX",
     "scopes": []
   },
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw2fxfvA9VwQTWyxe982sa/xAN21ykZz482Gzhcxbr2mgjKPETyT09shzBAb5TMgXTR6ZXXuaQOQ1ipnRRG2SccUgTylaO2zpSVPM6kFrhB/nT25Hl38fLvVIuMDcIc+yheZp0n3WZt3K24X8j/9hc4Bhg32fIN60EyooFyqquGAoet/p4Vi/T7CZpNy6qO2vsh9MoLCDeS8/WJXQiVlpkMySflFetZiycVrlgYuYDkChnDDnZCttRTonQYxjHMgw59De9NcUR/fFEq0Fzn6Jp5nRytqSrka/NbvIKw6S/V1HY+UeORzaosT88RLfE7PLbYaQAXZCOJyn3RPEeq5iPtQIDAQAB"
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArhV1fwXvi1wlCSJUW+2LpRytfpuGWz4T8RSEnbFeshiSPVYYXFx/9rvtr3ptQVTmfy5aOv4M2/FoUCufqtFyle99UBgq53r+o+OPSx6RjmdvLBh86ZP4InhcBcVWvlbKUag4Fm0CtgESkUptxXP/NfOv+fOvJ0sUR9O9QYxbUY1meecp2oj/GGMY0n8p+KgRNlUfY2+MUDYnxLPUpdgIzTpL7oXVL5BNVMPkpuWo7vImUa7+VPL9Z8dWRAsOd16x9TGheS3+P+sya+WrZZrCjGJE18P6LjHOdCTUfHAUijrwtbangZMdyGhZaioKn3TGnDxaA3FxeNGIxCjT4KaubwIDAQAB"
 }

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authenticating...</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #f3f3f3;
+            color: #555;
+            text-align: center;
+        }
+        .loader-container {
+            padding: 30px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .loader {
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #0070d2;
+        }
+        #status {
+            font-size: 14px;
+            color: #777;
+        }
+        .error {
+            color: #c23934;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader-container">
+        <div class="loader">Verifying Salesforce Session...</div>
+        <div id="status">Please wait while we process the secure tokens.</div>
+    </div>
+    <script src="callback.js"></script>
+</body>
+</html>

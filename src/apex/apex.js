@@ -6,11 +6,12 @@ let codeEditor = null;
 let outputEditor = null;
 
 const API_VERSION = '62.0';
+const DEBUG_LEVEL_NAME = 'SFTOOLS_DEBUG';
 
 // Default debug log levels for comprehensive logging
 const DEBUG_LEVELS = {
-    Apex_code: 'FINEST',
-    Apex_profiling: 'INFO',
+    ApexCode: 'FINEST',
+    ApexProfiling: 'INFO',
     Callout: 'INFO',
     Database: 'INFO',
     System: 'DEBUG',
@@ -19,86 +20,172 @@ const DEBUG_LEVELS = {
     Workflow: 'INFO'
 };
 
+// ============================================================
+// REST API Implementation
+// ============================================================
+
 /**
- * Build the SOAP envelope for executeAnonymous with DebuggingHeader
+ * Make an authenticated REST API call
  */
-function buildSoapEnvelope(apexCode, sessionId) {
-    // XML-escape the apex code
-    const escapedCode = apexCode
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
+async function apiCall(endpoint, options = {}) {
+    const url = `${getInstanceUrl()}${endpoint}`;
+    const response = await extensionFetch(url, {
+        ...options,
+        headers: {
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 
-    // Build debug level categories
-    const categories = Object.entries(DEBUG_LEVELS)
-        .map(([category, level]) => `<categories><category>${category}</category><level>${level}</level></categories>`)
-        .join('\n                ');
+    if (!response.success && response.status !== 404) {
+        const error = response.data ? JSON.parse(response.data) : { message: response.statusText };
+        throw new Error(error[0]?.message || error.message || 'API call failed');
+    }
 
-    return `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:apex="http://soap.sforce.com/2006/08/apex">
-    <soapenv:Header>
-        <apex:SessionHeader>
-            <apex:sessionId>${sessionId}</apex:sessionId>
-        </apex:SessionHeader>
-        <apex:DebuggingHeader>
-            ${categories}
-        </apex:DebuggingHeader>
-    </soapenv:Header>
-    <soapenv:Body>
-        <apex:executeAnonymous>
-            <apex:String>${escapedCode}</apex:String>
-        </apex:executeAnonymous>
-    </soapenv:Body>
-</soapenv:Envelope>`;
+    return {
+        ...response,
+        json: response.data ? JSON.parse(response.data) : null
+    };
 }
 
 /**
- * Parse the SOAP response for execution result
+ * Get current user ID
  */
-function parseSoapResponse(xmlText) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xmlText, 'text/xml');
+async function getCurrentUserId() {
+    const response = await apiCall(`/services/data/v${API_VERSION}/chatter/users/me`);
+    return response.json.id;
+}
 
-    // Check for SOAP fault
-    const fault = doc.querySelector('Fault');
-    if (fault) {
-        const faultString = fault.querySelector('faultstring')?.textContent || 'Unknown SOAP fault';
-        return {
-            success: false,
-            compiled: false,
-            error: faultString
-        };
+/**
+ * Find or create a DebugLevel with our desired log levels
+ */
+async function getOrCreateDebugLevel() {
+    // Check if our debug level already exists
+    const query = encodeURIComponent(`SELECT Id FROM DebugLevel WHERE DeveloperName = '${DEBUG_LEVEL_NAME}'`);
+    const response = await apiCall(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+
+    if (response.json.records && response.json.records.length > 0) {
+        return response.json.records[0].Id;
     }
 
-    // Get the executeAnonymousResponse
-    const result = doc.querySelector('result');
-    if (!result) {
-        return {
-            success: false,
-            compiled: false,
-            error: 'Invalid response: no result element found'
-        };
+    // Create new debug level
+    const createResponse = await apiCall(`/services/data/v${API_VERSION}/tooling/sobjects/DebugLevel`, {
+        method: 'POST',
+        body: JSON.stringify({
+            DeveloperName: DEBUG_LEVEL_NAME,
+            MasterLabel: 'sftools Debug Level',
+            ApexCode: DEBUG_LEVELS.ApexCode,
+            ApexProfiling: DEBUG_LEVELS.ApexProfiling,
+            Callout: DEBUG_LEVELS.Callout,
+            Database: DEBUG_LEVELS.Database,
+            System: DEBUG_LEVELS.System,
+            Validation: DEBUG_LEVELS.Validation,
+            Visualforce: DEBUG_LEVELS.Visualforce,
+            Workflow: DEBUG_LEVELS.Workflow
+        })
+    });
+
+    return createResponse.json.id;
+}
+
+/**
+ * Ensure a TraceFlag exists for the current user with correct debug level
+ * Returns early if existing trace flag already has the correct debug level name
+ */
+async function ensureTraceFlag(userId) {
+    const now = new Date().toISOString();
+    const fiveMinutesFromNow = Date.now() + 5 * 60 * 1000;
+
+    // Query trace flag with debug level name in one call
+    const query = encodeURIComponent(
+        `SELECT Id, DebugLevelId, DebugLevel.DeveloperName, ExpirationDate FROM TraceFlag WHERE TracedEntityId = '${userId}' AND LogType = 'USER_DEBUG' AND ExpirationDate > ${now}`
+    );
+    const response = await apiCall(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+
+    if (response.json.records && response.json.records.length > 0) {
+        const existing = response.json.records[0];
+        const expirationTime = new Date(existing.ExpirationDate).getTime();
+        const hasCorrectDebugLevel = existing.DebugLevel?.DeveloperName === DEBUG_LEVEL_NAME;
+
+        // Skip entirely if debug level name matches and expiration is more than 5 minutes away
+        if (hasCorrectDebugLevel && expirationTime > fiveMinutesFromNow) {
+            return existing.Id;
+        }
+
+        // Need to update - get or create the correct debug level
+        const debugLevelId = hasCorrectDebugLevel ? existing.DebugLevelId : await getOrCreateDebugLevel();
+
+        const newExpiration = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+        await apiCall(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${existing.Id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+                ExpirationDate: newExpiration,
+                DebugLevelId: debugLevelId
+            })
+        });
+
+        return existing.Id;
     }
 
-    const compiled = result.querySelector('compiled')?.textContent === 'true';
-    const success = result.querySelector('success')?.textContent === 'true';
-    const compileProblem = result.querySelector('compileProblem')?.textContent || null;
-    const exceptionMessage = result.querySelector('exceptionMessage')?.textContent || null;
-    const exceptionStackTrace = result.querySelector('exceptionStackTrace')?.textContent || null;
-    const line = parseInt(result.querySelector('line')?.textContent, 10) || null;
-    const column = parseInt(result.querySelector('column')?.textContent, 10) || null;
+    // No existing trace flag - need to create debug level and trace flag
+    const debugLevelId = await getOrCreateDebugLevel();
+    const startDate = new Date().toISOString();
+    const expirationDate = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-    return {
-        compiled,
-        success,
-        compileProblem,
-        exceptionMessage,
-        exceptionStackTrace,
-        line,
-        column
-    };
+    const createResponse = await apiCall(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag`, {
+        method: 'POST',
+        body: JSON.stringify({
+            TracedEntityId: userId,
+            DebugLevelId: debugLevelId,
+            LogType: 'USER_DEBUG',
+            StartDate: startDate,
+            ExpirationDate: expirationDate
+        })
+    });
+
+    return createResponse.json.id;
+}
+
+/**
+ * Execute anonymous Apex via REST Tooling API
+ */
+async function executeAnonymousRest(apexCode) {
+    const encodedCode = encodeURIComponent(apexCode);
+    const response = await apiCall(
+        `/services/data/v${API_VERSION}/tooling/executeAnonymous/?anonymousBody=${encodedCode}`
+    );
+
+    return response.json;
+}
+
+/**
+ * Get the latest anonymous apex debug log
+ */
+async function getLatestAnonymousLog() {
+    // Query for the most recent anonymous apex log
+    const query = encodeURIComponent(
+        `SELECT Id, LogLength, Status FROM ApexLog WHERE Operation LIKE '%executeAnonymous/' ORDER BY StartTime DESC LIMIT 1`
+    );
+    const response = await apiCall(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+
+    if (!response.json.records || response.json.records.length === 0) {
+        return null;
+    }
+
+    const logId = response.json.records[0].Id;
+
+    // Fetch the log body
+    const logResponse = await extensionFetch(
+        `${getInstanceUrl()}/services/data/v${API_VERSION}/tooling/sobjects/ApexLog/${logId}/Body`,
+        {
+            headers: {
+                'Authorization': `Bearer ${getAccessToken()}`
+            }
+        }
+    );
+
+    return logResponse.data;
 }
 
 /**
@@ -108,13 +195,11 @@ function setEditorMarkers(editor, result) {
     const model = editor.getModel();
     if (!model) return;
 
-    // Clear existing markers
     monaco.editor.setModelMarkers(model, 'apex', []);
 
     const markers = [];
 
     if (!result.compiled && result.compileProblem && result.line) {
-        // Compilation error
         markers.push({
             severity: monaco.MarkerSeverity.Error,
             message: result.compileProblem,
@@ -124,7 +209,6 @@ function setEditorMarkers(editor, result) {
             endColumn: result.column ? result.column + 10 : model.getLineMaxColumn(result.line)
         });
     } else if (!result.success && result.exceptionMessage && result.line) {
-        // Runtime exception
         markers.push({
             severity: monaco.MarkerSeverity.Error,
             message: result.exceptionMessage,
@@ -172,14 +256,23 @@ function formatOutput(result, debugLog) {
         lines.push('=== DEBUG LOG ===');
         lines.push(debugLog);
     } else {
-        lines.push('(No debug log returned)');
+        lines.push('(No debug log available)');
     }
 
     return lines.join('\n');
 }
 
 /**
- * Execute anonymous Apex via SOAP API
+ * Update status display
+ */
+function updateStatus(text, type) {
+    const statusSpan = document.getElementById('apex-status');
+    statusSpan.textContent = text;
+    statusSpan.className = `status-badge${type ? ` status-${type}` : ''}`;
+}
+
+/**
+ * Execute anonymous Apex (main entry point)
  */
 async function executeApex() {
     const apexCode = codeEditor.getValue().trim();
@@ -200,66 +293,51 @@ async function executeApex() {
         monaco.editor.setModelMarkers(model, 'apex', []);
     }
 
-    // Update UI
-    const statusSpan = document.getElementById('apex-status');
     const executeBtn = document.getElementById('apex-execute-btn');
-
-    statusSpan.textContent = 'Executing...';
-    statusSpan.className = 'status-badge status-loading';
     executeBtn.disabled = true;
-    outputEditor.setValue('// Executing Apex...');
 
     try {
-        const soapEndpoint = `${getInstanceUrl()}/services/Soap/s/${API_VERSION}`;
-        const soapEnvelope = buildSoapEnvelope(apexCode, getAccessToken());
+        // Step 1: Setup trace flag (handles debug level internally)
+        updateStatus('Setting up trace...', 'loading');
+        outputEditor.setValue('// Setting up debug trace flag...');
 
-        const response = await extensionFetch(soapEndpoint, {
-            'Authorization': `Bearer ${getAccessToken()}`,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/xml; charset=UTF-8',
-                'SOAPAction': '""'
-            },
-            body: soapEnvelope
-        });
+        const userId = await getCurrentUserId();
+        await ensureTraceFlag(userId);
 
-        // Get debug log from response headers (if available through the proxy)
-        let debugLog = response.headers?.['sforce-debug-log'] ||
-                       response.headers?.['Sforce-Debug-Log'] ||
-                       null;
+        // Step 2: Execute the apex
+        updateStatus('Executing...', 'loading');
+        outputEditor.setValue('// Executing Apex...');
 
-        // Parse the SOAP response
-        const result = parseSoapResponse(response.data);
+        const result = await executeAnonymousRest(apexCode);
 
-        // If there's an error in the result object itself (SOAP fault)
-        if (result.error) {
-            statusSpan.textContent = 'Error';
-            statusSpan.className = 'status-badge status-error';
-            outputEditor.setValue(`Error: ${result.error}`);
-            return;
-        }
-
-        // Set markers for errors
+        // Step 3: Set markers for any errors
         setEditorMarkers(codeEditor, result);
 
-        // Update status
-        if (!result.compiled) {
-            statusSpan.textContent = 'Compile Error';
-            statusSpan.className = 'status-badge status-error';
-        } else if (!result.success) {
-            statusSpan.textContent = 'Runtime Error';
-            statusSpan.className = 'status-badge status-error';
-        } else {
-            statusSpan.textContent = 'Success';
-            statusSpan.className = 'status-badge status-success';
+        // Step 4: Get debug log (only if execution was attempted)
+        let debugLog = null;
+        if (result.compiled) {
+            updateStatus('Fetching log...', 'loading');
+            outputEditor.setValue('// Fetching debug log...');
+
+            // Small delay to ensure log is available
+            await new Promise(resolve => setTimeout(resolve, 500));
+            debugLog = await getLatestAnonymousLog();
         }
 
-        // Format and display output
+        // Update final status
+        if (!result.compiled) {
+            updateStatus('Compile Error', 'error');
+        } else if (!result.success) {
+            updateStatus('Runtime Error', 'error');
+        } else {
+            updateStatus('Success', 'success');
+        }
+
+        // Display output
         outputEditor.setValue(formatOutput(result, debugLog));
 
     } catch (error) {
-        statusSpan.textContent = 'Error';
-        statusSpan.className = 'status-badge status-error';
+        updateStatus('Error', 'error');
         outputEditor.setValue(`Error: ${error.message}`);
         console.error('Apex execution error:', error);
     } finally {
@@ -297,4 +375,78 @@ for (Account acc : accounts) {
     codeEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
         executeApex();
     });
+}
+
+
+// ============================================================
+// SOAP API Implementation (stubbed for future use)
+// This approach could return the debug log in a single call
+// via the DebuggingHeader, but currently doesn't work reliably
+// ============================================================
+
+/**
+ * Build the SOAP envelope for executeAnonymous with DebuggingHeader
+ * @stub - Not currently used, kept for future implementation
+ */
+function buildSoapEnvelope(apexCode, sessionId) {
+    const escapedCode = apexCode
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+
+    const categories = Object.entries(DEBUG_LEVELS)
+        .map(([category, level]) => `<categories><category>${category}</category><level>${level}</level></categories>`)
+        .join('\n                ');
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:apex="http://soap.sforce.com/2006/08/apex">
+    <soapenv:Header>
+        <apex:SessionHeader>
+            <apex:sessionId>${sessionId}</apex:sessionId>
+        </apex:SessionHeader>
+        <apex:DebuggingHeader>
+            ${categories}
+        </apex:DebuggingHeader>
+    </soapenv:Header>
+    <soapenv:Body>
+        <apex:executeAnonymous>
+            <apex:String>${escapedCode}</apex:String>
+        </apex:executeAnonymous>
+    </soapenv:Body>
+</soapenv:Envelope>`;
+}
+
+/**
+ * Parse SOAP response
+ * @stub - Not currently used
+ */
+function parseSoapResponse(xmlText) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlText, 'text/xml');
+
+    const fault = doc.querySelector('Fault');
+    if (fault) {
+        return {
+            success: false,
+            compiled: false,
+            error: fault.querySelector('faultstring')?.textContent || 'Unknown SOAP fault'
+        };
+    }
+
+    const result = doc.querySelector('result');
+    if (!result) {
+        return { success: false, compiled: false, error: 'Invalid response' };
+    }
+
+    return {
+        compiled: result.querySelector('compiled')?.textContent === 'true',
+        success: result.querySelector('success')?.textContent === 'true',
+        compileProblem: result.querySelector('compileProblem')?.textContent || null,
+        exceptionMessage: result.querySelector('exceptionMessage')?.textContent || null,
+        exceptionStackTrace: result.querySelector('exceptionStackTrace')?.textContent || null,
+        line: parseInt(result.querySelector('line')?.textContent, 10) || null,
+        column: parseInt(result.querySelector('column')?.textContent, 10) || null
+    };
 }

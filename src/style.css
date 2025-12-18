@@ -118,6 +118,7 @@ body {
     border-radius: 4px;
     margin-bottom: 20px;
     box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.1);
+    overflow: visible;
 }
 
 .card-header {
@@ -151,6 +152,7 @@ body {
 
 .card-body {
     padding: 15px;
+    overflow: visible;
 }
 
 .form-element {
@@ -206,14 +208,23 @@ body {
 
 /* --- Monaco Editor Containers --- */
 .monaco-container {
-    height: 150px;
+    height: 220px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    overflow: hidden;
+    position: relative;
 }
 
 .monaco-container-lg {
     height: 300px;
+}
+
+/* Ensure Monaco hover widgets appear above other content */
+.monaco-editor .monaco-hover {
+    z-index: 1000 !important;
+}
+
+.monaco-editor .monaco-editor-hover {
+    z-index: 1000 !important;
 }
 
 .monaco-placeholder {

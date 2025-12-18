@@ -1,4 +1,18 @@
-document.addEventListener('DOMContentLoaded', () => {
+// sftools - Main Application Entry Point
+import { loadAuthTokens } from './lib/utils.js';
+import * as restApi from './rest-api/rest-api.js';
+
+// --- Initialization ---
+document.addEventListener('DOMContentLoaded', async () => {
+    initTabs();
+    await loadAuthTokens();
+
+    // Initialize tool modules
+    restApi.init();
+});
+
+// --- Tab Navigation ---
+function initTabs() {
     const tabs = document.querySelectorAll('.tab-link');
     const contents = document.querySelectorAll('.tab-content');
 
@@ -6,11 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
         tab.addEventListener('click', () => {
             const targetId = tab.getAttribute('data-tab');
 
-            // 1. Deactivate all tabs and hide all content
             tabs.forEach(t => t.classList.remove('active'));
             contents.forEach(c => c.classList.remove('active'));
 
-            // 2. Activate clicked tab and show target content
             tab.classList.add('active');
             const targetContent = document.getElementById(targetId);
             if (targetContent) {
@@ -18,4 +30,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-});
+}

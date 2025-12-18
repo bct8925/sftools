@@ -110,10 +110,43 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #0070d2;">R</div>
-                        <h2>REST Explorer</h2>
+                        <h2>Request Details</h2>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted">Use the REST API to interact with Salesforce resources.</p>
+                        <div class="form-element">
+                            <label for="rest-api-url">API URL (Relative to Instance)</label>
+                            <input type="text" id="rest-api-url" class="input" value="/services/data/v62.0/limits">
+                        </div>
+
+                        <div class="form-element">
+                            <label for="rest-method-select">HTTP Method</label>
+                            <select id="rest-method-select" class="select">
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PATCH">PATCH</option>
+                                <option value="DELETE">DELETE</option>
+                            </select>
+                        </div>
+
+                        <div class="form-element" id="rest-body-container" style="display: none;">
+                            <label>Request Body (JSON)</label>
+                            <div id="rest-request-editor" class="monaco-container"></div>
+                        </div>
+
+                        <div class="m-top_small">
+                            <button class="button-brand" id="rest-send-btn">Send Request</button>
+                            <span id="rest-status" class="status-badge"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background-color: #4bca81;">✓</div>
+                        <h2>API Response</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="rest-response-editor" class="monaco-container monaco-container-lg"></div>
                     </div>
                 </div>
             </div>

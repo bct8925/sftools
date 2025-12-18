@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="dist/salesfaux-app.js"></script>
+    <title>Salesforce Aura Debugger</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Salesforce Community Aura Debugger</h1>
+
+        <div class="form-section">
+            
+            <div class="input-group">
+                <label for="communityUrl">Community URL</label>
+                <input type="text" id="communityUrl" placeholder="https://mycommunity.force.com/s">
+            </div>
+
+            <div class="input-group">
+                <label>Authentication Mode</label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="authMode" value="unauth" checked>
+                        <span>Unauthenticated</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="authMode" value="auth">
+                        <span>Authenticated (Aura Token)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="authFields" class="auth-panel hidden">
+                <div>
+                    <label for="authToken">Aura Token</label>
+                    <input type="text" id="authToken" placeholder="eyJ..." class="font-mono text-xs">
+                </div>
+            </div>
+
+            <div class="grid-row">
+                <div>
+                    <label for="methodSelector">Method Type</label>
+                    <select id="methodSelector">
+                        <option value="getItems" selected>SelectableListDataProvider (Get Items)</option>
+                        <option value="getObjectInfo">RecordUiController (Get Object Info)</option>
+                        <option value="getConfigData">HostConfigController (Get Config Data)</option>
+                        <option value="auraCmpDef">Component Definition (auraCmpDef)</option>
+                        <option value="apex">ApexActionController (Execute)</option>
+                        <option value="custom">Custom Definition</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="methodDescriptor">Method Descriptor</label>
+                    <input type="text" id="methodDescriptor" 
+                        value="serviceComponent://ui.force.components.controllers.lists.selectableListDataProvider.SelectableListDataProviderController/ACTION$getItems" 
+                        disabled
+                        class="font-mono text-sm"
+                        style="background-color: #f3f4f6;"> </div>
+            </div>
+
+            <div>
+                <details>
+                    <summary>Advanced Config (FWUID)</summary>
+                    <div class="details-content">
+                        <label for="fwuid">Framework UID (fwuid)</label>
+                        <input type="text" id="fwuid" value="eE5UbjZPdVlRT3M0d0xtOXc5MzVOQWg5TGxiTHU3MEQ5RnBMM0VzVXc1cmcxMi42MjkxNDU2LjE2Nzc3MjE2" 
+                               class="font-mono text-xs text-muted">
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="editor-wrapper">
+            <label>Request Parameters (JSON)</label>
+            <div id="editorParams" class="editor-container editor-container-sm"></div>
+        </div>
+
+        <div class="actions-bar">
+            <!-- <a href="#editorResponse" style="text-decoration: none;"> -->
+                <button id="executeBtn" class="btn-primary">
+                    Execute Request
+                </button>
+            <!-- </a> -->
+            <div id="status" class="text-sm font-medium text-muted">Ready</div>
+        </div>
+
+        <div>
+            <label>Response</label>
+            <div id="editorResponse" class="editor-container" style="border-bottom: 0;"></div>
+            
+            <div id="responseResizer" class="resizer">
+                <div class="resizer-grip"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

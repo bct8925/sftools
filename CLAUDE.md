@@ -4,9 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-sftools is a Chrome Extension (Manifest V3) that combines multiple Salesforce developer tools into a single tabbed interface. It is built using Vite with Monaco Editor for code/JSON editing.
-
-**Reference projects** (`apiTester/`, `devcon/`, `salesfaux/`) are existing Chrome extensions being consolidated into this project. Use them as reference code only.
+sftools is a Chrome Extension (Manifest V3) that combines multiple Salesforce developer tools into a single tabbed interface. Built using Vite with Monaco Editor for code/JSON editing.
 
 ## Build Commands
 
@@ -21,53 +19,90 @@ npm run watch                  # Build with watch mode for development
 1. Run `npm run build`
 2. Open `chrome://extensions/`
 3. Enable "Developer mode"
-4. Click "Load unpacked" and select the repository root (not `dist/`)
-5. The manifest references `dist/` for built assets
+4. Click "Load unpacked" and select the repository root
+5. The manifest references `dist/` for built assets and `src/` for extension pages
 
-## Architecture
+## Project Structure
 
-### Chrome Extension Structure
+```
+src/
+├── app.html              # Main UI shell (Vite entry point)
+├── app.js                # Entry point - tab navigation, imports tool modules
+├── style.css             # Global styles
+├── lib/
+│   ├── monaco.js         # Monaco editor setup and helpers
+│   └── utils.js          # Shared utilities (auth, extensionFetch)
+├── background/
+│   └── background.js     # Service worker (fetch proxy)
+├── popup/
+│   ├── popup.html        # Extension popup UI
+│   └── popup.js          # OAuth authorization logic
+├── callback/
+│   ├── callback.html     # OAuth callback page
+│   └── callback.js       # Token extraction and storage
+└── rest-api/
+    └── rest-api.js       # REST API tab module
+```
 
-- `manifest.json` - Extension manifest (MV3) with OAuth2 config and declarative net request rules
-- `background.js` - Service worker handling fetch requests (proxy to bypass CORS)
-- `popup.html` - Extension popup for OAuth authorization
-- `callback.html` - OAuth callback handler
-- `rules.json` - Declarative net request rules (removes Origin header for Aura requests)
+Root files:
+- `manifest.json` - Extension manifest (MV3) with OAuth2 config
+- `rules.json` - Declarative net request rules
+- `vite.config.js` - Vite build config (root: 'src')
 
-### Frontend (Vite Build)
+## Tool Tabs
 
-- `src/app.html` - Main UI with tabbed interface
-- `src/app.js` - Tab navigation and Monaco editor initialization
-- `src/style.css` - Salesforce-like styling (local CSS, no external libraries)
-- `vite.config.js` - Configured for Chrome Extensions (relative paths, ES modules, Monaco workers)
+Current:
+- **REST API** - Salesforce REST API explorer with Monaco editors
 
-### Tab Tools (Planned)
+Planned:
+- **Query** - SOQL query editor
+- **Apex** - Anonymous Apex execution
+- **Platform Events** - CometD subscription/publishing
+- **Aura** - Aura component inspector
+- **Dev Console** - Debug log viewer
 
-1. **Query** - SOQL query editor
-2. **Apex** - Anonymous Apex execution
-3. **Platform Events** - CometD subscription/publishing
-4. **REST API** - Salesforce REST API explorer (adapted from `apiTester/`)
-5. **Aura** - Aura component inspector (adapted from `salesfaux/`)
-6. **Dev Console** - Debug log viewer
+## Adding a New Tool Tab
 
-### Key Patterns
+1. Create `src/<tool-name>/<tool-name>.js` with an `init()` export
+2. Add HTML for the tab content in `src/app.html`
+3. Import and call `init()` in `src/app.js`
 
-**Background fetch proxy** (from `salesfaux/src/background.js`):
+Example:
+```javascript
+// src/query/query.js
+import { createEditor } from '../lib/monaco.js';
+import { extensionFetch, getAccessToken, getInstanceUrl } from '../lib/utils.js';
+
+export function init() {
+    // Initialize the tab
+}
+```
+
+## Key Patterns
+
+**Background fetch proxy** (`src/background/background.js`):
 ```javascript
 // Frontend calls:
 chrome.runtime.sendMessage({ type: 'fetch', url, options });
 // Background handles actual fetch to bypass extension CORS restrictions
 ```
 
-**Monaco Editor setup** (from `salesfaux/src/app.js`):
-- Uses inline workers for Chrome Extension compatibility
-- Imports workers with `?worker&inline` suffix
-- Configured via `self.MonacoEnvironment.getWorker()`
+**Monaco Editor helpers** (`src/lib/monaco.js`):
+```javascript
+import { createEditor, createReadOnlyEditor } from '../lib/monaco.js';
+const editor = createEditor(container, { language: 'json', value: '{}' });
+```
 
-**OAuth flow** (from `apiTester/popup.js`):
-- Uses `hybrid_token` response type
+**Auth utilities** (`src/lib/utils.js`):
+```javascript
+import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../lib/utils.js';
+```
+
+## OAuth Flow
+
+- Uses external callback URL: `https://sftools.bri64.dev/sftools-callback`
 - Stores `accessToken` and `instanceUrl` in `chrome.storage.local`
-- Client ID from `manifest.json` `oauth2.client_id`
+- Client ID configured in `manifest.json` `oauth2.client_id`
 
 ## Styling Conventions
 
@@ -76,3 +111,4 @@ chrome.runtime.sendMessage({ type: 'fetch', url, options });
 - No external CSS frameworks
 - Card-based layouts with `.card`, `.card-header`, `.card-body`
 - Form elements use `.input`, `.select`, `.button-brand` classes
+- Monaco containers use `.monaco-container` and `.monaco-container-lg`

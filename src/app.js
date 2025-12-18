@@ -1,6 +1,7 @@
 // sftools - Main Application Entry Point
 import { loadAuthTokens } from './lib/utils.js';
 import * as restApi from './rest-api/rest-api.js';
+import * as apex from './apex/apex.js';
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -9,6 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initialize tool modules
     restApi.init();
+    apex.init();
 });
 
 // --- Tab Navigation ---

@@ -53,10 +53,22 @@
                     </div>
                     <div class="card-body">
                         <div class="form-element">
-                            <label>Apex Code</label>
-                            <div id="apex-editor" class="monaco-placeholder">System.debug('Hello Salesforce');</div>
+                            <label>Apex Code (Ctrl/Cmd+Enter to execute)</label>
+                            <div id="apex-editor" class="monaco-container"></div>
                         </div>
-                        <button class="button-brand">Execute Apex</button>
+                        <div class="m-top_small">
+                            <button class="button-brand" id="apex-execute-btn">Execute Apex</button>
+                            <span id="apex-status" class="status-badge"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background-color: #3ba755;">L</div>
+                        <h2>Execution Output &amp; Debug Log</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="apex-output-editor" class="monaco-container monaco-container-lg"></div>
                     </div>
                 </div>
             </div>

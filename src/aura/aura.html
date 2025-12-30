@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Debugger - sftools</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        /* Aura-specific standalone styles */
+        .standalone-header {
+            display: flex;
+            align-items: center;
+            background: var(--nav-bg);
+            border-bottom: 2px solid var(--border-color);
+            padding: 0 20px;
+            height: 50px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .standalone-header .nav-brand {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--primary-color);
+            letter-spacing: -0.5px;
+        }
+        .standalone-header .tool-name {
+            font-size: 14px;
+            color: var(--text-muted);
+            border-left: 1px solid var(--border-color);
+            padding-left: 15px;
+            margin-left: 15px;
+        }
+        .radio-group {
+            display: flex;
+            gap: 20px;
+        }
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .radio-item input[type="radio"] {
+            margin: 0;
+        }
+        .auth-panel {
+            margin-top: 10px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        .auth-panel.hidden {
+            display: none;
+        }
+        .grid-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .font-mono {
+            font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+        }
+        .text-xs {
+            font-size: 12px;
+        }
+        .text-sm {
+            font-size: 13px;
+        }
+        details {
+            margin-top: 15px;
+        }
+        details summary {
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        details .details-content {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .actions-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .resizer {
+            height: 8px;
+            background: var(--border-color);
+            cursor: row-resize;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0 0 4px 4px;
+        }
+        .resizer-grip {
+            width: 40px;
+            height: 3px;
+            background: #999;
+            border-radius: 2px;
+        }
+        .resizer:hover, .resizer.resizing {
+            background: var(--primary-color);
+        }
+        .resizer:hover .resizer-grip, .resizer.resizing .resizer-grip {
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+    <header class="standalone-header">
+        <div class="nav-brand">sftools</div>
+        <span class="tool-name">Aura Debugger</span>
+    </header>
+
+    <main class="content-area">
+        <header class="page-header">
+            <h1>Salesforce Aura Debugger</h1>
+        </header>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-header-icon" style="background-color: #f39e58;">A</div>
+                <h2>Request Configuration</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-element">
+                    <label for="communityUrl">Community URL</label>
+                    <input type="text" id="communityUrl" class="input" placeholder="https://mycommunity.force.com/s">
+                </div>
+
+                <div class="form-element">
+                    <label>Authentication Mode</label>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="authMode" value="unauth" checked>
+                            <span>Unauthenticated</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="authMode" value="auth">
+                            <span>Authenticated (Aura Token)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="authFields" class="auth-panel hidden">
+                    <div class="form-element">
+                        <label for="authToken">Aura Token</label>
+                        <input type="text" id="authToken" class="input font-mono text-xs" placeholder="eyJ...">
+                    </div>
+                    <div class="form-element" style="margin-bottom: 0;">
+                        <label for="authSid">Session ID (SID) <span style="font-weight: normal; text-transform: none;">&mdash; leave blank to use browser cookie</span></label>
+                        <input type="text" id="authSid" class="input font-mono text-xs" placeholder="00D...">
+                    </div>
+                </div>
+
+                <div class="grid-row">
+                    <div class="form-element">
+                        <label for="methodSelector">Method Type</label>
+                        <select id="methodSelector" class="select">
+                            <option value="getItems" selected>SelectableListDataProvider (Get Items)</option>
+                            <option value="getObjectInfo">RecordUiController (Get Object Info)</option>
+                            <option value="getConfigData">HostConfigController (Get Config Data)</option>
+                            <option value="auraCmpDef">Component Definition (auraCmpDef)</option>
+                            <option value="apex">ApexActionController (Execute)</option>
+                            <option value="custom">Custom Definition</option>
+                        </select>
+                    </div>
+                    <div class="form-element">
+                        <label for="methodDescriptor">Method Descriptor</label>
+                        <input type="text" id="methodDescriptor" class="input font-mono text-sm"
+                            value="serviceComponent://ui.force.components.controllers.lists.selectableListDataProvider.SelectableListDataProviderController/ACTION$getItems"
+                            disabled
+                            style="background-color: #f3f4f6;">
+                    </div>
+                </div>
+
+                <details>
+                    <summary>Advanced Config (FWUID)</summary>
+                    <div class="details-content">
+                        <div class="form-element" style="margin-bottom: 0;">
+                            <label for="fwuid">Framework UID (fwuid)</label>
+                            <input type="text" id="fwuid" class="input font-mono text-xs"
+                                value="eE5UbjZPdVlRT3M0d0xtOXc5MzVOQWg5TGxiTHU3MEQ5RnBMM0VzVXc1cmcxMi42MjkxNDU2LjE2Nzc3MjE2">
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-header-icon" style="background-color: #0070d2;">P</div>
+                <h2>Request Parameters</h2>
+            </div>
+            <div class="card-body">
+                <div id="paramsEditor" class="monaco-container"></div>
+            </div>
+        </div>
+
+        <div class="actions-bar">
+            <button id="executeBtn" class="button-brand">Execute Request</button>
+            <span id="status" class="status-badge">Ready</span>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-header-icon" style="background-color: #4bca81;">R</div>
+                <h2>Response</h2>
+            </div>
+            <div class="card-body" style="padding-bottom: 0;">
+                <div id="responseEditor" class="monaco-container monaco-container-lg"></div>
+                <div id="responseResizer" class="resizer">
+                    <div class="resizer-grip"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="aura.js"></script>
+</body>
+</html>

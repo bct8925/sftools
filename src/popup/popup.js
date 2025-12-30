@@ -27,7 +27,7 @@ function startAuthorization() {
             }
         }
 
-        const CALLBACK_URL = 'https://sftools.bri64.dev/sftools-callback';
+        const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
         const AUTH_URL = `${loginDomain}/services/oauth2/authorize` +
             `?client_id=${CLIENT_ID}` +

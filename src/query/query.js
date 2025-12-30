@@ -1,8 +1,9 @@
 // Query Tab Module - SOQL Query Editor with tabbed results
 import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../lib/utils.js';
+import { parseQuery, composeQuery, isQueryValid } from '@jetstreamapp/soql-parser-js';
 
 // State management for query tabs
-const queryTabs = new Map(); // queryString -> { id, query, records, columns }
+const queryTabs = new Map(); // normalizedQuery -> { id, query, normalizedQuery, records, columns, ... }
 let activeTabId = null;
 let tabCounter = 0;
 
@@ -32,6 +33,105 @@ export function init() {
     });
 }
 
+// Parse and analyze a SOQL query
+function analyzeQuery(query) {
+    try {
+        const parsed = parseQuery(query);
+
+        // Get normalized query string by re-composing
+        const normalizedQuery = composeQuery(parsed, { format: false });
+
+        // Extract columns from parsed fields
+        const columns = extractColumnsFromParsed(parsed.fields || []);
+
+        return {
+            normalizedQuery,
+            objectName: parsed.sObject || null,
+            columns,
+            error: null
+        };
+    } catch (e) {
+        // If parsing fails, fall back to simple normalization
+        console.warn('SOQL parse error:', e.message);
+        return {
+            normalizedQuery: query.toLowerCase().replace(/\s+/g, ' ').trim(),
+            objectName: null,
+            columns: [],
+            error: e.message
+        };
+    }
+}
+
+// Extract column info from parsed fields
+function extractColumnsFromParsed(fields) {
+    const columns = [];
+    let exprIndex = 0; // Salesforce uses expr0, expr1, etc. for unaliased aggregate functions
+
+    for (const field of fields) {
+        switch (field.type) {
+            case 'Field':
+                columns.push({
+                    title: field.alias || field.field,
+                    path: field.field
+                });
+                break;
+
+            case 'FieldRelationship':
+                // e.g., Account.Name -> relationships: ['Account'], field: 'Name'
+                const fullPath = [...field.relationships, field.field].join('.');
+                columns.push({
+                    title: field.alias || fullPath,
+                    path: fullPath
+                });
+                break;
+
+            case 'FieldFunctionExpression':
+                // e.g., COUNT(Id), SUM(Amount)
+                // Salesforce returns unaliased aggregates as expr0, expr1, etc.
+                // Only increment exprIndex when there's no alias
+                let aggPath;
+                if (field.alias) {
+                    aggPath = field.alias;
+                } else {
+                    aggPath = `expr${exprIndex++}`;
+                }
+                columns.push({
+                    title: field.alias || field.rawValue || field.functionName,
+                    path: aggPath
+                });
+                break;
+
+            case 'FieldSubquery':
+                // Subqueries return nested arrays - skip for now in main columns
+                columns.push({
+                    title: field.subquery.relationshipName,
+                    path: field.subquery.relationshipName,
+                    isSubquery: true
+                });
+                break;
+
+            case 'FieldTypeof':
+                // TYPEOF expressions - use the field name
+                columns.push({
+                    title: field.field,
+                    path: field.field
+                });
+                break;
+
+            default:
+                // Unknown field type, try to get something useful
+                if (field.field) {
+                    columns.push({
+                        title: field.field,
+                        path: field.field
+                    });
+                }
+        }
+    }
+
+    return columns;
+}
+
 // Execute the current query
 async function executeQuery() {
     const query = queryInput.value.trim();
@@ -46,8 +146,11 @@ async function executeQuery() {
         return;
     }
 
-    // Check if this query already has a tab
-    const existingTab = findTabByQuery(query);
+    // Analyze the query
+    const analysis = analyzeQuery(query);
+
+    // Check if this query already has a tab (using normalized form)
+    const existingTab = queryTabs.get(analysis.normalizedQuery);
     if (existingTab) {
         // Switch to existing tab and refresh
         switchToTab(existingTab.id);
@@ -56,36 +159,26 @@ async function executeQuery() {
     }
 
     // Create a new tab for this query
-    const tabId = createTab(query);
+    const tabId = createTab(query, analysis);
     switchToTab(tabId);
     await fetchQueryData(tabId);
 }
 
-// Find tab by query string
-function findTabByQuery(query) {
-    // TODO: Normalize query for comparison (lowercase, whitespace normalization, etc.)
-    const normalizedQuery = query.toLowerCase().replace(/\s+/g, ' ').trim();
-    for (const [key, tab] of queryTabs) {
-        const normalizedKey = key.toLowerCase().replace(/\s+/g, ' ').trim();
-        if (normalizedKey === normalizedQuery) {
-            return tab;
-        }
-    }
-    return null;
-}
-
 // Create a new tab
-function createTab(query) {
+function createTab(query, analysis) {
     const tabId = `query-tab-${++tabCounter}`;
     const tabData = {
         id: tabId,
         query: query,
+        normalizedQuery: analysis.normalizedQuery,
+        objectName: analysis.objectName,
+        parsedColumns: analysis.columns,
         records: [],
         columns: [],
         totalSize: 0
     };
 
-    queryTabs.set(query, tabData);
+    queryTabs.set(analysis.normalizedQuery, tabData);
     renderTabs();
     return tabId;
 }
@@ -117,16 +210,16 @@ function getTabDataById(tabId) {
 
 // Close a tab
 function closeTab(tabId) {
-    let queryToRemove = null;
-    for (const [query, tab] of queryTabs) {
+    let keyToRemove = null;
+    for (const [key, tab] of queryTabs) {
         if (tab.id === tabId) {
-            queryToRemove = query;
+            keyToRemove = key;
             break;
         }
     }
 
-    if (queryToRemove) {
-        queryTabs.delete(queryToRemove);
+    if (keyToRemove) {
+        queryTabs.delete(keyToRemove);
 
         // If closing active tab, switch to another or clear
         if (activeTabId === tabId) {
@@ -150,6 +243,7 @@ async function fetchQueryData(tabId) {
     if (!tabData) return;
 
     updateStatus('Loading...', 'loading');
+    tabData.error = null;
 
     try {
         const encodedQuery = encodeURIComponent(tabData.query);
@@ -167,7 +261,7 @@ async function fetchQueryData(tabId) {
             const data = JSON.parse(response.data);
             tabData.records = data.records || [];
             tabData.totalSize = data.totalSize || 0;
-            tabData.columns = extractColumns(tabData.records);
+            tabData.columns = resolveColumns(tabData);
 
             updateStatus(`${tabData.totalSize} record${tabData.totalSize !== 1 ? 's' : ''}`, 'success');
         } else {
@@ -198,23 +292,100 @@ async function fetchQueryData(tabId) {
     renderResults();
 }
 
-// Extract column names from records
-function extractColumns(records) {
-    if (!records || records.length === 0) return [];
+// Resolve columns - use parsed columns if available, otherwise extract from records
+function resolveColumns(tabData) {
+    const { records, parsedColumns } = tabData;
 
-    // TODO: Parse query to get column order from SELECT clause
-    // TODO: Handle nested relationships (e.g., Account.Name)
-    // For now, just extract keys from first record, excluding 'attributes'
-    const columns = [];
+    // If no records, use parsed columns or empty
+    if (!records || records.length === 0) {
+        return parsedColumns && parsedColumns.length > 0 ? parsedColumns : [];
+    }
+
+    // Get actual keys from the first record (excluding 'attributes')
     const firstRecord = records[0];
+    const recordKeys = Object.keys(firstRecord).filter(k => k !== 'attributes');
+    const recordKeySet = new Set(recordKeys);
 
-    for (const key of Object.keys(firstRecord)) {
-        if (key !== 'attributes') {
-            columns.push(key);
+    // If we have parsed columns, validate they match the record structure
+    if (parsedColumns && parsedColumns.length > 0) {
+        // Check if parsed columns align with record keys
+        // For nested paths like "Account.Name", check if the root exists
+        const columnsValid = parsedColumns.every(col => {
+            const rootKey = col.path.split('.')[0];
+            return recordKeySet.has(rootKey) || recordKeySet.has(col.path);
+        });
+
+        if (columnsValid) {
+            return parsedColumns;
         }
+
+        // Parsed columns don't match paths - merge: use record keys for paths,
+        // but try to get nice titles from parsed columns
+        // Build a map from parsed paths to titles for lookup
+        const pathToTitle = new Map();
+        parsedColumns.forEach(col => {
+            pathToTitle.set(col.path, col.title);
+        });
+
+        // Match record keys to parsed columns by position for expr fields
+        // parsedColumns and recordKeys should be in the same order
+        const columns = [];
+        for (let i = 0; i < recordKeys.length; i++) {
+            const key = recordKeys[i];
+            let title = key;
+
+            // Try to find a matching title from parsed columns
+            if (pathToTitle.has(key)) {
+                // Direct match (e.g., "Name" -> "Name")
+                title = pathToTitle.get(key);
+            } else if (key.startsWith('expr') && i < parsedColumns.length) {
+                // For expr fields, use the title from the corresponding parsed column position
+                // But we need to match by expr index, not array index
+                const exprMatch = key.match(/^expr(\d+)$/);
+                if (exprMatch) {
+                    const exprIdx = parseInt(exprMatch[1], 10);
+                    // Find the parsed column that would have been assigned this expr index
+                    let funcCount = 0;
+                    for (const pc of parsedColumns) {
+                        if (pc.path.startsWith('expr')) {
+                            if (funcCount === exprIdx) {
+                                title = pc.title;
+                                break;
+                            }
+                            funcCount++;
+                        }
+                    }
+                }
+            }
+
+            columns.push({ title, path: key });
+        }
+
+        return columns;
+    }
+
+    // Fallback: extract keys from first record
+    const columns = [];
+    for (const key of recordKeys) {
+        columns.push({ title: key, path: key });
     }
 
     return columns;
+}
+
+// Get value from record using path (handles nested objects like Account.Name)
+function getValueByPath(record, path) {
+    if (!path) return undefined;
+
+    const parts = path.split('.');
+    let value = record;
+
+    for (const part of parts) {
+        if (value === null || value === undefined) return undefined;
+        value = value[part];
+    }
+
+    return value;
 }
 
 // Update status badge
@@ -240,10 +411,10 @@ function renderTabs() {
         tabEl.className = `query-tab${tab.id === activeTabId ? ' active' : ''}`;
         tabEl.dataset.tabId = tab.id;
 
-        // Tab label - truncated query
+        // Tab label - use object name if available, otherwise truncated query
         const label = document.createElement('span');
         label.className = 'query-tab-label';
-        label.textContent = truncateQuery(tab.query);
+        label.textContent = getTabLabel(tab);
         label.title = tab.query;
         label.addEventListener('click', () => switchToTab(tab.id));
 
@@ -274,12 +445,16 @@ function renderTabs() {
     }
 }
 
-// Truncate query for tab label
-function truncateQuery(query) {
-    // TODO: Extract object name from query for smarter labeling
+// Get label for tab (object name or truncated query)
+function getTabLabel(tab) {
+    if (tab.objectName) {
+        return tab.objectName;
+    }
+
+    // Fallback to truncated query
     const maxLength = 30;
-    if (query.length <= maxLength) return query;
-    return query.substring(0, maxLength) + '...';
+    if (tab.query.length <= maxLength) return tab.query;
+    return tab.query.substring(0, maxLength) + '...';
 }
 
 // Render results table for active tab
@@ -314,7 +489,7 @@ function renderResults() {
     const headerRow = document.createElement('tr');
     for (const col of tabData.columns) {
         const th = document.createElement('th');
-        th.textContent = col;
+        th.textContent = col.title;
         headerRow.appendChild(th);
     }
     thead.appendChild(headerRow);
@@ -326,9 +501,9 @@ function renderResults() {
         const row = document.createElement('tr');
         for (const col of tabData.columns) {
             const td = document.createElement('td');
-            const value = record[col];
-            td.textContent = formatCellValue(value);
-            td.title = formatCellValue(value);
+            const value = getValueByPath(record, col.path);
+            td.textContent = formatCellValue(value, col);
+            td.title = formatCellValue(value, col);
             row.appendChild(td);
         }
         tbody.appendChild(row);
@@ -340,14 +515,28 @@ function renderResults() {
 }
 
 // Format cell value for display
-function formatCellValue(value) {
+function formatCellValue(value, col) {
     if (value === null || value === undefined) {
         return '';
     }
+
+    // Handle subquery results (arrays of records)
+    if (col?.isSubquery && typeof value === 'object') {
+        if (value.records) {
+            return `[${value.totalSize || value.records.length} records]`;
+        }
+        if (Array.isArray(value)) {
+            return `[${value.length} records]`;
+        }
+    }
+
     if (typeof value === 'object') {
-        // TODO: Handle relationship fields (nested objects) better
+        // Handle nested relationship objects - show relevant field or stringify
+        if (value.Name !== undefined) return value.Name;
+        if (value.Id !== undefined) return value.Id;
         return JSON.stringify(value);
     }
+
     return String(value);
 }
 

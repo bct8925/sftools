@@ -49,6 +49,30 @@ body {
     letter-spacing: -0.5px;
 }
 
+.tab-scroll-container {
+    flex: 1;
+}
+
+.nav-icon-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 6px 8px;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-left: auto;
+}
+
+.nav-icon-btn:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    background-color: rgba(0, 112, 210, 0.05);
+}
+
 .tab-link {
     background: none;
     border: none;

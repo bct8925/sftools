@@ -42,8 +42,10 @@ src/
 │   └── callback.js       # Token extraction and storage
 ├── rest-api/
 │   └── rest-api.js       # REST API tab module
-└── apex/
-    └── apex.js           # Anonymous Apex execution tab module
+├── apex/
+│   └── apex.js           # Anonymous Apex execution tab module
+└── query/
+    └── query.js          # SOQL query editor tab module
 ```
 
 Root files:
@@ -56,12 +58,16 @@ Root files:
 Implemented:
 - **REST API** - Salesforce REST API explorer with Monaco editors
 - **Apex** - Anonymous Apex execution with debug log retrieval
+- **Query** - SOQL query editor with tabbed results
 
 Planned:
-- **Query** - SOQL query editor
 - **Platform Events** - CometD subscription/publishing
 - **Aura** - Aura component inspector
 - **Dev Console** - Debug log viewer
+
+## Header Features
+
+- **Open Org Button** - Icon button in the top-right of the nav header that opens the authenticated org in a new browser tab using `frontdoor.jsp` with the current session token
 
 ## Adding a New Tool Tab
 

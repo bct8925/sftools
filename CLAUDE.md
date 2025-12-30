@@ -44,8 +44,11 @@ src/
 │   └── rest-api.js       # REST API tab module
 ├── apex/
 │   └── apex.js           # Anonymous Apex execution tab module
-└── query/
-    └── query.js          # SOQL query editor tab module
+├── query/
+│   └── query.js          # SOQL query editor tab module
+└── aura/
+    ├── aura.html         # Standalone Aura Debugger page
+    └── aura.js           # Aura request logic
 ```
 
 Root files:
@@ -53,7 +56,7 @@ Root files:
 - `rules.json` - Declarative net request rules
 - `vite.config.js` - Vite build config (root: 'src')
 
-## Tool Tabs
+## Tool Tabs (OAuth-authenticated)
 
 Implemented:
 - **REST API** - Salesforce REST API explorer with Monaco editors
@@ -62,8 +65,41 @@ Implemented:
 
 Planned:
 - **Platform Events** - CometD subscription/publishing
-- **Aura** - Aura component inspector
 - **Dev Console** - Debug log viewer
+
+## Standalone Tools
+
+Standalone tools are accessible from the popup regardless of OAuth state. They appear in the "Standalone Tools" section of the popup.
+
+### Aura Debugger (`src/aura/`)
+
+A standalone tool for making Aura framework requests to Salesforce communities/orgs. Does not use OAuth - handles its own authentication.
+
+**Features:**
+- Community URL input for any Salesforce domain
+- Unauthenticated/Authenticated mode toggle
+- Aura Token and Session ID (SID) inputs for authenticated requests
+- Preset action types: SelectableListDataProvider, RecordUiController, HostConfigController, Component Definition, ApexActionController, Custom
+- Monaco editors for request parameters and response
+- FWUID configuration in advanced settings
+
+**Authentication Flow:**
+1. If SID is provided manually, sets cookie before request and removes it after
+2. If SID is blank, checks for existing browser cookie via `chrome.cookies` API
+3. Aura token is passed in request body as `aura.token` parameter
+
+**Key Files:**
+- `src/aura/aura.html` - Standalone page (separate Vite entry point)
+- `src/aura/aura.js` - Request logic, cookie management, presets
+- `vite.config.js` - Includes `aura.html` in `rollupOptions.input`
+
+### Adding a New Standalone Tool
+
+1. Create `src/<tool-name>/<tool-name>.html` with full HTML structure (imports `../style.css`)
+2. Create `src/<tool-name>/<tool-name>.js` with tool logic
+3. Add the HTML file to `vite.config.js` `rollupOptions.input`
+4. Add a button in `src/popup/popup.html` under `#standalone-group`
+5. Add click handler in `src/popup/popup.js` to open `dist/<tool-name>/<tool-name>.html`
 
 ## Header Features
 

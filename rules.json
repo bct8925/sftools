@@ -32,5 +32,22 @@
       "urlFilter": "https://*.force.com/*",
       "resourceTypes": ["xmlhttprequest"]
     }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Origin",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "https://*.*/aura*",
+      "resourceTypes": ["xmlhttprequest"]
+    }
   }
 ]

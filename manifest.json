@@ -10,6 +10,7 @@
     "storage",
     "tabs",
     "activeTab",
+    "cookies",
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess"
   ],

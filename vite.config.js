@@ -14,7 +14,8 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        app: resolve(__dirname, 'src/app.html')
+        app: resolve(__dirname, 'src/app.html'),
+        aura: resolve(__dirname, 'src/aura/aura.html')
       },
       output: {
         entryFileNames: '[name].js',

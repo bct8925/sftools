@@ -108,7 +108,7 @@ import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from 
 
 ## OAuth Flow
 
-- Uses external callback URL: `https://sftools.bri64.dev/sftools-callback`
+- Uses external callback URL: `https://sftools.dev/sftools-callback`
 - Stores `accessToken` and `instanceUrl` in `chrome.storage.local`
 - Client ID configured in `manifest.json` `oauth2.client_id`
 

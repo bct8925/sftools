@@ -1,6 +1,5 @@
 // Query Tab Module - SOQL Query Editor with tabbed results
 import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../lib/utils.js';
-import { parseQuery, composeQuery, isQueryValid } from '@jetstreamapp/soql-parser-js';
 
 // State management for query tabs
 const queryTabs = new Map(); // normalizedQuery -> { id, query, normalizedQuery, records, columns, ... }
@@ -33,103 +32,49 @@ export function init() {
     });
 }
 
-// Parse and analyze a SOQL query
-function analyzeQuery(query) {
-    try {
-        const parsed = parseQuery(query);
-
-        // Get normalized query string by re-composing
-        const normalizedQuery = composeQuery(parsed, { format: false });
-
-        // Extract columns from parsed fields
-        const columns = extractColumnsFromParsed(parsed.fields || []);
-
-        return {
-            normalizedQuery,
-            objectName: parsed.sObject || null,
-            columns,
-            error: null
-        };
-    } catch (e) {
-        // If parsing fails, fall back to simple normalization
-        console.warn('SOQL parse error:', e.message);
-        return {
-            normalizedQuery: query.toLowerCase().replace(/\s+/g, ' ').trim(),
-            objectName: null,
-            columns: [],
-            error: e.message
-        };
-    }
+// Simple query normalization for tab deduplication
+function normalizeQuery(query) {
+    return query.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-// Extract column info from parsed fields
-function extractColumnsFromParsed(fields) {
+// Flatten column metadata from the columns=true API response
+// Handles nested joinColumns recursively for relationship fields
+function flattenColumnMetadata(columnMetadata, prefix = '') {
     const columns = [];
-    let exprIndex = 0; // Salesforce uses expr0, expr1, etc. for unaliased aggregate functions
 
-    for (const field of fields) {
-        switch (field.type) {
-            case 'Field':
-                columns.push({
-                    title: field.alias || field.field,
-                    path: field.field
-                });
-                break;
+    for (const col of columnMetadata) {
+        const columnName = col.columnName;
+        const path = prefix ? `${prefix}.${columnName}` : columnName;
 
-            case 'FieldRelationship':
-                // e.g., Account.Name -> relationships: ['Account'], field: 'Name'
-                const fullPath = [...field.relationships, field.field].join('.');
-                columns.push({
-                    title: field.alias || fullPath,
-                    path: fullPath
-                });
-                break;
-
-            case 'FieldFunctionExpression':
-                // e.g., COUNT(Id), SUM(Amount)
-                // Salesforce returns unaliased aggregates as expr0, expr1, etc.
-                // Only increment exprIndex when there's no alias
-                let aggPath;
-                if (field.alias) {
-                    aggPath = field.alias;
-                } else {
-                    aggPath = `expr${exprIndex++}`;
-                }
-                columns.push({
-                    title: field.alias || field.rawValue || field.functionName,
-                    path: aggPath
-                });
-                break;
-
-            case 'FieldSubquery':
-                // Subqueries return nested arrays - skip for now in main columns
-                columns.push({
-                    title: field.subquery.relationshipName,
-                    path: field.subquery.relationshipName,
-                    isSubquery: true
-                });
-                break;
-
-            case 'FieldTypeof':
-                // TYPEOF expressions - use the field name
-                columns.push({
-                    title: field.field,
-                    path: field.field
-                });
-                break;
-
-            default:
-                // Unknown field type, try to get something useful
-                if (field.field) {
-                    columns.push({
-                        title: field.field,
-                        path: field.field
-                    });
-                }
+        if (col.joinColumns && col.joinColumns.length > 0) {
+            // Relationship field - recurse into joinColumns
+            columns.push(...flattenColumnMetadata(col.joinColumns, path));
+        } else {
+            // Use full path as title for nested fields, displayName for top-level
+            // This shows "Account.Name" instead of just "Name" for relationship fields
+            const title = prefix ? path : col.displayName;
+            columns.push({
+                title: title,
+                path: path,
+                aggregate: col.aggregate || false,
+                isSubquery: false
+            });
         }
     }
 
     return columns;
+}
+
+// Fallback: extract columns from record keys when column metadata unavailable
+function extractColumnsFromRecord(record) {
+    return Object.keys(record)
+        .filter(key => key !== 'attributes')
+        .map(key => ({
+            title: key,
+            path: key,
+            aggregate: false,
+            isSubquery: false
+        }));
 }
 
 // Execute the current query
@@ -146,11 +91,10 @@ async function executeQuery() {
         return;
     }
 
-    // Analyze the query
-    const analysis = analyzeQuery(query);
+    const normalizedQuery = normalizeQuery(query);
 
     // Check if this query already has a tab (using normalized form)
-    const existingTab = queryTabs.get(analysis.normalizedQuery);
+    const existingTab = queryTabs.get(normalizedQuery);
     if (existingTab) {
         // Switch to existing tab and refresh
         switchToTab(existingTab.id);
@@ -159,26 +103,25 @@ async function executeQuery() {
     }
 
     // Create a new tab for this query
-    const tabId = createTab(query, analysis);
+    const tabId = createTab(query, normalizedQuery);
     switchToTab(tabId);
     await fetchQueryData(tabId);
 }
 
 // Create a new tab
-function createTab(query, analysis) {
+function createTab(query, normalizedQuery) {
     const tabId = `query-tab-${++tabCounter}`;
     const tabData = {
         id: tabId,
         query: query,
-        normalizedQuery: analysis.normalizedQuery,
-        objectName: analysis.objectName,
-        parsedColumns: analysis.columns,
+        normalizedQuery: normalizedQuery,
+        objectName: null, // Will be set from column metadata
         records: [],
         columns: [],
         totalSize: 0
     };
 
-    queryTabs.set(analysis.normalizedQuery, tabData);
+    queryTabs.set(normalizedQuery, tabData);
     renderTabs();
     return tabId;
 }
@@ -247,34 +190,53 @@ async function fetchQueryData(tabId) {
 
     try {
         const encodedQuery = encodeURIComponent(tabData.query);
-        const url = `${getInstanceUrl()}/services/data/v62.0/query/?q=${encodedQuery}`;
+        const baseUrl = `${getInstanceUrl()}/services/data/v62.0/query/?q=${encodedQuery}`;
+        const headers = {
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'Accept': 'application/json'
+        };
 
-        const response = await extensionFetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${getAccessToken()}`,
-                'Accept': 'application/json'
-            }
-        });
+        // Make both calls in parallel for better performance
+        const [columnsResponse, dataResponse] = await Promise.all([
+            extensionFetch(`${baseUrl}&columns=true`, { method: 'GET', headers }),
+            extensionFetch(baseUrl, { method: 'GET', headers })
+        ]);
 
-        if (response.success) {
-            const data = JSON.parse(response.data);
+        // Process column metadata
+        if (columnsResponse.success) {
+            const columnData = JSON.parse(columnsResponse.data);
+            tabData.objectName = columnData.entityName || null;
+            tabData.columns = flattenColumnMetadata(columnData.columnMetadata || []);
+            // Re-render tabs in case objectName changed
+            renderTabs();
+        } else {
+            // Column metadata failed - will fall back to record keys
+            tabData.columns = [];
+        }
+
+        // Process query results
+        if (dataResponse.success) {
+            const data = JSON.parse(dataResponse.data);
             tabData.records = data.records || [];
             tabData.totalSize = data.totalSize || 0;
-            tabData.columns = resolveColumns(tabData);
+
+            // If columns weren't set from metadata, extract from records
+            if (tabData.columns.length === 0 && tabData.records.length > 0) {
+                tabData.columns = extractColumnsFromRecord(tabData.records[0]);
+            }
 
             updateStatus(`${tabData.totalSize} record${tabData.totalSize !== 1 ? 's' : ''}`, 'success');
         } else {
             let errorMsg = 'Query failed';
             try {
-                const errorData = JSON.parse(response.data);
+                const errorData = JSON.parse(dataResponse.data);
                 if (Array.isArray(errorData) && errorData[0]?.message) {
                     errorMsg = errorData[0].message;
                 } else if (errorData.message) {
                     errorMsg = errorData.message;
                 }
             } catch (e) {
-                errorMsg = response.data || response.statusText || 'Unknown error';
+                errorMsg = dataResponse.data || dataResponse.statusText || 'Unknown error';
             }
             tabData.records = [];
             tabData.columns = [];
@@ -290,87 +252,6 @@ async function fetchQueryData(tabId) {
     }
 
     renderResults();
-}
-
-// Resolve columns - use parsed columns if available, otherwise extract from records
-function resolveColumns(tabData) {
-    const { records, parsedColumns } = tabData;
-
-    // If no records, use parsed columns or empty
-    if (!records || records.length === 0) {
-        return parsedColumns && parsedColumns.length > 0 ? parsedColumns : [];
-    }
-
-    // Get actual keys from the first record (excluding 'attributes')
-    const firstRecord = records[0];
-    const recordKeys = Object.keys(firstRecord).filter(k => k !== 'attributes');
-    const recordKeySet = new Set(recordKeys);
-
-    // If we have parsed columns, validate they match the record structure
-    if (parsedColumns && parsedColumns.length > 0) {
-        // Check if parsed columns align with record keys
-        // For nested paths like "Account.Name", check if the root exists
-        const columnsValid = parsedColumns.every(col => {
-            const rootKey = col.path.split('.')[0];
-            return recordKeySet.has(rootKey) || recordKeySet.has(col.path);
-        });
-
-        if (columnsValid) {
-            return parsedColumns;
-        }
-
-        // Parsed columns don't match paths - merge: use record keys for paths,
-        // but try to get nice titles from parsed columns
-        // Build a map from parsed paths to titles for lookup
-        const pathToTitle = new Map();
-        parsedColumns.forEach(col => {
-            pathToTitle.set(col.path, col.title);
-        });
-
-        // Match record keys to parsed columns by position for expr fields
-        // parsedColumns and recordKeys should be in the same order
-        const columns = [];
-        for (let i = 0; i < recordKeys.length; i++) {
-            const key = recordKeys[i];
-            let title = key;
-
-            // Try to find a matching title from parsed columns
-            if (pathToTitle.has(key)) {
-                // Direct match (e.g., "Name" -> "Name")
-                title = pathToTitle.get(key);
-            } else if (key.startsWith('expr') && i < parsedColumns.length) {
-                // For expr fields, use the title from the corresponding parsed column position
-                // But we need to match by expr index, not array index
-                const exprMatch = key.match(/^expr(\d+)$/);
-                if (exprMatch) {
-                    const exprIdx = parseInt(exprMatch[1], 10);
-                    // Find the parsed column that would have been assigned this expr index
-                    let funcCount = 0;
-                    for (const pc of parsedColumns) {
-                        if (pc.path.startsWith('expr')) {
-                            if (funcCount === exprIdx) {
-                                title = pc.title;
-                                break;
-                            }
-                            funcCount++;
-                        }
-                    }
-                }
-            }
-
-            columns.push({ title, path: key });
-        }
-
-        return columns;
-    }
-
-    // Fallback: extract keys from first record
-    const columns = [];
-    for (const key of recordKeys) {
-        columns.push({ title: key, path: key });
-    }
-
-    return columns;
 }
 
 // Get value from record using path (handles nested objects like Account.Name)

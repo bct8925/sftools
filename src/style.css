@@ -10,23 +10,25 @@
     --nav-bg: #ffffff;
 }
 
+html {
+    overscroll-behavior: none;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-color);
     margin: 0;
     padding: 0;
     color: var(--text-main);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
+    min-height: 100vh;
+    overscroll-behavior: none;
 }
 
 /* --- Layout Shell --- */
 .app-container {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    max-width: 100%;
+    min-height: 100vh;
 }
 
 /* --- Tab Navigation --- */
@@ -39,6 +41,9 @@ body {
     height: 50px;
     flex-shrink: 0;
     box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .nav-brand {
@@ -100,9 +105,8 @@ body {
 /* --- Content Area --- */
 .content-area {
     flex: 1;
-    overflow-y: auto;
     padding: 20px;
-    max-width: 900px; /* Constrain width for readability like the reference */
+    max-width: 900px;
     width: 100%;
     margin: 0 auto;
     box-sizing: border-box;
@@ -374,7 +378,7 @@ body {
 .query-results {
     padding: 15px;
     overflow-x: auto;
-    max-height: 400px;
+    max-height: 350px;
     overflow-y: auto;
 }
 

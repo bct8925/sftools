@@ -22,17 +22,21 @@ const schemaCache = new Map();
 async function getOrFetchSchema(schemaId, accessToken, instanceUrl, tenantId) {
     // Check cache first
     if (schemaCache.has(schemaId)) {
+        console.error(`[Schema] Cache hit for schema ${schemaId}`);
         return schemaCache.get(schemaId);
     }
 
+    console.error(`[Schema] Fetching schema ${schemaId} from Salesforce...`);
     // Fetch schema from Salesforce
     const schemaInfo = await getSchema(accessToken, instanceUrl, schemaId, tenantId);
+    console.error(`[Schema] Received schema, parsing Avro...`);
 
     // Parse the Avro schema
     const schema = avro.Type.forSchema(JSON.parse(schemaInfo.schema_json));
 
     // Cache it
     schemaCache.set(schemaId, schema);
+    console.error(`[Schema] Schema cached, cache size: ${schemaCache.size}`);
 
     return schema;
 }
@@ -57,9 +61,11 @@ function decodePayload(schema, payload) {
  * @returns {Promise<object>} - Event with decoded payload
  */
 async function decodeConsumerEvent(consumerEvent, accessToken, instanceUrl, tenantId) {
+    console.error(`[Schema] decodeConsumerEvent called`);
     const { event, replay_id } = consumerEvent;
 
     if (!event || !event.schema_id || !event.payload) {
+        console.error(`[Schema] Missing event data: event=${!!event}, schema=${event?.schema_id}, payload=${!!event?.payload}`);
         return {
             replayId: replay_id ? Buffer.from(replay_id).toString('base64') : null,
             schemaId: event?.schema_id,
@@ -67,6 +73,8 @@ async function decodeConsumerEvent(consumerEvent, accessToken, instanceUrl, tena
             error: 'Missing event data'
         };
     }
+
+    console.error(`[Schema] Decoding event with schema ${event.schema_id}, payload size: ${event.payload?.length || 0}`);
 
     try {
         // Get or fetch the schema
@@ -79,6 +87,7 @@ async function decodeConsumerEvent(consumerEvent, accessToken, instanceUrl, tena
 
         // Decode the payload
         const decodedPayload = decodePayload(schema, event.payload);
+        console.error(`[Schema] Payload decoded successfully`);
 
         return {
             id: event.id,
@@ -87,6 +96,7 @@ async function decodeConsumerEvent(consumerEvent, accessToken, instanceUrl, tena
             payload: decodedPayload
         };
     } catch (error) {
+        console.error(`[Schema] Decode error: ${error.message}`);
         return {
             id: event.id,
             replayId: replay_id ? Buffer.from(replay_id).toString('base64') : null,

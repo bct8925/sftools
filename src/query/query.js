@@ -1,5 +1,6 @@
 // Query Tab Module - SOQL Query Editor with tabbed results
 import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../lib/utils.js';
+import { createEditor, monaco } from '../lib/monaco.js';
 
 // State management for query tabs
 const queryTabs = new Map(); // normalizedQuery -> { id, query, normalizedQuery, records, columns, ... }
@@ -7,28 +8,35 @@ let activeTabId = null;
 let tabCounter = 0;
 
 // DOM element references
-let queryInput = null;
+let queryEditor = null;
 let tabsContainer = null;
 let resultsContainer = null;
 let executeBtn = null;
 let statusSpan = null;
 
 export function init() {
-    queryInput = document.getElementById('query-input');
+    const editorContainer = document.getElementById('query-editor');
     tabsContainer = document.getElementById('query-tabs');
     resultsContainer = document.getElementById('query-results');
     executeBtn = document.getElementById('query-execute-btn');
     statusSpan = document.getElementById('query-status');
 
+    // Create Monaco editor with SQL syntax highlighting
+    queryEditor = createEditor(editorContainer, {
+        language: 'sql',
+        value: `SELECT 
+    Id, 
+    Name 
+FROM Account 
+LIMIT 10`
+    });
+
     // Execute button click
     executeBtn.addEventListener('click', executeQuery);
 
     // Ctrl/Cmd+Enter to execute
-    queryInput.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.preventDefault();
-            executeQuery();
-        }
+    queryEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+        executeQuery();
     });
 }
 
@@ -79,7 +87,7 @@ function extractColumnsFromRecord(record) {
 
 // Execute the current query
 async function executeQuery() {
-    const query = queryInput.value.trim();
+    const query = queryEditor.getValue().trim();
 
     if (!query) {
         alert('Please enter a SOQL query.');

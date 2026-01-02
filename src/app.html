@@ -13,11 +13,10 @@
         <nav class="tab-nav">
             <div class="nav-brand">sftools</div>
             <div class="tab-scroll-container">
-                <button class="tab-link" data-tab="query">Query</button>
+                <button class="tab-link active" data-tab="query">Query</button>
                 <button class="tab-link" data-tab="apex">Apex</button>
+                <button class="tab-link" data-tab="rest-api">REST API</button>
                 <button class="tab-link" data-tab="events">Platform Events</button>
-                <button class="tab-link active" data-tab="rest-api">REST API</button>
-                <button class="tab-link" data-tab="console">Dev Console</button>
             </div>
             <button id="open-org-btn" class="nav-icon-btn" title="Open Org in Browser">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -28,10 +27,26 @@
         </nav>
 
         <main class="content-area">
-            <div id="query" class="tab-content">
+            <div id="query" class="tab-content active">
                 <header class="page-header">
                     <h1>SOQL Query Editor</h1>
                 </header>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background-color: #0070d2;">S</div>
+                        <h2>SOQL Query</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-element">
+                            <label>Enter SOQL Query (Ctrl/Cmd+Enter to execute)</label>
+                            <div id="query-editor" class="monaco-container query-editor"></div>
+                        </div>
+                        <div class="m-top_small">
+                            <button class="button-brand" id="query-execute-btn">Execute Query</button>
+                            <span id="query-status" class="status-badge"></span>
+                        </div>
+                    </div>
+                </div>
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #4bca81;">Q</div>
@@ -43,22 +58,6 @@
                         </div>
                         <div id="query-results" class="query-results">
                             <div class="query-results-empty">No query results to display</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-header-icon" style="background-color: #0070d2;">S</div>
-                        <h2>SOQL Query</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-element">
-                            <label>Enter SOQL Query (Ctrl/Cmd+Enter to execute)</label>
-                            <textarea id="query-input" class="textarea query-input" placeholder="SELECT Id, Name FROM Account LIMIT 10"></textarea>
-                        </div>
-                        <div class="m-top_small">
-                            <button class="button-brand" id="query-execute-btn">Execute Query</button>
-                            <span id="query-status" class="status-badge"></span>
                         </div>
                     </div>
                 </div>
@@ -137,7 +136,7 @@
                 </div>
             </div>
 
-            <div id="rest-api" class="tab-content active">
+            <div id="rest-api" class="tab-content">
                 <header class="page-header">
                     <h1>Salesforce API Tester</h1>
                 </header>
@@ -184,22 +183,6 @@
                     </div>
                 </div>
             </div>
-
-            <div id="console" class="tab-content">
-                <header class="page-header">
-                    <h1>Developer Console Log View</h1>
-                </header>
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-header-icon" style="background-color: #3ba755;">L</div>
-                        <h2>Debug Logs</h2>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Fetch and view real-time debug logs.</p>
-                    </div>
-                </div>
-            </div>
-
         </main>
     </div>
 

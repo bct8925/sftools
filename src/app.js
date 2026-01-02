@@ -1,5 +1,5 @@
 // sftools - Main Application Entry Point
-import { loadAuthTokens, getAccessToken, getInstanceUrl, isAuthenticated } from './lib/utils.js';
+import { loadAuthTokens, getAccessToken, getInstanceUrl, isAuthenticated, checkProxyStatus, isProxyConnected } from './lib/utils.js';
 import * as query from './query/query.js';
 import * as apex from './apex/apex.js';
 import * as restApi from './rest-api/rest-api.js';
@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
     initOpenOrgButton();
     await loadAuthTokens();
+    await checkProxyStatus();
+
+    // Apply feature gating based on proxy status
+    updateFeatureGating();
 
     // Initialize tool modules
     query.init();
@@ -17,6 +21,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     restApi.init();
     events.init();
 });
+
+// --- Feature Gating ---
+function updateFeatureGating() {
+    const eventsTab = document.querySelector('.tab-link[data-tab="events"]');
+    const eventsContent = document.getElementById('events');
+
+    if (!isProxyConnected()) {
+        // Disable the events tab
+        eventsTab.classList.add('tab-disabled');
+        eventsContent.classList.add('feature-disabled');
+
+        // Add overlay with message
+        const overlay = document.createElement('div');
+        overlay.className = 'feature-gate-overlay';
+        overlay.innerHTML = `
+            <div class="feature-gate-message">
+                <h3>Local Proxy Required</h3>
+                <p>Platform Events streaming requires the local proxy to be installed and connected.</p>
+                <button id="feature-gate-settings-btn">Open Settings</button>
+            </div>
+        `;
+        eventsContent.appendChild(overlay);
+
+        // Settings button handler
+        overlay.querySelector('#feature-gate-settings-btn').addEventListener('click', () => {
+            chrome.runtime.openOptionsPage();
+        });
+
+        // Prevent tab switching to disabled tab
+        eventsTab.addEventListener('click', (e) => {
+            if (eventsTab.classList.contains('tab-disabled')) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+        }, true);
+    }
+}
 
 // --- Open Org Button ---
 function initOpenOrgButton() {

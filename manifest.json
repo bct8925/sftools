@@ -19,6 +19,7 @@
   "side_panel": {
     "default_path": "dist/app.html"
   },
+  "options_page": "dist/options/options.html",
   "host_permissions": [
     "<all_urls>"
   ],

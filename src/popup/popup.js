@@ -3,6 +3,7 @@ const connectBtn = document.getElementById('connectBtn');
 const sidePanelBtn = document.getElementById('sidePanelBtn');
 const reauthorizeBtn = document.getElementById('reauthorizeBtn');
 const openAuraBtn = document.getElementById('openAuraBtn');
+const settingsBtn = document.getElementById('settingsBtn');
 const unauthorizedGroup = document.getElementById('unauthorized-group');
 const authorizedGroup = document.getElementById('authorized-group');
 const statusDiv = document.getElementById('status');
@@ -65,6 +66,11 @@ sidePanelBtn.addEventListener('click', function() {
 
 openAuraBtn.addEventListener('click', function() {
     chrome.tabs.create({ url: 'dist/aura/aura.html' });
+    window.close();
+});
+
+settingsBtn.addEventListener('click', function() {
+    chrome.runtime.openOptionsPage();
     window.close();
 });
 

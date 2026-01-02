@@ -15,7 +15,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         app: resolve(__dirname, 'src/app.html'),
-        aura: resolve(__dirname, 'src/aura/aura.html')
+        aura: resolve(__dirname, 'src/aura/aura.html'),
+        options: resolve(__dirname, 'src/options/options.html')
       },
       output: {
         entryFileNames: '[name].js',

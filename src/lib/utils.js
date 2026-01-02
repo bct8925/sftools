@@ -47,3 +47,61 @@ export async function extensionFetch(url, options = {}) {
     const data = await response.text();
     return { success: response.ok, status: response.status, statusText: response.statusText, data };
 }
+
+// --- Proxy Connection State ---
+let PROXY_CONNECTED = false;
+
+export function isProxyConnected() {
+    return PROXY_CONNECTED;
+}
+
+/**
+ * Check and update proxy connection status
+ * @returns {Promise<boolean>} - Whether proxy is connected
+ */
+export async function checkProxyStatus() {
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+        try {
+            const response = await chrome.runtime.sendMessage({ type: 'checkProxyConnection' });
+            PROXY_CONNECTED = response.connected;
+            return PROXY_CONNECTED;
+        } catch (err) {
+            console.error('Error checking proxy status:', err);
+            PROXY_CONNECTED = false;
+            return false;
+        }
+    }
+    return false;
+}
+
+/**
+ * Fetch via native proxy (bypasses all CORS restrictions)
+ * @param {string} url - URL to fetch
+ * @param {object} options - Fetch options (method, headers, body)
+ * @returns {Promise<object>} - Response object
+ */
+export async function proxyFetch(url, options = {}) {
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+        return await chrome.runtime.sendMessage({
+            type: 'proxyFetch',
+            url,
+            method: options.method,
+            headers: options.headers,
+            body: options.body
+        });
+    }
+    throw new Error('Proxy fetch requires extension context');
+}
+
+/**
+ * Smart fetch: uses proxy if available, falls back to extensionFetch
+ * @param {string} url - URL to fetch
+ * @param {object} options - Fetch options
+ * @returns {Promise<object>} - Response object
+ */
+export async function smartFetch(url, options = {}) {
+    if (PROXY_CONNECTED) {
+        return await proxyFetch(url, options);
+    }
+    return await extensionFetch(url, options);
+}

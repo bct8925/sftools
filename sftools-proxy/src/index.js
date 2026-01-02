@@ -14,6 +14,12 @@ const { readMessage, sendMessage } = require('./native-messaging');
 const { startServer } = require('./http-server');
 const { storePayload, shouldUseLargePayload } = require('./payload-store');
 const { handleRest } = require('./handlers/rest');
+const {
+    handleGrpcSubscribe,
+    handleGrpcUnsubscribe,
+    handleGetTopic,
+    handleGetSchema
+} = require('./handlers/grpc');
 
 const VERSION = '1.0.0';
 
@@ -52,7 +58,15 @@ const handlers = {
     /**
      * REST API proxy
      */
-    rest: handleRest
+    rest: handleRest,
+
+    /**
+     * gRPC Pub/Sub API handlers
+     */
+    grpcSubscribe: handleGrpcSubscribe,
+    grpcUnsubscribe: handleGrpcUnsubscribe,
+    getTopic: handleGetTopic,
+    getSchema: handleGetSchema
 };
 
 /**

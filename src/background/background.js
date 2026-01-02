@@ -33,11 +33,21 @@ async function connectNative() {
             nativePort = chrome.runtime.connectNative(NATIVE_HOST_NAME);
 
             // Handle incoming messages
-            nativePort.onMessage.addListener((response) => {
-                const pending = pendingRequests.get(response.id);
+            nativePort.onMessage.addListener((message) => {
+                // Check if this is a streaming event (no request ID)
+                if (message.type === 'grpcEvent' || message.type === 'grpcError' || message.type === 'grpcEnd') {
+                    // Forward streaming events to all extension pages
+                    chrome.runtime.sendMessage(message).catch(() => {
+                        // Ignore errors if no listeners
+                    });
+                    return;
+                }
+
+                // Handle request-response messages
+                const pending = pendingRequests.get(message.id);
                 if (pending) {
-                    pending.resolve(response);
-                    pendingRequests.delete(response.id);
+                    pending.resolve(message);
+                    pendingRequests.delete(message.id);
                 }
             });
 
@@ -273,6 +283,81 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             method: request.method,
             headers: request.headers,
             body: request.body
+        })
+            .then(response => sendResponse(response))
+            .catch(error => sendResponse({ success: false, error: error.message }));
+        return true;
+    }
+
+    // --- gRPC Pub/Sub API handlers ---
+    if (request.type === 'subscribe') {
+        if (!isProxyConnected()) {
+            sendResponse({ success: false, error: 'Proxy not connected' });
+            return false;
+        }
+
+        const subscriptionId = crypto.randomUUID();
+        sendProxyRequest({
+            type: 'grpcSubscribe',
+            subscriptionId,
+            accessToken: request.accessToken,
+            instanceUrl: request.instanceUrl,
+            topicName: request.topicName,
+            replayPreset: request.replayPreset,
+            replayId: request.replayId,
+            numRequested: request.numRequested,
+            tenantId: request.tenantId
+        })
+            .then(response => sendResponse({ ...response, subscriptionId }))
+            .catch(error => sendResponse({ success: false, error: error.message }));
+        return true;
+    }
+
+    if (request.type === 'unsubscribe') {
+        if (!isProxyConnected()) {
+            sendResponse({ success: false, error: 'Proxy not connected' });
+            return false;
+        }
+
+        sendProxyRequest({
+            type: 'grpcUnsubscribe',
+            subscriptionId: request.subscriptionId
+        })
+            .then(response => sendResponse(response))
+            .catch(error => sendResponse({ success: false, error: error.message }));
+        return true;
+    }
+
+    if (request.type === 'getTopic') {
+        if (!isProxyConnected()) {
+            sendResponse({ success: false, error: 'Proxy not connected' });
+            return false;
+        }
+
+        sendProxyRequest({
+            type: 'getTopic',
+            accessToken: request.accessToken,
+            instanceUrl: request.instanceUrl,
+            topicName: request.topicName,
+            tenantId: request.tenantId
+        })
+            .then(response => sendResponse(response))
+            .catch(error => sendResponse({ success: false, error: error.message }));
+        return true;
+    }
+
+    if (request.type === 'getSchema') {
+        if (!isProxyConnected()) {
+            sendResponse({ success: false, error: 'Proxy not connected' });
+            return false;
+        }
+
+        sendProxyRequest({
+            type: 'getSchema',
+            accessToken: request.accessToken,
+            instanceUrl: request.instanceUrl,
+            schemaId: request.schemaId,
+            tenantId: request.tenantId
         })
             .then(response => sendResponse(response))
             .catch(error => sendResponse({ success: false, error: error.message }));

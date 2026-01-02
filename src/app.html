@@ -106,12 +106,24 @@
                     <div class="card-body">
                         <div class="form-element">
                             <label for="event-channel-select">Event Channel</label>
+                            <select id="event-channel-select" class="select">
+                                <option value="">Loading channels...</option>
+                            </select>
+                        </div>
+                        <div class="form-element">
+                            <label for="event-replay-select">Replay From</label>
                             <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px;">
-                                <select id="event-channel-select" class="select">
-                                    <option value="">Loading channels...</option>
+                                <select id="event-replay-select" class="select">
+                                    <option value="LATEST">Latest (new events only)</option>
+                                    <option value="EARLIEST">Earliest (all retained events)</option>
+                                    <option value="CUSTOM">Custom Replay ID</option>
                                 </select>
                                 <button id="event-subscribe-btn" class="button-brand">Subscribe</button>
                             </div>
+                        </div>
+                        <div id="event-replay-custom" class="form-element" style="display: none;">
+                            <label for="event-replay-id">Replay ID</label>
+                            <input type="text" id="event-replay-id" class="input" placeholder="Enter base64 replay ID">
                         </div>
                         <div class="form-element">
                             <label>Event Stream <span id="event-stream-status" class="status-badge"></span></label>

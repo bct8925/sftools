@@ -84,6 +84,11 @@ function sendMessage(message) {
     const lengthBuffer = Buffer.alloc(4);
     lengthBuffer.writeUInt32LE(messageBuffer.length, 0);
 
+    // Log streaming messages for debugging
+    if (message.type && !message.id) {
+        console.error(`[NativeMsg] Sending streaming message: type=${message.type}, subscriptionId=${message.subscriptionId}, size=${messageBuffer.length}`);
+    }
+
     process.stdout.write(lengthBuffer);
     process.stdout.write(messageBuffer);
 }

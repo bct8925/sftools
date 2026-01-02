@@ -4,5 +4,6 @@
 
 NODE_PATH="/opt/homebrew/bin/node"
 SCRIPT_DIR="/Users/bctaylor/Dev/sftools/sftools-proxy"
+LOG_FILE="/tmp/sftools-proxy.log"
 
-exec "$NODE_PATH" "$SCRIPT_DIR/src/index.js"
+exec "$NODE_PATH" "$SCRIPT_DIR/src/index.js" 2>> "$LOG_FILE"

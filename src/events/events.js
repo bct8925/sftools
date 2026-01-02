@@ -1,7 +1,7 @@
 // Platform Events Tab - Subscribe to streams and publish events
-// Uses custom Bayeux/CometD client that routes through background service worker
+// Uses gRPC Pub/Sub API via local proxy for streaming
 import { createEditor, createReadOnlyEditor, monaco } from '../lib/monaco.js';
-import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../lib/utils.js';
+import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated, isProxyConnected } from '../lib/utils.js';
 
 // DOM Elements
 let channelSelect;
@@ -13,12 +13,14 @@ let publishChannelSelect;
 let publishEditor;
 let publishBtn;
 let publishStatus;
+let replaySelect;
+let replayCustomContainer;
+let replayIdInput;
 
 // Streaming state
-let clientId = null;
-let isConnected = false;
-let isPolling = false;
-let currentChannel = null;
+let currentSubscriptionId = null;
+let isSubscribed = false;
+let eventCount = 0;
 
 // Standard Platform Events (commonly available)
 const STANDARD_EVENTS = [
@@ -37,11 +39,14 @@ export function init() {
     publishChannelSelect = document.getElementById('event-publish-channel');
     publishBtn = document.getElementById('event-publish-btn');
     publishStatus = document.getElementById('event-publish-status');
+    replaySelect = document.getElementById('event-replay-select');
+    replayCustomContainer = document.getElementById('event-replay-custom');
+    replayIdInput = document.getElementById('event-replay-id');
 
     // Initialize Monaco editors
     streamEditor = createReadOnlyEditor(document.getElementById('event-stream-editor'), {
         language: 'json',
-        value: '// Waiting for events...\n',
+        value: '// Subscribe to a Platform Event channel to see events here\n',
         wordWrap: 'on'
     });
 
@@ -63,6 +68,11 @@ export function init() {
     clearBtn.addEventListener('click', clearStream);
     publishBtn.addEventListener('click', publishEvent);
 
+    // Replay option toggle
+    replaySelect.addEventListener('change', () => {
+        replayCustomContainer.style.display = replaySelect.value === 'CUSTOM' ? 'block' : 'none';
+    });
+
     // Sync channel selects
     channelSelect.addEventListener('change', () => {
         publishChannelSelect.value = channelSelect.value;
@@ -71,8 +81,33 @@ export function init() {
         channelSelect.value = publishChannelSelect.value;
     });
 
+    // Listen for stream events from background script
+    chrome.runtime.onMessage.addListener(handleStreamMessage);
+
     // Load available channels
     loadEventChannels();
+}
+
+/**
+ * Handle streaming messages from the background script (gRPC events)
+ */
+function handleStreamMessage(message) {
+    // Only process messages for our subscription
+    if (message.subscriptionId !== currentSubscriptionId) return;
+
+    switch (message.type) {
+        case 'grpcEvent':
+            appendEvent(message.event);
+            break;
+        case 'grpcError':
+            appendSystemMessage(`Error: ${message.error}`);
+            updateStreamStatus('Error', 'error');
+            break;
+        case 'grpcEnd':
+            appendSystemMessage('Stream ended by server');
+            handleDisconnect();
+            break;
+    }
 }
 
 async function loadEventChannels() {
@@ -173,35 +208,17 @@ function buildChannelOptions(customEvents) {
 }
 
 function toggleSubscription() {
-    if (isConnected) {
-        disconnect();
+    if (isSubscribed) {
+        unsubscribe();
     } else {
-        connect();
+        subscribe();
     }
 }
 
-// Custom Bayeux/CometD client using extensionFetch
-async function bayeuxRequest(messages) {
-    const instanceUrl = getInstanceUrl();
-    const token = getAccessToken();
-
-    const response = await extensionFetch(`${instanceUrl}/cometd/62.0`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(messages)
-    });
-
-    if (!response.success) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return JSON.parse(response.data);
-}
-
-async function connect() {
+/**
+ * Subscribe to a Platform Event channel via gRPC Pub/Sub API
+ */
+async function subscribe() {
     const channel = channelSelect.value;
     if (!channel) {
         updateStreamStatus('Select a channel', 'error');
@@ -213,144 +230,102 @@ async function connect() {
         return;
     }
 
+    if (!isProxyConnected()) {
+        updateStreamStatus('Proxy required', 'error');
+        appendSystemMessage('Platform Events require the local proxy. Open Settings to connect.');
+        return;
+    }
+
     updateStreamStatus('Connecting...', 'loading');
     subscribeBtn.disabled = true;
-    currentChannel = `/event/${channel}`;
 
     try {
-        // Step 1: Handshake
-        const handshakeResponse = await bayeuxRequest([{
-            channel: '/meta/handshake',
-            version: '1.0',
-            supportedConnectionTypes: ['long-polling']
-        }]);
+        // Get replay options
+        const replayPreset = replaySelect.value;
+        const replayId = replayPreset === 'CUSTOM' ? replayIdInput.value : undefined;
 
-        const handshake = handshakeResponse[0];
-        if (!handshake.successful) {
-            throw new Error(handshake.error || 'Handshake failed');
+        const response = await chrome.runtime.sendMessage({
+            type: 'subscribe',
+            instanceUrl: getInstanceUrl(),
+            accessToken: getAccessToken(),
+            topicName: `/event/${channel}`,
+            replayPreset,
+            replayId
+        });
+
+        if (response.success) {
+            currentSubscriptionId = response.subscriptionId;
+            isSubscribed = true;
+            updateStreamStatus('Subscribed', 'success');
+            subscribeBtn.textContent = 'Unsubscribe';
+            appendSystemMessage(`Subscribed to /event/${channel} (replay: ${replayPreset})`);
+        } else {
+            throw new Error(response.error || 'Subscription failed');
         }
-
-        clientId = handshake.clientId;
-        appendSystemMessage('Handshake successful');
-
-        // Step 2: Subscribe to the event channel
-        const subscribeResponse = await bayeuxRequest([{
-            channel: '/meta/subscribe',
-            clientId: clientId,
-            subscription: currentChannel
-        }]);
-
-        const subscribe = subscribeResponse[0];
-        if (!subscribe.successful) {
-            throw new Error(subscribe.error || 'Subscribe failed');
-        }
-
-        isConnected = true;
-        isPolling = true;
-        updateStreamStatus('Subscribed', 'success');
-        subscribeBtn.textContent = 'Unsubscribe';
-        subscribeBtn.disabled = false;
-        appendSystemMessage(`Subscribed to ${currentChannel}`);
-
-        // Step 3: Start long-polling for messages
-        poll();
-
     } catch (err) {
-        console.error('Connect error:', err);
+        console.error('Subscribe error:', err);
         updateStreamStatus('Error', 'error');
         appendSystemMessage(`Error: ${err.message}`);
+    } finally {
         subscribeBtn.disabled = false;
-        clientId = null;
-        isConnected = false;
     }
 }
 
-async function poll() {
-    if (!isPolling || !clientId) return;
+/**
+ * Unsubscribe from the current channel
+ */
+async function unsubscribe() {
+    if (!currentSubscriptionId) return;
+
+    subscribeBtn.disabled = true;
+    updateStreamStatus('Disconnecting...', 'loading');
 
     try {
-        const response = await bayeuxRequest([{
-            channel: '/meta/connect',
-            clientId: clientId,
-            connectionType: 'long-polling'
-        }]);
-
-        // Process any messages received
-        for (const msg of response) {
-            if (msg.channel === currentChannel && msg.data) {
-                appendEvent(msg);
-            } else if (msg.channel === '/meta/connect') {
-                if (!msg.successful) {
-                    console.error('Connect failed:', msg);
-                    if (msg.error?.includes('402') || msg.error?.includes('403')) {
-                        // Session expired or unauthorized
-                        updateStreamStatus('Session expired', 'error');
-                        appendSystemMessage('Session expired - please re-authorize');
-                        disconnect();
-                        return;
-                    }
-                }
-            }
-        }
-
-        // Continue polling if still connected
-        if (isPolling) {
-            poll();
-        }
-
+        await chrome.runtime.sendMessage({
+            type: 'unsubscribe',
+            subscriptionId: currentSubscriptionId
+        });
+        appendSystemMessage('Unsubscribed');
     } catch (err) {
-        console.error('Poll error:', err);
-        if (isPolling) {
-            appendSystemMessage(`Poll error: ${err.message}`);
-            // Retry after a short delay
-            setTimeout(() => {
-                if (isPolling) poll();
-            }, 2000);
-        }
+        console.error('Unsubscribe error:', err);
     }
+
+    handleDisconnect();
 }
 
-async function disconnect() {
-    isPolling = false;
-
-    if (clientId) {
-        try {
-            // Unsubscribe
-            if (currentChannel) {
-                await bayeuxRequest([{
-                    channel: '/meta/unsubscribe',
-                    clientId: clientId,
-                    subscription: currentChannel
-                }]);
-            }
-
-            // Disconnect
-            await bayeuxRequest([{
-                channel: '/meta/disconnect',
-                clientId: clientId
-            }]);
-        } catch (err) {
-            console.error('Disconnect error:', err);
-        }
-    }
-
-    clientId = null;
-    isConnected = false;
-    currentChannel = null;
+/**
+ * Handle disconnect (cleanup state)
+ */
+function handleDisconnect() {
+    currentSubscriptionId = null;
+    isSubscribed = false;
     subscribeBtn.textContent = 'Subscribe';
     subscribeBtn.disabled = false;
     updateStreamStatus('Disconnected', '');
-    appendSystemMessage('Disconnected from stream');
 }
 
-function appendEvent(message) {
-    const timestamp = new Date().toLocaleTimeString();
-    const payload = message.data?.payload || message.data || message;
-    const formatted = JSON.stringify(payload, null, 2);
+function appendEvent(event) {
+    eventCount++;
+    const timestamp = new Date().toISOString();
 
-    const current = streamEditor.getValue();
-    const newContent = current + `\n// [${timestamp}] Event received:\n${formatted}\n`;
-    streamEditor.setValue(newContent);
+    const eventEntry = {
+        _eventNumber: eventCount,
+        _receivedAt: timestamp,
+        replayId: event.replayId,
+        payload: event.payload,
+        error: event.error
+    };
+
+    const currentValue = streamEditor.getValue();
+    const newEntry = JSON.stringify(eventEntry, null, 2);
+
+    if (currentValue.startsWith('//')) {
+        // First event, replace the placeholder
+        streamEditor.setValue(newEntry);
+    } else {
+        // Append to existing events
+        streamEditor.setValue(currentValue + '\n\n' + newEntry);
+    }
 
     // Scroll to bottom
     const lineCount = streamEditor.getModel().getLineCount();
@@ -369,7 +344,8 @@ function appendSystemMessage(msg) {
 }
 
 function clearStream() {
-    streamEditor.setValue('// Waiting for events...\n');
+    eventCount = 0;
+    streamEditor.setValue('// Stream cleared\n');
 }
 
 async function publishEvent() {

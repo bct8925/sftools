@@ -11,8 +11,8 @@ const path = require('path');
 
 const PROTO_PATH = path.join(__dirname, '../../proto/pubsub_api.proto');
 
-// Salesforce Pub/Sub API endpoint
-const PUBSUB_ENDPOINT = 'api.pubsub.salesforce.com:7443';
+// Salesforce Pub/Sub API endpoint (port 443 works on networks that block 7443)
+const PUBSUB_ENDPOINT = 'api.pubsub.salesforce.com:443';
 
 // Cached proto definition
 let protoDefinition = null;
@@ -57,24 +57,43 @@ function createAuthMetadata(accessToken, instanceUrl, tenantId) {
 }
 
 /**
- * Extract org ID from access token if it's a JWT
- * Falls back to empty string if not a JWT
+ * Extract org ID from access token
+ * Salesforce tokens can be:
+ * 1. Session tokens: format "00Dxxxxxx!xxxxxx" where 00Dxxxxxx is the org ID
+ * 2. JWTs: contains organization_id in the payload
  * @param {string} accessToken - Salesforce access token
  * @returns {string} - Org ID or empty string
  */
 function extractOrgIdFromToken(accessToken) {
+    if (!accessToken) return '';
+
+    // Try session token format first: 00Dxxxxxx!xxxxxx
+    // The org ID is the part before the !
+    const exclamationIndex = accessToken.indexOf('!');
+    if (exclamationIndex > 0) {
+        const potentialOrgId = accessToken.substring(0, exclamationIndex);
+        // Salesforce org IDs start with 00D and are 15 or 18 characters
+        if (potentialOrgId.startsWith('00D') && (potentialOrgId.length === 15 || potentialOrgId.length === 18)) {
+            console.error(`[gRPC] Extracted org ID from session token: ${potentialOrgId}`);
+            return potentialOrgId;
+        }
+    }
+
+    // Try JWT format
     try {
-        // Salesforce access tokens from certain OAuth flows are JWTs
         const parts = accessToken.split('.');
         if (parts.length === 3) {
-            // Decode the payload (base64url)
             const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
             const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
-            return decoded.organization_id || '';
+            if (decoded.organization_id) {
+                console.error(`[gRPC] Extracted org ID from JWT: ${decoded.organization_id}`);
+                return decoded.organization_id;
+            }
         }
     } catch (e) {
         // Not a JWT or failed to parse
     }
+
     return '';
 }
 
@@ -86,18 +105,32 @@ function extractOrgIdFromToken(accessToken) {
  * @returns {Promise<{client: object, metadata: grpc.Metadata}>}
  */
 async function createClient(accessToken, instanceUrl, tenantId) {
+    console.error(`[gRPC] Loading proto definition...`);
     const proto = await loadProto();
     const PubSub = proto.eventbus.v1.PubSub;
 
     // Create SSL credentials for secure connection
     const credentials = grpc.credentials.createSsl();
 
+    console.error(`[gRPC] Creating client for endpoint: ${PUBSUB_ENDPOINT}`);
     // Create the client
     const client = new PubSub(PUBSUB_ENDPOINT, credentials);
 
     // Use provided tenant ID or try to extract from token
-    const orgId = tenantId || extractOrgIdFromToken(accessToken);
+    let orgId = tenantId || extractOrgIdFromToken(accessToken);
+
+    // If we couldn't extract org ID, try to get it from the instance URL
+    // Format: https://MyDomainName.my.salesforce.com -> extract org ID requires API call
+    // For now, log a warning - the API might still work without it in some cases
+    if (!orgId) {
+        console.error(`[gRPC] WARNING: Could not extract org ID from token. Authentication may fail.`);
+        console.error(`[gRPC] Token starts with: ${accessToken.substring(0, 20)}...`);
+    } else {
+        console.error(`[gRPC] Using org ID: ${orgId}`);
+    }
+
     const metadata = createAuthMetadata(accessToken, instanceUrl, orgId);
+    console.error(`[gRPC] Metadata headers: accesstoken=..., instanceurl=${instanceUrl}, tenantid=${orgId || '(empty)'}`);
 
     return { client, metadata };
 }
@@ -177,15 +210,30 @@ async function subscribe(options) {
         onEnd
     } = options;
 
+    console.error(`[gRPC] Subscribing to ${topicName} with replay ${replayPreset}`);
+
     const { client, metadata } = await createClient(accessToken, instanceUrl, tenantId);
 
     // Create bidirectional stream
+    console.error(`[gRPC] Creating bidirectional stream...`);
     const call = client.Subscribe(metadata);
+
+    // Track stream state
+    call.on('metadata', (metadata) => {
+        console.error(`[gRPC] Stream metadata received:`, JSON.stringify(metadata.getMap()));
+    });
+
+    call.on('status', (status) => {
+        console.error(`[gRPC] Stream status: code=${status.code}, details=${status.details}`);
+    });
 
     // Handle incoming events
     call.on('data', (fetchResponse) => {
+        console.error(`[gRPC] Received FetchResponse: ${fetchResponse.events?.length || 0} events, pending: ${fetchResponse.pending_num_requested}`);
+
         if (fetchResponse.events && fetchResponse.events.length > 0) {
             for (const consumerEvent of fetchResponse.events) {
+                console.error(`[gRPC] Event received, schema: ${consumerEvent.event?.schema_id}`);
                 onEvent({
                     subscriptionId,
                     event: consumerEvent
@@ -195,6 +243,7 @@ async function subscribe(options) {
 
         // Request more events to maintain flow
         if (fetchResponse.pending_num_requested < numRequested / 2) {
+            console.error(`[gRPC] Requesting more events`);
             call.write({
                 topic_name: topicName,
                 num_requested: numRequested
@@ -204,6 +253,7 @@ async function subscribe(options) {
 
     // Handle errors
     call.on('error', (error) => {
+        console.error(`[gRPC] Stream error: ${error.message} (code: ${error.code})`);
         subscriptions.delete(subscriptionId);
         onError({
             subscriptionId,
@@ -214,14 +264,16 @@ async function subscribe(options) {
 
     // Handle stream end
     call.on('end', () => {
+        console.error(`[gRPC] Stream ended`);
         subscriptions.delete(subscriptionId);
         onEnd({ subscriptionId });
     });
 
     // Send initial fetch request
+    // Note: With enums: String in proto-loader, we pass enum names as strings
     const fetchRequest = {
         topic_name: topicName,
-        replay_preset: replayPreset === 'EARLIEST' ? 1 : (replayPreset === 'CUSTOM' ? 2 : 0),
+        replay_preset: replayPreset, // 'LATEST', 'EARLIEST', or 'CUSTOM'
         num_requested: numRequested
     };
 
@@ -229,7 +281,9 @@ async function subscribe(options) {
         fetchRequest.replay_id = replayId;
     }
 
-    call.write(fetchRequest);
+    console.error(`[gRPC] Sending initial FetchRequest:`, JSON.stringify(fetchRequest));
+    const writeSuccess = call.write(fetchRequest);
+    console.error(`[gRPC] FetchRequest write returned: ${writeSuccess}`);
 
     // Store subscription for management
     subscriptions.set(subscriptionId, {

@@ -13,6 +13,7 @@
 const { readMessage, sendMessage } = require('./native-messaging');
 const { startServer } = require('./http-server');
 const { storePayload, shouldUseLargePayload } = require('./payload-store');
+const { handleRest } = require('./handlers/rest');
 
 const VERSION = '1.0.0';
 
@@ -46,7 +47,12 @@ const handlers = {
     ping: () => ({
         success: true,
         version: VERSION
-    })
+    }),
+
+    /**
+     * REST API proxy
+     */
+    rest: handleRest
 };
 
 /**

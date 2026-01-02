@@ -17,6 +17,15 @@
                 <button class="tab-link" data-tab="apex">Apex</button>
                 <button class="tab-link" data-tab="rest-api">REST API</button>
                 <button class="tab-link" data-tab="events">Platform Events</button>
+                <div class="nav-overflow-dropdown hidden">
+                    <button class="tab-link nav-overflow-trigger">
+                        More
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style="margin-left: 4px;">
+                            <path d="M1 3l4 4 4-4H1z"/>
+                        </svg>
+                    </button>
+                    <div class="nav-overflow-menu"></div>
+                </div>
             </div>
             <button id="open-org-btn" class="nav-icon-btn" title="Open Org in Browser">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -28,9 +37,6 @@
 
         <main class="content-area">
             <div id="query" class="tab-content active">
-                <header class="page-header">
-                    <h1>SOQL Query Editor</h1>
-                </header>
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #0070d2;">S</div>
@@ -50,7 +56,7 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #4bca81;">Q</div>
-                        <h2>Query Results</h2>
+                        <h2>Results</h2>
                     </div>
                     <div class="card-body query-card-body">
                         <div id="query-tabs" class="query-tabs">
@@ -64,13 +70,10 @@
             </div>
 
             <div id="apex" class="tab-content">
-                <header class="page-header">
-                    <h1>Execute Anonymous Apex</h1>
-                </header>
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #6a67ce;">A</div>
-                        <h2>Apex Script</h2>
+                        <h2>Anonymous Apex</h2>
                     </div>
                     <div class="card-body">
                         <div class="form-element">
@@ -86,7 +89,7 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #3ba755;">L</div>
-                        <h2>Execution Output &amp; Debug Log</h2>
+                        <h2>Output &amp; Debug Log</h2>
                     </div>
                     <div class="card-body">
                         <div id="apex-output-editor" class="monaco-container monaco-container-lg"></div>
@@ -95,18 +98,14 @@
             </div>
 
             <div id="events" class="tab-content">
-                <header class="page-header">
-                    <h1>Platform Events</h1>
-                </header>
-
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #e96d63;">E</div>
-                        <h2>Event Subscriber</h2>
+                        <h2>Platform Events</h2>
                     </div>
                     <div class="card-body">
                         <div class="form-element">
-                            <label>Event Channel (e.g., /event/My_Event__e)</label>
+                            <label>Event Channel</label>
                             <div class="grid-row" style="display: grid; grid-template-columns: 1fr auto; gap: 10px;">
                                 <input type="text" class="input" placeholder="/event/YourEventName__e">
                                 <button class="button-brand" style="width: auto;">Subscribe</button>
@@ -124,26 +123,23 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #706e6b;">P</div>
-                        <h2>Publish Test Event</h2>
+                        <h2>Publish Event</h2>
                     </div>
                     <div class="card-body">
                         <div class="form-element">
                             <label>JSON Payload</label>
                             <div id="event-publish-editor" class="monaco-placeholder">{ "Field__c": "Value" }</div>
                         </div>
-                        <button class="button-brand">Publish Event</button>
+                        <button class="button-brand">Publish</button>
                     </div>
                 </div>
             </div>
 
             <div id="rest-api" class="tab-content">
-                <header class="page-header">
-                    <h1>Salesforce API Tester</h1>
-                </header>
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #0070d2;">R</div>
-                        <h2>Request Details</h2>
+                        <h2>Request</h2>
                     </div>
                     <div class="card-body">
                         <div class="form-element">
@@ -162,7 +158,7 @@
                         </div>
 
                         <div class="form-element" id="rest-body-container" style="display: none;">
-                            <label>Request Body (JSON)</label>
+                            <label>Body (JSON)</label>
                             <div id="rest-request-editor" class="monaco-container"></div>
                         </div>
 
@@ -176,7 +172,7 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-header-icon" style="background-color: #4bca81;">✓</div>
-                        <h2>API Response</h2>
+                        <h2>Response</h2>
                     </div>
                     <div class="card-body">
                         <div id="rest-response-editor" class="monaco-container monaco-container-lg"></div>

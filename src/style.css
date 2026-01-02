@@ -56,6 +56,11 @@ body {
 
 .tab-scroll-container {
     flex: 1;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .nav-icon-btn {
@@ -90,6 +95,8 @@ body {
     border-bottom: 3px solid transparent;
     transition: all 0.2s;
     margin-right: 5px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .tab-link:hover {
@@ -100,6 +107,57 @@ body {
     color: var(--primary-color);
     border-bottom-color: var(--primary-color);
     font-weight: 700;
+}
+
+/* --- Nav Overflow Dropdown --- */
+.nav-overflow-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.nav-overflow-trigger {
+    display: flex;
+    align-items: center;
+}
+
+.nav-overflow-menu {
+    display: none;
+    position: fixed;
+    top: 50px;
+    background: var(--nav-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    min-width: 150px;
+    z-index: 200;
+    padding: 4px 0;
+}
+
+.nav-overflow-dropdown.open .nav-overflow-menu {
+    display: block;
+}
+
+.nav-overflow-menu .tab-link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    height: auto;
+    padding: 10px 15px;
+    border-bottom: none;
+    margin-right: 0;
+}
+
+.nav-overflow-menu .tab-link:hover {
+    background-color: rgba(0, 112, 210, 0.05);
+}
+
+.nav-overflow-menu .tab-link.active {
+    background-color: rgba(0, 112, 210, 0.1);
+    border-bottom: none;
+}
+
+.tab-link.nav-hidden {
+    display: none !important;
 }
 
 /* --- Content Area --- */

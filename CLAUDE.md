@@ -101,9 +101,19 @@ A standalone tool for making Aura framework requests to Salesforce communities/o
 4. Add a button in `src/popup/popup.html` under `#standalone-group`
 5. Add click handler in `src/popup/popup.js` to open `dist/<tool-name>/<tool-name>.html`
 
+## Opening the Extension
+
+The popup provides two ways to open sftools after authorization:
+
+- **Open sftools** - Opens in a new browser tab (full page)
+- **Open in Side Panel** - Opens in Chrome's side panel, attached to the current tab
+
+Side panel support is configured in `manifest.json` via the `sidePanel` permission and `side_panel.default_path` pointing to `dist/app.html`.
+
 ## Header Features
 
 - **Open Org Button** - Icon button in the top-right of the nav header that opens the authenticated org in a new browser tab using `frontdoor.jsp` with the current session token
+- **Responsive Nav** - Tab navigation with overflow dropdown. When tabs don't fit (e.g., in side panel), excess tabs move to a "More" dropdown menu
 
 ## Adding a New Tool Tab
 
@@ -178,3 +188,14 @@ Monaco editor markers are used to highlight compilation errors with line/column 
 - Card-based layouts with `.card`, `.card-header`, `.card-body`
 - Form elements use `.input`, `.select`, `.button-brand` classes
 - Monaco containers use `.monaco-container` and `.monaco-container-lg`
+
+## Responsive Nav Implementation
+
+The tab navigation handles overflow for narrow viewports (side panel):
+
+- `.tab-scroll-container` uses `display: flex`, `flex-wrap: nowrap`, `overflow: hidden`
+- `.nav-overflow-dropdown` contains a "More" trigger button and `.nav-overflow-menu`
+- JS in `app.js` (`initTabs`) measures tab widths on load/resize
+- Tabs that don't fit are hidden with `.nav-hidden` and cloned into the dropdown menu
+- Dropdown menu uses `position: fixed` to escape the container's `overflow: hidden`
+- Menu position is set dynamically based on trigger button location

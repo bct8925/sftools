@@ -1,0 +1,15 @@
+{
+  "name": "sftools-proxy",
+  "version": "1.0.0",
+  "description": "Local proxy for sftools Chrome extension - enables gRPC and bypasses CORS",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "install-host": "node install.js"
+  },
+  "keywords": ["salesforce", "chrome-extension", "native-messaging", "grpc"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

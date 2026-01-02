@@ -105,18 +105,19 @@
                     </div>
                     <div class="card-body">
                         <div class="form-element">
-                            <label>Event Channel</label>
-                            <div class="grid-row" style="display: grid; grid-template-columns: 1fr auto; gap: 10px;">
-                                <input type="text" class="input" placeholder="/event/YourEventName__e">
-                                <button class="button-brand" style="width: auto;">Subscribe</button>
+                            <label for="event-channel-select">Event Channel</label>
+                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px;">
+                                <select id="event-channel-select" class="select">
+                                    <option value="">Loading channels...</option>
+                                </select>
+                                <button id="event-subscribe-btn" class="button-brand">Subscribe</button>
                             </div>
                         </div>
                         <div class="form-element">
-                            <label>Event Stream</label>
-                            <div class="textarea font-mono text-sm" style="height: 150px; background: #1e1e1e; color: #d4d4d4; overflow-y: auto; padding: 10px;">
-                                [Waiting for events...]
-                            </div>
+                            <label>Event Stream <span id="event-stream-status" class="status-badge"></span></label>
+                            <div id="event-stream-editor" class="monaco-container monaco-container-lg"></div>
                         </div>
+                        <button id="event-clear-btn" class="button-neutral">Clear Stream</button>
                     </div>
                 </div>
 
@@ -127,10 +128,19 @@
                     </div>
                     <div class="card-body">
                         <div class="form-element">
-                            <label>JSON Payload</label>
-                            <div id="event-publish-editor" class="monaco-placeholder">{ "Field__c": "Value" }</div>
+                            <label for="event-publish-channel">Event Type</label>
+                            <select id="event-publish-channel" class="select">
+                                <option value="">Select event type...</option>
+                            </select>
                         </div>
-                        <button class="button-brand">Publish</button>
+                        <div class="form-element">
+                            <label>JSON Payload (Ctrl/Cmd+Enter to publish)</label>
+                            <div id="event-publish-editor" class="monaco-container"></div>
+                        </div>
+                        <div class="m-top_small">
+                            <button id="event-publish-btn" class="button-brand">Publish Event</button>
+                            <span id="event-publish-status" class="status-badge"></span>
+                        </div>
                     </div>
                 </div>
             </div>

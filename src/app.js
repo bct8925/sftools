@@ -1,8 +1,9 @@
 // sftools - Main Application Entry Point
 import { loadAuthTokens, getAccessToken, getInstanceUrl, isAuthenticated } from './lib/utils.js';
-import * as restApi from './rest-api/rest-api.js';
-import * as apex from './apex/apex.js';
 import * as query from './query/query.js';
+import * as apex from './apex/apex.js';
+import * as restApi from './rest-api/rest-api.js';
+import * as events from './events/events.js';
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -11,9 +12,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadAuthTokens();
 
     // Initialize tool modules
-    restApi.init();
-    apex.init();
     query.init();
+    apex.init();
+    restApi.init();
+    events.init();
 });
 
 // --- Open Org Button ---

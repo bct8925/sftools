@@ -33,21 +33,127 @@ function initOpenOrgButton() {
 
 // --- Tab Navigation ---
 function initTabs() {
-    const tabs = document.querySelectorAll('.tab-link');
+    const container = document.querySelector('.tab-scroll-container');
+    const tabs = container.querySelectorAll('.tab-link[data-tab]');
     const contents = document.querySelectorAll('.tab-content');
+    const dropdown = container.querySelector('.nav-overflow-dropdown');
+    const trigger = dropdown.querySelector('.nav-overflow-trigger');
+    const menu = dropdown.querySelector('.nav-overflow-menu');
+
+    // Tab click handler (works for both nav and dropdown items)
+    function handleTabClick(tab) {
+        const targetId = tab.getAttribute('data-tab');
+
+        // Update all tabs (nav + dropdown clones)
+        container.querySelectorAll('.tab-link[data-tab]').forEach(t => t.classList.remove('active'));
+        menu.querySelectorAll('.tab-link[data-tab]').forEach(t => t.classList.remove('active'));
+
+        // Activate clicked tab and its clone if exists
+        container.querySelectorAll(`.tab-link[data-tab="${targetId}"]`).forEach(t => t.classList.add('active'));
+
+        contents.forEach(c => c.classList.remove('active'));
+        const targetContent = document.getElementById(targetId);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+
+        // Close dropdown
+        dropdown.classList.remove('open');
+    }
 
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const targetId = tab.getAttribute('data-tab');
-
-            tabs.forEach(t => t.classList.remove('active'));
-            contents.forEach(c => c.classList.remove('active'));
-
-            tab.classList.add('active');
-            const targetContent = document.getElementById(targetId);
-            if (targetContent) {
-                targetContent.classList.add('active');
-            }
-        });
+        tab.addEventListener('click', () => handleTabClick(tab));
     });
+
+    // Dropdown toggle
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+
+        // Position menu below trigger
+        if (dropdown.classList.contains('open')) {
+            const rect = trigger.getBoundingClientRect();
+            menu.style.left = rect.left + 'px';
+        }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+        dropdown.classList.remove('open');
+    });
+
+    // Overflow detection
+    function updateOverflow() {
+        // Reset all tabs to visible first to measure true widths
+        tabs.forEach(tab => tab.classList.remove('nav-hidden'));
+        dropdown.classList.add('hidden');
+        menu.innerHTML = '';
+
+        // Use container's actual width
+        const containerWidth = container.offsetWidth;
+        const dropdownWidth = 85; // Width of "More" button
+
+        // Measure tab widths
+        let totalWidth = 0;
+        const tabWidths = [];
+        tabs.forEach(tab => {
+            const width = tab.offsetWidth + 5; // include margin
+            tabWidths.push(width);
+            totalWidth += width;
+        });
+
+        // Check if all tabs fit
+        if (totalWidth <= containerWidth) {
+            return; // All tabs fit, no overflow needed
+        }
+
+        // Find how many tabs fit (leaving room for dropdown)
+        let usedWidth = 0;
+        let fitCount = 0;
+        for (let i = 0; i < tabs.length; i++) {
+            if (usedWidth + tabWidths[i] + dropdownWidth <= containerWidth) {
+                usedWidth += tabWidths[i];
+                fitCount++;
+            } else {
+                break;
+            }
+        }
+
+        // At least show the dropdown if nothing fits
+        if (fitCount === tabs.length) {
+            return; // All fit after all
+        }
+
+        // Hide overflowing tabs and show dropdown
+        dropdown.classList.remove('hidden');
+
+        for (let i = fitCount; i < tabs.length; i++) {
+            const tab = tabs[i];
+            tab.classList.add('nav-hidden');
+
+            // Create dropdown item
+            const clone = document.createElement('button');
+            clone.className = 'tab-link';
+            clone.setAttribute('data-tab', tab.getAttribute('data-tab'));
+            clone.textContent = tab.textContent;
+            if (tab.classList.contains('active')) {
+                clone.classList.add('active');
+            }
+            clone.addEventListener('click', () => handleTabClick(clone));
+            menu.appendChild(clone);
+        }
+    }
+
+    // Run on load and resize (with debounce for resize)
+    let resizeTimeout;
+    function handleResize() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(updateOverflow, 50);
+    }
+
+    // Initial run after layout settles
+    requestAnimationFrame(() => {
+        requestAnimationFrame(updateOverflow);
+    });
+    window.addEventListener('resize', handleResize);
 }

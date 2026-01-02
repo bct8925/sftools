@@ -12,8 +12,12 @@
     "activeTab",
     "cookies",
     "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess"
+    "declarativeNetRequestWithHostAccess",
+    "sidePanel"
   ],
+  "side_panel": {
+    "default_path": "dist/app.html"
+  },
   "host_permissions": [
     "<all_urls>"
   ],

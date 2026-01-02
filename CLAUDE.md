@@ -148,6 +148,18 @@ import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from 
 - Stores `accessToken` and `instanceUrl` in `chrome.storage.local`
 - Client ID configured in `manifest.json` `oauth2.client_id`
 
+## Query Tab Implementation
+
+The Query tab uses the REST Query API with the `columns=true` parameter to get accurate column metadata:
+
+1. **Parallel API Calls** - Makes two simultaneous requests for better performance:
+   - `?q=...&columns=true` - Returns column metadata without query results
+   - `?q=...` - Returns actual query results
+2. **Column Metadata** - The `columnMetadata` array provides column names, display names, and nested `joinColumns` for relationship fields
+3. **Nested Relationships** - Relationship fields (e.g., `Account.Owner.Name`) are flattened recursively from the `joinColumns` structure, with the full path used as the column header
+
+This approach is more reliable than client-side SOQL parsing, especially for aggregate functions (`COUNT()`, `SUM()`) and complex relationship queries.
+
 ## Apex Tab Implementation
 
 The Apex tab uses the REST Tooling API for anonymous Apex execution:

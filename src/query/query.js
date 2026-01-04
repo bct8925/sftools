@@ -1,5 +1,5 @@
 // Query Tab Module - SOQL Query Editor with tabbed results
-import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../lib/utils.js';
+import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated, API_VERSION } from '../lib/utils.js';
 import { createEditor, monaco } from '../lib/monaco.js';
 
 // State management for query tabs
@@ -198,7 +198,7 @@ async function fetchQueryData(tabId) {
 
     try {
         const encodedQuery = encodeURIComponent(tabData.query);
-        const baseUrl = `${getInstanceUrl()}/services/data/v62.0/query/?q=${encodedQuery}`;
+        const baseUrl = `${getInstanceUrl()}/services/data/v${API_VERSION}/query/?q=${encodedQuery}`;
         const headers = {
             'Authorization': `Bearer ${getAccessToken()}`,
             'Accept': 'application/json'

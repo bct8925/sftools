@@ -148,66 +148,60 @@ async function removeCookie(url, name) {
     });
 }
 
+// --- Validation ---
+function validateRequest(url, descriptor, paramsJson) {
+    if (!url) return { valid: false, error: 'Enter Community URL' };
+    if (!descriptor) return { valid: false, error: 'Enter Method Descriptor' };
+    try {
+        JSON.parse(paramsJson);
+        return { valid: true };
+    } catch (e) {
+        return { valid: false, error: 'Invalid JSON' };
+    }
+}
+
+// --- Authentication Flow ---
+async function resolveSessionId(url, providedSid) {
+    if (providedSid) {
+        await setCookie(url, 'sid', providedSid);
+        return { sid: providedSid, cleanup: true };
+    }
+
+    const sid = await getCookie(url, 'sid');
+    if (!sid) {
+        throw new Error('No SID cookie found for this domain. Either provide a SID value manually, or ensure you are logged into this Salesforce org in your browser.');
+    }
+    return { sid, cleanup: false };
+}
+
+// --- Response Parsing ---
+function parseAuraResponse(responseText) {
+    const cleanJson = responseText.replace(/^while\(1\);/, '');
+    return JSON.parse(cleanJson);
+}
+
 // --- Core Request Logic ---
 executeBtn.addEventListener('click', async () => {
-    const url = communityUrlInput.value.replace(/\/$/, ''); // Remove trailing slash
+    const url = communityUrlInput.value.replace(/\/$/, '');
     const isAuth = document.querySelector('input[name="authMode"]:checked').value === 'auth';
     const descriptor = methodDescriptorInput.value;
-    const fwuid = fwuidInput.value;
 
-    let params;
-    try {
-        params = JSON.parse(paramsEditor.getValue());
-    } catch (err) {
-        setStatus('Invalid JSON', 'error');
+    const validation = validateRequest(url, descriptor, paramsEditor.getValue());
+    if (!validation.valid) {
+        setStatus(validation.error, 'error');
         return;
     }
 
-    if (!url) {
-        setStatus('Enter Community URL', 'error');
-        return;
-    }
+    const params = JSON.parse(paramsEditor.getValue());
+    let sessionInfo = null;
 
-    if (!descriptor) {
-        setStatus('Enter Method Descriptor', 'error');
-        return;
-    }
-
-    // Handle authentication
-    let sid = null;
-    let manuallySetCookie = false;
     if (isAuth) {
-        const providedSid = authSidInput.value.trim();
-        if (providedSid) {
-            // Use provided SID - we'll need to set and clean up
-            sid = providedSid;
-            manuallySetCookie = true;
-        } else {
-            // Check for existing browser cookie
-            try {
-                sid = await getCookie(url, 'sid');
-                if (!sid) {
-                    setStatus('No SID cookie found', 'error');
-                    responseEditor.setValue(JSON.stringify({
-                        error: 'No SID cookie found for this domain.',
-                        hint: 'Either provide a SID value manually, or ensure you are logged into this Salesforce org in your browser.'
-                    }, null, 4));
-                    return;
-                }
-            } catch (e) {
-                setStatus('Cookie check failed', 'error');
-                responseEditor.setValue(JSON.stringify({ error: e.message }, null, 4));
-                return;
-            }
-        }
-
-        // Set the SID cookie for the request (only if manually provided)
-        if (manuallySetCookie) {
-            try {
-                await setCookie(url, 'sid', sid);
-            } catch (e) {
-                console.warn('Failed to set SID cookie:', e);
-            }
+        try {
+            sessionInfo = await resolveSessionId(url, authSidInput.value.trim());
+        } catch (e) {
+            setStatus('Auth Error', 'error');
+            responseEditor.setValue(JSON.stringify({ error: e.message }, null, 4));
+            return;
         }
     }
 
@@ -216,31 +210,16 @@ executeBtn.addEventListener('click', async () => {
 
     try {
         const token = isAuth ? authTokenInput.value : null;
-        const result = await performAuraRequest(url, descriptor, params, fwuid, token, isAuth);
-
-        // Salesforce prefixes JSON with "while(1);" to prevent XSSI
-        const cleanJson = result.replace(/^while\(1\);/, '');
-
-        try {
-            const parsed = JSON.parse(cleanJson);
-            responseEditor.setValue(JSON.stringify(parsed, null, 4));
-            setStatus('Success', 'success');
-        } catch (e) {
-            // Non-JSON response
-            responseEditor.setValue(result);
-            setStatus('Non-JSON Response', 'error');
-        }
+        const result = await performAuraRequest(url, descriptor, params, fwuidInput.value, token, isAuth);
+        const parsed = parseAuraResponse(result);
+        responseEditor.setValue(JSON.stringify(parsed, null, 4));
+        setStatus('Success', 'success');
     } catch (error) {
         responseEditor.setValue(JSON.stringify({ error: error.message }, null, 4));
-        setStatus('Error', 'error');
+        setStatus(error.message.includes('JSON') ? 'Non-JSON Response' : 'Error', 'error');
     } finally {
-        // Clean up manually-set SID cookie to avoid interfering with future requests
-        if (manuallySetCookie) {
-            try {
-                await removeCookie(url, 'sid');
-            } catch (e) {
-                console.warn('Failed to remove SID cookie:', e);
-            }
+        if (sessionInfo?.cleanup) {
+            await removeCookie(url, 'sid').catch(() => {});
         }
     }
 });

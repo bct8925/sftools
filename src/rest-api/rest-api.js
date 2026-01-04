@@ -1,5 +1,5 @@
 // REST API Tab Module
-import { createEditor, createReadOnlyEditor } from '../lib/monaco.js';
+import { createEditor, createReadOnlyEditor, monaco } from '../lib/monaco.js';
 import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../lib/utils.js';
 
 let requestEditor = null;
@@ -42,8 +42,8 @@ export function init() {
         }
     }
 
-    // Send REST API request
-    async function sendRequest() {
+    // Execute REST API request
+    async function executeRequest() {
         const url = urlInput.value.trim();
         const method = methodSelect.value;
 
@@ -119,7 +119,10 @@ export function init() {
 
     // Event listeners
     methodSelect.addEventListener('change', toggleBodyInput);
-    sendButton.addEventListener('click', sendRequest);
+    sendButton.addEventListener('click', executeRequest);
+
+    // Keyboard shortcut (Ctrl/Cmd + Enter to execute)
+    requestEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, executeRequest);
 
     // Initial state
     toggleBodyInput();

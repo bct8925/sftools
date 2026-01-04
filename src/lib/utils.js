@@ -1,5 +1,8 @@
 // Shared utilities for sftools
 
+// --- API Configuration ---
+export const API_VERSION = '62.0';
+
 // --- Global Auth State ---
 let ACCESS_TOKEN = '';
 let INSTANCE_URL = '';
@@ -104,4 +107,34 @@ export async function smartFetch(url, options = {}) {
         return await proxyFetch(url, options);
     }
     return await extensionFetch(url, options);
+}
+
+// --- Salesforce API Request Helper ---
+
+/**
+ * Make an authenticated Salesforce REST API request
+ * Handles URL building, headers, and error parsing
+ */
+export async function salesforceRequest(endpoint, options = {}) {
+    const url = `${getInstanceUrl()}${endpoint}`;
+    const response = await extensionFetch(url, {
+        method: options.method || 'GET',
+        headers: {
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            ...options.headers
+        },
+        body: options.body
+    });
+
+    if (!response.success && response.status !== 404) {
+        const error = response.data ? JSON.parse(response.data) : { message: response.statusText };
+        throw new Error(error[0]?.message || error.message || 'Request failed');
+    }
+
+    return {
+        ...response,
+        json: response.data ? JSON.parse(response.data) : null
+    };
 }

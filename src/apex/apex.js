@@ -1,11 +1,10 @@
 // Anonymous Apex Execution Tab Module
 import { createEditor, createReadOnlyEditor, monaco } from '../lib/monaco.js';
-import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../lib/utils.js';
+import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated, API_VERSION, salesforceRequest } from '../lib/utils.js';
 
 let codeEditor = null;
 let outputEditor = null;
 
-const API_VERSION = '62.0';
 const DEBUG_LEVEL_NAME = 'SFTOOLS_DEBUG';
 
 // Default debug log levels for comprehensive logging
@@ -25,35 +24,10 @@ const DEBUG_LEVELS = {
 // ============================================================
 
 /**
- * Make an authenticated REST API call
- */
-async function apiCall(endpoint, options = {}) {
-    const url = `${getInstanceUrl()}${endpoint}`;
-    const response = await extensionFetch(url, {
-        ...options,
-        headers: {
-            'Authorization': `Bearer ${getAccessToken()}`,
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-
-    if (!response.success && response.status !== 404) {
-        const error = response.data ? JSON.parse(response.data) : { message: response.statusText };
-        throw new Error(error[0]?.message || error.message || 'API call failed');
-    }
-
-    return {
-        ...response,
-        json: response.data ? JSON.parse(response.data) : null
-    };
-}
-
-/**
  * Get current user ID
  */
 async function getCurrentUserId() {
-    const response = await apiCall(`/services/data/v${API_VERSION}/chatter/users/me`);
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/chatter/users/me`);
     return response.json.id;
 }
 
@@ -63,14 +37,14 @@ async function getCurrentUserId() {
 async function getOrCreateDebugLevel() {
     // Check if our debug level already exists
     const query = encodeURIComponent(`SELECT Id FROM DebugLevel WHERE DeveloperName = '${DEBUG_LEVEL_NAME}'`);
-    const response = await apiCall(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
 
     if (response.json.records && response.json.records.length > 0) {
         return response.json.records[0].Id;
     }
 
     // Create new debug level
-    const createResponse = await apiCall(`/services/data/v${API_VERSION}/tooling/sobjects/DebugLevel`, {
+    const createResponse = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/DebugLevel`, {
         method: 'POST',
         body: JSON.stringify({
             DeveloperName: DEBUG_LEVEL_NAME,
@@ -101,7 +75,7 @@ async function ensureTraceFlag(userId) {
     const query = encodeURIComponent(
         `SELECT Id, DebugLevelId, DebugLevel.DeveloperName, ExpirationDate FROM TraceFlag WHERE TracedEntityId = '${userId}' AND LogType = 'USER_DEBUG' AND ExpirationDate > ${now}`
     );
-    const response = await apiCall(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
 
     if (response.json.records && response.json.records.length > 0) {
         const existing = response.json.records[0];
@@ -117,7 +91,7 @@ async function ensureTraceFlag(userId) {
         const debugLevelId = hasCorrectDebugLevel ? existing.DebugLevelId : await getOrCreateDebugLevel();
 
         const newExpiration = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-        await apiCall(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${existing.Id}`, {
+        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${existing.Id}`, {
             method: 'PATCH',
             body: JSON.stringify({
                 ExpirationDate: newExpiration,
@@ -133,7 +107,7 @@ async function ensureTraceFlag(userId) {
     const startDate = new Date().toISOString();
     const expirationDate = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-    const createResponse = await apiCall(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag`, {
+    const createResponse = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag`, {
         method: 'POST',
         body: JSON.stringify({
             TracedEntityId: userId,
@@ -152,7 +126,7 @@ async function ensureTraceFlag(userId) {
  */
 async function executeAnonymousRest(apexCode) {
     const encodedCode = encodeURIComponent(apexCode);
-    const response = await apiCall(
+    const response = await salesforceRequest(
         `/services/data/v${API_VERSION}/tooling/executeAnonymous/?anonymousBody=${encodedCode}`
     );
 
@@ -167,7 +141,7 @@ async function getLatestAnonymousLog() {
     const query = encodeURIComponent(
         `SELECT Id, LogLength, Status FROM ApexLog WHERE Operation LIKE '%executeAnonymous/' ORDER BY StartTime DESC LIMIT 1`
     );
-    const response = await apiCall(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
 
     if (!response.json.records || response.json.records.length === 0) {
         return null;
@@ -283,7 +257,7 @@ async function executeApex() {
     }
 
     if (!isAuthenticated()) {
-        outputEditor.setValue('// Not authenticated. Please authorize via the extension popup first.');
+        alert('Not authenticated. Please authorize via the extension popup first.');
         return;
     }
 

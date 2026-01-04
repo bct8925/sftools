@@ -364,3 +364,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 });
+
+// ============================================================================
+// Auto-connect to Proxy on Startup
+// ============================================================================
+
+// Silently attempt to connect to the local proxy when the service worker starts.
+// This enables automatic connection without requiring a manual trip to Settings.
+// If the proxy isn't installed or available, this fails silently.
+connectNative()
+    .then(result => {
+        if (result.success) {
+            console.log('Auto-connected to proxy');
+        }
+    })
+    .catch(() => {
+        // Silent failure - proxy not available
+    });

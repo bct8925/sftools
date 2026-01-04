@@ -1,7 +1,12 @@
-// Platform Events Tab - Subscribe to streams and publish events
-// Uses gRPC Pub/Sub API via local proxy for streaming
+// Platform Events Tab - UI Controller
+// Subscribe to streams and publish events via gRPC Pub/Sub API
 import { createEditor, createReadOnlyEditor, monaco } from '../lib/monaco.js';
-import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated, isProxyConnected } from '../lib/utils.js';
+import { isAuthenticated, isProxyConnected, getInstanceUrl, getAccessToken } from '../lib/utils.js';
+import { getEventChannels, publishPlatformEvent } from '../lib/salesforce.js';
+
+// ============================================================
+// State
+// ============================================================
 
 // DOM Elements
 let channelSelect;
@@ -30,8 +35,11 @@ const STANDARD_EVENTS = [
     { name: 'AsyncOperationEvent', label: 'Async Operation Event' }
 ];
 
+// ============================================================
+// Initialization
+// ============================================================
+
 export function init() {
-    // Get DOM references
     channelSelect = document.getElementById('event-channel-select');
     subscribeBtn = document.getElementById('event-subscribe-btn');
     streamStatus = document.getElementById('event-stream-status');
@@ -43,7 +51,6 @@ export function init() {
     replayCustomContainer = document.getElementById('event-replay-custom');
     replayIdInput = document.getElementById('event-replay-id');
 
-    // Initialize Monaco editors
     streamEditor = createReadOnlyEditor(document.getElementById('event-stream-editor'), {
         language: 'json',
         value: '// Subscribe to a Platform Event channel to see events here\n',
@@ -55,25 +62,21 @@ export function init() {
         value: '{\n  \n}'
     });
 
-    // Add Ctrl/Cmd+Enter shortcut for publish
     publishEditor.addAction({
         id: 'publish-event',
         label: 'Publish Event',
         keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-        run: () => publishEvent()
+        run: () => handlePublish()
     });
 
-    // Event handlers
     subscribeBtn.addEventListener('click', toggleSubscription);
     clearBtn.addEventListener('click', clearStream);
-    publishBtn.addEventListener('click', publishEvent);
+    publishBtn.addEventListener('click', handlePublish);
 
-    // Replay option toggle
     replaySelect.addEventListener('change', () => {
         replayCustomContainer.style.display = replaySelect.value === 'CUSTOM' ? 'block' : 'none';
     });
 
-    // Sync channel selects
     channelSelect.addEventListener('change', () => {
         publishChannelSelect.value = channelSelect.value;
     });
@@ -81,36 +84,16 @@ export function init() {
         channelSelect.value = publishChannelSelect.value;
     });
 
-    // Listen for stream events from background script
     chrome.runtime.onMessage.addListener(handleStreamMessage);
 
-    // Load available channels
-    loadEventChannels();
+    loadChannels();
 }
 
-/**
- * Handle streaming messages from the background script (gRPC events)
- */
-function handleStreamMessage(message) {
-    // Only process messages for our subscription
-    if (message.subscriptionId !== currentSubscriptionId) return;
+// ============================================================
+// Channel Loading
+// ============================================================
 
-    switch (message.type) {
-        case 'grpcEvent':
-            appendEvent(message.event);
-            break;
-        case 'grpcError':
-            appendSystemMessage(`Error: ${message.error}`);
-            updateStreamStatus('Error', 'error');
-            break;
-        case 'grpcEnd':
-            appendSystemMessage('Stream ended by server');
-            handleDisconnect();
-            break;
-    }
-}
-
-async function loadEventChannels() {
+async function loadChannels() {
     if (!isAuthenticated()) {
         channelSelect.innerHTML = '<option value="">Not authenticated</option>';
         publishChannelSelect.innerHTML = '<option value="">Not authenticated</option>';
@@ -121,32 +104,8 @@ async function loadEventChannels() {
     publishChannelSelect.innerHTML = '<option value="">Loading...</option>';
 
     try {
-        const instanceUrl = getInstanceUrl();
-        const token = getAccessToken();
-
-        // Query for custom Platform Events (entities ending in __e)
-        const query = encodeURIComponent(
-            "SELECT DeveloperName, QualifiedApiName, Label FROM EntityDefinition WHERE QualifiedApiName LIKE '%__e' AND IsCustomizable = true ORDER BY Label"
-        );
-        const response = await extensionFetch(
-            `${instanceUrl}/services/data/v62.0/tooling/query?q=${query}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-
-        let customEvents = [];
-        if (response.success) {
-            const data = JSON.parse(response.data);
-            customEvents = data.records || [];
-        }
-
-        // Build the select options
-        buildChannelOptions(customEvents);
-
+        const result = await getEventChannels();
+        buildChannelOptions(result.customEvents);
     } catch (err) {
         console.error('Error loading event channels:', err);
         channelSelect.innerHTML = '<option value="">Error loading channels</option>';
@@ -155,7 +114,6 @@ async function loadEventChannels() {
 }
 
 function buildChannelOptions(customEvents) {
-    // Clear and add default option
     channelSelect.innerHTML = '';
     publishChannelSelect.innerHTML = '';
 
@@ -165,7 +123,6 @@ function buildChannelOptions(customEvents) {
     channelSelect.appendChild(defaultOpt);
     publishChannelSelect.appendChild(defaultOpt.cloneNode(true));
 
-    // Custom Events optgroup
     if (customEvents.length > 0) {
         const customGroup = document.createElement('optgroup');
         customGroup.label = 'Custom Events';
@@ -181,7 +138,6 @@ function buildChannelOptions(customEvents) {
         publishChannelSelect.appendChild(customGroup.cloneNode(true));
     }
 
-    // Standard Events optgroup
     const standardGroup = document.createElement('optgroup');
     standardGroup.label = 'Standard Events';
 
@@ -195,17 +151,19 @@ function buildChannelOptions(customEvents) {
     channelSelect.appendChild(standardGroup);
     publishChannelSelect.appendChild(standardGroup.cloneNode(true));
 
-    // If no custom events, show a message
     if (customEvents.length === 0) {
         const noCustomOpt = document.createElement('option');
         noCustomOpt.value = '';
         noCustomOpt.disabled = true;
         noCustomOpt.textContent = '(No custom events found)';
-        // Insert before standard group
         channelSelect.insertBefore(noCustomOpt, channelSelect.querySelector('optgroup'));
         publishChannelSelect.insertBefore(noCustomOpt.cloneNode(true), publishChannelSelect.querySelector('optgroup'));
     }
 }
+
+// ============================================================
+// Subscription (via gRPC proxy)
+// ============================================================
 
 function toggleSubscription() {
     if (isSubscribed) {
@@ -215,9 +173,6 @@ function toggleSubscription() {
     }
 }
 
-/**
- * Subscribe to a Platform Event channel via gRPC Pub/Sub API
- */
 async function subscribe() {
     const channel = channelSelect.value;
     if (!channel) {
@@ -240,7 +195,6 @@ async function subscribe() {
     subscribeBtn.disabled = true;
 
     try {
-        // Get replay options
         const replayPreset = replaySelect.value;
         const replayId = replayPreset === 'CUSTOM' ? replayIdInput.value : undefined;
 
@@ -271,9 +225,6 @@ async function subscribe() {
     }
 }
 
-/**
- * Unsubscribe from the current channel
- */
 async function unsubscribe() {
     if (!currentSubscriptionId) return;
 
@@ -293,15 +244,34 @@ async function unsubscribe() {
     handleDisconnect();
 }
 
-/**
- * Handle disconnect (cleanup state)
- */
 function handleDisconnect() {
     currentSubscriptionId = null;
     isSubscribed = false;
     subscribeBtn.textContent = 'Subscribe';
     subscribeBtn.disabled = false;
     updateStreamStatus('Disconnected', '');
+}
+
+// ============================================================
+// Stream Message Handling
+// ============================================================
+
+function handleStreamMessage(message) {
+    if (message.subscriptionId !== currentSubscriptionId) return;
+
+    switch (message.type) {
+        case 'grpcEvent':
+            appendEvent(message.event);
+            break;
+        case 'grpcError':
+            appendSystemMessage(`Error: ${message.error}`);
+            updateStreamStatus('Error', 'error');
+            break;
+        case 'grpcEnd':
+            appendSystemMessage('Stream ended by server');
+            handleDisconnect();
+            break;
+    }
 }
 
 function appendEvent(event) {
@@ -320,14 +290,11 @@ function appendEvent(event) {
     const newEntry = JSON.stringify(eventEntry, null, 2);
 
     if (currentValue.startsWith('//')) {
-        // First event, replace the placeholder
         streamEditor.setValue(newEntry);
     } else {
-        // Append to existing events
         streamEditor.setValue(currentValue + '\n\n' + newEntry);
     }
 
-    // Scroll to bottom
     const lineCount = streamEditor.getModel().getLineCount();
     streamEditor.revealLine(lineCount);
 }
@@ -338,7 +305,6 @@ function appendSystemMessage(msg) {
     const newContent = current + `// [${timestamp}] ${msg}\n`;
     streamEditor.setValue(newContent);
 
-    // Scroll to bottom
     const lineCount = streamEditor.getModel().getLineCount();
     streamEditor.revealLine(lineCount);
 }
@@ -348,7 +314,11 @@ function clearStream() {
     streamEditor.setValue('// Stream cleared\n');
 }
 
-async function publishEvent() {
+// ============================================================
+// Publishing
+// ============================================================
+
+async function handlePublish() {
     const channel = publishChannelSelect.value;
     if (!channel) {
         updatePublishStatus('Select an event type', 'error');
@@ -372,36 +342,13 @@ async function publishEvent() {
     publishBtn.disabled = true;
 
     try {
-        const instanceUrl = getInstanceUrl();
-        const token = getAccessToken();
+        const result = await publishPlatformEvent(channel, payload);
 
-        const response = await extensionFetch(
-            `${instanceUrl}/services/data/v62.0/sobjects/${channel}`,
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            }
-        );
-
-        if (response.success) {
-            const data = JSON.parse(response.data);
+        if (result.success) {
             updatePublishStatus('Published', 'success');
-            appendSystemMessage(`Published event: ${data.id || 'success'}`);
+            appendSystemMessage(`Published event: ${result.id || 'success'}`);
         } else {
-            let errorMsg = 'Publish failed';
-            try {
-                const errorData = JSON.parse(response.data);
-                if (Array.isArray(errorData) && errorData[0]?.message) {
-                    errorMsg = errorData[0].message;
-                }
-            } catch (e) {
-                // Use default error message
-            }
-            updatePublishStatus(errorMsg, 'error');
+            updatePublishStatus(result.error, 'error');
         }
     } catch (err) {
         console.error('Publish error:', err);
@@ -410,6 +357,10 @@ async function publishEvent() {
         publishBtn.disabled = false;
     }
 }
+
+// ============================================================
+// UI Helpers
+// ============================================================
 
 function updateStreamStatus(text, type = '') {
     streamStatus.textContent = text;

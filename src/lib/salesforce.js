@@ -248,3 +248,61 @@ export async function executeRestRequest(endpoint, method, body = null) {
         raw: response.data
     };
 }
+
+// ============================================================
+// Platform Events
+// ============================================================
+
+/**
+ * Get available Platform Event channels
+ * Queries for custom Platform Events (entities ending in __e)
+ * @returns {Promise<{customEvents: array}>}
+ */
+export async function getEventChannels() {
+    const query = encodeURIComponent(
+        "SELECT DeveloperName, QualifiedApiName, Label FROM EntityDefinition WHERE QualifiedApiName LIKE '%__e' AND IsCustomizable = true ORDER BY Label"
+    );
+
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query?q=${query}`);
+
+    return {
+        customEvents: response.json.records || []
+    };
+}
+
+/**
+ * Publish a Platform Event
+ * @param {string} eventType - The event API name (e.g., 'My_Event__e')
+ * @param {object} payload - The event payload
+ * @returns {Promise<{success: boolean, id: string|null, error: string|null}>}
+ */
+export async function publishPlatformEvent(eventType, payload) {
+    const response = await extensionFetch(
+        `${getInstanceUrl()}/services/data/v${API_VERSION}/sobjects/${eventType}`,
+        {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getAccessToken()}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        }
+    );
+
+    if (response.success) {
+        const data = JSON.parse(response.data);
+        return { success: true, id: data.id, error: null };
+    }
+
+    let errorMsg = 'Publish failed';
+    try {
+        const errorData = JSON.parse(response.data);
+        if (Array.isArray(errorData) && errorData[0]?.message) {
+            errorMsg = errorData[0].message;
+        }
+    } catch (e) {
+        // Use default error message
+    }
+
+    return { success: false, id: null, error: errorMsg };
+}

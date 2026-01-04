@@ -46,9 +46,34 @@ src/
 │   └── apex.js           # Anonymous Apex execution tab module
 ├── query/
 │   └── query.js          # SOQL query editor tab module
+├── events/
+│   └── events.js         # Platform Events tab module
 └── aura/
     ├── aura.html         # Standalone Aura Debugger page
     └── aura.js           # Aura request logic
+```
+
+### Local Proxy (`sftools-proxy/`)
+
+A Node.js native messaging host that enables gRPC and bypasses CORS restrictions:
+
+```
+sftools-proxy/
+├── src/
+│   ├── index.js              # Main entry, message routing
+│   ├── native-messaging.js   # Chrome native messaging protocol
+│   ├── http-server.js        # HTTP server for large payloads
+│   ├── payload-store.js      # Large payload storage
+│   ├── handlers/
+│   │   ├── rest.js           # REST API proxy handler
+│   │   └── grpc.js           # gRPC Pub/Sub handlers
+│   └── grpc/
+│       ├── pubsub-client.js  # Salesforce Pub/Sub API client
+│       └── schema-cache.js   # Avro schema caching
+├── proto/
+│   └── pubsub_api.proto      # Salesforce Pub/Sub API proto
+├── install.js                # Native host installer
+└── sftools-proxy.sh          # Wrapper script (auto-generated)
 ```
 
 Root files:
@@ -62,9 +87,9 @@ Implemented:
 - **REST API** - Salesforce REST API explorer with Monaco editors
 - **Apex** - Anonymous Apex execution with debug log retrieval
 - **Query** - SOQL query editor with tabbed results
+- **Events** - Platform Events subscription via gRPC Pub/Sub API (requires local proxy)
 
 Planned:
-- **Platform Events** - CometD subscription/publishing
 - **Dev Console** - Debug log viewer
 
 ## Standalone Tools
@@ -100,6 +125,36 @@ A standalone tool for making Aura framework requests to Salesforce communities/o
 3. Add the HTML file to `vite.config.js` `rollupOptions.input`
 4. Add a button in `src/popup/popup.html` under `#standalone-group`
 5. Add click handler in `src/popup/popup.js` to open `dist/<tool-name>/<tool-name>.html`
+
+## Local Proxy Setup
+
+The local proxy enables gRPC connections and bypasses CORS for advanced features like Platform Events.
+
+**Installation:**
+```bash
+cd sftools-proxy
+npm install
+node install.js
+```
+
+This installs the native messaging host manifest at:
+- macOS: `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.sftools.proxy.json`
+
+**Connecting:**
+1. Open sftools Settings tab
+2. Click "Connect to Proxy"
+3. Status shows "Connected" when successful
+
+**Logging:**
+Proxy logs are written to `/tmp/sftools-proxy.log`. To view:
+```bash
+tail -f /tmp/sftools-proxy.log
+```
+
+**Troubleshooting:**
+- If port 7443 is blocked (corporate firewall), the proxy uses port 443 instead
+- Verify native host is installed: check the manifest file exists
+- Check Chrome's native messaging errors in `chrome://extensions` > Errors
 
 ## Opening the Extension
 
@@ -179,6 +234,38 @@ The Apex tab uses the REST Tooling API for anonymous Apex execution:
 3. **Fetch Debug Log** - Queries `ApexLog WHERE Operation LIKE '%executeAnonymous/'` and fetches the log body
 
 Monaco editor markers are used to highlight compilation errors with line/column info. SOAP API implementation is stubbed for potential future single-call debug log retrieval.
+
+## Events Tab Implementation
+
+The Events tab uses the Salesforce Pub/Sub API (gRPC) for real-time Platform Event streaming. This requires the local proxy since browsers cannot make gRPC/HTTP2 connections directly.
+
+**Architecture:**
+1. **Frontend** (`src/events/events.js`) - UI for channel selection, subscribe/unsubscribe, event display
+2. **Background** (`src/background/background.js`) - Routes messages between frontend and native host, forwards streaming events
+3. **Local Proxy** (`sftools-proxy/`) - Native messaging host that maintains gRPC connections
+
+**Subscription Flow:**
+1. Frontend sends `{ type: 'subscribe', topicName, accessToken, instanceUrl, replayPreset }` to background
+2. Background generates a `subscriptionId` and forwards to proxy as `grpcSubscribe`
+3. Proxy creates gRPC client, connects to `api.pubsub.salesforce.com:443`
+4. Proxy sends streaming events back via native messaging with `{ type: 'grpcEvent', subscriptionId, event }`
+5. Background forwards these to all extension pages via `chrome.runtime.sendMessage`
+6. Frontend filters by `subscriptionId` and displays decoded events
+
+**Key Components:**
+- `pubsub-client.js` - gRPC client wrapper, handles bidirectional streaming
+- `schema-cache.js` - Caches Avro schemas, decodes event payloads
+- Org ID extracted from session token format (`00Dxxxxxx!...`)
+
+**Replay Options:**
+- LATEST - New events only (default)
+- EARLIEST - All retained events
+- CUSTOM - Start from specific replay ID
+
+**Feature Gating:**
+- Tab is disabled when proxy is not connected
+- `isProxyConnected()` utility checks connection status
+- Overlay prompts user to connect via Settings
 
 ## Styling Conventions
 

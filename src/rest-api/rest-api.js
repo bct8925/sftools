@@ -1,6 +1,7 @@
-// REST API Tab Module
+// REST API Tab Module - UI Controller
 import { createEditor, createReadOnlyEditor, monaco } from '../lib/monaco.js';
-import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../lib/utils.js';
+import { isAuthenticated } from '../lib/utils.js';
+import { executeRestRequest } from '../lib/salesforce.js';
 
 let requestEditor = null;
 let responseEditor = null;
@@ -12,7 +13,6 @@ export function init() {
     const sendButton = document.getElementById('rest-send-btn');
     const statusSpan = document.getElementById('rest-status');
 
-    // Initialize Monaco editors
     requestEditor = createEditor(document.getElementById('rest-request-editor'), {
         value: '{\n    \n}',
         language: 'json'
@@ -23,7 +23,6 @@ export function init() {
         language: 'json'
     });
 
-    // Toggle body input based on method
     function toggleBodyInput() {
         const method = methodSelect.value;
         if (method === 'POST' || method === 'PATCH') {
@@ -33,7 +32,6 @@ export function init() {
         }
     }
 
-    // Update status badge
     function updateStatus(status, type = '') {
         statusSpan.textContent = status;
         statusSpan.className = 'status-badge';
@@ -42,7 +40,6 @@ export function init() {
         }
     }
 
-    // Execute REST API request
     async function executeRequest() {
         const url = urlInput.value.trim();
         const method = methodSelect.value;
@@ -57,57 +54,32 @@ export function init() {
             return;
         }
 
+        // Validate JSON for POST/PATCH
+        let body = null;
+        if (method === 'POST' || method === 'PATCH') {
+            const bodyValue = requestEditor.getValue();
+            try {
+                JSON.parse(bodyValue);
+                body = bodyValue;
+            } catch (e) {
+                alert('Invalid JSON in Request Body.');
+                updateStatus('Invalid JSON', 'error');
+                return;
+            }
+        }
+
         updateStatus('Loading...', 'loading');
         responseEditor.setValue('// Loading...');
 
         try {
-            const fullUrl = `${getInstanceUrl()}${url}`;
+            const response = await executeRestRequest(url, method, body);
 
-            const requestOptions = {
-                method: method,
-                headers: {
-                    'Authorization': `Bearer ${getAccessToken()}`,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            };
+            updateStatus(response.status.toString(), response.success ? 'success' : 'error');
 
-            // Add body for POST/PATCH requests
-            if (method === 'POST' || method === 'PATCH') {
-                const bodyValue = requestEditor.getValue();
-                try {
-                    JSON.parse(bodyValue); // Validate JSON
-                    requestOptions.body = bodyValue;
-                } catch (e) {
-                    alert('Invalid JSON in Request Body.');
-                    updateStatus('Invalid JSON', 'error');
-                    return;
-                }
-            }
-
-            const response = await extensionFetch(fullUrl, requestOptions);
-
-            if (response.success) {
-                const statusCode = response.status.toString();
-                updateStatus(statusCode, 'success');
-
-                try {
-                    const parsed = JSON.parse(response.data);
-                    responseEditor.setValue(JSON.stringify(parsed, null, 2));
-                } catch (e) {
-                    responseEditor.setValue(response.data);
-                }
+            if (typeof response.data === 'object') {
+                responseEditor.setValue(JSON.stringify(response.data, null, 2));
             } else {
-                updateStatus(`${response.status || 'Error'}`, 'error');
-
-                let errorOutput = response.data || response.error || response.statusText || 'Unknown error';
-                try {
-                    const parsed = JSON.parse(errorOutput);
-                    errorOutput = JSON.stringify(parsed, null, 2);
-                } catch (e) {
-                    // Keep as-is if not JSON
-                }
-                responseEditor.setValue(errorOutput);
+                responseEditor.setValue(response.raw || String(response.data));
             }
 
         } catch (error) {
@@ -117,13 +89,10 @@ export function init() {
         }
     }
 
-    // Event listeners
     methodSelect.addEventListener('change', toggleBodyInput);
     sendButton.addEventListener('click', executeRequest);
 
-    // Keyboard shortcut (Ctrl/Cmd + Enter to execute)
     requestEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, executeRequest);
 
-    // Initial state
     toggleBodyInput();
 }

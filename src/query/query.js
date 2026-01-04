@@ -1,8 +1,12 @@
-// Query Tab Module - SOQL Query Editor with tabbed results
-import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated, API_VERSION } from '../lib/utils.js';
+// Query Tab Module - SOQL Query Editor with tabbed results - UI Controller
+import { isAuthenticated } from '../lib/utils.js';
 import { createEditor, monaco } from '../lib/monaco.js';
+import { executeQueryWithColumns } from '../lib/salesforce.js';
 
-// State management for query tabs
+// ============================================================
+// State Management
+// ============================================================
+
 const queryTabs = new Map(); // normalizedQuery -> { id, query, normalizedQuery, records, columns, ... }
 let activeTabId = null;
 let tabCounter = 0;
@@ -14,6 +18,10 @@ let resultsContainer = null;
 let executeBtn = null;
 let statusSpan = null;
 
+// ============================================================
+// Initialization
+// ============================================================
+
 export function init() {
     const editorContainer = document.getElementById('query-editor');
     tabsContainer = document.getElementById('query-tabs');
@@ -21,32 +29,30 @@ export function init() {
     executeBtn = document.getElementById('query-execute-btn');
     statusSpan = document.getElementById('query-status');
 
-    // Create Monaco editor with SQL syntax highlighting
     queryEditor = createEditor(editorContainer, {
         language: 'sql',
-        value: `SELECT 
-    Id, 
-    Name 
-FROM Account 
+        value: `SELECT
+    Id,
+    Name
+FROM Account
 LIMIT 10`
     });
 
-    // Execute button click
     executeBtn.addEventListener('click', executeQuery);
 
-    // Ctrl/Cmd+Enter to execute
     queryEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
         executeQuery();
     });
 }
 
-// Simple query normalization for tab deduplication
+// ============================================================
+// Data Transformations
+// ============================================================
+
 function normalizeQuery(query) {
     return query.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-// Flatten column metadata from the columns=true API response
-// Handles nested joinColumns recursively for relationship fields
 function flattenColumnMetadata(columnMetadata, prefix = '') {
     const columns = [];
 
@@ -55,11 +61,8 @@ function flattenColumnMetadata(columnMetadata, prefix = '') {
         const path = prefix ? `${prefix}.${columnName}` : columnName;
 
         if (col.joinColumns && col.joinColumns.length > 0) {
-            // Relationship field - recurse into joinColumns
             columns.push(...flattenColumnMetadata(col.joinColumns, path));
         } else {
-            // Use full path as title for nested fields, displayName for top-level
-            // This shows "Account.Name" instead of just "Name" for relationship fields
             const title = prefix ? path : col.displayName;
             columns.push({
                 title: title,
@@ -73,7 +76,6 @@ function flattenColumnMetadata(columnMetadata, prefix = '') {
     return columns;
 }
 
-// Fallback: extract columns from record keys when column metadata unavailable
 function extractColumnsFromRecord(record) {
     return Object.keys(record)
         .filter(key => key !== 'attributes')
@@ -85,7 +87,24 @@ function extractColumnsFromRecord(record) {
         }));
 }
 
-// Execute the current query
+function getValueByPath(record, path) {
+    if (!path) return undefined;
+
+    const parts = path.split('.');
+    let value = record;
+
+    for (const part of parts) {
+        if (value === null || value === undefined) return undefined;
+        value = value[part];
+    }
+
+    return value;
+}
+
+// ============================================================
+// Query Execution
+// ============================================================
+
 async function executeQuery() {
     const query = queryEditor.getValue().trim();
 
@@ -101,29 +120,65 @@ async function executeQuery() {
 
     const normalizedQuery = normalizeQuery(query);
 
-    // Check if this query already has a tab (using normalized form)
     const existingTab = queryTabs.get(normalizedQuery);
     if (existingTab) {
-        // Switch to existing tab and refresh
         switchToTab(existingTab.id);
         await refreshTab(existingTab.id);
         return;
     }
 
-    // Create a new tab for this query
     const tabId = createTab(query, normalizedQuery);
     switchToTab(tabId);
     await fetchQueryData(tabId);
 }
 
-// Create a new tab
+async function fetchQueryData(tabId) {
+    const tabData = getTabDataById(tabId);
+    if (!tabData) return;
+
+    updateStatus('Loading...', 'loading');
+    tabData.error = null;
+
+    try {
+        const result = await executeQueryWithColumns(tabData.query);
+
+        tabData.records = result.records;
+        tabData.totalSize = result.totalSize;
+        tabData.objectName = result.entityName;
+
+        if (result.columnMetadata.length > 0) {
+            tabData.columns = flattenColumnMetadata(result.columnMetadata);
+        } else if (tabData.records.length > 0) {
+            tabData.columns = extractColumnsFromRecord(tabData.records[0]);
+        } else {
+            tabData.columns = [];
+        }
+
+        updateStatus(`${tabData.totalSize} record${tabData.totalSize !== 1 ? 's' : ''}`, 'success');
+        renderTabs();
+
+    } catch (error) {
+        tabData.records = [];
+        tabData.columns = [];
+        tabData.error = error.message;
+        updateStatus('Error', 'error');
+        console.error('Query error:', error);
+    }
+
+    renderResults();
+}
+
+// ============================================================
+// Tab Management
+// ============================================================
+
 function createTab(query, normalizedQuery) {
     const tabId = `query-tab-${++tabCounter}`;
     const tabData = {
         id: tabId,
         query: query,
         normalizedQuery: normalizedQuery,
-        objectName: null, // Will be set from column metadata
+        objectName: null,
         records: [],
         columns: [],
         totalSize: 0
@@ -134,14 +189,12 @@ function createTab(query, normalizedQuery) {
     return tabId;
 }
 
-// Switch to a specific tab
 function switchToTab(tabId) {
     activeTabId = tabId;
     renderTabs();
     renderResults();
 }
 
-// Refresh data for a specific tab
 async function refreshTab(tabId) {
     const tabData = getTabDataById(tabId);
     if (tabData) {
@@ -149,7 +202,6 @@ async function refreshTab(tabId) {
     }
 }
 
-// Get tab data by ID
 function getTabDataById(tabId) {
     for (const tab of queryTabs.values()) {
         if (tab.id === tabId) {
@@ -159,7 +211,6 @@ function getTabDataById(tabId) {
     return null;
 }
 
-// Close a tab
 function closeTab(tabId) {
     let keyToRemove = null;
     for (const [key, tab] of queryTabs) {
@@ -172,7 +223,6 @@ function closeTab(tabId) {
     if (keyToRemove) {
         queryTabs.delete(keyToRemove);
 
-        // If closing active tab, switch to another or clear
         if (activeTabId === tabId) {
             const remaining = Array.from(queryTabs.values());
             if (remaining.length > 0) {
@@ -188,96 +238,20 @@ function closeTab(tabId) {
     }
 }
 
-// Fetch query data from Salesforce
-async function fetchQueryData(tabId) {
-    const tabData = getTabDataById(tabId);
-    if (!tabData) return;
-
-    updateStatus('Loading...', 'loading');
-    tabData.error = null;
-
-    try {
-        const encodedQuery = encodeURIComponent(tabData.query);
-        const baseUrl = `${getInstanceUrl()}/services/data/v${API_VERSION}/query/?q=${encodedQuery}`;
-        const headers = {
-            'Authorization': `Bearer ${getAccessToken()}`,
-            'Accept': 'application/json'
-        };
-
-        // Make both calls in parallel for better performance
-        const [columnsResponse, dataResponse] = await Promise.all([
-            extensionFetch(`${baseUrl}&columns=true`, { method: 'GET', headers }),
-            extensionFetch(baseUrl, { method: 'GET', headers })
-        ]);
-
-        // Process column metadata
-        if (columnsResponse.success) {
-            const columnData = JSON.parse(columnsResponse.data);
-            tabData.objectName = columnData.entityName || null;
-            tabData.columns = flattenColumnMetadata(columnData.columnMetadata || []);
-            // Re-render tabs in case objectName changed
-            renderTabs();
-        } else {
-            // Column metadata failed - will fall back to record keys
-            tabData.columns = [];
-        }
-
-        // Process query results
-        if (dataResponse.success) {
-            const data = JSON.parse(dataResponse.data);
-            tabData.records = data.records || [];
-            tabData.totalSize = data.totalSize || 0;
-
-            // If columns weren't set from metadata, extract from records
-            if (tabData.columns.length === 0 && tabData.records.length > 0) {
-                tabData.columns = extractColumnsFromRecord(tabData.records[0]);
-            }
-
-            updateStatus(`${tabData.totalSize} record${tabData.totalSize !== 1 ? 's' : ''}`, 'success');
-        } else {
-            let errorMsg = 'Query failed';
-            try {
-                const errorData = JSON.parse(dataResponse.data);
-                if (Array.isArray(errorData) && errorData[0]?.message) {
-                    errorMsg = errorData[0].message;
-                } else if (errorData.message) {
-                    errorMsg = errorData.message;
-                }
-            } catch (e) {
-                errorMsg = dataResponse.data || dataResponse.statusText || 'Unknown error';
-            }
-            tabData.records = [];
-            tabData.columns = [];
-            tabData.error = errorMsg;
-            updateStatus('Error', 'error');
-        }
-    } catch (error) {
-        tabData.records = [];
-        tabData.columns = [];
-        tabData.error = error.message;
-        updateStatus('Error', 'error');
-        console.error('Query error:', error);
+function getTabLabel(tab) {
+    if (tab.objectName) {
+        return tab.objectName;
     }
 
-    renderResults();
+    const maxLength = 30;
+    if (tab.query.length <= maxLength) return tab.query;
+    return tab.query.substring(0, maxLength) + '...';
 }
 
-// Get value from record using path (handles nested objects like Account.Name)
-function getValueByPath(record, path) {
-    if (!path) return undefined;
+// ============================================================
+// UI Rendering
+// ============================================================
 
-    const parts = path.split('.');
-    let value = record;
-
-    for (const part of parts) {
-        if (value === null || value === undefined) return undefined;
-        value = value[part];
-    }
-
-    return value;
-}
-
-// Update status badge
 function updateStatus(status, type = '') {
     statusSpan.textContent = status;
     statusSpan.className = 'status-badge';
@@ -286,7 +260,6 @@ function updateStatus(status, type = '') {
     }
 }
 
-// Render the tabs bar
 function renderTabs() {
     tabsContainer.innerHTML = '';
 
@@ -300,24 +273,21 @@ function renderTabs() {
         tabEl.className = `query-tab${tab.id === activeTabId ? ' active' : ''}`;
         tabEl.dataset.tabId = tab.id;
 
-        // Tab label - use object name if available, otherwise truncated query
         const label = document.createElement('span');
         label.className = 'query-tab-label';
         label.textContent = getTabLabel(tab);
         label.title = tab.query;
         label.addEventListener('click', () => switchToTab(tab.id));
 
-        // Refresh button
         const refreshBtn = document.createElement('button');
         refreshBtn.className = 'query-tab-refresh';
-        refreshBtn.innerHTML = '&#x21bb;'; // ↻
+        refreshBtn.innerHTML = '&#x21bb;';
         refreshBtn.title = 'Refresh';
         refreshBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             refreshTab(tab.id);
         });
 
-        // Close button
         const closeBtn = document.createElement('button');
         closeBtn.className = 'query-tab-close';
         closeBtn.innerHTML = '&times;';
@@ -334,19 +304,6 @@ function renderTabs() {
     }
 }
 
-// Get label for tab (object name or truncated query)
-function getTabLabel(tab) {
-    if (tab.objectName) {
-        return tab.objectName;
-    }
-
-    // Fallback to truncated query
-    const maxLength = 30;
-    if (tab.query.length <= maxLength) return tab.query;
-    return tab.query.substring(0, maxLength) + '...';
-}
-
-// Render results table for active tab
 function renderResults() {
     if (!activeTabId) {
         resultsContainer.innerHTML = '<div class="query-results-empty">No query results to display</div>';
@@ -369,11 +326,9 @@ function renderResults() {
         return;
     }
 
-    // Build table
     const table = document.createElement('table');
     table.className = 'query-results-table';
 
-    // Header row
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
     for (const col of tabData.columns) {
@@ -384,7 +339,6 @@ function renderResults() {
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
-    // Data rows
     const tbody = document.createElement('tbody');
     for (const record of tabData.records) {
         const row = document.createElement('tr');
@@ -403,13 +357,11 @@ function renderResults() {
     resultsContainer.appendChild(table);
 }
 
-// Format cell value for display
 function formatCellValue(value, col) {
     if (value === null || value === undefined) {
         return '';
     }
 
-    // Handle subquery results (arrays of records)
     if (col?.isSubquery && typeof value === 'object') {
         if (value.records) {
             return `[${value.totalSize || value.records.length} records]`;
@@ -420,7 +372,6 @@ function formatCellValue(value, col) {
     }
 
     if (typeof value === 'object') {
-        // Handle nested relationship objects - show relevant field or stringify
         if (value.Name !== undefined) return value.Name;
         if (value.Id !== undefined) return value.Id;
         return JSON.stringify(value);
@@ -429,7 +380,6 @@ function formatCellValue(value, col) {
     return String(value);
 }
 
-// Escape HTML for safe rendering
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;

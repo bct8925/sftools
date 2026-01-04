@@ -82,3 +82,19 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
         }
     });
 }
+
+// Listen for storage changes (e.g., token refresh from background)
+if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== 'local') return;
+
+        if (changes[STORAGE_KEYS.ACCESS_TOKEN]?.newValue) {
+            ACCESS_TOKEN = changes[STORAGE_KEYS.ACCESS_TOKEN].newValue;
+            console.log('Access token updated from storage');
+        }
+
+        if (changes[STORAGE_KEYS.INSTANCE_URL]?.newValue) {
+            INSTANCE_URL = changes[STORAGE_KEYS.INSTANCE_URL].newValue;
+        }
+    });
+}

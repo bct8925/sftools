@@ -11,7 +11,16 @@ const statusDiv = document.getElementById('status');
 const CLIENT_ID = chrome.runtime.getManifest().oauth2.client_id;
 
 // --- Core Authorization Function ---
-function startAuthorization() {
+async function startAuthorization() {
+    // Check if proxy is connected to determine OAuth flow
+    let useCodeFlow = false;
+    try {
+        const proxyStatus = await chrome.runtime.sendMessage({ type: 'checkProxyConnection' });
+        useCodeFlow = proxyStatus.connected;
+    } catch (e) {
+        console.log('Proxy not available, using implicit flow');
+    }
+
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         const currentTab = tabs[0];
         let loginDomain = 'https://login.salesforce.com';
@@ -32,9 +41,16 @@ function startAuthorization() {
 
         const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
+        // Store loginDomain for token refresh (handles sandbox vs production)
+        chrome.storage.local.set({ loginDomain: loginDomain });
+
+        // Use authorization code flow if proxy connected (supports refresh tokens)
+        // Otherwise use implicit flow (no refresh tokens, but no CORS issues)
+        const responseType = useCodeFlow ? 'code' : 'token';
+
         const AUTH_URL = `${loginDomain}/services/oauth2/authorize` +
             `?client_id=${CLIENT_ID}` +
-            `&response_type=token` +
+            `&response_type=${responseType}` +
             `&redirect_uri=${encodeURIComponent(CALLBACK_URL)}`;
 
         chrome.tabs.create({ url: AUTH_URL });
@@ -46,7 +62,7 @@ function startAuthorization() {
 authorizeBtn.addEventListener('click', startAuthorization);
 
 reauthorizeBtn.addEventListener('click', function() {
-    chrome.storage.local.remove(['accessToken', 'instanceUrl'], function() {
+    chrome.storage.local.remove(['accessToken', 'refreshToken', 'instanceUrl', 'loginDomain'], function() {
         statusDiv.innerText = 'Old session cleared. Starting re-authorization...';
         startAuthorization();
     });

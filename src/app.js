@@ -1,5 +1,5 @@
 // sftools - Main Application Entry Point
-import { loadAuthTokens, getAccessToken, getInstanceUrl, isAuthenticated, checkProxyStatus, isProxyConnected } from './lib/utils.js';
+import { loadAuthTokens, getAccessToken, getInstanceUrl, isAuthenticated, checkProxyStatus, isProxyConnected, onAuthExpired } from './lib/utils.js';
 import * as query from './query/query.js';
 import * as apex from './apex/apex.js';
 import * as restApi from './rest-api/rest-api.js';
@@ -9,6 +9,7 @@ import * as events from './events/events.js';
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
     initOpenOrgButton();
+    initAuthExpirationHandler();
     await loadAuthTokens();
     await checkProxyStatus();
 
@@ -21,6 +22,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     restApi.init();
     events.init();
 });
+
+// --- Auth Expiration Handler ---
+function initAuthExpirationHandler() {
+    onAuthExpired(() => {
+        // Show re-auth overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'auth-expired-overlay';
+        overlay.innerHTML = `
+            <div class="auth-expired-modal">
+                <h2>Session Expired</h2>
+                <p>Your Salesforce session has expired and could not be refreshed.</p>
+                <p>Please re-authorize to continue.</p>
+                <button id="reauth-btn" class="button-brand">Close and Re-authorize</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('reauth-btn').addEventListener('click', () => {
+            window.close();
+        });
+    });
+}
 
 // --- Feature Gating ---
 function updateFeatureGating() {

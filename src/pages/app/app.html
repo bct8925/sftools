@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sftools</title>
+    <link rel="icon" type="image/png" href="../../icon.png">
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+    
+    <div class="app-container">
+        
+        <nav class="tab-nav">
+            <div class="nav-brand"><img src="../../icon.png" alt="" class="nav-brand-icon">sftools</div>
+            <div class="tab-scroll-container">
+                <button class="tab-link active" data-tab="query">Query</button>
+                <button class="tab-link" data-tab="apex">Apex</button>
+                <button class="tab-link" data-tab="rest-api">REST API</button>
+                <button class="tab-link" data-tab="events">Platform Events</button>
+                <div class="nav-overflow-dropdown hidden">
+                    <button class="tab-link nav-overflow-trigger">
+                        More
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style="margin-left: 4px;">
+                            <path d="M1 3l4 4 4-4H1z"/>
+                        </svg>
+                    </button>
+                    <div class="nav-overflow-menu"></div>
+                </div>
+            </div>
+            <button id="open-org-btn" class="nav-icon-btn" title="Open Org in Browser">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
+                    <path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
+                </svg>
+            </button>
+            <button id="side-panel-btn" class="nav-icon-btn" title="Open in Side Panel">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M2 1h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm0-1a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                    <path d="M5 1v14H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h3z"/>
+                    <rect x="2.5" y="4" width="1.5" height="1" rx="0.25"/>
+                    <rect x="2.5" y="6.5" width="1.5" height="1" rx="0.25"/>
+                </svg>
+            </button>
+        </nav>
+
+        <main class="content-area">
+            <query-tab id="query" class="tab-content active"></query-tab>
+
+            <apex-tab id="apex" class="tab-content"></apex-tab>
+
+            <events-tab id="events" class="tab-content"></events-tab>
+
+            <rest-api-tab id="rest-api" class="tab-content"></rest-api-tab>
+        </main>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

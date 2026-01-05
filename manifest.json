@@ -9,7 +9,7 @@
     "128": "icon.png"
   },
   "action": {
-    "default_popup": "src/popup/popup.html",
+    "default_popup": "dist/pages/popup/popup.html",
     "default_icon": "icon.png"
   },
   "permissions": [
@@ -23,9 +23,9 @@
     "nativeMessaging"
   ],
   "side_panel": {
-    "default_path": "dist/app.html"
+    "default_path": "dist/pages/app/app.html"
   },
-  "options_page": "dist/options/options.html",
+  "options_page": "dist/pages/options/options.html",
   "host_permissions": [
     "<all_urls>"
   ],
@@ -39,12 +39,12 @@
     ]
   },
   "background": {
-    "service_worker": "src/background/background.js",
+    "service_worker": "dist/background.js",
     "type": "module"
   },
   "web_accessible_resources": [
     {
-      "resources": ["dist/*", "src/callback/*"],
+      "resources": ["dist/*"],
       "matches": ["<all_urls>"]
     }
   ],

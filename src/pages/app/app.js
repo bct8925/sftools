@@ -1,9 +1,10 @@
 // sftools - Main Application Entry Point
-import { loadAuthTokens, getAccessToken, getInstanceUrl, isAuthenticated, checkProxyStatus, isProxyConnected, onAuthExpired } from './lib/utils.js';
-import * as query from './query/query.js';
-import * as apex from './apex/apex.js';
-import * as restApi from './rest-api/rest-api.js';
-import * as events from './events/events.js';
+import { loadAuthTokens, getAccessToken, getInstanceUrl, isAuthenticated, checkProxyStatus, isProxyConnected, onAuthExpired } from '../../lib/utils.js';
+// Self-registering custom element tabs
+import '../../components/query/query-tab.js';
+import '../../components/apex/apex-tab.js';
+import '../../components/rest-api/rest-api-tab.js';
+import '../../components/events/events-tab.js';
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -16,12 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Apply feature gating based on proxy status
     updateFeatureGating();
-
-    // Initialize tool modules
-    query.init();
-    apex.init();
-    restApi.init();
-    events.init();
+    // All tab modules are self-initializing via connectedCallback
 });
 
 // --- Auth Expiration Handler ---

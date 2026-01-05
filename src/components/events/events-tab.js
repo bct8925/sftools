@@ -1,6 +1,6 @@
 // Events Tab - Platform Events Streaming via gRPC Pub/Sub API
 import template from './events.html?raw';
-import { createEditor, createReadOnlyEditor, monaco } from '../../lib/monaco.js';
+import '../monaco-editor/monaco-editor.js';
 import { isAuthenticated, isProxyConnected, getInstanceUrl, getAccessToken } from '../../lib/utils.js';
 import { getEventChannels, publishPlatformEvent } from '../../lib/salesforce.js';
 
@@ -63,23 +63,13 @@ class EventsTab extends HTMLElement {
     }
 
     initEditors() {
-        this.streamEditor = createReadOnlyEditor(this.querySelector('.event-stream-editor'), {
-            language: 'json',
-            value: '// Subscribe to a Platform Event channel to see events here\n',
-            wordWrap: 'on'
-        });
+        this.streamEditor = this.querySelector('.event-stream-editor');
+        this.publishEditor = this.querySelector('.event-publish-editor');
 
-        this.publishEditor = createEditor(this.querySelector('.event-publish-editor'), {
-            language: 'json',
-            value: '{\n  \n}'
-        });
+        this.streamEditor.setValue('// Subscribe to a Platform Event channel to see events here\n');
+        this.publishEditor.setValue('{\n  \n}');
 
-        this.publishEditor.addAction({
-            id: 'publish-event',
-            label: 'Publish Event',
-            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-            run: () => this.handlePublish()
-        });
+        this.publishEditor.addEventListener('execute', () => this.handlePublish());
     }
 
     attachEventListeners() {
@@ -308,8 +298,7 @@ class EventsTab extends HTMLElement {
             this.streamEditor.setValue(currentValue + '\n\n' + newEntry);
         }
 
-        const lineCount = this.streamEditor.getModel().getLineCount();
-        this.streamEditor.revealLine(lineCount);
+        this.scrollStreamToBottom();
     }
 
     appendSystemMessage(msg) {
@@ -318,8 +307,15 @@ class EventsTab extends HTMLElement {
         const newContent = current + `// [${timestamp}] ${msg}\n`;
         this.streamEditor.setValue(newContent);
 
-        const lineCount = this.streamEditor.getModel().getLineCount();
-        this.streamEditor.revealLine(lineCount);
+        this.scrollStreamToBottom();
+    }
+
+    scrollStreamToBottom() {
+        const editor = this.streamEditor.editor;
+        if (editor) {
+            const lineCount = editor.getModel().getLineCount();
+            editor.revealLine(lineCount);
+        }
     }
 
     clearStream() {

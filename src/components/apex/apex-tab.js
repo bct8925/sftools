@@ -1,6 +1,6 @@
 // Apex Tab - Anonymous Apex Execution
 import template from './apex.html?raw';
-import { createEditor, createReadOnlyEditor, monaco } from '../../lib/monaco.js';
+import { monaco } from '../monaco-editor/monaco-editor.js';
 import { isAuthenticated } from '../../lib/utils.js';
 import { executeAnonymousApex } from '../../lib/salesforce.js';
 
@@ -24,32 +24,24 @@ class ApexTab extends HTMLElement {
     }
 
     initEditors() {
-        const codeContainer = this.querySelector('.apex-editor');
-        const outputContainer = this.querySelector('.apex-output-editor');
+        this.codeEditor = this.querySelector('.apex-editor');
+        this.outputEditor = this.querySelector('.apex-output-editor');
 
-        this.codeEditor = createEditor(codeContainer, {
-            value: `// Enter your Apex code here
+        this.codeEditor.setValue(`// Enter your Apex code here
 System.debug('Hello from Anonymous Apex!');
 
 // Example: Query and debug accounts
 List<Account> accounts = [SELECT Id, Name FROM Account LIMIT 5];
 for (Account acc : accounts) {
     System.debug('Account: ' + acc.Name);
-}`,
-            language: 'apex'
-        });
+}`);
 
-        this.outputEditor = createReadOnlyEditor(outputContainer, {
-            value: '// Output will appear here after execution',
-            language: 'text'
-        });
+        this.outputEditor.setValue('// Output will appear here after execution');
     }
 
     attachEventListeners() {
         this.executeBtn.addEventListener('click', () => this.executeApex());
-        this.codeEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-            this.executeApex();
-        });
+        this.codeEditor.addEventListener('execute', () => this.executeApex());
     }
 
     // ============================================================
@@ -57,7 +49,7 @@ for (Account acc : accounts) {
     // ============================================================
 
     setEditorMarkers(result) {
-        const model = this.codeEditor.getModel();
+        const model = this.codeEditor.editor?.getModel();
         if (!model) return;
 
         monaco.editor.setModelMarkers(model, 'apex', []);
@@ -147,7 +139,7 @@ for (Account acc : accounts) {
         }
 
         // Clear previous markers
-        const model = this.codeEditor.getModel();
+        const model = this.codeEditor.editor?.getModel();
         if (model) {
             monaco.editor.setModelMarkers(model, 'apex', []);
         }

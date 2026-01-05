@@ -2,7 +2,7 @@
 import template from './query.html?raw';
 import './query.css';
 import { isAuthenticated } from '../../lib/utils.js';
-import { createEditor, monaco } from '../../lib/monaco.js';
+import '../monaco-editor/monaco-editor.js';
 import { executeQueryWithColumns } from '../../lib/salesforce.js';
 
 class QueryTab extends HTMLElement {
@@ -33,22 +33,17 @@ class QueryTab extends HTMLElement {
     }
 
     initEditor() {
-        const editorContainer = this.querySelector('.query-editor');
-        this.editor = createEditor(editorContainer, {
-            language: 'sql',
-            value: `SELECT
+        this.editor = this.querySelector('.query-editor');
+        this.editor.setValue(`SELECT
     Id,
     Name
 FROM Account
-LIMIT 10`
-        });
+LIMIT 10`);
     }
 
     attachEventListeners() {
         this.executeBtn.addEventListener('click', () => this.executeQuery());
-        this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-            this.executeQuery();
-        });
+        this.editor.addEventListener('execute', () => this.executeQuery());
     }
 
     // ============================================================

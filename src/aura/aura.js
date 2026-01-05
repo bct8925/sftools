@@ -14,6 +14,13 @@ const contentArea = document.querySelector('.content-area');
 standaloneHeader.classList.add('main-content-disabled');
 contentArea.classList.add('main-content-disabled');
 
+// Click on container toggles checkbox
+document.querySelector('.disclaimer-checkbox-container').addEventListener('click', (e) => {
+    if (e.target !== disclaimerCheckbox) {
+        disclaimerCheckbox.click();
+    }
+});
+
 // Enable accept button only when checkbox is checked
 disclaimerCheckbox.addEventListener('change', () => {
     disclaimerAccept.disabled = !disclaimerCheckbox.checked;

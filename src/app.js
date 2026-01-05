@@ -9,6 +9,7 @@ import * as events from './events/events.js';
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
     initOpenOrgButton();
+    initSidePanelButton();
     initAuthExpirationHandler();
     await loadAuthTokens();
     await checkProxyStatus();
@@ -94,6 +95,16 @@ function initOpenOrgButton() {
         const accessToken = getAccessToken();
         const frontdoorUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${encodeURIComponent(accessToken)}`;
         window.open(frontdoorUrl, '_blank');
+    });
+}
+
+// --- Side Panel Button ---
+function initSidePanelButton() {
+    const btn = document.getElementById('side-panel-btn');
+    btn.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.sidePanel.open({ tabId: tabs[0].id });
+        });
     });
 }
 

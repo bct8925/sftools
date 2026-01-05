@@ -161,16 +161,16 @@ tail -f /tmp/sftools-proxy.log
 
 ## Opening the Extension
 
-The popup provides two ways to open sftools after authorization:
+The popup provides a way to open sftools after authorization:
 
 - **Open sftools** - Opens in a new browser tab (full page)
-- **Open in Side Panel** - Opens in Chrome's side panel, attached to the current tab
 
 Side panel support is configured in `manifest.json` via the `sidePanel` permission and `side_panel.default_path` pointing to `dist/app.html`.
 
 ## Header Features
 
 - **Open Org Button** - Icon button in the top-right of the nav header that opens the authenticated org in a new browser tab using `frontdoor.jsp` with the current session token
+- **Side Panel Button** - Icon button to the right of Open Org that opens the app in Chrome's side panel
 - **Responsive Nav** - Tab navigation with overflow dropdown. When tabs don't fit (e.g., in side panel), excess tabs move to a "More" dropdown menu
 
 ## Adding a New Tool Tab

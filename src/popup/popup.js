@@ -1,6 +1,5 @@
 const authorizeBtn = document.getElementById('authorizeBtn');
 const connectBtn = document.getElementById('connectBtn');
-const sidePanelBtn = document.getElementById('sidePanelBtn');
 const reauthorizeBtn = document.getElementById('reauthorizeBtn');
 const openAuraBtn = document.getElementById('openAuraBtn');
 const settingsBtn = document.getElementById('settingsBtn');
@@ -71,13 +70,6 @@ reauthorizeBtn.addEventListener('click', function() {
 connectBtn.addEventListener('click', function() {
     chrome.tabs.create({ url: 'dist/app.html' });
     window.close();
-});
-
-sidePanelBtn.addEventListener('click', function() {
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-        chrome.sidePanel.open({ tabId: tabs[0].id });
-        window.close();
-    });
 });
 
 openAuraBtn.addEventListener('click', function() {

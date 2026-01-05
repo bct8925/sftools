@@ -47,11 +47,19 @@ body {
 }
 
 .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 700;
     font-size: 18px;
     color: var(--primary-color);
     margin-right: 30px;
     letter-spacing: -0.5px;
+}
+
+.nav-brand-icon {
+    height: 24px;
+    width: auto;
 }
 
 .tab-scroll-container {

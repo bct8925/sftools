@@ -19,10 +19,17 @@
             box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
         }
         .standalone-header .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-weight: 700;
             font-size: 18px;
             color: var(--primary-color);
             letter-spacing: -0.5px;
+        }
+        .standalone-header .nav-brand img {
+            height: 24px;
+            width: auto;
         }
         .standalone-header .tool-name {
             font-size: 14px;
@@ -115,7 +122,7 @@
 </head>
 <body>
     <header class="standalone-header">
-        <div class="nav-brand">sftools</div>
+        <div class="nav-brand"><img src="../../icon.png" alt="">sftools</div>
         <span class="tool-name">Aura Debugger</span>
     </header>
 

@@ -13,9 +13,16 @@
             background: #f3f3f3;
         }
         h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             margin: 0 0 15px 0;
             color: #0070d2;
             font-size: 16px;
+        }
+        h3 img {
+            height: 20px;
+            width: auto;
         }
         .button-group {
             display: flex;
@@ -57,7 +64,7 @@
     </style>
 </head>
 <body>
-    <h3>sftools</h3>
+    <h3><img src="../../icon.png" alt="">sftools</h3>
 
     <div class="button-group" id="unauthorized-group">
         <button id="authorizeBtn" class="btn-primary">Authorize Session</button>

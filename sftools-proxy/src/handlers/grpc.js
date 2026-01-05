@@ -43,15 +43,6 @@ async function handleGrpcSubscribe(request) {
         };
     }
 
-    console.error(`[Handler] handleGrpcSubscribe called:`, JSON.stringify({
-        subscriptionId,
-        topicName,
-        replayPreset,
-        hasReplayId: !!replayId,
-        hasAccessToken: !!accessToken,
-        instanceUrl
-    }));
-
     try {
         const result = await subscribe({
             subscriptionId,
@@ -63,12 +54,8 @@ async function handleGrpcSubscribe(request) {
             numRequested,
             tenantId,
 
-            // Event callback - decode and forward via Native Messaging
             onEvent: async ({ subscriptionId: subId, event }) => {
-                console.error(`[Handler] onEvent callback triggered for subscription ${subId}`);
-                console.error(`[Handler] Event has schema: ${event?.event?.schema_id}, has payload: ${!!event?.event?.payload}`);
                 try {
-                    // Decode the Avro payload
                     const decodedEvent = await decodeConsumerEvent(
                         event,
                         accessToken,
@@ -76,50 +63,48 @@ async function handleGrpcSubscribe(request) {
                         tenantId
                     );
 
-                    console.error(`[Handler] Decoded event successfully, sending via Native Messaging`);
-                    // Send event to extension via Native Messaging
                     sendMessage({
-                        type: 'grpcEvent',
-                        subscriptionId: subId,
-                        event: decodedEvent
-                    });
-                    console.error(`[Handler] sendMessage completed for grpcEvent`);
-                } catch (error) {
-                    console.error(`[Handler] Decode error: ${error.message}`);
-                    console.error(error.stack);
-                    // Send decode error
-                    sendMessage({
-                        type: 'grpcEvent',
+                        type: 'streamEvent',
                         subscriptionId: subId,
                         event: {
-                            error: `Failed to decode event: ${error.message}`
+                            ...decodedEvent,
+                            channel: topicName,
+                            protocol: 'grpc'
+                        }
+                    });
+                } catch (error) {
+                    console.error(`[gRPC] Decode error: ${error.message}`);
+                    sendMessage({
+                        type: 'streamEvent',
+                        subscriptionId: subId,
+                        event: {
+                            error: `Failed to decode event: ${error.message}`,
+                            channel: topicName,
+                            protocol: 'grpc'
                         }
                     });
                 }
             },
 
-            // Error callback
             onError: ({ subscriptionId: subId, error, code }) => {
-                console.error(`[Handler] onError callback: ${error} (code: ${code})`);
+                console.error(`[gRPC] Stream error: ${error} (code: ${code})`);
                 sendMessage({
-                    type: 'grpcError',
+                    type: 'streamError',
                     subscriptionId: subId,
                     error,
                     code
                 });
             },
 
-            // End callback
             onEnd: ({ subscriptionId: subId }) => {
-                console.error(`[Handler] onEnd callback for subscription ${subId}`);
+                console.error(`[gRPC] Stream ended`);
                 sendMessage({
-                    type: 'grpcEnd',
+                    type: 'streamEnd',
                     subscriptionId: subId
                 });
             }
         });
 
-        console.error(`[Handler] subscribe() returned:`, JSON.stringify(result));
         return result;
     } catch (error) {
         return {

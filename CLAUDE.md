@@ -91,26 +91,7 @@ dist/
 
 ### Local Proxy (`sftools-proxy/`)
 
-A Node.js native messaging host that enables gRPC and bypasses CORS restrictions:
-
-```
-sftools-proxy/
-├── src/
-│   ├── index.js              # Main entry, message routing
-│   ├── native-messaging.js   # Chrome native messaging protocol
-│   ├── http-server.js        # HTTP server for large payloads
-│   ├── payload-store.js      # Large payload storage
-│   ├── handlers/
-│   │   ├── rest.js           # REST API proxy handler
-│   │   └── grpc.js           # gRPC Pub/Sub handlers
-│   └── grpc/
-│       ├── pubsub-client.js  # Salesforce Pub/Sub API client
-│       └── schema-cache.js   # Avro schema caching
-├── proto/
-│   └── pubsub_api.proto      # Salesforce Pub/Sub API proto
-├── install.js                # Native host installer
-└── sftools-proxy.sh          # Wrapper script (auto-generated)
-```
+A Node.js native messaging host that enables gRPC/CometD streaming and bypasses CORS restrictions. See `sftools-proxy/CLAUDE.md` for detailed architecture and implementation documentation.
 
 Root files:
 - `manifest.json` - Extension manifest (MV3) with OAuth2 config
@@ -123,7 +104,7 @@ Implemented:
 - **REST API** - Salesforce REST API explorer with Monaco editors
 - **Apex** - Anonymous Apex execution with debug log retrieval
 - **Query** - SOQL query editor with tabbed results
-- **Events** - Platform Events subscription via gRPC Pub/Sub API (requires local proxy)
+- **Events** - Unified streaming for Platform Events (gRPC), PushTopics, and System Topics (CometD) - requires local proxy
 
 Planned:
 - **Dev Console** - Debug log viewer
@@ -151,7 +132,7 @@ A standalone tool for making Aura framework requests to Salesforce communities/o
 
 ## Local Proxy Setup
 
-The local proxy enables gRPC connections and bypasses CORS for advanced features like Platform Events.
+The local proxy enables gRPC and CometD streaming connections for all Salesforce event types.
 
 **Installation:**
 ```bash
@@ -406,25 +387,38 @@ Monaco editor markers are used to highlight compilation errors with line/column 
 
 ## Events Tab Implementation
 
-The Events tab uses the Salesforce Pub/Sub API (gRPC) for real-time Platform Event streaming. This requires the local proxy since browsers cannot make gRPC/HTTP2 connections directly.
+The Events tab provides unified streaming across multiple Salesforce protocols. Protocol selection is transparent to users - they select a channel and the proxy routes to the appropriate client.
+
+**Channel Types & Protocols:**
+| Channel Pattern | Protocol | Example |
+|----------------|----------|---------|
+| `/event/*` | gRPC Pub/Sub | `/event/Order_Event__e` |
+| `/topic/*` | CometD | `/topic/InvoiceUpdates` |
+| `/systemTopic/*` | CometD | `/systemTopic/Logging` |
 
 **Architecture:**
-1. **Frontend** (`src/components/events/events-tab.js`) - UI for channel selection, subscribe/unsubscribe, event display
+1. **Frontend** (`src/components/events/events-tab.js`) - Grouped dropdown for all channel types, subscribe/unsubscribe, event display
 2. **Background** (`src/background/background.js`) - Routes messages between frontend and native host, forwards streaming events
-3. **Local Proxy** (`sftools-proxy/`) - Native messaging host that maintains gRPC connections
+3. **Local Proxy** (`sftools-proxy/`) - Routes to gRPC or CometD based on channel prefix
 
 **Subscription Flow:**
-1. Frontend sends `{ type: 'subscribe', topicName, accessToken, instanceUrl, replayPreset }` to background
-2. Background generates a `subscriptionId` and forwards to proxy as `grpcSubscribe`
-3. Proxy creates gRPC client, connects to `api.pubsub.salesforce.com:443`
-4. Proxy sends streaming events back via native messaging with `{ type: 'grpcEvent', subscriptionId, event }`
+1. Frontend sends `{ type: 'subscribe', channel, accessToken, instanceUrl, replayPreset }` to background
+2. Background generates a `subscriptionId` and forwards to proxy
+3. Proxy routes based on channel: `/event/*` → gRPC, others → CometD
+4. Proxy sends streaming events back via native messaging with `{ type: 'streamEvent', subscriptionId, event }`
 5. Background forwards these to all extension pages via `chrome.runtime.sendMessage`
-6. Frontend filters by `subscriptionId` and displays decoded events
+6. Frontend filters by `subscriptionId` and displays events
 
-**Key Components:**
-- `pubsub-client.js` - gRPC client wrapper, handles bidirectional streaming
-- `schema-cache.js` - Caches Avro schemas, decodes event payloads
-- Org ID extracted from session token format (`00Dxxxxxx!...`)
+**Key Proxy Components:**
+- `subscription-manager.js` - Central registry for all subscriptions
+- `protocols/router.js` - Routes channels to correct protocol
+- `grpc/pubsub-client.js` - gRPC client for Platform Events
+- `cometd/cometd-client.js` - Faye-based CometD client for PushTopics/System Topics
+
+**Unified Message Types:**
+- `streamEvent` - Event received from either protocol
+- `streamError` - Error from stream
+- `streamEnd` - Stream closed by server
 
 **Replay Options:**
 - LATEST - New events only (default)

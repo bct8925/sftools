@@ -65,21 +65,19 @@ const handlers = {
     subscribe: proxyRequired(async (req) => {
         const subscriptionId = crypto.randomUUID();
         const response = await sendProxyRequest({
-            type: 'grpcSubscribe',
+            type: 'subscribe',
             subscriptionId,
             accessToken: req.accessToken,
             instanceUrl: req.instanceUrl,
-            topicName: req.topicName,
+            channel: req.channel,
             replayPreset: req.replayPreset,
-            replayId: req.replayId,
-            numRequested: req.numRequested,
-            tenantId: req.tenantId
+            replayId: req.replayId
         });
         return { ...response, subscriptionId };
     }),
 
     unsubscribe: proxyRequired((req) =>
-        sendProxyRequest({ type: 'grpcUnsubscribe', subscriptionId: req.subscriptionId })
+        sendProxyRequest({ type: 'unsubscribe', subscriptionId: req.subscriptionId })
     ),
 
     getTopic: proxyRequired((req) =>

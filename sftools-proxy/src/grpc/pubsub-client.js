@@ -8,6 +8,7 @@
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
 const path = require('path');
+const subscriptionManager = require('../subscription-manager');
 
 const PROTO_PATH = path.join(__dirname, '../../proto/pubsub_api.proto');
 
@@ -16,9 +17,6 @@ const PUBSUB_ENDPOINT = 'api.pubsub.salesforce.com:443';
 
 // Cached proto definition
 let protoDefinition = null;
-
-// Active subscriptions by ID
-const subscriptions = new Map();
 
 /**
  * Load and cache the proto definition
@@ -254,7 +252,7 @@ async function subscribe(options) {
     // Handle errors
     call.on('error', (error) => {
         console.error(`[gRPC] Stream error: ${error.message} (code: ${error.code})`);
-        subscriptions.delete(subscriptionId);
+        subscriptionManager.remove(subscriptionId);
         onError({
             subscriptionId,
             error: error.message,
@@ -265,7 +263,7 @@ async function subscribe(options) {
     // Handle stream end
     call.on('end', () => {
         console.error(`[gRPC] Stream ended`);
-        subscriptions.delete(subscriptionId);
+        subscriptionManager.remove(subscriptionId);
         onEnd({ subscriptionId });
     });
 
@@ -285,11 +283,11 @@ async function subscribe(options) {
     const writeSuccess = call.write(fetchRequest);
     console.error(`[gRPC] FetchRequest write returned: ${writeSuccess}`);
 
-    // Store subscription for management
-    subscriptions.set(subscriptionId, {
-        call,
-        client,
-        topicName
+    // Store subscription in central manager
+    subscriptionManager.add(subscriptionId, {
+        protocol: 'grpc',
+        channel: topicName,
+        cleanup: () => call.end()
     });
 
     return { success: true, subscriptionId };
@@ -301,10 +299,10 @@ async function subscribe(options) {
  * @returns {object}
  */
 function unsubscribe(subscriptionId) {
-    const sub = subscriptions.get(subscriptionId);
-    if (sub) {
-        sub.call.end();
-        subscriptions.delete(subscriptionId);
+    const sub = subscriptionManager.get(subscriptionId);
+    if (sub && sub.protocol === 'grpc') {
+        sub.cleanup();
+        subscriptionManager.remove(subscriptionId);
         return { success: true };
     }
     return { success: false, error: 'Subscription not found' };
@@ -336,14 +334,6 @@ async function publish(accessToken, instanceUrl, topicName, events, tenantId) {
     });
 }
 
-/**
- * Get all active subscription IDs
- * @returns {string[]}
- */
-function getActiveSubscriptions() {
-    return Array.from(subscriptions.keys());
-}
-
 module.exports = {
     createClient,
     getTopic,
@@ -351,7 +341,5 @@ module.exports = {
     subscribe,
     unsubscribe,
     publish,
-    getActiveSubscriptions,
-    subscriptions,
     extractOrgIdFromToken
 };

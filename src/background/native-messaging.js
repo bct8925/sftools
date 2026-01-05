@@ -26,7 +26,7 @@ export async function connectNative() {
 
             nativePort.onMessage.addListener((message) => {
                 // Check if this is a streaming event (no request ID)
-                if (message.type === 'grpcEvent' || message.type === 'grpcError' || message.type === 'grpcEnd') {
+                if (message.type === 'streamEvent' || message.type === 'streamError' || message.type === 'streamEnd') {
                     chrome.runtime.sendMessage(message).catch(() => {});
                     return;
                 }

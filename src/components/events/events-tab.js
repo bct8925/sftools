@@ -1,16 +1,8 @@
-// Events Tab - Platform Events Streaming via gRPC Pub/Sub API
+// Events Tab - Unified Streaming (gRPC Pub/Sub + CometD)
 import template from './events.html?raw';
 import '../monaco-editor/monaco-editor.js';
 import { isAuthenticated, isProxyConnected, getInstanceUrl, getAccessToken } from '../../lib/utils.js';
-import { getEventChannels, publishPlatformEvent } from '../../lib/salesforce.js';
-
-// Standard Platform Events (commonly available)
-const STANDARD_EVENTS = [
-    { name: 'BatchApexErrorEvent', label: 'Batch Apex Error Event' },
-    { name: 'FlowExecutionErrorEvent', label: 'Flow Execution Error Event' },
-    { name: 'PlatformStatusAlertEvent', label: 'Platform Status Alert Event' },
-    { name: 'AsyncOperationEvent', label: 'Async Operation Event' }
-];
+import { getAllStreamingChannels, publishPlatformEvent } from '../../lib/salesforce.js';
 
 class EventsTab extends HTMLElement {
     // DOM references
@@ -72,7 +64,7 @@ class EventsTab extends HTMLElement {
         this.streamEditor = this.querySelector('.event-stream-editor');
         this.publishEditor = this.querySelector('.event-publish-editor');
 
-        this.streamEditor.setValue('// Subscribe to a Platform Event channel to see events here\n');
+        this.streamEditor.setValue('// Subscribe to a channel to see events here\n');
         this.publishEditor.setValue('{\n  \n}');
 
         this.publishEditor.addEventListener('execute', () => this.handlePublish());
@@ -85,13 +77,6 @@ class EventsTab extends HTMLElement {
 
         this.replaySelect.addEventListener('change', () => {
             this.replayCustomContainer.style.display = this.replaySelect.value === 'CUSTOM' ? 'block' : 'none';
-        });
-
-        this.channelSelect.addEventListener('change', () => {
-            this.publishChannelSelect.value = this.channelSelect.value;
-        });
-        this.publishChannelSelect.addEventListener('change', () => {
-            this.channelSelect.value = this.publishChannelSelect.value;
         });
 
         this.boundMessageHandler = (message) => this.handleStreamMessage(message);
@@ -113,65 +98,99 @@ class EventsTab extends HTMLElement {
         this.publishChannelSelect.innerHTML = '<option value="">Loading...</option>';
 
         try {
-            const result = await getEventChannels();
-            this.buildChannelOptions(result.customEvents);
+            const channels = await getAllStreamingChannels();
+            this.buildChannelOptions(channels);
         } catch (err) {
-            console.error('Error loading event channels:', err);
+            console.error('Error loading streaming channels:', err);
             this.channelSelect.innerHTML = '<option value="">Error loading channels</option>';
             this.publishChannelSelect.innerHTML = '<option value="">Error loading channels</option>';
         }
     }
 
-    buildChannelOptions(customEvents) {
-        this.channelSelect.innerHTML = '';
-        this.publishChannelSelect.innerHTML = '';
+    buildChannelOptions(channels) {
+        const { platformEvents, standardEvents, pushTopics, systemTopics } = channels;
 
+        // Build subscribe dropdown (all channel types)
+        this.channelSelect.innerHTML = '';
         const defaultOpt = document.createElement('option');
         defaultOpt.value = '';
-        defaultOpt.textContent = 'Select an event channel...';
+        defaultOpt.textContent = 'Select a channel...';
         this.channelSelect.appendChild(defaultOpt);
-        this.publishChannelSelect.appendChild(defaultOpt.cloneNode(true));
 
-        if (customEvents.length > 0) {
+        // Platform Events (gRPC) - Custom
+        if (platformEvents.length > 0) {
             const customGroup = document.createElement('optgroup');
-            customGroup.label = 'Custom Events';
-
-            customEvents.forEach(evt => {
+            customGroup.label = 'Platform Events - Custom';
+            platformEvents.forEach(evt => {
                 const opt = document.createElement('option');
-                opt.value = evt.QualifiedApiName;
+                opt.value = `/event/${evt.QualifiedApiName}`;
                 opt.textContent = evt.Label || evt.DeveloperName;
                 customGroup.appendChild(opt);
             });
-
             this.channelSelect.appendChild(customGroup);
-            this.publishChannelSelect.appendChild(customGroup.cloneNode(true));
         }
 
-        const standardGroup = document.createElement('optgroup');
-        standardGroup.label = 'Standard Events';
+        // Platform Events (gRPC) - Standard
+        if (standardEvents.length > 0) {
+            const standardGroup = document.createElement('optgroup');
+            standardGroup.label = 'Platform Events - Standard';
+            standardEvents.forEach(evt => {
+                const opt = document.createElement('option');
+                opt.value = `/event/${evt.name}`;
+                opt.textContent = evt.label;
+                standardGroup.appendChild(opt);
+            });
+            this.channelSelect.appendChild(standardGroup);
+        }
 
-        STANDARD_EVENTS.forEach(evt => {
-            const opt = document.createElement('option');
-            opt.value = evt.name;
-            opt.textContent = evt.label;
-            standardGroup.appendChild(opt);
-        });
+        // PushTopics (CometD)
+        if (pushTopics.length > 0) {
+            const pushTopicGroup = document.createElement('optgroup');
+            pushTopicGroup.label = 'PushTopics';
+            pushTopics.forEach(topic => {
+                const opt = document.createElement('option');
+                opt.value = `/topic/${topic.Name}`;
+                opt.textContent = topic.Name;
+                pushTopicGroup.appendChild(opt);
+            });
+            this.channelSelect.appendChild(pushTopicGroup);
+        }
 
-        this.channelSelect.appendChild(standardGroup);
-        this.publishChannelSelect.appendChild(standardGroup.cloneNode(true));
+        // System Topics (CometD)
+        if (systemTopics.length > 0) {
+            const systemGroup = document.createElement('optgroup');
+            systemGroup.label = 'System Topics';
+            systemTopics.forEach(topic => {
+                const opt = document.createElement('option');
+                opt.value = topic.channel;
+                opt.textContent = topic.label;
+                systemGroup.appendChild(opt);
+            });
+            this.channelSelect.appendChild(systemGroup);
+        }
 
-        if (customEvents.length === 0) {
-            const noCustomOpt = document.createElement('option');
-            noCustomOpt.value = '';
-            noCustomOpt.disabled = true;
-            noCustomOpt.textContent = '(No custom events found)';
-            this.channelSelect.insertBefore(noCustomOpt, this.channelSelect.querySelector('optgroup'));
-            this.publishChannelSelect.insertBefore(noCustomOpt.cloneNode(true), this.publishChannelSelect.querySelector('optgroup'));
+        // Build publish dropdown (Platform Events only - publishing only works for PE)
+        this.publishChannelSelect.innerHTML = '';
+        const publishDefault = document.createElement('option');
+        publishDefault.value = '';
+        publishDefault.textContent = 'Select an event type...';
+        this.publishChannelSelect.appendChild(publishDefault);
+
+        if (platformEvents.length > 0) {
+            const publishCustomGroup = document.createElement('optgroup');
+            publishCustomGroup.label = 'Custom Events';
+            platformEvents.forEach(evt => {
+                const opt = document.createElement('option');
+                opt.value = evt.QualifiedApiName;
+                opt.textContent = evt.Label || evt.DeveloperName;
+                publishCustomGroup.appendChild(opt);
+            });
+            this.publishChannelSelect.appendChild(publishCustomGroup);
         }
     }
 
     // ============================================================
-    // Subscription (via gRPC proxy)
+    // Subscription (via proxy - gRPC or CometD based on channel)
     // ============================================================
 
     toggleSubscription() {
@@ -196,7 +215,7 @@ class EventsTab extends HTMLElement {
 
         if (!isProxyConnected()) {
             this.updateStreamStatus('Proxy required', 'error');
-            this.appendSystemMessage('Platform Events require the local proxy. Open Settings to connect.');
+            this.appendSystemMessage('Streaming requires the local proxy. Open Settings to connect.');
             return;
         }
 
@@ -211,7 +230,7 @@ class EventsTab extends HTMLElement {
                 type: 'subscribe',
                 instanceUrl: getInstanceUrl(),
                 accessToken: getAccessToken(),
-                topicName: `/event/${channel}`,
+                channel,
                 replayPreset,
                 replayId
             });
@@ -221,7 +240,7 @@ class EventsTab extends HTMLElement {
                 this.isSubscribed = true;
                 this.updateStreamStatus('Subscribed', 'success');
                 this.subscribeBtn.textContent = 'Unsubscribe';
-                this.appendSystemMessage(`Subscribed to /event/${channel} (replay: ${replayPreset})`);
+                this.appendSystemMessage(`Subscribed to ${channel} (replay: ${replayPreset})`);
             } else {
                 throw new Error(response.error || 'Subscription failed');
             }
@@ -269,14 +288,14 @@ class EventsTab extends HTMLElement {
         if (message.subscriptionId !== this.currentSubscriptionId) return;
 
         switch (message.type) {
-            case 'grpcEvent':
+            case 'streamEvent':
                 this.appendEvent(message.event);
                 break;
-            case 'grpcError':
+            case 'streamError':
                 this.appendSystemMessage(`Error: ${message.error}`);
                 this.updateStreamStatus('Error', 'error');
                 break;
-            case 'grpcEnd':
+            case 'streamEnd':
                 this.appendSystemMessage('Stream ended by server');
                 this.handleDisconnect();
                 break;
@@ -290,6 +309,8 @@ class EventsTab extends HTMLElement {
         const eventEntry = {
             _eventNumber: this.eventCount,
             _receivedAt: timestamp,
+            _channel: event.channel,
+            _protocol: event.protocol,
             replayId: event.replayId,
             payload: event.payload,
             error: event.error

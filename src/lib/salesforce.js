@@ -250,7 +250,7 @@ export async function executeRestRequest(endpoint, method, body = null) {
 }
 
 // ============================================================
-// Platform Events
+// Streaming Channels
 // ============================================================
 
 /**
@@ -267,6 +267,51 @@ export async function getEventChannels() {
 
     return {
         customEvents: response.json.records || []
+    };
+}
+
+/**
+ * Get active PushTopic channels
+ * @returns {Promise<array>} PushTopic records
+ */
+export async function getPushTopics() {
+    const query = encodeURIComponent(
+        "SELECT Id, Name, Query, ApiVersion, IsActive FROM PushTopic WHERE IsActive = true ORDER BY Name"
+    );
+
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/query?q=${query}`);
+
+    return response.json.records || [];
+}
+
+// Standard Platform Events (commonly available)
+const STANDARD_EVENTS = [
+    { name: 'BatchApexErrorEvent', label: 'Batch Apex Error Event' },
+    { name: 'FlowExecutionErrorEvent', label: 'Flow Execution Error Event' },
+    { name: 'PlatformStatusAlertEvent', label: 'Platform Status Alert Event' },
+    { name: 'AsyncOperationEvent', label: 'Async Operation Event' }
+];
+
+// System Topics (CometD only)
+const SYSTEM_TOPICS = [
+    { channel: '/systemTopic/Logging', label: 'Debug Logs' }
+];
+
+/**
+ * Get all streaming channels (unified)
+ * @returns {Promise<{platformEvents: array, standardEvents: array, pushTopics: array, systemTopics: array}>}
+ */
+export async function getAllStreamingChannels() {
+    const [platformEvents, pushTopics] = await Promise.all([
+        getEventChannels(),
+        getPushTopics().catch(() => [])
+    ]);
+
+    return {
+        platformEvents: platformEvents.customEvents,
+        standardEvents: STANDARD_EVENTS,
+        pushTopics,
+        systemTopics: SYSTEM_TOPICS
     };
 }
 

@@ -20,40 +20,73 @@ npm run watch                  # Build with watch mode for development
 2. Open `chrome://extensions/`
 3. Enable "Developer mode"
 4. Click "Load unpacked" and select the repository root
-5. The manifest references `dist/` for built assets and `src/` for extension pages
+5. The manifest references `dist/` for all built assets
 
 ## Project Structure
 
 ```
 src/
-├── app.html              # Main UI shell (Vite entry point)
-├── app.js                # Entry point - tab navigation, imports tool modules
-├── style.css             # Global styles
-├── lib/
-│   ├── auth.js           # Frontend auth state and storage listeners
-│   ├── monaco.js         # Monaco editor setup and helpers
-│   └── utils.js          # Shared utilities (extensionFetch, re-exports auth)
-├── background/
-│   ├── background.js     # Service worker entry, message routing
-│   ├── native-messaging.js # Proxy connection via Chrome Native Messaging
-│   └── auth.js           # Token exchange and refresh (routes via proxy)
-├── popup/
-│   ├── popup.html        # Extension popup UI
-│   └── popup.js          # OAuth authorization logic
-├── callback/
-│   ├── callback.html     # OAuth callback page
-│   └── callback.js       # Token extraction and storage
-├── rest-api/
-│   └── rest-api.js       # REST API tab module
-├── apex/
-│   └── apex.js           # Anonymous Apex execution tab module
-├── query/
-│   └── query.js          # SOQL query editor tab module
-├── events/
-│   └── events.js         # Platform Events tab module
-└── aura/
-    ├── aura.html         # Standalone Aura Debugger page
-    └── aura.js           # Aura request logic
+├── components/               # Reusable UI components (custom elements)
+│   ├── monaco-editor/        # Monaco editor web component
+│   │   └── monaco-editor.js
+│   ├── query/                # Query tab component
+│   │   ├── query-tab.js
+│   │   ├── query.html
+│   │   └── query.css
+│   ├── apex/                 # Apex tab component
+│   │   ├── apex-tab.js
+│   │   └── apex.html
+│   ├── rest-api/             # REST API tab component
+│   │   ├── rest-api-tab.js
+│   │   └── rest-api.html
+│   └── events/               # Events tab component
+│       ├── events-tab.js
+│       └── events.html
+├── pages/                    # Full page entry points
+│   ├── app/                  # Main tabbed interface
+│   │   ├── app.html
+│   │   └── app.js
+│   ├── popup/                # Extension popup
+│   │   ├── popup.html
+│   │   └── popup.js
+│   ├── callback/             # OAuth callback
+│   │   ├── callback.html
+│   │   └── callback.js
+│   ├── options/              # Extension settings
+│   │   ├── options.html
+│   │   └── options.js
+│   └── aura/                 # Standalone Aura Debugger
+│       ├── aura.html
+│       └── aura.js
+├── background/               # Service worker
+│   ├── background.js
+│   ├── native-messaging.js
+│   └── auth.js
+├── lib/                      # Shared utilities
+│   ├── auth.js               # Frontend auth state
+│   ├── salesforce.js         # Salesforce API helpers
+│   └── utils.js              # Shared utilities
+├── public/                   # Static assets (copied to dist/)
+│   └── icon.png
+└── style.css                 # Global styles
+```
+
+### Build Output (`dist/`)
+
+```
+dist/
+├── pages/
+│   ├── app/app.html, app.js
+│   ├── popup/popup.html, popup.js
+│   ├── callback/callback.html, callback.js
+│   ├── options/options.html, options.js
+│   └── aura/aura.html, aura.js
+├── chunks/                   # Shared code chunks
+├── assets/                   # Monaco workers, fonts
+├── background.js             # Service worker
+├── style.css                 # Global styles
+├── app.css                   # Component styles (bundled)
+└── icon.png                  # Copied from public/
 ```
 
 ### Local Proxy (`sftools-proxy/`)
@@ -99,7 +132,7 @@ Planned:
 
 Standalone tools are accessible from the popup regardless of OAuth state. They appear in the "Standalone Tools" section of the popup.
 
-### Aura Debugger (`src/aura/`)
+### Aura Debugger (`src/pages/aura/`)
 
 A standalone tool for making Aura framework requests to Salesforce communities/orgs. Does not use OAuth - handles its own authentication.
 
@@ -115,19 +148,6 @@ A standalone tool for making Aura framework requests to Salesforce communities/o
 1. If SID is provided manually, sets cookie before request and removes it after
 2. If SID is blank, checks for existing browser cookie via `chrome.cookies` API
 3. Aura token is passed in request body as `aura.token` parameter
-
-**Key Files:**
-- `src/aura/aura.html` - Standalone page (separate Vite entry point)
-- `src/aura/aura.js` - Request logic, cookie management, presets
-- `vite.config.js` - Includes `aura.html` in `rollupOptions.input`
-
-### Adding a New Standalone Tool
-
-1. Create `src/<tool-name>/<tool-name>.html` with full HTML structure (imports `../style.css`)
-2. Create `src/<tool-name>/<tool-name>.js` with tool logic
-3. Add the HTML file to `vite.config.js` `rollupOptions.input`
-4. Add a button in `src/popup/popup.html` under `#standalone-group`
-5. Add click handler in `src/popup/popup.js` to open `dist/<tool-name>/<tool-name>.html`
 
 ## Local Proxy Setup
 
@@ -165,7 +185,7 @@ The popup provides a way to open sftools after authorization:
 
 - **Open sftools** - Opens in a new browser tab (full page)
 
-Side panel support is configured in `manifest.json` via the `sidePanel` permission and `side_panel.default_path` pointing to `dist/app.html`.
+Side panel support is configured in `manifest.json` via the `sidePanel` permission and `side_panel.default_path` pointing to `dist/pages/app/app.html`.
 
 ## Header Features
 
@@ -173,22 +193,131 @@ Side panel support is configured in `manifest.json` via the `sidePanel` permissi
 - **Side Panel Button** - Icon button to the right of Open Org that opens the app in Chrome's side panel
 - **Responsive Nav** - Tab navigation with overflow dropdown. When tabs don't fit (e.g., in side panel), excess tabs move to a "More" dropdown menu
 
-## Adding a New Tool Tab
+## Component Architecture
 
-1. Create `src/<tool-name>/<tool-name>.js` with an `init()` export
-2. Add HTML for the tab content in `src/app.html`
-3. Import and call `init()` in `src/app.js`
+Tool tabs are implemented as Custom Elements (Web Components) without Shadow DOM. This keeps CSS simple while providing encapsulation for JS logic.
 
-Example:
-```javascript
-// src/query/query.js
-import { createEditor } from '../lib/monaco.js';
-import { extensionFetch, getAccessToken, getInstanceUrl } from '../lib/utils.js';
+### Monaco Editor Component
 
-export function init() {
-    // Initialize the tab
-}
+The `<monaco-editor>` custom element wraps Monaco Editor:
+
+```html
+<!-- In template HTML -->
+<monaco-editor class="monaco-container" language="json"></monaco-editor>
+<monaco-editor class="monaco-container" language="apex" readonly></monaco-editor>
 ```
+
+```javascript
+// In component JS
+import '../monaco-editor/monaco-editor.js';
+
+// Get reference and use
+const editor = this.querySelector('.my-editor');
+editor.setValue('content');
+const value = editor.getValue();
+
+// Listen for Ctrl/Cmd+Enter
+editor.addEventListener('execute', () => this.handleExecute());
+
+// Access underlying Monaco instance if needed
+editor.editor?.getModel().getLineCount();
+```
+
+**Attributes:**
+- `language` - Editor language (json, sql, apex, text, etc.)
+- `readonly` - Makes editor read-only
+
+**Methods:**
+- `getValue()` / `setValue(value)` - Get/set editor content
+- `appendValue(text)` - Append text and scroll to bottom
+- `clear()` - Clear editor content
+- `setMarkers(markers)` / `clearMarkers()` - Set/clear error markers
+
+**Events:**
+- `execute` - Fired on Ctrl/Cmd+Enter
+
+**Property:**
+- `editor` - Access the underlying Monaco editor instance
+
+### Tab Component Pattern
+
+Each tab is a custom element that loads its HTML template via Vite's `?raw` import:
+
+```javascript
+// src/components/query/query-tab.js
+import template from './query.html?raw';
+import './query.css';
+import '../monaco-editor/monaco-editor.js';
+
+class QueryTab extends HTMLElement {
+    connectedCallback() {
+        this.innerHTML = template;
+        this.initElements();
+        this.attachEventListeners();
+    }
+
+    initElements() {
+        this.editor = this.querySelector('.query-editor');
+        this.executeBtn = this.querySelector('.query-execute-btn');
+    }
+    // ...
+}
+
+customElements.define('query-tab', QueryTab);
+```
+
+```html
+<!-- src/components/query/query.html -->
+<div class="card">
+    <div class="card-header">...</div>
+    <div class="card-body">
+        <monaco-editor class="query-editor monaco-container" language="sql"></monaco-editor>
+        <button class="query-execute-btn button-brand">Execute</button>
+    </div>
+</div>
+```
+
+```html
+<!-- src/pages/app/app.html -->
+<main class="content-area">
+    <query-tab id="query" class="tab-content active"></query-tab>
+    <apex-tab id="apex" class="tab-content"></apex-tab>
+    <!-- ... -->
+</main>
+```
+
+### Adding a New Tool Tab
+
+1. Create component folder: `src/components/<name>/`
+2. Create files:
+   - `<name>-tab.js` - Custom element class
+   - `<name>.html` - Template HTML
+   - `<name>.css` - Component-specific styles (optional)
+3. Import in `src/pages/app/app.js`:
+   ```javascript
+   import '../../components/<name>/<name>-tab.js';
+   ```
+4. Add to `src/pages/app/app.html`:
+   ```html
+   <button class="tab-link" data-tab="<name>">Tab Name</button>
+   <!-- ... -->
+   <<name>-tab id="<name>" class="tab-content"></<name>-tab>
+   ```
+
+### Adding a New Standalone Tool
+
+1. Create page folder: `src/pages/<name>/`
+2. Create `<name>.html` with full HTML structure (imports `../../style.css`)
+3. Create `<name>.js` with tool logic
+4. Add to `vite.config.js` `rollupOptions.input`:
+   ```javascript
+   <name>: resolve(__dirname, 'src/pages/<name>/<name>.html'),
+   ```
+5. Add button in `src/pages/popup/popup.html` under `#standalone-group`
+6. Add click handler in `src/pages/popup/popup.js`:
+   ```javascript
+   chrome.tabs.create({ url: chrome.runtime.getURL('dist/pages/<name>/<name>.html') });
+   ```
 
 ## Key Patterns
 
@@ -203,16 +332,23 @@ chrome.runtime.sendMessage({ type: 'fetch', url, options });
 // Background handles actual fetch to bypass extension CORS restrictions
 ```
 
-**Monaco Editor helpers** (`src/lib/monaco.js`):
-```javascript
-import { createEditor, createReadOnlyEditor } from '../lib/monaco.js';
-const editor = createEditor(container, { language: 'json', value: '{}' });
-```
-
 **Auth utilities** (`src/lib/utils.js`):
 ```javascript
-import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../lib/utils.js';
+import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../../lib/utils.js';
 ```
+
+## CSS Specificity for Component Overrides
+
+When component CSS needs to override global styles, use compound selectors for higher specificity:
+
+```css
+/* In query.css - overrides .card-body from style.css */
+.card-body.query-card-body {
+    padding: 0;
+}
+```
+
+Component CSS is bundled into `app.css` by Vite. Global `style.css` loads via HTML link, so component CSS may load in different order. Using compound selectors ensures overrides work regardless of load order.
 
 ## OAuth Flow
 
@@ -230,8 +366,8 @@ Uses a hybrid approach based on proxy availability:
 - Token exchange routed through proxy to bypass CORS on Salesforce token endpoint
 
 **Key Files:**
-- `src/popup/popup.js` - Checks proxy status, chooses OAuth flow
-- `src/callback/callback.js` - Handles both code and token responses
+- `src/pages/popup/popup.js` - Checks proxy status, chooses OAuth flow
+- `src/pages/callback/callback.js` - Handles both code and token responses
 - `src/background/auth.js` - Token exchange and refresh via proxy
 - `src/lib/auth.js` - Frontend auth state with storage change listener
 
@@ -266,14 +402,14 @@ The Apex tab uses the REST Tooling API for anonymous Apex execution:
 2. **Execute Anonymous** - Calls `/services/data/vXX/tooling/executeAnonymous/`
 3. **Fetch Debug Log** - Queries `ApexLog WHERE Operation LIKE '%executeAnonymous/'` and fetches the log body
 
-Monaco editor markers are used to highlight compilation errors with line/column info. SOAP API implementation is stubbed for potential future single-call debug log retrieval.
+Monaco editor markers are used to highlight compilation errors with line/column info. Access the underlying editor via `this.codeEditor.editor` for marker APIs.
 
 ## Events Tab Implementation
 
 The Events tab uses the Salesforce Pub/Sub API (gRPC) for real-time Platform Event streaming. This requires the local proxy since browsers cannot make gRPC/HTTP2 connections directly.
 
 **Architecture:**
-1. **Frontend** (`src/events/events.js`) - UI for channel selection, subscribe/unsubscribe, event display
+1. **Frontend** (`src/components/events/events-tab.js`) - UI for channel selection, subscribe/unsubscribe, event display
 2. **Background** (`src/background/background.js`) - Routes messages between frontend and native host, forwards streaming events
 3. **Local Proxy** (`sftools-proxy/`) - Native messaging host that maintains gRPC connections
 

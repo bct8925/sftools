@@ -1,6 +1,6 @@
 // Aura Debugger - Standalone Tool
-import { createEditor, createReadOnlyEditor } from '../lib/monaco.js';
-import { extensionFetch } from '../lib/utils.js';
+import { createEditor, createReadOnlyEditor } from '../../lib/monaco.js';
+import { extensionFetch } from '../../lib/utils.js';
 
 // --- Disclaimer Modal ---
 const disclaimerOverlay = document.getElementById('disclaimerOverlay');

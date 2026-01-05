@@ -68,12 +68,12 @@ reauthorizeBtn.addEventListener('click', function() {
 });
 
 connectBtn.addEventListener('click', function() {
-    chrome.tabs.create({ url: 'dist/app.html' });
+    chrome.tabs.create({ url: chrome.runtime.getURL('dist/pages/app/app.html') });
     window.close();
 });
 
 openAuraBtn.addEventListener('click', function() {
-    chrome.tabs.create({ url: 'dist/aura/aura.html' });
+    chrome.tabs.create({ url: chrome.runtime.getURL('dist/pages/aura/aura.html') });
     window.close();
 });
 

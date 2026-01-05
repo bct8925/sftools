@@ -17,7 +17,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Apply feature gating based on proxy status
     updateFeatureGating();
-    // All tab modules are self-initializing via connectedCallback
+
+    // Notify components that auth is ready
+    document.dispatchEvent(new CustomEvent('auth-ready'));
 });
 
 // --- Auth Expiration Handler ---

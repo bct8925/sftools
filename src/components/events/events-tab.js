@@ -40,7 +40,13 @@ class EventsTab extends HTMLElement {
         this.initElements();
         this.initEditors();
         this.attachEventListeners();
-        this.loadChannels();
+
+        // Load channels now if auth is ready, otherwise wait for event
+        if (isAuthenticated()) {
+            this.loadChannels();
+        } else {
+            document.addEventListener('auth-ready', () => this.loadChannels(), { once: true });
+        }
     }
 
     disconnectedCallback() {

@@ -2,6 +2,44 @@
 import { createEditor, createReadOnlyEditor } from '../lib/monaco.js';
 import { extensionFetch } from '../lib/utils.js';
 
+// --- Disclaimer Modal ---
+const disclaimerOverlay = document.getElementById('disclaimerOverlay');
+const disclaimerCheckbox = document.getElementById('disclaimerCheckbox');
+const disclaimerAccept = document.getElementById('disclaimerAccept');
+const disclaimerCancel = document.getElementById('disclaimerCancel');
+const standaloneHeader = document.querySelector('.standalone-header');
+const contentArea = document.querySelector('.content-area');
+
+// Disable main content while modal is shown
+standaloneHeader.classList.add('main-content-disabled');
+contentArea.classList.add('main-content-disabled');
+
+// Enable accept button only when checkbox is checked
+disclaimerCheckbox.addEventListener('change', () => {
+    disclaimerAccept.disabled = !disclaimerCheckbox.checked;
+});
+
+// Accept button - hide modal and enable content
+disclaimerAccept.addEventListener('click', () => {
+    disclaimerOverlay.classList.add('hidden');
+    standaloneHeader.classList.remove('main-content-disabled');
+    contentArea.classList.remove('main-content-disabled');
+});
+
+// Cancel button - close the window/tab
+disclaimerCancel.addEventListener('click', () => {
+    window.close();
+    // Fallback if window.close() doesn't work (e.g., not opened by script)
+    document.body.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, sans-serif;">
+            <div style="text-align: center; color: #666;">
+                <h2 style="margin-bottom: 10px;">Tool Access Declined</h2>
+                <p>You may close this tab.</p>
+            </div>
+        </div>
+    `;
+});
+
 // --- Presets Configuration ---
 const PRESETS = {
     getItems: {

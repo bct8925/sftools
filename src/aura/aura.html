@@ -118,9 +118,221 @@
         .resizer:hover .resizer-grip, .resizer.resizing .resizer-grip {
             background: #fff;
         }
+
+        /* Disclaimer Modal */
+        .disclaimer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        .disclaimer-overlay.hidden {
+            display: none;
+        }
+        .disclaimer-modal {
+            background: #fff;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .disclaimer-header {
+            background: linear-gradient(135deg, #d93025 0%, #b31412 100%);
+            color: #fff;
+            padding: 20px 24px;
+            border-radius: 8px 8px 0 0;
+        }
+        .disclaimer-header h2 {
+            margin: 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .disclaimer-header .warning-icon {
+            font-size: 24px;
+        }
+        .disclaimer-body {
+            padding: 24px;
+        }
+        .disclaimer-body h3 {
+            color: #1a1a1a;
+            font-size: 16px;
+            margin: 0 0 12px 0;
+        }
+        .disclaimer-body p {
+            color: #444;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0 0 16px 0;
+        }
+        .disclaimer-body ul {
+            margin: 0 0 16px 0;
+            padding-left: 20px;
+            color: #444;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .disclaimer-body li {
+            margin-bottom: 4px;
+        }
+        .disclaimer-warning-box {
+            background: #fef3f2;
+            border: 1px solid #fecaca;
+            border-left: 4px solid #d93025;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .disclaimer-warning-box p {
+            margin: 0;
+            color: #991b1b;
+            font-weight: 500;
+        }
+        .disclaimer-checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            background: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .disclaimer-checkbox-container:hover {
+            background: #f0f1f2;
+        }
+        .disclaimer-checkbox-container input[type="checkbox"] {
+            margin-top: 2px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .disclaimer-checkbox-container label {
+            font-size: 14px;
+            color: #1a1a1a;
+            cursor: pointer;
+            line-height: 1.5;
+        }
+        .disclaimer-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .disclaimer-btn {
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s ease;
+        }
+        .disclaimer-btn-cancel {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .disclaimer-btn-cancel:hover {
+            background: #d1d5db;
+        }
+        .disclaimer-btn-accept {
+            background: #0070d2;
+            color: #fff;
+        }
+        .disclaimer-btn-accept:hover:not(:disabled) {
+            background: #005bb5;
+        }
+        .disclaimer-btn-accept:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .main-content-disabled {
+            pointer-events: none;
+            opacity: 0.3;
+            filter: blur(2px);
+        }
     </style>
 </head>
 <body>
+    <!-- Disclaimer Modal -->
+    <div id="disclaimerOverlay" class="disclaimer-overlay">
+        <div class="disclaimer-modal">
+            <div class="disclaimer-header">
+                <h2><span class="warning-icon">&#9888;</span> Important: Authorized Use Only</h2>
+            </div>
+            <div class="disclaimer-body">
+                <h3>What This Tool Does</h3>
+                <p>
+                    The Aura Debugger allows you to send requests to the Salesforce Aura framework,
+                    which powers Lightning Experience and Salesforce Communities. This tool can retrieve
+                    data, execute Apex code, and interact with Salesforce components on your behalf.
+                </p>
+
+                <div class="disclaimer-warning-box">
+                    <p>
+                        This tool should only be used on Salesforce orgs and communities where you have
+                        explicit authorization to perform debugging and development activities.
+                    </p>
+                </div>
+
+                <h3>Authorized Use Includes</h3>
+                <ul>
+                    <li>Debugging and testing on Salesforce orgs where you are an authorized administrator or developer</li>
+                    <li>Development and testing on sandbox or scratch orgs assigned to you</li>
+                    <li>Security testing with explicit written authorization from the org owner</li>
+                    <li>Educational purposes on your own personal developer org</li>
+                    <li>Legitimate troubleshooting as part of your job responsibilities</li>
+                </ul>
+
+                <h3>Prohibited Use Includes</h3>
+                <ul>
+                    <li>Accessing or attempting to access Salesforce orgs without authorization</li>
+                    <li>Extracting, scraping, or exfiltrating data you are not authorized to access</li>
+                    <li>Attempting to bypass security controls, authentication, or access restrictions</li>
+                    <li>Probing or testing orgs belonging to other organizations without written consent</li>
+                    <li>Any activity that violates Salesforce's Terms of Service or Acceptable Use Policy</li>
+                    <li>Any activity that violates applicable laws or regulations</li>
+                </ul>
+
+                <h3>Your Responsibility</h3>
+                <p>
+                    By using this tool, you accept full responsibility for ensuring your use is authorized
+                    and lawful. Unauthorized access to computer systems is a serious offense that may result
+                    in civil liability and criminal prosecution under laws such as the Computer Fraud and
+                    Abuse Act (CFAA) in the United States and similar laws in other jurisdictions.
+                </p>
+
+                <p>
+                    The developers of this tool accept no responsibility for misuse. This tool is provided
+                    for legitimate development and debugging purposes only.
+                </p>
+
+                <div class="disclaimer-checkbox-container" onclick="document.getElementById('disclaimerCheckbox').click()">
+                    <input type="checkbox" id="disclaimerCheckbox">
+                    <label for="disclaimerCheckbox">
+                        I confirm that I have authorization to use this tool on the Salesforce org(s) I intend
+                        to access, and I understand that I am solely responsible for ensuring my use complies
+                        with all applicable laws, regulations, and Salesforce's Terms of Service.
+                    </label>
+                </div>
+
+                <div class="disclaimer-footer">
+                    <button class="disclaimer-btn disclaimer-btn-cancel" id="disclaimerCancel">Cancel</button>
+                    <button class="disclaimer-btn disclaimer-btn-accept" id="disclaimerAccept" disabled>I Understand &amp; Accept</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <header class="standalone-header">
         <div class="nav-brand"><img src="../../icon.png" alt="">sftools</div>
         <span class="tool-name">Aura Debugger</span>

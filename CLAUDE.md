@@ -30,10 +30,13 @@ src/
 ├── app.js                # Entry point - tab navigation, imports tool modules
 ├── style.css             # Global styles
 ├── lib/
+│   ├── auth.js           # Frontend auth state and storage listeners
 │   ├── monaco.js         # Monaco editor setup and helpers
-│   └── utils.js          # Shared utilities (auth, extensionFetch)
+│   └── utils.js          # Shared utilities (extensionFetch, re-exports auth)
 ├── background/
-│   └── background.js     # Service worker (fetch proxy, returns headers)
+│   ├── background.js     # Service worker entry, message routing
+│   ├── native-messaging.js # Proxy connection via Chrome Native Messaging
+│   └── auth.js           # Token exchange and refresh (routes via proxy)
 ├── popup/
 │   ├── popup.html        # Extension popup UI
 │   └── popup.js          # OAuth authorization logic
@@ -189,7 +192,11 @@ export function init() {
 
 ## Key Patterns
 
-**Background fetch proxy** (`src/background/background.js`):
+**Background service worker** (`src/background/background.js`):
+- ES module with handler map pattern for message routing
+- `proxyRequired()` wrapper for handlers that need proxy connection
+- All handlers return promises, unified error handling
+
 ```javascript
 // Frontend calls:
 chrome.runtime.sendMessage({ type: 'fetch', url, options });
@@ -209,9 +216,35 @@ import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from 
 
 ## OAuth Flow
 
-- Uses external callback URL: `https://sftools.dev/sftools-callback`
+Uses a hybrid approach based on proxy availability:
+
+**Without Proxy (Implicit Flow):**
+- Uses `response_type=token` - tokens returned directly in URL hash
 - Stores `accessToken` and `instanceUrl` in `chrome.storage.local`
-- Client ID configured in `manifest.json` `oauth2.client_id`
+- No refresh tokens - user must re-authorize when session expires
+
+**With Proxy (Authorization Code Flow):**
+- Uses `response_type=code` - authorization code exchanged for tokens via proxy
+- Stores `accessToken`, `refreshToken`, `instanceUrl`, and `loginDomain`
+- Automatic token refresh on 401 responses (transparent to frontend)
+- Token exchange routed through proxy to bypass CORS on Salesforce token endpoint
+
+**Key Files:**
+- `src/popup/popup.js` - Checks proxy status, chooses OAuth flow
+- `src/callback/callback.js` - Handles both code and token responses
+- `src/background/auth.js` - Token exchange and refresh via proxy
+- `src/lib/auth.js` - Frontend auth state with storage change listener
+
+**Token Refresh Flow:**
+1. Frontend request returns 401
+2. Background checks for refresh token + proxy connection
+3. If available, exchanges refresh token for new access token via proxy
+4. Retries original request with new token
+5. Frontend's in-memory token updated via `chrome.storage.onChanged` listener
+
+**Configuration:**
+- Callback URL: `https://sftools.dev/sftools-callback`
+- Client ID: `manifest.json` `oauth2.client_id`
 
 ## Query Tab Implementation
 

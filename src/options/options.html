@@ -7,26 +7,41 @@
     <link rel="icon" type="image/png" href="../../icon.png">
     <link rel="stylesheet" href="../style.css">
     <style>
-        body {
-            background: var(--background);
-            min-height: 100vh;
-            padding: 2rem;
+        .standalone-header {
+            display: flex;
+            align-items: center;
+            background: var(--nav-bg);
+            border-bottom: 2px solid var(--border-color);
+            padding: 0 20px;
+            height: 50px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .standalone-header .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--primary-color);
+            letter-spacing: -0.5px;
+        }
+        .standalone-header .nav-brand img {
+            height: 24px;
+            width: auto;
+        }
+        .standalone-header .tool-name {
+            font-size: 14px;
+            color: var(--text-muted);
+            border-left: 1px solid var(--border-color);
+            padding-left: 15px;
+            margin-left: 15px;
         }
 
         .options-container {
             max-width: 600px;
             margin: 0 auto;
-        }
-
-        .options-header {
-            margin-bottom: 1.5rem;
-        }
-
-        .options-header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
+            padding: 2rem;
         }
 
         .proxy-status-row {
@@ -119,11 +134,12 @@
     </style>
 </head>
 <body>
-    <div class="options-container">
-        <div class="options-header">
-            <h1>sftools Settings</h1>
-        </div>
+    <header class="standalone-header">
+        <div class="nav-brand"><img src="../../icon.png" alt="">sftools</div>
+        <span class="tool-name">Settings</span>
+    </header>
 
+    <div class="options-container">
         <div class="card">
             <div class="card-header">
                 <div class="card-header-icon" style="background-color: #0070d2;">P</div>

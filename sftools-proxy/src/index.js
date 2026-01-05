@@ -14,12 +14,8 @@ const { readMessage, sendMessage } = require('./native-messaging');
 const { startServer } = require('./http-server');
 const { storePayload, shouldUseLargePayload } = require('./payload-store');
 const { handleRest } = require('./handlers/rest');
-const {
-    handleGrpcSubscribe,
-    handleGrpcUnsubscribe,
-    handleGetTopic,
-    handleGetSchema
-} = require('./handlers/grpc');
+const { handleGetTopic, handleGetSchema } = require('./handlers/grpc');
+const { handleSubscribe, handleUnsubscribe } = require('./handlers/streaming');
 
 const VERSION = '1.0.0';
 
@@ -61,10 +57,14 @@ const handlers = {
     rest: handleRest,
 
     /**
-     * gRPC Pub/Sub API handlers
+     * Unified streaming handlers (routes to gRPC or CometD based on channel)
      */
-    grpcSubscribe: handleGrpcSubscribe,
-    grpcUnsubscribe: handleGrpcUnsubscribe,
+    subscribe: handleSubscribe,
+    unsubscribe: handleUnsubscribe,
+
+    /**
+     * gRPC-specific metadata handlers (for Platform Events)
+     */
     getTopic: handleGetTopic,
     getSchema: handleGetSchema
 };

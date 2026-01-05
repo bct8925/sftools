@@ -6,7 +6,7 @@
     <div class="card-body">
         <div class="form-element">
             <label>Apex Code (Ctrl/Cmd+Enter to execute)</label>
-            <div class="apex-editor monaco-container"></div>
+            <monaco-editor class="apex-editor monaco-container" language="apex"></monaco-editor>
         </div>
         <div class="m-top_small">
             <button class="button-brand apex-execute-btn">Execute Apex</button>
@@ -20,6 +20,6 @@
         <h2>Output &amp; Debug Log</h2>
     </div>
     <div class="card-body">
-        <div class="apex-output-editor monaco-container monaco-container-lg"></div>
+        <monaco-editor class="apex-output-editor monaco-container monaco-container-lg" language="text" readonly></monaco-editor>
     </div>
 </div>

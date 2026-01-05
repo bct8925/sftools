@@ -1,6 +1,6 @@
 // REST API Tab - Salesforce REST API Explorer
 import template from './rest-api.html?raw';
-import { createEditor, createReadOnlyEditor, monaco } from '../../lib/monaco.js';
+import '../monaco-editor/monaco-editor.js';
 import { isAuthenticated } from '../../lib/utils.js';
 import { executeRestRequest } from '../../lib/salesforce.js';
 
@@ -31,23 +31,17 @@ class RestApiTab extends HTMLElement {
     }
 
     initEditors() {
-        this.requestEditor = createEditor(this.querySelector('.rest-request-editor'), {
-            value: '{\n    \n}',
-            language: 'json'
-        });
+        this.requestEditor = this.querySelector('.rest-request-editor');
+        this.responseEditor = this.querySelector('.rest-response-editor');
 
-        this.responseEditor = createReadOnlyEditor(this.querySelector('.rest-response-editor'), {
-            value: '// Response will appear here',
-            language: 'json'
-        });
+        this.requestEditor.setValue('{\n    \n}');
+        this.responseEditor.setValue('// Response will appear here');
     }
 
     attachEventListeners() {
         this.methodSelect.addEventListener('change', () => this.toggleBodyInput());
         this.sendButton.addEventListener('click', () => this.executeRequest());
-        this.requestEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-            this.executeRequest();
-        });
+        this.requestEditor.addEventListener('execute', () => this.executeRequest());
     }
 
     toggleBodyInput() {

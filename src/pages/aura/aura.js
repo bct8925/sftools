@@ -1,5 +1,5 @@
 // Aura Debugger - Standalone Tool
-import { createEditor, createReadOnlyEditor } from '../../lib/monaco.js';
+import '../../components/monaco-editor/monaco-editor.js';
 import { extensionFetch } from '../../lib/utils.js';
 
 // --- Disclaimer Modal ---
@@ -107,15 +107,11 @@ const executeBtn = document.getElementById('executeBtn');
 const statusBadge = document.getElementById('status');
 
 // --- Monaco Editors ---
-const paramsEditor = createEditor(document.getElementById('paramsEditor'), {
-    language: 'json',
-    value: JSON.stringify(PRESETS.getItems.params, null, 4)
-});
+const paramsEditor = document.getElementById('paramsEditor');
+const responseEditor = document.getElementById('responseEditor');
 
-const responseEditor = createReadOnlyEditor(document.getElementById('responseEditor'), {
-    language: 'json',
-    value: '// Response will appear here'
-});
+paramsEditor.setValue(JSON.stringify(PRESETS.getItems.params, null, 4));
+responseEditor.setValue('// Response will appear here');
 
 // --- UI Logic ---
 
@@ -332,7 +328,7 @@ document.addEventListener('mousemove', (e) => {
     const dy = e.clientY - startY;
     const newHeight = Math.max(100, startHeight + dy);
     responseContainer.style.height = `${newHeight}px`;
-    responseEditor.layout();
+    responseEditor.editor?.layout();
 });
 
 document.addEventListener('mouseup', () => {

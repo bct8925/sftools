@@ -27,7 +27,7 @@
         </div>
         <div class="form-element">
             <label>Event Stream <span class="event-stream-status status-badge"></span></label>
-            <div class="event-stream-editor monaco-container monaco-container-lg"></div>
+            <monaco-editor class="event-stream-editor monaco-container monaco-container-lg" language="json" readonly></monaco-editor>
         </div>
         <button class="event-clear-btn button-neutral">Clear Stream</button>
     </div>
@@ -47,7 +47,7 @@
         </div>
         <div class="form-element">
             <label>JSON Payload (Ctrl/Cmd+Enter to publish)</label>
-            <div class="event-publish-editor monaco-container"></div>
+            <monaco-editor class="event-publish-editor monaco-container" language="json"></monaco-editor>
         </div>
         <div class="m-top_small">
             <button class="event-publish-btn button-brand">Publish Event</button>

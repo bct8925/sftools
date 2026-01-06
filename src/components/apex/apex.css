@@ -1,4 +1,58 @@
-/* Apex Tab - History/Favorites Dropdown */
+/* Apex Tab Styles */
+
+/* ============================================================
+   Output Search
+   ============================================================ */
+
+.apex-output-search {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.apex-search-input {
+    width: 180px;
+    padding: 5px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--text-main);
+    background: white;
+}
+
+.apex-search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.apex-search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.apex-search-clear {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.15s;
+}
+
+.apex-search-clear:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--text-main);
+}
+
+/* ============================================================
+   History/Favorites Dropdown
+   ============================================================ */
 
 .apex-header-dropdown {
     margin-left: auto;

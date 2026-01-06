@@ -21,9 +21,14 @@ class ApexTab extends HTMLElement {
     favoritesList = null;
     dropdownTabs = [];
 
+    // Search DOM references
+    searchInput = null;
+    searchClear = null;
+
     // In-memory cache
     history = [];
     favorites = [];
+    fullOutput = '';  // Store unfiltered output for search
 
     connectedCallback() {
         this.innerHTML = template;
@@ -43,6 +48,10 @@ class ApexTab extends HTMLElement {
         this.historyList = this.querySelector('.apex-history-list');
         this.favoritesList = this.querySelector('.apex-favorites-list');
         this.dropdownTabs = this.querySelectorAll('.apex-dropdown-tab');
+
+        // Search elements
+        this.searchInput = this.querySelector('.apex-search-input');
+        this.searchClear = this.querySelector('.apex-search-clear');
     }
 
     initEditors() {
@@ -58,7 +67,7 @@ for (Account acc : accounts) {
     System.debug('Account: ' + acc.Name);
 }`);
 
-        this.outputEditor.setValue('// Output will appear here after execution');
+        this.setOutput('// Output will appear here after execution');
     }
 
     attachEventListeners() {
@@ -86,6 +95,10 @@ for (Account acc : accounts) {
                 this.closeDropdown();
             }
         });
+
+        // Search filtering
+        this.searchInput.addEventListener('input', () => this.applyFilter());
+        this.searchClear.addEventListener('click', () => this.clearFilter());
     }
 
     // ============================================================
@@ -339,6 +352,35 @@ for (Account acc : accounts) {
     }
 
     // ============================================================
+    // Output Search/Filter
+    // ============================================================
+
+    setOutput(text) {
+        this.fullOutput = text;
+        this.applyFilter();
+    }
+
+    applyFilter() {
+        const filter = this.searchInput.value.trim().toLowerCase();
+        if (!filter) {
+            this.outputEditor.setValue(this.fullOutput);
+            return;
+        }
+
+        const lines = this.fullOutput.split('\n');
+        const filtered = lines.filter(line => line.toLowerCase().includes(filter));
+        const result = filtered.length > 0
+            ? filtered.join('\n')
+            : `// No lines match "${this.searchInput.value}"`;
+        this.outputEditor.setValue(result);
+    }
+
+    clearFilter() {
+        this.searchInput.value = '';
+        this.outputEditor.setValue(this.fullOutput);
+    }
+
+    // ============================================================
     // Utility Methods
     // ============================================================
 
@@ -461,7 +503,7 @@ for (Account acc : accounts) {
         const apexCode = this.codeEditor.getValue().trim();
 
         if (!apexCode) {
-            this.outputEditor.setValue('// Please enter Apex code to execute');
+            this.setOutput('// Please enter Apex code to execute');
             return;
         }
 
@@ -481,7 +523,7 @@ for (Account acc : accounts) {
         try {
             const result = await executeAnonymousApex(apexCode, (status) => {
                 this.updateStatus(status, 'loading');
-                this.outputEditor.setValue(`// ${status}`);
+                this.setOutput(`// ${status}`);
             });
 
             this.setEditorMarkers(result.execution);
@@ -494,14 +536,14 @@ for (Account acc : accounts) {
                 this.updateStatus('Success', 'success');
             }
 
-            this.outputEditor.setValue(this.formatOutput(result.execution, result.debugLog));
+            this.setOutput(this.formatOutput(result.execution, result.debugLog));
 
             // Save to history after execution
             await this.saveToHistory(apexCode);
 
         } catch (error) {
             this.updateStatus('Error', 'error');
-            this.outputEditor.setValue(`Error: ${error.message}`);
+            this.setOutput(`Error: ${error.message}`);
             console.error('Apex execution error:', error);
         } finally {
             this.executeBtn.disabled = false;

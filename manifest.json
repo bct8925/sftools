@@ -9,17 +9,16 @@
     "128": "dist/icon.png"
   },
   "action": {
-    "default_popup": "dist/pages/popup/popup.html",
     "default_icon": "dist/icon.png"
   },
   "permissions": [
-    "storage",
-    "tabs",
+    "sidePanel",
     "activeTab",
-    "cookies",
+    "tabs",
+    "storage",
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess",
-    "sidePanel",
+    "cookies",
     "nativeMessaging"
   ],
   "side_panel": {

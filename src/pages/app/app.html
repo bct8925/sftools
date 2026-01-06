@@ -18,6 +18,7 @@
                 <button class="tab-link" data-tab="apex">Apex</button>
                 <button class="tab-link" data-tab="rest-api">REST API</button>
                 <button class="tab-link" data-tab="events">Platform Events</button>
+                <button class="tab-link" data-tab="settings">Settings</button>
                 <div class="nav-overflow-dropdown hidden">
                     <button class="tab-link nav-overflow-trigger">
                         More
@@ -34,12 +35,10 @@
                     <path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
                 </svg>
             </button>
-            <button id="side-panel-btn" class="nav-icon-btn" title="Open in Side Panel">
+            <button id="open-in-tab-btn" class="nav-icon-btn" title="Open in New Tab">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M2 1h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm0-1a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
-                    <path d="M5 1v14H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h3z"/>
-                    <rect x="2.5" y="4" width="1.5" height="1" rx="0.25"/>
-                    <rect x="2.5" y="6.5" width="1.5" height="1" rx="0.25"/>
+                    <path d="M14 1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                    <path d="M6.5 5.5a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 1 0V6.707l3.146 3.147a.5.5 0 0 0 .708-.708L7.707 6H10a.5.5 0 0 0 0-1H6.5z"/>
                 </svg>
             </button>
         </nav>
@@ -52,7 +51,19 @@
             <events-tab id="events" class="tab-content"></events-tab>
 
             <rest-api-tab id="rest-api" class="tab-content"></rest-api-tab>
+
+            <settings-tab id="settings" class="tab-content"></settings-tab>
         </main>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="auth-modal-overlay hidden">
+        <div class="auth-modal">
+            <h2>Authorize Salesforce</h2>
+            <p>Connect to your Salesforce org to use sftools.</p>
+            <div class="auth-modal-status" id="auth-modal-domain">Detecting domain...</div>
+            <button id="auth-modal-authorize" class="button-brand">Authorize Session</button>
+        </div>
     </div>
 
     <script type="module" src="app.js"></script>

@@ -14,12 +14,12 @@ class ApexTab extends HTMLElement {
     executeBtn = null;
     statusSpan = null;
 
-    // Sidebar DOM references
-    sidebar = null;
+    // Dropdown DOM references
+    dropdown = null;
+    dropdownTrigger = null;
     historyList = null;
     favoritesList = null;
-    sidebarTabs = [];
-    sidebarToggle = null;
+    dropdownTabs = [];
 
     // In-memory cache
     history = [];
@@ -37,12 +37,12 @@ class ApexTab extends HTMLElement {
         this.executeBtn = this.querySelector('.apex-execute-btn');
         this.statusSpan = this.querySelector('.apex-status');
 
-        // Sidebar elements
-        this.sidebar = this.querySelector('.apex-sidebar');
+        // Dropdown elements
+        this.dropdown = this.querySelector('.apex-header-dropdown');
+        this.dropdownTrigger = this.querySelector('.apex-dropdown-trigger');
         this.historyList = this.querySelector('.apex-history-list');
         this.favoritesList = this.querySelector('.apex-favorites-list');
-        this.sidebarTabs = this.querySelectorAll('.apex-sidebar-tab');
-        this.sidebarToggle = this.querySelector('.apex-sidebar-toggle');
+        this.dropdownTabs = this.querySelectorAll('.apex-dropdown-tab');
     }
 
     initEditors() {
@@ -65,17 +65,27 @@ for (Account acc : accounts) {
         this.executeBtn.addEventListener('click', () => this.executeApex());
         this.codeEditor.addEventListener('execute', () => this.executeApex());
 
-        // Sidebar tab switching
-        this.sidebarTabs.forEach(tab => {
-            tab.addEventListener('click', () => this.switchSidebarTab(tab.dataset.tab));
+        // Dropdown trigger
+        this.dropdownTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleDropdown();
         });
 
-        // Sidebar collapse/expand
-        this.sidebarToggle.addEventListener('click', () => this.toggleSidebar());
+        // Dropdown tab switching
+        this.dropdownTabs.forEach(tab => {
+            tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
+        });
 
-        // Sidebar list click delegation
+        // List click delegation
         this.historyList.addEventListener('click', (e) => this.handleListClick(e, 'history'));
         this.favoritesList.addEventListener('click', (e) => this.handleListClick(e, 'favorites'));
+
+        // Close dropdown on outside click
+        document.addEventListener('click', (e) => {
+            if (!this.dropdown.contains(e.target)) {
+                this.closeDropdown();
+            }
+        });
     }
 
     // ============================================================
@@ -83,16 +93,10 @@ for (Account acc : accounts) {
     // ============================================================
 
     async loadStoredData() {
-        const data = await chrome.storage.local.get(['apexHistory', 'apexFavorites', 'apexSidebarCollapsed']);
+        const data = await chrome.storage.local.get(['apexHistory', 'apexFavorites']);
         this.history = data.apexHistory || [];
         this.favorites = data.apexFavorites || [];
-
-        if (data.apexSidebarCollapsed) {
-            this.sidebar.classList.add('collapsed');
-        }
-
-        this.renderHistoryList();
-        this.renderFavoritesList();
+        this.renderLists();
     }
 
     async saveHistory() {
@@ -101,10 +105,6 @@ for (Account acc : accounts) {
 
     async saveFavorites() {
         await chrome.storage.local.set({ apexFavorites: this.favorites });
-    }
-
-    async saveSidebarState(collapsed) {
-        await chrome.storage.local.set({ apexSidebarCollapsed: collapsed });
     }
 
     // ============================================================
@@ -138,7 +138,7 @@ for (Account acc : accounts) {
         }
 
         await this.saveHistory();
-        this.renderHistoryList();
+        this.renderLists();
     }
 
     async addToFavorites(code, label) {
@@ -153,19 +153,19 @@ for (Account acc : accounts) {
         });
 
         await this.saveFavorites();
-        this.renderFavoritesList();
+        this.renderLists();
     }
 
     async removeFromHistory(id) {
         this.history = this.history.filter(item => item.id !== id);
         await this.saveHistory();
-        this.renderHistoryList();
+        this.renderLists();
     }
 
     async removeFromFavorites(id) {
         this.favorites = this.favorites.filter(item => item.id !== id);
         await this.saveFavorites();
-        this.renderFavoritesList();
+        this.renderLists();
     }
 
     loadScript(code) {
@@ -173,11 +173,19 @@ for (Account acc : accounts) {
     }
 
     // ============================================================
-    // Sidebar UI
+    // Dropdown UI
     // ============================================================
 
-    switchSidebarTab(tabName) {
-        this.sidebarTabs.forEach(tab => {
+    toggleDropdown() {
+        this.dropdown.classList.toggle('open');
+    }
+
+    closeDropdown() {
+        this.dropdown.classList.remove('open');
+    }
+
+    switchTab(tabName) {
+        this.dropdownTabs.forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabName);
         });
 
@@ -185,9 +193,13 @@ for (Account acc : accounts) {
         this.favoritesList.style.display = tabName === 'favorites' ? '' : 'none';
     }
 
-    toggleSidebar() {
-        const collapsed = this.sidebar.classList.toggle('collapsed');
-        this.saveSidebarState(collapsed);
+    // ============================================================
+    // List Rendering
+    // ============================================================
+
+    renderLists() {
+        this.renderHistoryList();
+        this.renderFavoritesList();
     }
 
     renderHistoryList() {
@@ -255,8 +267,10 @@ for (Account acc : accounts) {
 
             if (action.classList.contains('load')) {
                 this.loadScript(scriptData.code);
+                this.closeDropdown();
             } else if (action.classList.contains('favorite')) {
                 this.showFavoriteModal(scriptData.code);
+                this.closeDropdown();
             } else if (action.classList.contains('delete')) {
                 if (listType === 'history') {
                     this.removeFromHistory(id);
@@ -267,6 +281,7 @@ for (Account acc : accounts) {
         } else {
             // Click on item itself loads the script
             this.loadScript(scriptData.code);
+            this.closeDropdown();
         }
     }
 

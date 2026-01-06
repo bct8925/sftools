@@ -1,47 +1,60 @@
-/* Apex Tab - History/Favorites Sidebar */
+/* Apex Tab - History/Favorites Dropdown */
 
-.apex-layout {
-    display: flex;
-    gap: 20px;
+.apex-header-dropdown {
+    margin-left: auto;
+    position: relative;
 }
 
-.apex-sidebar {
-    width: 280px;
-    flex-shrink: 0;
+.apex-dropdown-trigger {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.apex-dropdown-trigger:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.apex-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    width: 300px;
+    max-height: 400px;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 200;
+    overflow: hidden;
+}
+
+.apex-header-dropdown.open .apex-dropdown-menu {
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 120px);
-    transition: width 0.2s, opacity 0.2s;
 }
 
-.apex-sidebar.collapsed {
-    width: 40px;
-}
-
-.apex-sidebar.collapsed .apex-sidebar-tabs,
-.apex-sidebar.collapsed .apex-sidebar-content {
-    display: none;
-}
-
-.apex-sidebar-header {
+.apex-dropdown-tabs {
     display: flex;
-    align-items: center;
-    padding: 8px;
     border-bottom: 1px solid var(--border-color);
     background-color: #f8f9fa;
-    gap: 8px;
-}
-
-.apex-sidebar-tabs {
-    display: flex;
-    flex: 1;
+    padding: 8px;
     gap: 4px;
 }
 
-.apex-sidebar-tab {
+.apex-dropdown-tab {
     flex: 1;
     padding: 6px 10px;
     border: none;
@@ -54,46 +67,26 @@
     transition: all 0.2s;
 }
 
-.apex-sidebar-tab:hover {
+.apex-dropdown-tab:hover {
     background-color: rgba(0, 112, 210, 0.05);
     color: var(--primary-color);
 }
 
-.apex-sidebar-tab.active {
+.apex-dropdown-tab.active {
     background-color: var(--primary-color);
     color: white;
 }
 
-.apex-sidebar-toggle {
-    width: 28px;
-    height: 28px;
-    border: 1px solid var(--border-color);
-    background: white;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    font-size: 10px;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
-
-.apex-sidebar-toggle:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.apex-sidebar.collapsed .apex-sidebar-toggle {
-    transform: rotate(180deg);
-}
-
-.apex-sidebar-content {
+.apex-dropdown-content {
     flex: 1;
     overflow-y: auto;
     padding: 8px;
+    max-height: 340px;
 }
+
+/* ============================================================
+   Script List Styles
+   ============================================================ */
 
 .apex-script-list {
     display: flex;
@@ -190,12 +183,10 @@
     color: #f5a623;
 }
 
-.apex-main {
-    flex: 1;
-    min-width: 0;
-}
+/* ============================================================
+   Favorite Modal
+   ============================================================ */
 
-/* Favorite Modal */
 .apex-favorite-modal {
     position: fixed;
     top: 0;

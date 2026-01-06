@@ -115,9 +115,14 @@ for (Account acc : accounts) {
         const trimmedCode = code.trim();
         if (!trimmedCode) return;
 
-        // Skip if already in favorites
-        const isFavorite = this.favorites.some(item => item.code.trim() === trimmedCode);
-        if (isFavorite) return;
+        // If already in favorites, just update the timestamp
+        const favoriteIndex = this.favorites.findIndex(item => item.code.trim() === trimmedCode);
+        if (favoriteIndex !== -1) {
+            this.favorites[favoriteIndex].timestamp = Date.now();
+            await this.saveFavorites();
+            this.renderLists();
+            return;
+        }
 
         // Remove duplicate if exists
         const existingIndex = this.history.findIndex(item => item.code.trim() === trimmedCode);

@@ -1,25 +1,42 @@
-<div class="card">
-    <div class="card-header">
-        <div class="card-header-icon" style="background-color: #6a67ce;">A</div>
-        <h2>Anonymous Apex</h2>
-    </div>
-    <div class="card-body">
-        <div class="form-element">
-            <label>Apex Code (Ctrl/Cmd+Enter to execute)</label>
-            <monaco-editor class="apex-editor monaco-container" language="apex"></monaco-editor>
+<div class="apex-layout">
+    <aside class="apex-sidebar">
+        <div class="apex-sidebar-header">
+            <div class="apex-sidebar-tabs">
+                <button class="apex-sidebar-tab active" data-tab="history">History</button>
+                <button class="apex-sidebar-tab" data-tab="favorites">Favorites</button>
+            </div>
+            <button class="apex-sidebar-toggle" title="Collapse sidebar">&#9664;</button>
         </div>
-        <div class="m-top_small">
-            <button class="button-brand apex-execute-btn">Execute Apex</button>
-            <span class="apex-status status-badge"></span>
+        <div class="apex-sidebar-content">
+            <div class="apex-script-list apex-history-list"></div>
+            <div class="apex-script-list apex-favorites-list" style="display: none;"></div>
         </div>
-    </div>
-</div>
-<div class="card">
-    <div class="card-header">
-        <div class="card-header-icon" style="background-color: #3ba755;">L</div>
-        <h2>Output &amp; Debug Log</h2>
-    </div>
-    <div class="card-body">
-        <monaco-editor class="apex-output-editor monaco-container monaco-container-lg" language="text" readonly></monaco-editor>
+    </aside>
+    <div class="apex-main">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-header-icon" style="background-color: #6a67ce;">A</div>
+                <h2>Anonymous Apex</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-element">
+                    <label>Apex Code (Ctrl/Cmd+Enter to execute)</label>
+                    <monaco-editor class="apex-editor monaco-container" language="apex"></monaco-editor>
+                </div>
+                <div class="m-top_small">
+                    <button class="button-brand apex-execute-btn">Execute Apex</button>
+                    <span class="apex-status status-badge"></span>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-header-icon" style="background-color: #3ba755;">L</div>
+                <h2>Output &amp; Debug Log</h2>
+            </div>
+            <div class="card-body">
+                <monaco-editor class="apex-output-editor monaco-container monaco-container-lg" language="text" readonly></monaco-editor>
+            </div>
+        </div>
     </div>
 </div>

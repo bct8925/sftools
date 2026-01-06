@@ -2,6 +2,19 @@
     <div class="card-header">
         <div class="card-header-icon" style="background-color: #0070d2;">S</div>
         <h2>SOQL Query</h2>
+        <div class="query-header-dropdown">
+            <button class="query-dropdown-trigger" title="History & Favorites">&#9776;</button>
+            <div class="query-dropdown-menu">
+                <div class="query-dropdown-tabs">
+                    <button class="query-dropdown-tab active" data-tab="history">History</button>
+                    <button class="query-dropdown-tab" data-tab="favorites">Favorites</button>
+                </div>
+                <div class="query-dropdown-content">
+                    <div class="query-script-list query-history-list"></div>
+                    <div class="query-script-list query-favorites-list" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="card-body">
         <div class="form-element">
@@ -18,6 +31,10 @@
     <div class="card-header">
         <div class="card-header-icon" style="background-color: #4bca81;">Q</div>
         <h2>Results</h2>
+        <div class="query-results-search">
+            <input type="text" class="query-search-input" placeholder="Filter rows...">
+            <button class="query-search-clear" title="Clear filter">&times;</button>
+        </div>
     </div>
     <div class="card-body query-card-body">
         <div class="query-tabs">

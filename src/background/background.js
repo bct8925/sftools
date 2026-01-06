@@ -17,8 +17,8 @@ import {
 // Extension Action Handler
 // ============================================================================
 
-chrome.action.onClicked.addListener(() => {
-    chrome.tabs.create({ url: 'dist/app.html' });
+chrome.action.onClicked.addListener(async (tab) => {
+    await chrome.sidePanel.open({ tabId: tab.id });
 });
 
 // ============================================================================

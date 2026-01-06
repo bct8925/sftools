@@ -5,15 +5,27 @@ import '../../components/query/query-tab.js';
 import '../../components/apex/apex-tab.js';
 import '../../components/rest-api/rest-api-tab.js';
 import '../../components/events/events-tab.js';
+import '../../components/settings/settings-tab.js';
+
+// OAuth constants
+const CLIENT_ID = chrome.runtime.getManifest().oauth2.client_id;
+const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
     initOpenOrgButton();
-    initSidePanelButton();
+    initOpenInTabButton();
     initAuthExpirationHandler();
+    initAuthModal();
+
     await loadAuthTokens();
     await checkProxyStatus();
+
+    // Show auth modal if not authenticated
+    if (!isAuthenticated()) {
+        showAuthModal();
+    }
 
     // Apply feature gating based on proxy status
     updateFeatureGating();
@@ -21,6 +33,82 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Notify components that auth is ready
     document.dispatchEvent(new CustomEvent('auth-ready'));
 });
+
+// Listen for auth changes to hide modal
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    if (changes.accessToken?.newValue && changes.instanceUrl?.newValue) {
+        hideAuthModal();
+    }
+});
+
+// --- Auth Modal ---
+function initAuthModal() {
+    const authorizeBtn = document.getElementById('auth-modal-authorize');
+    authorizeBtn.addEventListener('click', startAuthorization);
+}
+
+function showAuthModal() {
+    const modal = document.getElementById('auth-modal');
+    const domainEl = document.getElementById('auth-modal-domain');
+
+    modal.classList.remove('hidden');
+    detectAndDisplayDomain(domainEl);
+}
+
+function hideAuthModal() {
+    const modal = document.getElementById('auth-modal');
+    modal.classList.add('hidden');
+}
+
+async function detectAndDisplayDomain(domainEl) {
+    let loginDomain = 'https://login.salesforce.com';
+
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.url) {
+            const urlObj = new URL(tab.url);
+            if (urlObj.hostname.includes('.my.salesforce.com')) {
+                loginDomain = urlObj.origin;
+            } else if (urlObj.hostname.includes('.lightning.force.com')) {
+                loginDomain = urlObj.origin.replace('.lightning.force.com', '.my.salesforce.com');
+            } else if (urlObj.hostname.includes('.salesforce-setup.com')) {
+                loginDomain = urlObj.origin.replace('.salesforce-setup.com', '.salesforce.com');
+            }
+        }
+    } catch (e) {
+        console.error('Error detecting domain:', e);
+    }
+
+    const hostname = new URL(loginDomain).hostname;
+    domainEl.textContent = `Will connect to: ${hostname}`;
+    domainEl.dataset.loginDomain = loginDomain;
+}
+
+async function startAuthorization() {
+    const domainEl = document.getElementById('auth-modal-domain');
+    const loginDomain = domainEl.dataset.loginDomain || 'https://login.salesforce.com';
+
+    // Check proxy for code flow
+    let useCodeFlow = false;
+    try {
+        const proxyStatus = await chrome.runtime.sendMessage({ type: 'checkProxyConnection' });
+        useCodeFlow = proxyStatus.connected;
+    } catch (e) {
+        console.log('Proxy not available, using implicit flow');
+    }
+
+    // Store loginDomain before opening auth URL (needed by callback for token exchange)
+    await chrome.storage.local.set({ loginDomain });
+
+    const responseType = useCodeFlow ? 'code' : 'token';
+    const authUrl = `${loginDomain}/services/oauth2/authorize` +
+        `?client_id=${CLIENT_ID}` +
+        `&response_type=${responseType}` +
+        `&redirect_uri=${encodeURIComponent(CALLBACK_URL)}`;
+
+    chrome.tabs.create({ url: authUrl });
+}
 
 // --- Auth Expiration Handler ---
 function initAuthExpirationHandler() {
@@ -66,9 +154,12 @@ function updateFeatureGating() {
         `;
         eventsContent.appendChild(overlay);
 
-        // Settings button handler
+        // Settings button handler - switch to settings tab
         overlay.querySelector('#feature-gate-settings-btn').addEventListener('click', () => {
-            chrome.runtime.openOptionsPage();
+            const settingsTab = document.querySelector('.tab-link[data-tab="settings"]');
+            if (settingsTab) {
+                settingsTab.click();
+            }
         });
 
         // Prevent tab switching to disabled tab
@@ -86,7 +177,7 @@ function initOpenOrgButton() {
     const btn = document.getElementById('open-org-btn');
     btn.addEventListener('click', () => {
         if (!isAuthenticated()) {
-            alert('Not authenticated. Please authorize via the extension popup.');
+            showAuthModal();
             return;
         }
         const instanceUrl = getInstanceUrl();
@@ -96,13 +187,11 @@ function initOpenOrgButton() {
     });
 }
 
-// --- Side Panel Button ---
-function initSidePanelButton() {
-    const btn = document.getElementById('side-panel-btn');
+// --- Open in Tab Button ---
+function initOpenInTabButton() {
+    const btn = document.getElementById('open-in-tab-btn');
     btn.addEventListener('click', () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            chrome.sidePanel.open({ tabId: tabs[0].id });
-        });
+        chrome.tabs.create({ url: chrome.runtime.getURL('dist/pages/app/app.html') });
     });
 }
 

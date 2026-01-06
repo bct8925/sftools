@@ -38,7 +38,18 @@ export async function exchangeCodeForTokens(code, redirectUri) {
         });
 
         if (!response.success) {
-            return { success: false, error: response.error || 'Token exchange failed' };
+            // Try to parse error details from response data if available
+            let errorMsg = response.error || 'Token exchange request failed';
+            if (response.data) {
+                try {
+                    const errData = JSON.parse(response.data);
+                    errorMsg = errData.error_description || errData.error || errorMsg;
+                } catch (e) {
+                    // Not JSON, use raw response
+                    errorMsg = response.data.substring(0, 200) || errorMsg;
+                }
+            }
+            return { success: false, error: errorMsg };
         }
 
         const tokenData = JSON.parse(response.data);

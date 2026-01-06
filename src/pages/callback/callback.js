@@ -43,10 +43,8 @@ async function handleCodeFlow(code) {
         });
 
         if (response.success) {
-            statusEl.innerText = 'Session acquired. Redirecting to sftools...';
-            setTimeout(() => {
-                window.location.href = '../../dist/app.html';
-            }, 500);
+            statusEl.innerText = 'Session acquired. You can close this tab.';
+            setTimeout(() => window.close(), 1000);
         } else {
             statusEl.innerHTML = `<span class="error">Token exchange failed: ${response.error}</span>`;
         }
@@ -68,10 +66,8 @@ async function handleImplicitFlow(accessToken, instanceUrl) {
             // No refreshToken in implicit flow
         });
 
-        statusEl.innerText = 'Session acquired. Redirecting to sftools...';
-        setTimeout(() => {
-            window.location.href = '../../dist/app.html';
-        }, 500);
+        statusEl.innerText = 'Session acquired. You can close this tab.';
+        setTimeout(() => window.close(), 1000);
     } catch (err) {
         statusEl.innerHTML = `<span class="error">Error storing tokens: ${err.message}</span>`;
     }

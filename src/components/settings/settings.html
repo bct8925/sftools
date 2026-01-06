@@ -1,0 +1,64 @@
+<div class="settings-content">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon" style="background-color: #0070d2;">P</div>
+            <h2>Local Proxy</h2>
+        </div>
+        <div class="card-body">
+            <p class="settings-description">
+                The local proxy enables advanced features like Platform Event streaming via gRPC and automatic token refresh.
+            </p>
+
+            <div class="settings-status-row">
+                <span class="settings-proxy-indicator status-indicator disconnected"></span>
+                <div class="status-text">
+                    <div class="label settings-proxy-label">Not Connected</div>
+                    <div class="detail settings-proxy-detail">Click Connect to establish connection</div>
+                </div>
+            </div>
+
+            <div class="settings-button-row">
+                <button class="settings-connect-btn button-brand">Connect</button>
+                <button class="settings-disconnect-btn button-neutral" style="display: none;">Disconnect</button>
+            </div>
+
+            <div class="settings-version-info" style="display: none;"></div>
+
+            <details class="settings-install-instructions">
+                <summary>Installation Instructions</summary>
+                <ol>
+                    <li>Install <a href="https://nodejs.org/" target="_blank">Node.js 18</a> or later</li>
+                    <li>Open a terminal in the <code>sftools-proxy</code> folder</li>
+                    <li>Run: <code>npm run install-host</code></li>
+                    <li>Restart Chrome completely</li>
+                    <li>Click "Connect" above</li>
+                </ol>
+            </details>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon" style="background-color: #4bca81;">S</div>
+            <h2>Session</h2>
+        </div>
+        <div class="card-body">
+            <p class="settings-description">
+                Manage your Salesforce connection.
+            </p>
+
+            <div class="settings-status-row">
+                <span class="settings-session-indicator status-indicator disconnected"></span>
+                <div class="status-text">
+                    <div class="label settings-session-label">Not Connected</div>
+                    <div class="detail settings-session-detail">No active session</div>
+                </div>
+            </div>
+
+            <div class="settings-button-row">
+                <button class="settings-reauth-btn button-neutral">Re-Authorize</button>
+                <button class="settings-logout-btn button-neutral">Log Out</button>
+            </div>
+        </div>
+    </div>
+</div>

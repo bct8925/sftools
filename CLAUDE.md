@@ -42,6 +42,10 @@ src/
 │   ├── events/               # Events tab component
 │   │   ├── events-tab.js
 │   │   └── events.html
+│   ├── settings/             # Settings tab component
+│   │   ├── settings-tab.js
+│   │   ├── settings.html
+│   │   └── settings.css
 │   ├── aura/                 # Aura Debugger page component
 │   │   ├── aura-page.js
 │   │   ├── aura.html
@@ -413,7 +417,12 @@ import {
     getActiveConnectionId,
     addConnection,
     updateConnection,
-    removeConnection
+    removeConnection,
+    // Custom connected app
+    getOAuthCredentials,
+    loadCustomConnectedApp,
+    saveCustomConnectedApp,
+    clearCustomConnectedApp
 } from '../../lib/utils.js';
 ```
 
@@ -499,7 +508,27 @@ Supports multiple saved Salesforce connections. Each sftools instance (browser t
 
 **Configuration:**
 - Callback URL: `https://sftools.dev/sftools-callback`
-- Client ID: `manifest.json` `oauth2.client_id`
+- Default Client ID: `manifest.json` `oauth2.client_id`
+
+**Custom Connected App:**
+
+Users can configure their own Salesforce connected app instead of the built-in one via Settings → Connected App.
+
+Storage schema:
+```javascript
+{
+  customConnectedApp: {
+    enabled: boolean,
+    clientId: string
+  }
+}
+```
+
+Key functions in `src/lib/auth.js`:
+- `getOAuthCredentials()` - Returns custom client ID if enabled, otherwise manifest default
+- `loadCustomConnectedApp()` / `saveCustomConnectedApp()` / `clearCustomConnectedApp()` - Storage management
+
+All OAuth flows (authorization, token exchange, token refresh) call `getOAuthCredentials()` to get the active client ID. The background service worker has its own `getBackgroundOAuthCredentials()` helper since it can't import from `lib/auth.js`.
 
 ## Query Tab Implementation
 

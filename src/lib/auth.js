@@ -237,6 +237,46 @@ export async function migrateFromSingleConnection() {
     });
 }
 
+// --- Custom Connected App ---
+
+/**
+ * Get OAuth credentials (custom app if configured, otherwise manifest default)
+ * @returns {Promise<{clientId: string, isCustom: boolean}>}
+ */
+export async function getOAuthCredentials() {
+    const { customConnectedApp } = await chrome.storage.local.get(['customConnectedApp']);
+
+    if (customConnectedApp?.enabled && customConnectedApp.clientId) {
+        return { clientId: customConnectedApp.clientId, isCustom: true };
+    }
+
+    return { clientId: chrome.runtime.getManifest().oauth2.client_id, isCustom: false };
+}
+
+/**
+ * Load custom connected app config from storage
+ * @returns {Promise<{enabled: boolean, clientId: string}|null>}
+ */
+export async function loadCustomConnectedApp() {
+    const { customConnectedApp } = await chrome.storage.local.get(['customConnectedApp']);
+    return customConnectedApp || null;
+}
+
+/**
+ * Save custom connected app config to storage
+ * @param {{enabled: boolean, clientId: string}} config
+ */
+export async function saveCustomConnectedApp(config) {
+    await chrome.storage.local.set({ customConnectedApp: config });
+}
+
+/**
+ * Clear custom connected app config (revert to default)
+ */
+export async function clearCustomConnectedApp() {
+    await chrome.storage.local.remove(['customConnectedApp']);
+}
+
 // Listen for auth expiration broadcasts from background
 if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
     chrome.runtime.onMessage.addListener((message) => {

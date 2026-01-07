@@ -177,7 +177,7 @@ const handlers = {
     checkProxyConnection: () => ({ connected: isProxyConnected(), ...getProxyInfo() }),
     getProxyInfo: () => getProxyInfo(),
 
-    tokenExchange: (req) => exchangeCodeForTokens(req.code, req.redirectUri, req.loginDomain),
+    tokenExchange: (req) => exchangeCodeForTokens(req.code, req.redirectUri, req.loginDomain, req.clientId),
 
     proxyFetch: proxyRequired((req) =>
         sendProxyRequest({

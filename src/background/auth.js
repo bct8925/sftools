@@ -4,14 +4,30 @@
 import { isProxyConnected, sendProxyRequest } from './native-messaging.js';
 
 /**
+ * Get OAuth credentials from storage (for background use)
+ * Falls back to manifest client ID if no custom app configured
+ * @returns {Promise<{clientId: string}>}
+ */
+async function getBackgroundOAuthCredentials() {
+    const { customConnectedApp } = await chrome.storage.local.get(['customConnectedApp']);
+
+    if (customConnectedApp?.enabled && customConnectedApp.clientId) {
+        return { clientId: customConnectedApp.clientId };
+    }
+
+    return { clientId: chrome.runtime.getManifest().oauth2.client_id };
+}
+
+/**
  * Exchange authorization code for tokens via proxy
  * Returns token data for the callback page to handle storage
  * @param {string} code - Authorization code
  * @param {string} redirectUri - Redirect URI used in auth request
  * @param {string} loginDomain - The login domain used for auth
+ * @param {string} clientId - OAuth client ID
  * @returns {Promise<{success: boolean, accessToken?: string, refreshToken?: string, instanceUrl?: string, loginDomain?: string, error?: string}>}
  */
-export async function exchangeCodeForTokens(code, redirectUri, loginDomain) {
+export async function exchangeCodeForTokens(code, redirectUri, loginDomain, clientId) {
     if (!isProxyConnected()) {
         return { success: false, error: 'Proxy not connected' };
     }
@@ -19,11 +35,10 @@ export async function exchangeCodeForTokens(code, redirectUri, loginDomain) {
     try {
         loginDomain = loginDomain || 'https://login.salesforce.com';
         const tokenUrl = `${loginDomain}/services/oauth2/token`;
-        const CLIENT_ID = chrome.runtime.getManifest().oauth2.client_id;
 
         const body = new URLSearchParams({
             grant_type: 'authorization_code',
-            client_id: CLIENT_ID,
+            client_id: clientId,
             code: code,
             redirect_uri: redirectUri
         }).toString();
@@ -103,11 +118,11 @@ export async function refreshAccessToken(connection) {
 
             const loginDomain = connection.loginDomain || 'https://login.salesforce.com';
             const tokenUrl = `${loginDomain}/services/oauth2/token`;
-            const CLIENT_ID = chrome.runtime.getManifest().oauth2.client_id;
+            const { clientId } = await getBackgroundOAuthCredentials();
 
             const body = new URLSearchParams({
                 grant_type: 'refresh_token',
-                client_id: CLIENT_ID,
+                client_id: clientId,
                 refresh_token: connection.refreshToken
             }).toString();
 

@@ -1,9 +1,15 @@
 // Settings Tab - Proxy Connection & Session Management
 import template from './settings.html?raw';
 import './settings.css';
-import { isAuthenticated, getInstanceUrl } from '../../lib/utils.js';
+import {
+    isAuthenticated,
+    getInstanceUrl,
+    getOAuthCredentials,
+    loadCustomConnectedApp,
+    saveCustomConnectedApp,
+    clearCustomConnectedApp
+} from '../../lib/utils.js';
 
-const CLIENT_ID = chrome.runtime.getManifest().oauth2.client_id;
 const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
 class SettingsTab extends HTMLElement {
@@ -22,12 +28,20 @@ class SettingsTab extends HTMLElement {
     reauthBtn = null;
     logoutBtn = null;
 
+    // Custom Connected App DOM references
+    customAppToggle = null;
+    customAppClientId = null;
+    customAppSaveBtn = null;
+    customAppResetBtn = null;
+    customAppFields = null;
+
     connectedCallback() {
         this.innerHTML = template;
         this.initElements();
         this.attachEventListeners();
         this.checkProxyStatus();
         this.updateSessionUI();
+        this.initCustomAppUI();
 
         // Listen for auth changes
         document.addEventListener('auth-ready', () => this.updateSessionUI());
@@ -53,6 +67,13 @@ class SettingsTab extends HTMLElement {
         this.sessionDetail = this.querySelector('.settings-session-detail');
         this.reauthBtn = this.querySelector('.settings-reauth-btn');
         this.logoutBtn = this.querySelector('.settings-logout-btn');
+
+        // Custom Connected App elements
+        this.customAppToggle = this.querySelector('.settings-custom-app-toggle');
+        this.customAppClientId = this.querySelector('.settings-custom-app-client-id');
+        this.customAppSaveBtn = this.querySelector('.settings-custom-app-save-btn');
+        this.customAppResetBtn = this.querySelector('.settings-custom-app-reset-btn');
+        this.customAppFields = this.querySelector('.settings-custom-app-fields');
     }
 
     attachEventListeners() {
@@ -60,6 +81,11 @@ class SettingsTab extends HTMLElement {
         this.disconnectBtn.addEventListener('click', () => this.disconnect());
         this.reauthBtn.addEventListener('click', () => this.reauthorize());
         this.logoutBtn.addEventListener('click', () => this.logout());
+
+        // Custom Connected App listeners
+        this.customAppToggle.addEventListener('change', () => this.handleCustomAppToggle());
+        this.customAppSaveBtn.addEventListener('click', () => this.saveCustomApp());
+        this.customAppResetBtn.addEventListener('click', () => this.resetCustomApp());
     }
 
     // ============================================================
@@ -194,9 +220,12 @@ class SettingsTab extends HTMLElement {
 
         chrome.storage.local.set({ loginDomain });
 
+        // Get OAuth credentials (custom or default)
+        const { clientId } = await getOAuthCredentials();
+
         const responseType = useCodeFlow ? 'code' : 'token';
         const authUrl = `${loginDomain}/services/oauth2/authorize` +
-            `?client_id=${CLIENT_ID}` +
+            `?client_id=${clientId}` +
             `&response_type=${responseType}` +
             `&redirect_uri=${encodeURIComponent(CALLBACK_URL)}`;
 
@@ -231,6 +260,65 @@ class SettingsTab extends HTMLElement {
                 domainEl.dataset.loginDomain = loginDomain;
             }
         }
+    }
+
+    // ============================================================
+    // Custom Connected App Management
+    // ============================================================
+
+    async initCustomAppUI() {
+        const config = await loadCustomConnectedApp();
+
+        if (config) {
+            this.customAppToggle.checked = config.enabled;
+            this.customAppClientId.value = config.clientId || '';
+        }
+
+        this.updateCustomAppFieldsVisibility();
+    }
+
+    handleCustomAppToggle() {
+        this.updateCustomAppFieldsVisibility();
+    }
+
+    updateCustomAppFieldsVisibility() {
+        if (this.customAppToggle.checked) {
+            this.customAppFields.classList.remove('hidden');
+        } else {
+            this.customAppFields.classList.add('hidden');
+        }
+    }
+
+    async saveCustomApp() {
+        const clientId = this.customAppClientId.value.trim();
+
+        if (this.customAppToggle.checked && !clientId) {
+            alert('Client ID is required when using a custom connected app.');
+            return;
+        }
+
+        await saveCustomConnectedApp({
+            enabled: this.customAppToggle.checked,
+            clientId: clientId
+        });
+
+        // Show confirmation
+        this.customAppSaveBtn.textContent = 'Saved!';
+        setTimeout(() => {
+            this.customAppSaveBtn.textContent = 'Save';
+        }, 1500);
+    }
+
+    async resetCustomApp() {
+        if (!confirm('Reset to default connected app? Your custom app settings will be removed.')) {
+            return;
+        }
+
+        await clearCustomConnectedApp();
+
+        this.customAppToggle.checked = false;
+        this.customAppClientId.value = '';
+        this.updateCustomAppFieldsVisibility();
     }
 }
 

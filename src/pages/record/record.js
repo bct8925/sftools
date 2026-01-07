@@ -69,7 +69,7 @@ async function loadRecord() {
         }
 
         objectNameEl.textContent = describe.label;
-        document.title = `${describe.label} - Record Viewer - sftools`;
+        document.title = `${recordId} - Record Viewer - sftools`;
 
         originalValues = { ...record };
         currentValues = { ...record };

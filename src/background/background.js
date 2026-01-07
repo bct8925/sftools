@@ -23,6 +23,112 @@ chrome.action.onClicked.addListener(async (tab) => {
 });
 
 // ============================================================================
+// Context Menu Setup
+// ============================================================================
+
+const RECORD_MENU_ID = 'view-edit-record';
+
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.contextMenus.create({
+        id: RECORD_MENU_ID,
+        title: 'View/Edit Record',
+        contexts: ['action']
+    });
+});
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+    if (info.menuItemId === RECORD_MENU_ID) {
+        await handleViewEditRecord(tab);
+    }
+});
+
+function parseLightningUrl(url) {
+    // Match Lightning record page URLs: /lightning/r/{SObjectType}/{RecordId}/view
+    const regex = /\/lightning\/r\/([^/]+)\/([a-zA-Z0-9]{15,18})\/view/;
+    const match = url.match(regex);
+    return match ? { objectType: match[1], recordId: match[2] } : null;
+}
+
+function extractOrgIdentifier(hostname) {
+    // Extract org-specific part from Salesforce domain formats
+    const patterns = [
+        /^([^.]+)\.lightning\.force\.com$/,
+        /^([^.]+)\.my\.salesforce\.com$/,
+        /^([^.]+)\.sandbox\.lightning\.force\.com$/,
+        /^([^.]+)\.sandbox\.my\.salesforce\.com$/,
+        /^([^.]+)\.scratch\.lightning\.force\.com$/,
+        /^([^.]+)\.scratch\.my\.salesforce\.com$/
+    ];
+
+    for (const pattern of patterns) {
+        const match = hostname.match(pattern);
+        if (match) {
+            return match[1].toLowerCase();
+        }
+    }
+    return null;
+}
+
+async function findConnectionByDomain(tabUrl) {
+    const tabHostname = new URL(tabUrl).hostname;
+    const { connections } = await chrome.storage.local.get(['connections']);
+
+    if (!connections || connections.length === 0) {
+        return null;
+    }
+
+    const tabOrgId = extractOrgIdentifier(tabHostname);
+
+    for (const connection of connections) {
+        const connHostname = new URL(connection.instanceUrl).hostname;
+
+        // Direct hostname match
+        if (tabHostname === connHostname) {
+            return connection;
+        }
+
+        // Match by org identifier (handles lightning vs my.salesforce domain differences)
+        const connOrgId = extractOrgIdentifier(connHostname);
+        if (tabOrgId && connOrgId && tabOrgId === connOrgId) {
+            return connection;
+        }
+    }
+
+    return null;
+}
+
+async function handleViewEditRecord(tab) {
+    const parsed = parseLightningUrl(tab.url);
+    if (!parsed) {
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'dist/icon.png',
+            title: 'sftools',
+            message: 'Navigate to a Salesforce record page to use this feature.'
+        });
+        return;
+    }
+
+    const connection = await findConnectionByDomain(tab.url);
+    if (!connection) {
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'dist/icon.png',
+            title: 'sftools',
+            message: 'No saved connection for this Salesforce org. Please authorize first.'
+        });
+        return;
+    }
+
+    const viewerUrl = chrome.runtime.getURL('dist/pages/record/record.html') +
+        `?objectType=${encodeURIComponent(parsed.objectType)}` +
+        `&recordId=${encodeURIComponent(parsed.recordId)}` +
+        `&connectionId=${encodeURIComponent(connection.id)}`;
+
+    chrome.tabs.create({ url: viewerUrl });
+}
+
+// ============================================================================
 // Helper Functions
 // ============================================================================
 

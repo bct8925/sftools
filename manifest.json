@@ -19,7 +19,9 @@
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess",
     "cookies",
-    "nativeMessaging"
+    "nativeMessaging",
+    "contextMenus",
+    "notifications"
   ],
   "side_panel": {
     "default_path": "dist/pages/app/app.html"

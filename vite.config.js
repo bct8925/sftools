@@ -18,6 +18,7 @@ export default defineConfig({
         app: resolve(__dirname, 'src/pages/app/app.html'),
         callback: resolve(__dirname, 'src/pages/callback/callback.html'),
         aura: resolve(__dirname, 'src/pages/aura/aura.html'),
+        record: resolve(__dirname, 'src/pages/record/record.html'),
         // Background service worker
         background: resolve(__dirname, 'src/background/background.js')
       },

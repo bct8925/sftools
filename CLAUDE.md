@@ -49,9 +49,12 @@ src/
 │   ├── callback/             # OAuth callback
 │   │   ├── callback.html
 │   │   └── callback.js
-│   └── aura/                 # Standalone Aura Debugger
-│       ├── aura.html
-│       └── aura.js
+│   ├── aura/                 # Standalone Aura Debugger
+│   │   ├── aura.html
+│   │   └── aura.js
+│   └── record/               # Standalone Record Viewer/Editor
+│       ├── record.html
+│       └── record.js
 ├── background/               # Service worker
 │   ├── background.js
 │   ├── native-messaging.js
@@ -72,7 +75,8 @@ dist/
 ├── pages/
 │   ├── app/app.html, app.js
 │   ├── callback/callback.html, callback.js
-│   └── aura/aura.html, aura.js
+│   ├── aura/aura.html, aura.js
+│   └── record/record.html, record.js
 ├── chunks/                   # Shared code chunks
 ├── assets/                   # Monaco workers, fonts
 ├── background.js             # Service worker
@@ -119,6 +123,35 @@ A standalone tool for making Aura framework requests to Salesforce communities/o
 1. If SID is provided manually, sets cookie before request and removes it after
 2. If SID is blank, checks for existing browser cookie via `chrome.cookies` API
 3. Aura token is passed in request body as `aura.token` parameter
+
+### Record Viewer (`src/pages/record/`)
+
+A standalone tool for viewing and editing field values on a Salesforce record. Accessed via context menu when right-clicking the extension icon.
+
+**How to Use:**
+1. Navigate to a Lightning record page (e.g., `/lightning/r/Account/001.../view`)
+2. Right-click the sftools extension icon
+3. Click "View/Edit Record"
+4. A new tab opens showing all fields with their values
+
+**Features:**
+- Displays all fields with Label, API Name, Type, and Value columns
+- Fields sorted: Id first, Name second, then alphabetically by API name
+- Text inputs for updateable fields, disabled for read-only
+- Modified fields highlighted visually
+- Save button sends only changed fields via PATCH
+- Refresh button reloads current values
+
+**Context Menu Setup** (`src/background/background.js`):
+- Registered via `chrome.contextMenus.create()` with `contexts: ['action']`
+- `parseLightningUrl()` extracts object type and record ID from URL
+- `findConnectionByDomain()` matches tab domain against saved connections
+- Opens record viewer with URL params: `?objectType=X&recordId=Y&connectionId=Z`
+
+**API Methods** (`src/lib/salesforce.js`):
+- `getObjectDescribe(objectType)` - Gets field metadata
+- `getRecord(objectType, recordId)` - Gets record data
+- `updateRecord(objectType, recordId, fields)` - Updates record fields
 
 ## Local Proxy Setup
 
@@ -290,6 +323,8 @@ customElements.define('query-tab', QueryTab);
 - ES module with handler map pattern for message routing
 - `proxyRequired()` wrapper for handlers that need proxy connection
 - All handlers return promises, unified error handling
+- Context menu registration via `chrome.runtime.onInstalled` listener
+- URL parsing and connection matching for Record Viewer
 
 ```javascript
 // Frontend calls:

@@ -1,6 +1,8 @@
 // OAuth Callback Handler
 // Supports both authorization code flow (with proxy) and implicit flow (without proxy)
 
+import { addConnection, findConnectionByInstance, updateConnection } from '../../lib/auth.js';
+
 const statusEl = document.getElementById('status');
 
 // Check for authorization code (code flow) in query params
@@ -36,14 +38,26 @@ async function handleCodeFlow(code) {
     try {
         const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
+        // Get loginDomain that was stored before auth redirect
+        const { loginDomain } = await chrome.storage.local.get(['loginDomain']);
+
         const response = await chrome.runtime.sendMessage({
             type: 'tokenExchange',
             code: code,
-            redirectUri: CALLBACK_URL
+            redirectUri: CALLBACK_URL,
+            loginDomain: loginDomain
         });
 
         if (response.success) {
-            statusEl.innerText = 'Session acquired. You can close this tab.';
+            // Add or update connection using the new multi-connection storage
+            await addOrUpdateConnection({
+                instanceUrl: response.instanceUrl,
+                accessToken: response.accessToken,
+                refreshToken: response.refreshToken,
+                loginDomain: response.loginDomain
+            });
+
+            statusEl.innerText = 'Connection saved. You can close this tab.';
             setTimeout(() => window.close(), 1000);
         } else {
             statusEl.innerHTML = `<span class="error">Token exchange failed: ${response.error}</span>`;
@@ -60,15 +74,39 @@ async function handleImplicitFlow(accessToken, instanceUrl) {
     statusEl.innerText = 'Processing tokens...';
 
     try {
-        await chrome.storage.local.set({
+        // Get loginDomain that was stored before auth redirect
+        const { loginDomain } = await chrome.storage.local.get(['loginDomain']);
+
+        // Add or update connection using the new multi-connection storage
+        await addOrUpdateConnection({
+            instanceUrl: instanceUrl,
             accessToken: accessToken,
-            instanceUrl: instanceUrl
-            // No refreshToken in implicit flow
+            refreshToken: null, // No refresh token in implicit flow
+            loginDomain: loginDomain
         });
 
-        statusEl.innerText = 'Session acquired. You can close this tab.';
+        statusEl.innerText = 'Connection saved. You can close this tab.';
         setTimeout(() => window.close(), 1000);
     } catch (err) {
         statusEl.innerHTML = `<span class="error">Error storing tokens: ${err.message}</span>`;
+    }
+}
+
+/**
+ * Add a new connection or update existing one if same instanceUrl
+ */
+async function addOrUpdateConnection(data) {
+    const existing = await findConnectionByInstance(data.instanceUrl);
+
+    if (existing) {
+        // Update existing connection with new tokens
+        await updateConnection(existing.id, {
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken || existing.refreshToken,
+            loginDomain: data.loginDomain || existing.loginDomain
+        });
+    } else {
+        // Add new connection
+        await addConnection(data);
     }
 }

@@ -26,6 +26,7 @@ class EventsTab extends HTMLElement {
 
     // Bound message handler for cleanup
     boundMessageHandler = null;
+    boundConnectionHandler = null;
 
     connectedCallback() {
         this.innerHTML = template;
@@ -39,12 +40,38 @@ class EventsTab extends HTMLElement {
         } else {
             document.addEventListener('auth-ready', () => this.loadChannels(), { once: true });
         }
+
+        // Handle connection changes - reload channels for new org
+        this.boundConnectionHandler = () => this.handleConnectionChange();
+        document.addEventListener('connection-changed', this.boundConnectionHandler);
     }
 
     disconnectedCallback() {
         if (this.boundMessageHandler) {
             chrome.runtime.onMessage.removeListener(this.boundMessageHandler);
         }
+        if (this.boundConnectionHandler) {
+            document.removeEventListener('connection-changed', this.boundConnectionHandler);
+        }
+    }
+
+    async handleConnectionChange() {
+        // Unsubscribe from current channel if subscribed
+        if (this.isSubscribed && this.currentSubscriptionId) {
+            try {
+                await chrome.runtime.sendMessage({
+                    type: 'unsubscribe',
+                    subscriptionId: this.currentSubscriptionId
+                });
+            } catch (e) {
+                // Ignore errors during cleanup
+            }
+            this.handleDisconnect();
+        }
+
+        // Clear the stream and reload channels for new org
+        this.clearStream();
+        this.loadChannels();
     }
 
     initElements() {

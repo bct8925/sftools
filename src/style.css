@@ -168,6 +168,140 @@ body {
     display: none !important;
 }
 
+/* --- Connection Selector --- */
+.connection-selector {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+.connection-authorize-btn {
+    padding: 6px 14px;
+    font-size: 13px;
+}
+
+.connection-dropdown {
+    position: relative;
+}
+
+.connection-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-main);
+    max-width: 220px;
+    transition: all 0.2s;
+}
+
+.connection-dropdown-trigger:hover {
+    border-color: var(--primary-color);
+}
+
+.connection-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.connection-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 250px;
+    z-index: 1000;
+    display: none;
+}
+
+.connection-dropdown.open .connection-dropdown-menu {
+    display: block;
+}
+
+.connection-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.connection-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.connection-item:hover {
+    background: var(--bg-color);
+}
+
+.connection-item.active {
+    background: rgba(0, 112, 210, 0.1);
+    color: var(--primary-color);
+}
+
+.connection-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.connection-remove {
+    opacity: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 2px 6px;
+    font-size: 16px;
+    line-height: 1;
+    border-radius: 3px;
+    transition: all 0.15s;
+}
+
+.connection-item:hover .connection-remove {
+    opacity: 1;
+}
+
+.connection-remove:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #c23934;
+}
+
+.connection-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+.connection-add-btn {
+    width: 100%;
+    padding: 10px 12px;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    color: var(--primary-color);
+    font-size: 13px;
+    transition: background 0.15s;
+}
+
+.connection-add-btn:hover {
+    background: var(--bg-color);
+}
+
 /* --- Content Area --- */
 .content-area {
     flex: 1;

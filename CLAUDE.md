@@ -63,9 +63,9 @@ src/
 │   ├── native-messaging.js
 │   └── auth.js
 ├── lib/                      # Shared utilities
-│   ├── auth.js               # Frontend auth state
+│   ├── auth.js               # Multi-connection storage, active connection context
 │   ├── salesforce.js         # Salesforce API helpers
-│   └── utils.js              # Shared utilities
+│   └── utils.js              # Shared utilities, re-exports auth functions
 ├── public/                   # Static assets (copied to dist/)
 │   └── icon.png
 └── style.css                 # Global styles
@@ -162,16 +162,15 @@ tail -f /tmp/sftools-proxy.log
 
 ## Opening the Extension
 
-The popup provides a way to open sftools after authorization:
-
-- **Open sftools** - Opens in a new browser tab (full page)
+Clicking the extension icon opens sftools in the side panel. Authorization is handled directly in the app header via the connection selector dropdown.
 
 Side panel support is configured in `manifest.json` via the `sidePanel` permission and `side_panel.default_path` pointing to `dist/pages/app/app.html`.
 
 ## Header Features
 
-- **Open Org Button** - Icon button in the top-right of the nav header that opens the authenticated org in a new browser tab using `frontdoor.jsp` with the current session token
-- **Side Panel Button** - Icon button to the right of Open Org that opens the app in Chrome's side panel
+- **Connection Selector** - Dropdown in the header to switch between saved Salesforce connections. Shows "Authorize" button if no connections exist. Each sftools instance (browser tab or sidepanel) can have its own active connection.
+- **Open Org Button** - Icon button that opens the authenticated org in a new browser tab using `frontdoor.jsp` with the current session token
+- **Open in Tab Button** - Icon button that opens sftools in a new browser tab
 - **Responsive Nav** - Tab navigation with overflow dropdown. When tabs don't fit (e.g., in side panel), excess tabs move to a "More" dropdown menu
 
 ## Component Architecture
@@ -315,7 +314,28 @@ chrome.runtime.sendMessage({ type: 'fetch', url, options });
 
 **Auth utilities** (`src/lib/utils.js`):
 ```javascript
-import { extensionFetch, getAccessToken, getInstanceUrl, isAuthenticated } from '../../lib/utils.js';
+import {
+    extensionFetch,
+    getAccessToken,
+    getInstanceUrl,
+    isAuthenticated,
+    // Multi-connection
+    loadConnections,
+    setActiveConnection,
+    getActiveConnectionId,
+    addConnection,
+    updateConnection,
+    removeConnection
+} from '../../lib/utils.js';
+```
+
+**Connection change events:**
+```javascript
+// Listen for connection switches (in tool tab components)
+document.addEventListener('connection-changed', (e) => {
+    const connection = e.detail;
+    this.reloadDataForNewOrg();
+});
 ```
 
 ## CSS Specificity for Component Overrides
@@ -331,33 +351,63 @@ When component CSS needs to override global styles, use compound selectors for h
 
 Component CSS is bundled into `app.css` by Vite. Global `style.css` loads via HTML link, so component CSS may load in different order. Using compound selectors ensures overrides work regardless of load order.
 
-## OAuth Flow
+## OAuth Flow & Multi-Connection Architecture
 
-Uses a hybrid approach based on proxy availability:
+Supports multiple saved Salesforce connections. Each sftools instance (browser tab or sidepanel) selects one active connection from the shared list. Different instances can use different connections simultaneously.
 
-**Without Proxy (Implicit Flow):**
+**Storage Schema:**
+```javascript
+{
+  connections: [{
+    id: string,          // UUID
+    label: string,       // Hostname derived from instanceUrl
+    instanceUrl: string,
+    loginDomain: string,
+    accessToken: string,
+    refreshToken: string | null,
+    createdAt: number,
+    lastUsedAt: number
+  }]
+}
+```
+
+**Per-Instance Connection State:**
+- Each sftools instance has isolated module-level state (`ACCESS_TOKEN`, `INSTANCE_URL`, `ACTIVE_CONNECTION_ID`)
+- `setActiveConnection(connection)` sets the active connection for that instance
+- Components call `getAccessToken()` / `getInstanceUrl()` which return the instance's active connection
+
+**OAuth Flows (based on proxy availability):**
+
+*Without Proxy (Implicit Flow):*
 - Uses `response_type=token` - tokens returned directly in URL hash
-- Stores `accessToken` and `instanceUrl` in `chrome.storage.local`
 - No refresh tokens - user must re-authorize when session expires
 
-**With Proxy (Authorization Code Flow):**
+*With Proxy (Authorization Code Flow):*
 - Uses `response_type=code` - authorization code exchanged for tokens via proxy
-- Stores `accessToken`, `refreshToken`, `instanceUrl`, and `loginDomain`
 - Automatic token refresh on 401 responses (transparent to frontend)
 - Token exchange routed through proxy to bypass CORS on Salesforce token endpoint
 
 **Key Files:**
-- `src/pages/popup/popup.js` - Checks proxy status, chooses OAuth flow
-- `src/pages/callback/callback.js` - Handles both code and token responses
-- `src/background/auth.js` - Token exchange and refresh via proxy
-- `src/lib/auth.js` - Frontend auth state with storage change listener
+- `src/lib/auth.js` - Connection storage functions, active connection context, migration
+- `src/pages/app/app.js` - Connection selector UI, authorization flow
+- `src/pages/callback/callback.js` - Handles both code and token responses, adds/updates connections
+- `src/background/auth.js` - Token exchange and refresh (per-connection)
+- `src/background/background.js` - Fetch handler with connection-targeted 401 retry
 
 **Token Refresh Flow:**
-1. Frontend request returns 401
-2. Background checks for refresh token + proxy connection
-3. If available, exchanges refresh token for new access token via proxy
-4. Retries original request with new token
-5. Frontend's in-memory token updated via `chrome.storage.onChanged` listener
+1. Frontend request includes `connectionId`
+2. Background receives 401, finds connection by ID
+3. If refresh token exists + proxy connected, refreshes that connection's token
+4. Updates specific connection in storage array
+5. Retries original request with new token
+6. Frontend's in-memory token updated via `chrome.storage.onChanged` listener
+
+**Authorization Flow:**
+1. User clicks "Authorize" button (or "+ Add Connection" in dropdown)
+2. OAuth redirect opens in new tab
+3. Callback page adds connection to storage (or updates if same instanceUrl)
+4. All sftools instances refresh their connection list via storage listener
+5. If no prior connections, the new connection is auto-selected
 
 **Configuration:**
 - Callback URL: `https://sftools.dev/sftools-callback`

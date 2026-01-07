@@ -29,6 +29,28 @@
                     <div class="nav-overflow-menu"></div>
                 </div>
             </div>
+
+            <!-- Connection Selector -->
+            <div class="connection-selector">
+                <!-- No connections state -->
+                <button id="authorize-btn" class="button-brand connection-authorize-btn">Authorize</button>
+
+                <!-- Has connections state (hidden by default) -->
+                <div class="connection-dropdown hidden">
+                    <button class="connection-dropdown-trigger">
+                        <span class="connection-label">Select Org...</span>
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                            <path d="M1 3l4 4 4-4H1z"/>
+                        </svg>
+                    </button>
+                    <div class="connection-dropdown-menu">
+                        <div class="connection-list"></div>
+                        <div class="connection-divider"></div>
+                        <button class="connection-add-btn">+ Add Connection</button>
+                    </div>
+                </div>
+            </div>
+
             <button id="open-org-btn" class="nav-icon-btn" title="Open Org in Browser">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                     <path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
@@ -54,16 +76,6 @@
 
             <settings-tab id="settings" class="tab-content"></settings-tab>
         </main>
-    </div>
-
-    <!-- Auth Modal -->
-    <div id="auth-modal" class="auth-modal-overlay hidden">
-        <div class="auth-modal">
-            <h2>Authorize Salesforce</h2>
-            <p>Connect to your Salesforce org to use sftools.</p>
-            <div class="auth-modal-status" id="auth-modal-domain">Detecting domain...</div>
-            <button id="auth-modal-authorize" class="button-brand">Authorize Session</button>
-        </div>
     </div>
 
     <script type="module" src="app.js"></script>

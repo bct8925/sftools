@@ -10,7 +10,8 @@ import {
 
 import {
     exchangeCodeForTokens,
-    refreshAccessToken
+    refreshAccessToken,
+    updateConnectionToken
 } from './auth.js';
 
 // ============================================================================
@@ -50,7 +51,7 @@ const handlers = {
     checkProxyConnection: () => ({ connected: isProxyConnected(), ...getProxyInfo() }),
     getProxyInfo: () => getProxyInfo(),
 
-    tokenExchange: (req) => exchangeCodeForTokens(req.code, req.redirectUri),
+    tokenExchange: (req) => exchangeCodeForTokens(req.code, req.redirectUri, req.loginDomain),
 
     proxyFetch: proxyRequired((req) =>
         sendProxyRequest({
@@ -119,14 +120,20 @@ async function handleFetch(request) {
     try {
         let response = await fetch(request.url, request.options);
 
-        if (response.status === 401 && request.options?.headers?.Authorization) {
-            const { refreshToken } = await chrome.storage.local.get(['refreshToken']);
+        if (response.status === 401 && request.options?.headers?.Authorization && request.connectionId) {
+            // Find the connection in storage
+            const { connections } = await chrome.storage.local.get(['connections']);
+            const connection = connections?.find(c => c.id === request.connectionId);
 
-            if (refreshToken && isProxyConnected()) {
-                console.log('Got 401, attempting token refresh...');
-                const refreshResult = await refreshAccessToken();
+            if (connection?.refreshToken && isProxyConnected()) {
+                console.log('Got 401, attempting token refresh for connection:', request.connectionId);
+                const refreshResult = await refreshAccessToken(connection);
 
                 if (refreshResult.success) {
+                    // Update the connection's token in storage
+                    await updateConnectionToken(request.connectionId, refreshResult.accessToken);
+
+                    // Retry with new token
                     response = await fetch(request.url, {
                         ...request.options,
                         headers: {
@@ -135,10 +142,24 @@ async function handleFetch(request) {
                         }
                     });
                 } else {
-                    return { success: false, status: 401, statusText: 'Unauthorized', authExpired: true, error: refreshResult.error };
+                    return {
+                        success: false,
+                        status: 401,
+                        statusText: 'Unauthorized',
+                        authExpired: true,
+                        connectionId: request.connectionId,
+                        error: refreshResult.error
+                    };
                 }
             } else {
-                return { success: false, status: 401, statusText: 'Unauthorized', authExpired: true, error: 'Session expired' };
+                return {
+                    success: false,
+                    status: 401,
+                    statusText: 'Unauthorized',
+                    authExpired: true,
+                    connectionId: request.connectionId,
+                    error: 'Session expired'
+                };
             }
         }
 

@@ -211,6 +211,75 @@ export async function executeQueryWithColumns(soql) {
 }
 
 // ============================================================
+// SObject Operations
+// ============================================================
+
+/**
+ * Get object describe metadata (field definitions, etc.)
+ * @param {string} objectType - The SObject API name
+ * @returns {Promise<object>} Describe result with fields array
+ */
+export async function getObjectDescribe(objectType) {
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/${objectType}/describe`);
+    return response.json;
+}
+
+/**
+ * Get a single record by ID
+ * @param {string} objectType - The SObject API name
+ * @param {string} recordId - The record ID
+ * @returns {Promise<object>} Record data
+ */
+export async function getRecord(objectType, recordId) {
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/${objectType}/${recordId}`);
+    return response.json;
+}
+
+/**
+ * Get a single record with relationship names included
+ * @param {string} objectType - The SObject API name
+ * @param {string} recordId - The record ID
+ * @param {Array} fields - Field metadata from describe
+ * @returns {Promise<object>} Record data with relationship names
+ */
+export async function getRecordWithRelationships(objectType, recordId, fields) {
+    // Build field list including relationship.Name for reference fields
+    const fieldNames = ['Id'];
+    for (const field of fields) {
+        if (field.name === 'Id') continue;
+        fieldNames.push(field.name);
+
+        // Add relationship.Name for reference fields
+        if (field.type === 'reference' && field.relationshipName) {
+            fieldNames.push(`${field.relationshipName}.Name`);
+        }
+    }
+
+    const soql = `SELECT ${fieldNames.join(', ')} FROM ${objectType} WHERE Id = '${recordId}'`;
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/query/?q=${encodeURIComponent(soql)}`);
+
+    if (!response.json.records || response.json.records.length === 0) {
+        throw new Error('Record not found');
+    }
+
+    return response.json.records[0];
+}
+
+/**
+ * Update a record
+ * @param {string} objectType - The SObject API name
+ * @param {string} recordId - The record ID
+ * @param {object} fields - Field values to update
+ * @returns {Promise<void>}
+ */
+export async function updateRecord(objectType, recordId, fields) {
+    await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/${objectType}/${recordId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(fields)
+    });
+}
+
+// ============================================================
 // Generic REST
 // ============================================================
 

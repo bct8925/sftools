@@ -13,9 +13,11 @@ export const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
 // --- Frontend Auth State ---
 // These are used by content scripts to access tokens without async calls
+// Each sftools instance (browser tab/sidepanel) has its own isolated module state
 
 let ACCESS_TOKEN = '';
 let INSTANCE_URL = '';
+let ACTIVE_CONNECTION_ID = null;
 let authExpiredCallback = null;
 
 export function getAccessToken() {
@@ -51,8 +53,9 @@ export function triggerAuthExpired() {
 }
 
 /**
- * Load auth tokens from storage into module state
+ * Load auth tokens from storage into module state (legacy - for backward compatibility)
  * @returns {Promise<boolean>} - Whether tokens were loaded successfully
+ * @deprecated Use loadConnections() and setActiveConnection() instead
  */
 export function loadAuthTokens() {
     return new Promise((resolve) => {
@@ -74,6 +77,166 @@ export function loadAuthTokens() {
     });
 }
 
+// --- Multi-Connection Storage Functions ---
+
+/**
+ * Get the active connection ID for this sftools instance
+ */
+export function getActiveConnectionId() {
+    return ACTIVE_CONNECTION_ID;
+}
+
+/**
+ * Set the active connection for this sftools instance
+ * Updates module-level ACCESS_TOKEN and INSTANCE_URL
+ */
+export function setActiveConnection(connection) {
+    if (connection) {
+        ACCESS_TOKEN = connection.accessToken;
+        INSTANCE_URL = connection.instanceUrl;
+        ACTIVE_CONNECTION_ID = connection.id;
+    } else {
+        ACCESS_TOKEN = '';
+        INSTANCE_URL = '';
+        ACTIVE_CONNECTION_ID = null;
+    }
+}
+
+/**
+ * Load all saved connections from storage
+ * @returns {Promise<Array>} - Array of connection objects
+ */
+export async function loadConnections() {
+    return new Promise((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            chrome.storage.local.get(['connections'], (data) => {
+                resolve(data.connections || []);
+            });
+        } else {
+            resolve([]);
+        }
+    });
+}
+
+/**
+ * Save connections array to storage
+ */
+export async function saveConnections(connections) {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        await chrome.storage.local.set({ connections });
+    }
+}
+
+/**
+ * Add a new connection to storage
+ * @returns {Promise<object>} - The new connection object with generated ID
+ */
+export async function addConnection(connectionData) {
+    const connections = await loadConnections();
+    const newConnection = {
+        id: crypto.randomUUID(),
+        label: new URL(connectionData.instanceUrl).hostname,
+        instanceUrl: connectionData.instanceUrl,
+        loginDomain: connectionData.loginDomain || 'https://login.salesforce.com',
+        accessToken: connectionData.accessToken,
+        refreshToken: connectionData.refreshToken || null,
+        createdAt: Date.now(),
+        lastUsedAt: Date.now()
+    };
+    connections.push(newConnection);
+    await saveConnections(connections);
+    return newConnection;
+}
+
+/**
+ * Update an existing connection
+ */
+export async function updateConnection(connectionId, updates) {
+    const connections = await loadConnections();
+    const index = connections.findIndex(c => c.id === connectionId);
+    if (index !== -1) {
+        connections[index] = { ...connections[index], ...updates, lastUsedAt: Date.now() };
+        await saveConnections(connections);
+        return connections[index];
+    }
+    return null;
+}
+
+/**
+ * Remove a connection from storage
+ */
+export async function removeConnection(connectionId) {
+    const connections = await loadConnections();
+    const filtered = connections.filter(c => c.id !== connectionId);
+    await saveConnections(filtered);
+}
+
+/**
+ * Find a connection by its instance URL
+ */
+export async function findConnectionByInstance(instanceUrl) {
+    const connections = await loadConnections();
+    return connections.find(c => c.instanceUrl === instanceUrl);
+}
+
+/**
+ * Migrate from single-connection storage to multi-connection format
+ * Should be called once on app initialization
+ */
+export async function migrateFromSingleConnection() {
+    return new Promise((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            chrome.storage.local.get([
+                'connections',
+                STORAGE_KEYS.ACCESS_TOKEN,
+                STORAGE_KEYS.INSTANCE_URL,
+                STORAGE_KEYS.REFRESH_TOKEN,
+                STORAGE_KEYS.LOGIN_DOMAIN
+            ], async (data) => {
+                // Already migrated or fresh install
+                if (data.connections !== undefined) {
+                    resolve(false);
+                    return;
+                }
+
+                // No existing auth to migrate
+                if (!data[STORAGE_KEYS.ACCESS_TOKEN] || !data[STORAGE_KEYS.INSTANCE_URL]) {
+                    await chrome.storage.local.set({ connections: [] });
+                    resolve(false);
+                    return;
+                }
+
+                // Migrate single connection to array
+                const connection = {
+                    id: crypto.randomUUID(),
+                    label: new URL(data[STORAGE_KEYS.INSTANCE_URL]).hostname,
+                    instanceUrl: data[STORAGE_KEYS.INSTANCE_URL],
+                    loginDomain: data[STORAGE_KEYS.LOGIN_DOMAIN] || 'https://login.salesforce.com',
+                    accessToken: data[STORAGE_KEYS.ACCESS_TOKEN],
+                    refreshToken: data[STORAGE_KEYS.REFRESH_TOKEN] || null,
+                    createdAt: Date.now(),
+                    lastUsedAt: Date.now()
+                };
+
+                await chrome.storage.local.set({ connections: [connection] });
+
+                // Clean up old keys
+                await chrome.storage.local.remove([
+                    STORAGE_KEYS.ACCESS_TOKEN,
+                    STORAGE_KEYS.REFRESH_TOKEN,
+                    STORAGE_KEYS.INSTANCE_URL,
+                    STORAGE_KEYS.LOGIN_DOMAIN
+                ]);
+
+                console.log('Migrated single connection to multi-connection format');
+                resolve(true);
+            });
+        } else {
+            resolve(false);
+        }
+    });
+}
+
 // Listen for auth expiration broadcasts from background
 if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
     chrome.runtime.onMessage.addListener((message) => {
@@ -88,9 +251,25 @@ if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
     chrome.storage.onChanged.addListener((changes, area) => {
         if (area !== 'local') return;
 
+        // Handle multi-connection format
+        if (changes.connections?.newValue && ACTIVE_CONNECTION_ID) {
+            const updatedConnections = changes.connections.newValue;
+            const activeConn = updatedConnections.find(c => c.id === ACTIVE_CONNECTION_ID);
+            if (activeConn) {
+                // Update in-memory tokens if active connection was refreshed
+                ACCESS_TOKEN = activeConn.accessToken;
+                INSTANCE_URL = activeConn.instanceUrl;
+                console.log('Active connection tokens updated from storage');
+            } else {
+                // Active connection was removed
+                triggerAuthExpired();
+            }
+        }
+
+        // Legacy single-connection format (for backward compatibility during migration)
         if (changes[STORAGE_KEYS.ACCESS_TOKEN]?.newValue) {
             ACCESS_TOKEN = changes[STORAGE_KEYS.ACCESS_TOKEN].newValue;
-            console.log('Access token updated from storage');
+            console.log('Access token updated from storage (legacy)');
         }
 
         if (changes[STORAGE_KEYS.INSTANCE_URL]?.newValue) {

@@ -3,22 +3,21 @@
 
 import { isProxyConnected, sendProxyRequest } from './native-messaging.js';
 
-let refreshPromise = null;
-
 /**
  * Exchange authorization code for tokens via proxy
+ * Returns token data for the callback page to handle storage
  * @param {string} code - Authorization code
  * @param {string} redirectUri - Redirect URI used in auth request
- * @returns {Promise<{success: boolean, error?: string}>}
+ * @param {string} loginDomain - The login domain used for auth
+ * @returns {Promise<{success: boolean, accessToken?: string, refreshToken?: string, instanceUrl?: string, loginDomain?: string, error?: string}>}
  */
-export async function exchangeCodeForTokens(code, redirectUri) {
+export async function exchangeCodeForTokens(code, redirectUri, loginDomain) {
     if (!isProxyConnected()) {
         return { success: false, error: 'Proxy not connected' };
     }
 
     try {
-        const data = await chrome.storage.local.get(['loginDomain']);
-        const loginDomain = data.loginDomain || 'https://login.salesforce.com';
+        loginDomain = loginDomain || 'https://login.salesforce.com';
         const tokenUrl = `${loginDomain}/services/oauth2/token`;
         const CLIENT_ID = chrome.runtime.getManifest().oauth2.client_id;
 
@@ -38,14 +37,12 @@ export async function exchangeCodeForTokens(code, redirectUri) {
         });
 
         if (!response.success) {
-            // Try to parse error details from response data if available
             let errorMsg = response.error || 'Token exchange request failed';
             if (response.data) {
                 try {
                     const errData = JSON.parse(response.data);
                     errorMsg = errData.error_description || errData.error || errorMsg;
                 } catch (e) {
-                    // Not JSON, use raw response
                     errorMsg = response.data.substring(0, 200) || errorMsg;
                 }
             }
@@ -55,13 +52,14 @@ export async function exchangeCodeForTokens(code, redirectUri) {
         const tokenData = JSON.parse(response.data);
 
         if (tokenData.access_token) {
-            await chrome.storage.local.set({
+            console.log('OAuth token exchange successful');
+            return {
+                success: true,
                 accessToken: tokenData.access_token,
                 refreshToken: tokenData.refresh_token,
-                instanceUrl: tokenData.instance_url
-            });
-            console.log('OAuth tokens stored successfully');
-            return { success: true };
+                instanceUrl: tokenData.instance_url,
+                loginDomain: loginDomain
+            };
         } else {
             return {
                 success: false,
@@ -73,22 +71,29 @@ export async function exchangeCodeForTokens(code, redirectUri) {
     }
 }
 
+// Track refresh promises per connection to prevent concurrent refreshes
+const refreshPromises = new Map();
+
 /**
- * Refresh the access token using the stored refresh token.
- * Uses mutex pattern to prevent concurrent refreshes.
+ * Refresh the access token for a specific connection.
+ * Uses mutex pattern per connection to prevent concurrent refreshes.
  * Routes through proxy to bypass CORS.
+ * @param {object} connection - Connection object with refreshToken and loginDomain
  * @returns {Promise<{success: boolean, accessToken?: string, error?: string}>}
  */
-export async function refreshAccessToken() {
-    if (refreshPromise) {
-        return refreshPromise;
+export async function refreshAccessToken(connection) {
+    if (!connection || !connection.id) {
+        return { success: false, error: 'No connection provided' };
     }
 
-    refreshPromise = (async () => {
-        try {
-            const data = await chrome.storage.local.get(['refreshToken', 'loginDomain']);
+    // Check for existing refresh in progress for this connection
+    if (refreshPromises.has(connection.id)) {
+        return refreshPromises.get(connection.id);
+    }
 
-            if (!data.refreshToken) {
+    const promise = (async () => {
+        try {
+            if (!connection.refreshToken) {
                 return { success: false, error: 'No refresh token available' };
             }
 
@@ -96,14 +101,14 @@ export async function refreshAccessToken() {
                 return { success: false, error: 'Proxy not connected for token refresh' };
             }
 
-            const loginDomain = data.loginDomain || 'https://login.salesforce.com';
+            const loginDomain = connection.loginDomain || 'https://login.salesforce.com';
             const tokenUrl = `${loginDomain}/services/oauth2/token`;
             const CLIENT_ID = chrome.runtime.getManifest().oauth2.client_id;
 
             const body = new URLSearchParams({
                 grant_type: 'refresh_token',
                 client_id: CLIENT_ID,
-                refresh_token: data.refreshToken
+                refresh_token: connection.refreshToken
             }).toString();
 
             const response = await sendProxyRequest({
@@ -116,30 +121,45 @@ export async function refreshAccessToken() {
 
             if (!response.success) {
                 console.error('Token refresh request failed:', response.error);
-                await clearAuthTokens();
                 return { success: false, error: response.error || 'Refresh failed' };
             }
 
             const tokenData = JSON.parse(response.data);
 
             if (tokenData.access_token) {
-                await chrome.storage.local.set({ accessToken: tokenData.access_token });
-                console.log('Token refreshed successfully');
+                console.log('Token refreshed successfully for connection:', connection.id);
                 return { success: true, accessToken: tokenData.access_token };
             } else {
                 console.error('Token refresh failed:', tokenData.error_description);
-                await clearAuthTokens();
                 return { success: false, error: tokenData.error_description || 'Refresh failed' };
             }
         } catch (error) {
             console.error('Token refresh error:', error);
             return { success: false, error: error.message };
         } finally {
-            refreshPromise = null;
+            refreshPromises.delete(connection.id);
         }
     })();
 
-    return refreshPromise;
+    refreshPromises.set(connection.id, promise);
+    return promise;
+}
+
+/**
+ * Update a specific connection's access token in storage
+ * @param {string} connectionId - The connection ID to update
+ * @param {string} accessToken - The new access token
+ */
+export async function updateConnectionToken(connectionId, accessToken) {
+    const data = await chrome.storage.local.get(['connections']);
+    const connections = data.connections || [];
+    const index = connections.findIndex(c => c.id === connectionId);
+
+    if (index !== -1) {
+        connections[index].accessToken = accessToken;
+        connections[index].lastUsedAt = Date.now();
+        await chrome.storage.local.set({ connections });
+    }
 }
 
 /**

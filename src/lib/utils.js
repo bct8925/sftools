@@ -10,15 +10,27 @@ export {
     isAuthenticated,
     loadAuthTokens,
     onAuthExpired,
-    triggerAuthExpired
+    triggerAuthExpired,
+    // Multi-connection exports
+    getActiveConnectionId,
+    setActiveConnection,
+    loadConnections,
+    saveConnections,
+    addConnection,
+    updateConnection,
+    removeConnection,
+    findConnectionByInstance,
+    migrateFromSingleConnection
 } from './auth.js';
 
-import { getAccessToken, getInstanceUrl, triggerAuthExpired } from './auth.js';
+import { getAccessToken, getInstanceUrl, getActiveConnectionId, triggerAuthExpired } from './auth.js';
 
 // --- Background Fetch Proxy ---
-export async function extensionFetch(url, options = {}) {
+export async function extensionFetch(url, options = {}, connectionId = null) {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-        const response = await chrome.runtime.sendMessage({ type: 'fetch', url, options });
+        // Use provided connectionId or get from active connection
+        const connId = connectionId || getActiveConnectionId();
+        const response = await chrome.runtime.sendMessage({ type: 'fetch', url, options, connectionId: connId });
 
         // Handle auth expiration from background
         if (response.authExpired) {

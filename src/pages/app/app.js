@@ -1,5 +1,19 @@
 // sftools - Main Application Entry Point
-import { loadAuthTokens, getAccessToken, getInstanceUrl, isAuthenticated, checkProxyStatus, isProxyConnected, onAuthExpired } from '../../lib/utils.js';
+import {
+    getAccessToken,
+    getInstanceUrl,
+    isAuthenticated,
+    checkProxyStatus,
+    isProxyConnected,
+    onAuthExpired,
+    // Multi-connection
+    loadConnections,
+    setActiveConnection,
+    getActiveConnectionId,
+    removeConnection,
+    updateConnection,
+    migrateFromSingleConnection
+} from '../../lib/utils.js';
 // Self-registering custom element tabs
 import '../../components/query/query-tab.js';
 import '../../components/apex/apex-tab.js';
@@ -11,21 +25,19 @@ import '../../components/settings/settings-tab.js';
 const CLIENT_ID = chrome.runtime.getManifest().oauth2.client_id;
 const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
+// Cached login domain for authorization
+let detectedLoginDomain = 'https://login.salesforce.com';
+
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
     initOpenOrgButton();
     initOpenInTabButton();
     initAuthExpirationHandler();
-    initAuthModal();
+    initConnectionSelector();
 
-    await loadAuthTokens();
     await checkProxyStatus();
-
-    // Show auth modal if not authenticated
-    if (!isAuthenticated()) {
-        showAuthModal();
-    }
+    await initializeConnections();
 
     // Apply feature gating based on proxy status
     updateFeatureGating();
@@ -34,60 +46,198 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.dispatchEvent(new CustomEvent('auth-ready'));
 });
 
-// Listen for auth changes to hide modal
-chrome.storage.onChanged.addListener((changes, area) => {
+// Listen for connection list changes (e.g., new auth from another tab)
+chrome.storage.onChanged.addListener(async (changes, area) => {
     if (area !== 'local') return;
-    if (changes.accessToken?.newValue && changes.instanceUrl?.newValue) {
-        hideAuthModal();
+    if (changes.connections) {
+        await refreshConnectionList();
     }
 });
 
-// --- Auth Modal ---
-function initAuthModal() {
-    const authorizeBtn = document.getElementById('auth-modal-authorize');
+// --- Connection Selector ---
+function initConnectionSelector() {
+    const authorizeBtn = document.getElementById('authorize-btn');
+    const dropdown = document.querySelector('.connection-dropdown');
+    const trigger = dropdown.querySelector('.connection-dropdown-trigger');
+    const addBtn = dropdown.querySelector('.connection-add-btn');
+    const connectionList = dropdown.querySelector('.connection-list');
+
+    // Authorize button (shown when no connections)
     authorizeBtn.addEventListener('click', startAuthorization);
+
+    // Add connection button in dropdown
+    addBtn.addEventListener('click', () => {
+        dropdown.classList.remove('open');
+        startAuthorization();
+    });
+
+    // Dropdown toggle
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => dropdown.classList.remove('open'));
+
+    // Delegate clicks on connection list
+    connectionList.addEventListener('click', async (e) => {
+        const item = e.target.closest('.connection-item');
+        if (!item) return;
+
+        if (e.target.closest('.connection-remove')) {
+            e.stopPropagation();
+            await handleRemoveConnection(item.dataset.id);
+        } else {
+            await handleSelectConnection(item.dataset.id);
+            dropdown.classList.remove('open');
+        }
+    });
 }
 
-function showAuthModal() {
-    const modal = document.getElementById('auth-modal');
-    const domainEl = document.getElementById('auth-modal-domain');
+async function initializeConnections() {
+    // Migrate from old single-connection format if needed
+    await migrateFromSingleConnection();
 
-    modal.classList.remove('hidden');
-    detectAndDisplayDomain(domainEl);
+    const connections = await loadConnections();
+
+    if (connections.length === 0) {
+        showAuthorizeButton();
+    } else {
+        showConnectionDropdown(connections);
+        // Auto-select most recently used
+        const mostRecent = connections.reduce((a, b) =>
+            a.lastUsedAt > b.lastUsedAt ? a : b
+        );
+        await selectConnection(mostRecent);
+    }
 }
 
-function hideAuthModal() {
-    const modal = document.getElementById('auth-modal');
-    modal.classList.add('hidden');
+async function refreshConnectionList() {
+    const connections = await loadConnections();
+
+    if (connections.length === 0) {
+        showAuthorizeButton();
+        setActiveConnection(null);
+    } else {
+        showConnectionDropdown(connections);
+
+        // If active connection was removed, select the most recent
+        const activeId = getActiveConnectionId();
+        const activeExists = connections.some(c => c.id === activeId);
+        if (!activeExists) {
+            const mostRecent = connections.reduce((a, b) =>
+                a.lastUsedAt > b.lastUsedAt ? a : b
+            );
+            await selectConnection(mostRecent);
+        } else {
+            // Just update the UI
+            renderConnectionList(connections);
+        }
+    }
 }
 
-async function detectAndDisplayDomain(domainEl) {
-    let loginDomain = 'https://login.salesforce.com';
+function showAuthorizeButton() {
+    const authorizeBtn = document.getElementById('authorize-btn');
+    const dropdown = document.querySelector('.connection-dropdown');
+    authorizeBtn.classList.remove('hidden');
+    dropdown.classList.add('hidden');
+}
 
+function showConnectionDropdown(connections) {
+    const authorizeBtn = document.getElementById('authorize-btn');
+    const dropdown = document.querySelector('.connection-dropdown');
+    authorizeBtn.classList.add('hidden');
+    dropdown.classList.remove('hidden');
+    renderConnectionList(connections);
+}
+
+function renderConnectionList(connections) {
+    const list = document.querySelector('.connection-list');
+    const activeId = getActiveConnectionId();
+
+    list.innerHTML = connections.map(conn => `
+        <div class="connection-item ${conn.id === activeId ? 'active' : ''}" data-id="${conn.id}">
+            <span class="connection-name">${escapeHtml(conn.label)}</span>
+            <button class="connection-remove" title="Remove">&times;</button>
+        </div>
+    `).join('');
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+async function selectConnection(connection) {
+    setActiveConnection(connection);
+    updateConnectionLabel(connection.label);
+    renderConnectionList(await loadConnections());
+
+    // Update lastUsedAt
+    await updateConnection(connection.id, {});
+
+    // Notify components that connection changed
+    document.dispatchEvent(new CustomEvent('connection-changed', { detail: connection }));
+}
+
+function updateConnectionLabel(label) {
+    const labelEl = document.querySelector('.connection-label');
+    labelEl.textContent = label;
+}
+
+async function handleSelectConnection(connectionId) {
+    const connections = await loadConnections();
+    const connection = connections.find(c => c.id === connectionId);
+    if (connection) {
+        await selectConnection(connection);
+    }
+}
+
+async function handleRemoveConnection(connectionId) {
+    if (!confirm('Remove this connection?')) return;
+
+    await removeConnection(connectionId);
+    const connections = await loadConnections();
+
+    if (connections.length === 0) {
+        setActiveConnection(null);
+        showAuthorizeButton();
+    } else {
+        renderConnectionList(connections);
+        // If removed the active one, switch to another
+        if (getActiveConnectionId() === connectionId) {
+            const mostRecent = connections.reduce((a, b) =>
+                a.lastUsedAt > b.lastUsedAt ? a : b
+            );
+            await selectConnection(mostRecent);
+        }
+    }
+}
+
+async function detectLoginDomain() {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.url) {
             const urlObj = new URL(tab.url);
             if (urlObj.hostname.includes('.my.salesforce.com')) {
-                loginDomain = urlObj.origin;
+                detectedLoginDomain = urlObj.origin;
             } else if (urlObj.hostname.includes('.lightning.force.com')) {
-                loginDomain = urlObj.origin.replace('.lightning.force.com', '.my.salesforce.com');
+                detectedLoginDomain = urlObj.origin.replace('.lightning.force.com', '.my.salesforce.com');
             } else if (urlObj.hostname.includes('.salesforce-setup.com')) {
-                loginDomain = urlObj.origin.replace('.salesforce-setup.com', '.salesforce.com');
+                detectedLoginDomain = urlObj.origin.replace('.salesforce-setup.com', '.salesforce.com');
             }
         }
     } catch (e) {
         console.error('Error detecting domain:', e);
     }
-
-    const hostname = new URL(loginDomain).hostname;
-    domainEl.textContent = `Will connect to: ${hostname}`;
-    domainEl.dataset.loginDomain = loginDomain;
 }
 
 async function startAuthorization() {
-    const domainEl = document.getElementById('auth-modal-domain');
-    const loginDomain = domainEl.dataset.loginDomain || 'https://login.salesforce.com';
+    // Detect login domain from current tab at click time
+    await detectLoginDomain();
+    const loginDomain = detectedLoginDomain;
 
     // Check proxy for code flow
     let useCodeFlow = false;
@@ -177,7 +327,8 @@ function initOpenOrgButton() {
     const btn = document.getElementById('open-org-btn');
     btn.addEventListener('click', () => {
         if (!isAuthenticated()) {
-            showAuthModal();
+            // If not authenticated, start authorization instead
+            startAuthorization();
             return;
         }
         const instanceUrl = getInstanceUrl();

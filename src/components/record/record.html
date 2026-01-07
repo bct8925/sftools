@@ -1,0 +1,39 @@
+<header class="standalone-header">
+    <div class="nav-brand"><img src="../../icon.png" alt="">sftools</div>
+    <span class="tool-name">Record Viewer</span>
+</header>
+
+<main class="content-area">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon" style="background-color: #0070d2;">R</div>
+            <h2>Record Details</h2>
+        </div>
+        <div class="card-body">
+            <div class="record-info">
+                <span class="object-name" id="objectName">Loading...</span>
+                <span class="record-id" id="recordId"></span>
+                <button id="openInOrgBtn" class="button-neutral" style="margin-left: auto; padding: 4px 12px; font-size: 12px;">Open in Org</button>
+                <span id="status" class="status-badge"></span>
+            </div>
+
+            <div class="field-header">
+                <div>Field Label</div>
+                <div>API Name</div>
+                <div>Type</div>
+                <div>Value</div>
+                <div>Preview</div>
+            </div>
+
+            <div class="fields-container" id="fieldsContainer">
+                <div class="loading-container">Loading record data...</div>
+            </div>
+
+            <div class="actions-bar">
+                <button id="saveBtn" class="button-brand save-btn" disabled>Save Changes</button>
+                <button id="refreshBtn" class="button-neutral">Refresh</button>
+                <span id="changeCount" class="change-count"></span>
+            </div>
+        </div>
+    </div>
+</main>

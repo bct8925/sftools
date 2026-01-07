@@ -1,0 +1,178 @@
+<!-- Disclaimer Modal -->
+<div id="disclaimerOverlay" class="disclaimer-overlay">
+    <div class="disclaimer-modal">
+        <div class="disclaimer-header">
+            <h2><span class="warning-icon">&#9888;</span> Important: Authorized Use Only</h2>
+        </div>
+        <div class="disclaimer-body">
+            <h3>What This Tool Does</h3>
+            <p>
+                The Aura Debugger allows you to send requests to the Salesforce Aura framework,
+                which powers Lightning Experience and Salesforce Communities. This tool can retrieve
+                data, execute Apex code, and interact with Salesforce components on your behalf.
+            </p>
+
+            <div class="disclaimer-warning-box">
+                <p>
+                    This tool should only be used on Salesforce orgs and communities where you have
+                    explicit authorization to perform debugging and development activities.
+                </p>
+            </div>
+
+            <h3>Authorized Use Includes</h3>
+            <ul>
+                <li>Debugging and testing on Salesforce orgs where you are an authorized administrator or developer</li>
+                <li>Development and testing on sandbox or scratch orgs assigned to you</li>
+                <li>Security testing with explicit written authorization from the org owner</li>
+                <li>Educational purposes on your own personal developer org</li>
+                <li>Legitimate troubleshooting as part of your job responsibilities</li>
+            </ul>
+
+            <h3>Prohibited Use Includes</h3>
+            <ul>
+                <li>Accessing or attempting to access Salesforce orgs without authorization</li>
+                <li>Extracting, scraping, or exfiltrating data you are not authorized to access</li>
+                <li>Attempting to bypass security controls, authentication, or access restrictions</li>
+                <li>Probing or testing orgs belonging to other organizations without written consent</li>
+                <li>Any activity that violates Salesforce's Terms of Service or Acceptable Use Policy</li>
+                <li>Any activity that violates applicable laws or regulations</li>
+            </ul>
+
+            <h3>Your Responsibility</h3>
+            <p>
+                By using this tool, you accept full responsibility for ensuring your use is authorized
+                and lawful. Unauthorized access to computer systems is a serious offense that may result
+                in civil liability and criminal prosecution under laws such as the Computer Fraud and
+                Abuse Act (CFAA) in the United States and similar laws in other jurisdictions.
+            </p>
+
+            <p>
+                The developers of this tool accept no responsibility for misuse. This tool is provided
+                for legitimate development and debugging purposes only.
+            </p>
+
+            <div class="disclaimer-checkbox-container">
+                <input type="checkbox" id="disclaimerCheckbox">
+                <label for="disclaimerCheckbox">
+                    I confirm that I have authorization to use this tool on the Salesforce org(s) I intend
+                    to access, and I understand that I am solely responsible for ensuring my use complies
+                    with all applicable laws, regulations, and Salesforce's Terms of Service.
+                </label>
+            </div>
+
+            <div class="disclaimer-footer">
+                <button class="disclaimer-btn disclaimer-btn-cancel" id="disclaimerCancel">Cancel</button>
+                <button class="disclaimer-btn disclaimer-btn-accept" id="disclaimerAccept" disabled>I Understand &amp; Accept</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<header class="standalone-header">
+    <div class="nav-brand"><img src="../../icon.png" alt="">sftools</div>
+    <span class="tool-name">Aura Debugger</span>
+</header>
+
+<main class="content-area">
+    <header class="page-header">
+        <h1>Salesforce Aura Debugger</h1>
+    </header>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon" style="background-color: #f39e58;">A</div>
+            <h2>Request Configuration</h2>
+        </div>
+        <div class="card-body">
+            <div class="form-element">
+                <label for="communityUrl">Community URL</label>
+                <input type="text" id="communityUrl" class="input" placeholder="https://mycommunity.force.com/s">
+            </div>
+
+            <div class="form-element">
+                <label>Authentication Mode</label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="authMode" value="unauth" checked>
+                        <span>Unauthenticated</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="authMode" value="auth">
+                        <span>Authenticated (Aura Token)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="authFields" class="auth-panel hidden">
+                <div class="form-element">
+                    <label for="authToken">Aura Token</label>
+                    <input type="text" id="authToken" class="input font-mono text-xs" placeholder="eyJ...">
+                </div>
+                <div class="form-element" style="margin-bottom: 0;">
+                    <label for="authSid">Session ID (SID) <span style="font-weight: normal; text-transform: none;">&mdash; leave blank to use browser cookie</span></label>
+                    <input type="text" id="authSid" class="input font-mono text-xs" placeholder="00D...">
+                </div>
+            </div>
+
+            <div class="grid-row">
+                <div class="form-element">
+                    <label for="methodSelector">Method Type</label>
+                    <select id="methodSelector" class="select">
+                        <option value="getItems" selected>SelectableListDataProvider (Get Items)</option>
+                        <option value="getObjectInfo">RecordUiController (Get Object Info)</option>
+                        <option value="getConfigData">HostConfigController (Get Config Data)</option>
+                        <option value="auraCmpDef">Component Definition (auraCmpDef)</option>
+                        <option value="apex">ApexActionController (Execute)</option>
+                        <option value="custom">Custom Definition</option>
+                    </select>
+                </div>
+                <div class="form-element">
+                    <label for="methodDescriptor">Method Descriptor</label>
+                    <input type="text" id="methodDescriptor" class="input font-mono text-sm"
+                        value="serviceComponent://ui.force.components.controllers.lists.selectableListDataProvider.SelectableListDataProviderController/ACTION$getItems"
+                        disabled
+                        style="background-color: #f3f4f6;">
+                </div>
+            </div>
+
+            <details>
+                <summary>Advanced Config (FWUID)</summary>
+                <div class="details-content">
+                    <div class="form-element" style="margin-bottom: 0;">
+                        <label for="fwuid">Framework UID (fwuid)</label>
+                        <input type="text" id="fwuid" class="input font-mono text-xs"
+                            value="eE5UbjZPdVlRT3M0d0xtOXc5MzVOQWg5TGxiTHU3MEQ5RnBMM0VzVXc1cmcxMi42MjkxNDU2LjE2Nzc3MjE2">
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon" style="background-color: #0070d2;">P</div>
+            <h2>Request Parameters</h2>
+        </div>
+        <div class="card-body">
+            <monaco-editor id="paramsEditor" class="monaco-container" language="json"></monaco-editor>
+        </div>
+    </div>
+
+    <div class="actions-bar">
+        <button id="executeBtn" class="button-brand">Execute Request</button>
+        <span id="status" class="status-badge">Ready</span>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon" style="background-color: #4bca81;">R</div>
+            <h2>Response</h2>
+        </div>
+        <div class="card-body" style="padding-bottom: 0;">
+            <monaco-editor id="responseEditor" class="monaco-container monaco-container-lg" language="json" readonly></monaco-editor>
+            <div id="responseResizer" class="resizer">
+                <div class="resizer-grip"></div>
+            </div>
+        </div>
+    </div>
+</main>

@@ -39,20 +39,28 @@ src/
 │   ├── rest-api/             # REST API tab component
 │   │   ├── rest-api-tab.js
 │   │   └── rest-api.html
-│   └── events/               # Events tab component
-│       ├── events-tab.js
-│       └── events.html
-├── pages/                    # Full page entry points
+│   ├── events/               # Events tab component
+│   │   ├── events-tab.js
+│   │   └── events.html
+│   ├── aura/                 # Aura Debugger page component
+│   │   ├── aura-page.js
+│   │   ├── aura.html
+│   │   └── aura.css
+│   └── record/               # Record Viewer page component
+│       ├── record-page.js
+│       ├── record.html
+│       └── record.css
+├── pages/                    # Page entry points (minimal shells)
 │   ├── app/                  # Main tabbed interface
 │   │   ├── app.html
 │   │   └── app.js
 │   ├── callback/             # OAuth callback
 │   │   ├── callback.html
 │   │   └── callback.js
-│   ├── aura/                 # Standalone Aura Debugger
+│   ├── aura/                 # Aura Debugger entry (loads <aura-page>)
 │   │   ├── aura.html
 │   │   └── aura.js
-│   └── record/               # Standalone Record Viewer/Editor
+│   └── record/               # Record Viewer entry (loads <record-page>)
 │       ├── record.html
 │       └── record.js
 ├── background/               # Service worker
@@ -81,7 +89,9 @@ dist/
 ├── assets/                   # Monaco workers, fonts
 ├── background.js             # Service worker
 ├── style.css                 # Global styles
-├── app.css                   # Component styles (bundled)
+├── app.css                   # Tab component styles (bundled)
+├── aura.css                  # Aura page component styles
+├── record.css                # Record page component styles
 └── icon.png                  # Copied from public/
 ```
 
@@ -107,7 +117,9 @@ Planned:
 
 ## Standalone Tools
 
-### Aura Debugger (`src/pages/aura/`)
+Standalone tools use the same custom element pattern as tabs. Each tool has a component in `src/components/` and a minimal entry point in `src/pages/`.
+
+### Aura Debugger (`src/components/aura/`)
 
 A standalone tool for making Aura framework requests to Salesforce communities/orgs. Does not use OAuth - handles its own authentication.
 
@@ -124,7 +136,7 @@ A standalone tool for making Aura framework requests to Salesforce communities/o
 2. If SID is blank, checks for existing browser cookie via `chrome.cookies` API
 3. Aura token is passed in request body as `aura.token` parameter
 
-### Record Viewer (`src/pages/record/`)
+### Record Viewer (`src/components/record/`)
 
 A standalone tool for viewing and editing field values on a Salesforce record. Accessed via context menu when right-clicking the extension icon.
 
@@ -198,7 +210,7 @@ Side panel support is configured in `manifest.json` via the `sidePanel` permissi
 
 ## Component Architecture
 
-Tool tabs are implemented as Custom Elements (Web Components) without Shadow DOM. This keeps CSS simple while providing encapsulation for JS logic.
+Both tool tabs and standalone pages are implemented as Custom Elements (Web Components) without Shadow DOM. This keeps CSS simple while providing encapsulation for JS logic. All components follow the same pattern: template loaded via `?raw` import, CSS in separate file, state as class properties.
 
 ### Monaco Editor Component
 
@@ -307,11 +319,67 @@ customElements.define('query-tab', QueryTab);
    <<name>-tab id="<name>" class="tab-content"></<name>-tab>
    ```
 
+### Standalone Page Component Pattern
+
+Standalone pages use the same custom element pattern as tabs. The page entry point is a minimal HTML shell that loads a custom element:
+
+```html
+<!-- src/pages/aura/aura.html (entry point - minimal shell) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Aura Debugger - sftools</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+    <aura-page></aura-page>
+    <script type="module" src="aura.js"></script>
+</body>
+</html>
+```
+
+```javascript
+// src/pages/aura/aura.js (entry point - single import)
+import '../../components/aura/aura-page.js';
+```
+
+```javascript
+// src/components/aura/aura-page.js (component)
+import template from './aura.html?raw';
+import './aura.css';
+
+class AuraPage extends HTMLElement {
+    // State as class properties
+    communityUrl = null;
+    paramsEditor = null;
+
+    connectedCallback() {
+        this.innerHTML = template;
+        this.initElements();
+        this.attachEventListeners();
+    }
+
+    initElements() {
+        this.paramsEditor = this.querySelector('#paramsEditor');
+        // ...
+    }
+    // ...
+}
+
+customElements.define('aura-page', AuraPage);
+```
+
 ### Adding a New Standalone Tool
 
-1. Create page folder: `src/pages/<name>/`
-2. Create `<name>.html` with full HTML structure (imports `../../style.css`)
-3. Create `<name>.js` with tool logic
+1. Create component folder: `src/components/<name>/`
+2. Create files:
+   - `<name>-page.js` - Custom element class
+   - `<name>.html` - Template HTML (body content only, no DOCTYPE)
+   - `<name>.css` - Component-specific styles
+3. Create page entry: `src/pages/<name>/`
+   - `<name>.html` - Minimal shell with `<<name>-page></<name>-page>`
+   - `<name>.js` - Single import: `import '../../components/<name>/<name>-page.js';`
 4. Add to `vite.config.js` `rollupOptions.input`:
    ```javascript
    <name>: resolve(__dirname, 'src/pages/<name>/<name>.html'),

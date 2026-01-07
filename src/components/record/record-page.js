@@ -11,6 +11,7 @@ class RecordPage extends HTMLElement {
     connectionId = null;
     instanceUrl = null;
     fieldDescribe = {};
+    nameFieldMap = {};
     originalValues = {};
     currentValues = {};
 
@@ -90,12 +91,13 @@ class RecordPage extends HTMLElement {
 
         try {
             const describe = await getObjectDescribe(this.objectType);
-            const record = await getRecordWithRelationships(this.objectType, this.recordId, describe.fields);
+            const { record, nameFieldMap } = await getRecordWithRelationships(this.objectType, this.recordId, describe.fields);
 
             this.fieldDescribe = {};
             for (const field of describe.fields) {
                 this.fieldDescribe[field.name] = field;
             }
+            this.nameFieldMap = nameFieldMap;
 
             this.objectNameEl.textContent = describe.label;
             document.title = `${this.recordId} - Record Viewer - sftools`;
@@ -114,12 +116,12 @@ class RecordPage extends HTMLElement {
     }
 
     renderFields(fields, record) {
-        // Sort: Id first, Name second, then alphabetically by API name
+        // Sort: Id first, name field second, then alphabetically by API name
         const sortedFields = [...fields].sort((a, b) => {
             if (a.name === 'Id') return -1;
             if (b.name === 'Id') return 1;
-            if (a.name === 'Name') return -1;
-            if (b.name === 'Name') return 1;
+            if (a.nameField) return -1;
+            if (b.nameField) return 1;
             return a.name.localeCompare(b.name);
         });
 
@@ -211,9 +213,10 @@ class RecordPage extends HTMLElement {
             case 'reference':
                 if (field.relationshipName && field.referenceTo?.length > 0) {
                     const related = record[field.relationshipName];
-                    const relatedName = related?.Name;
+                    const relatedType = field.referenceTo[0];
+                    const nameField = this.nameFieldMap[relatedType] || 'Name';
+                    const relatedName = related?.[nameField];
                     if (relatedName) {
-                        const relatedType = field.referenceTo[0];
                         const displayType = field.name === 'OwnerId' ? 'User/Group' : relatedType;
                         const url = `record.html?objectType=${encodeURIComponent(relatedType)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(this.connectionId)}`;
                         return `<a href="${url}" target="_blank">${this.escapeHtml(relatedName)} (${this.escapeHtml(displayType)})</a>`;

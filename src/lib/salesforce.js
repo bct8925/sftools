@@ -240,18 +240,47 @@ export async function getRecord(objectType, recordId) {
  * @param {string} objectType - The SObject API name
  * @param {string} recordId - The record ID
  * @param {Array} fields - Field metadata from describe
- * @returns {Promise<object>} Record data with relationship names
+ * @returns {Promise<{record: object, nameFieldMap: object}>} Record data and map of objectType -> nameField
  */
 export async function getRecordWithRelationships(objectType, recordId, fields) {
-    // Build field list including relationship.Name for reference fields
+    // Collect unique referenced object types
+    const referencedTypes = new Set();
+    for (const field of fields) {
+        if (field.type === 'reference' && field.referenceTo?.length > 0) {
+            referencedTypes.add(field.referenceTo[0]);
+        }
+    }
+
+    // Get describes for all referenced types to find their name fields
+    const nameFieldMap = {};
+    if (referencedTypes.size > 0) {
+        const describes = await Promise.all(
+            [...referencedTypes].map(type =>
+                getObjectDescribe(type).catch(() => null)
+            )
+        );
+
+        [...referencedTypes].forEach((type, index) => {
+            const describe = describes[index];
+            if (describe) {
+                const nameField = describe.fields.find(f => f.nameField);
+                nameFieldMap[type] = nameField?.name || 'Name';
+            } else {
+                nameFieldMap[type] = 'Name';
+            }
+        });
+    }
+
+    // Build field list including relationship name fields
     const fieldNames = ['Id'];
     for (const field of fields) {
         if (field.name === 'Id') continue;
         fieldNames.push(field.name);
 
-        // Add relationship.Name for reference fields
-        if (field.type === 'reference' && field.relationshipName) {
-            fieldNames.push(`${field.relationshipName}.Name`);
+        if (field.type === 'reference' && field.relationshipName && field.referenceTo?.length > 0) {
+            const refType = field.referenceTo[0];
+            const nameField = nameFieldMap[refType] || 'Name';
+            fieldNames.push(`${field.relationshipName}.${nameField}`);
         }
     }
 
@@ -262,7 +291,7 @@ export async function getRecordWithRelationships(objectType, recordId, fields) {
         throw new Error('Record not found');
     }
 
-    return response.json.records[0];
+    return { record: response.json.records[0], nameFieldMap };
 }
 
 /**

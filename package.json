@@ -7,6 +7,7 @@
   },
   "scripts": {
     "build": "vite build",
-    "watch": "vite build --watch"
+    "watch": "vite build --watch",
+    "package": "vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'"
   }
 }

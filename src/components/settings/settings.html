@@ -39,31 +39,6 @@
 
     <div class="card">
         <div class="card-header">
-            <div class="card-header-icon" style="background-color: #4bca81;">S</div>
-            <h2>Session</h2>
-        </div>
-        <div class="card-body">
-            <p class="settings-description">
-                Manage your Salesforce connection.
-            </p>
-
-            <div class="settings-status-row">
-                <span class="settings-session-indicator status-indicator disconnected"></span>
-                <div class="status-text">
-                    <div class="label settings-session-label">Not Connected</div>
-                    <div class="detail settings-session-detail">No active session</div>
-                </div>
-            </div>
-
-            <div class="settings-button-row">
-                <button class="settings-reauth-btn button-neutral">Re-Authorize</button>
-                <button class="settings-logout-btn button-neutral">Log Out</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
             <div class="card-header-icon" style="background-color: #9050e9;">A</div>
             <h2>Connected App</h2>
         </div>
@@ -95,6 +70,7 @@
                     <li>In Salesforce Setup, create an External Client App or Connected App</li>
                     <li>Callback URL: <code>https://sftools.dev/sftools-callback</code></li>
                     <li>OAuth Scopes: <code>api, web, refresh_token</code></li>
+                    <li>Disable <code>PKCE, Require secret for Web Server, Require secret for Refresh Token</code></li>
                 </ol>
             </details>
         </div>

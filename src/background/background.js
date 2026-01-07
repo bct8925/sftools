@@ -26,13 +26,31 @@ chrome.action.onClicked.addListener(async (tab) => {
 // Context Menu Setup
 // ============================================================================
 
+const SFTOOLS_MENU_ID = 'sftools-parent';
 const RECORD_MENU_ID = 'view-edit-record';
 
 chrome.runtime.onInstalled.addListener(() => {
+    // Parent menu - appears on Salesforce pages
+    chrome.contextMenus.create({
+        id: SFTOOLS_MENU_ID,
+        title: 'sftools',
+        contexts: ['page'],
+        documentUrlPatterns: [
+            '*://*.my.salesforce.com/*',
+            '*://*.lightning.force.com/*'
+        ]
+    });
+
+    // Child menu item
     chrome.contextMenus.create({
         id: RECORD_MENU_ID,
+        parentId: SFTOOLS_MENU_ID,
         title: 'View/Edit Record',
-        contexts: ['action']
+        contexts: ['page'],
+        documentUrlPatterns: [
+            '*://*.my.salesforce.com/*',
+            '*://*.lightning.force.com/*'
+        ]
     });
 });
 

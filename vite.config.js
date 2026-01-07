@@ -16,9 +16,7 @@ export default defineConfig({
       input: {
         // Main pages
         app: resolve(__dirname, 'src/pages/app/app.html'),
-        popup: resolve(__dirname, 'src/pages/popup/popup.html'),
         callback: resolve(__dirname, 'src/pages/callback/callback.html'),
-        options: resolve(__dirname, 'src/pages/options/options.html'),
         aura: resolve(__dirname, 'src/pages/aura/aura.html'),
         // Background service worker
         background: resolve(__dirname, 'src/background/background.js')

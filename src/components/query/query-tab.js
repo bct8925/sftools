@@ -467,7 +467,7 @@ LIMIT 10`);
         }
 
         if (!isAuthenticated()) {
-            alert('Not authenticated. Please authorize via the extension popup first.');
+            alert('Not authenticated. Please authorize via the connection selector.');
             return;
         }
 

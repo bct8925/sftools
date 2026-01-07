@@ -67,7 +67,7 @@ export function loadAuthTokens() {
                     console.log('Loaded auth for instance:', INSTANCE_URL);
                     resolve(true);
                 } else {
-                    console.log('No auth tokens found. Please authorize via popup.');
+                    console.log('No auth tokens found. Please authorize via connection selector.');
                     resolve(false);
                 }
             });

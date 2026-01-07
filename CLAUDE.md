@@ -46,15 +46,9 @@ src/
 │   ├── app/                  # Main tabbed interface
 │   │   ├── app.html
 │   │   └── app.js
-│   ├── popup/                # Extension popup
-│   │   ├── popup.html
-│   │   └── popup.js
 │   ├── callback/             # OAuth callback
 │   │   ├── callback.html
 │   │   └── callback.js
-│   ├── options/              # Extension settings
-│   │   ├── options.html
-│   │   └── options.js
 │   └── aura/                 # Standalone Aura Debugger
 │       ├── aura.html
 │       └── aura.js
@@ -77,9 +71,7 @@ src/
 dist/
 ├── pages/
 │   ├── app/app.html, app.js
-│   ├── popup/popup.html, popup.js
 │   ├── callback/callback.html, callback.js
-│   ├── options/options.html, options.js
 │   └── aura/aura.html, aura.js
 ├── chunks/                   # Shared code chunks
 ├── assets/                   # Monaco workers, fonts
@@ -110,8 +102,6 @@ Planned:
 - **Dev Console** - Debug log viewer
 
 ## Standalone Tools
-
-Standalone tools are accessible from the popup regardless of OAuth state. They appear in the "Standalone Tools" section of the popup.
 
 ### Aura Debugger (`src/pages/aura/`)
 
@@ -292,11 +282,6 @@ customElements.define('query-tab', QueryTab);
 4. Add to `vite.config.js` `rollupOptions.input`:
    ```javascript
    <name>: resolve(__dirname, 'src/pages/<name>/<name>.html'),
-   ```
-5. Add button in `src/pages/popup/popup.html` under `#standalone-group`
-6. Add click handler in `src/pages/popup/popup.js`:
-   ```javascript
-   chrome.tabs.create({ url: chrome.runtime.getURL('dist/pages/<name>/<name>.html') });
    ```
 
 ## Key Patterns

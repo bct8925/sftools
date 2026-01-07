@@ -301,7 +301,7 @@ function initAuthExpirationHandler() {
         overlay.innerHTML = `
             <div class="auth-expired-modal">
                 <h2>Authorization Lost</h2>
-                <p>The session for <strong>${escapeHtml(connectionLabel)}</strong> has expired and could not be refreshed.</p>
+                <p>The session for <strong>${escapeHtml(connectionLabel)}</strong> has expired.</p>
                 <div class="auth-expired-buttons">
                     <button id="reauth-btn" class="button-brand">Re-authorize</button>
                     <button id="delete-conn-btn" class="button-neutral">Delete</button>

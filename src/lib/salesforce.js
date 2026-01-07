@@ -342,6 +342,7 @@ export async function executeRestRequest(endpoint, method, body = null) {
         success: response.success,
         status: response.status,
         statusText: response.statusText,
+        error: response.error,
         data,
         raw: response.data
     };

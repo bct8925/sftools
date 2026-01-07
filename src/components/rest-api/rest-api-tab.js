@@ -99,8 +99,12 @@ class RestApiTab extends HTMLElement {
 
             if (typeof response.data === 'object') {
                 this.responseEditor.setValue(JSON.stringify(response.data, null, 2));
+            } else if (response.raw) {
+                this.responseEditor.setValue(response.raw);
+            } else if (response.error) {
+                this.responseEditor.setValue(`Error: ${response.error}`);
             } else {
-                this.responseEditor.setValue(response.raw || String(response.data));
+                this.responseEditor.setValue(response.statusText || 'No response');
             }
 
         } catch (error) {

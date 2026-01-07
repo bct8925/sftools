@@ -6,6 +6,7 @@ import { getObjectDescribe, getRecordWithRelationships, updateRecord } from '../
 let objectType = null;
 let recordId = null;
 let connectionId = null;
+let instanceUrl = null;
 let fieldDescribe = {};
 let originalValues = {};
 let currentValues = {};
@@ -18,6 +19,7 @@ const fieldsContainer = document.getElementById('fieldsContainer');
 const saveBtn = document.getElementById('saveBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 const changeCountEl = document.getElementById('changeCount');
+const openInOrgBtn = document.getElementById('openInOrgBtn');
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -40,13 +42,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    instanceUrl = connection.instanceUrl;
     setActiveConnection(connection);
 
     await loadRecord();
 
     saveBtn.addEventListener('click', saveChanges);
     refreshBtn.addEventListener('click', loadRecord);
+    openInOrgBtn.addEventListener('click', openInOrg);
 });
+
+function openInOrg() {
+    const url = `${instanceUrl}/lightning/r/${objectType}/${recordId}/view`;
+    window.open(url, '_blank');
+}
 
 async function loadConnection(id) {
     const { connections } = await chrome.storage.local.get(['connections']);

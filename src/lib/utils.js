@@ -39,7 +39,7 @@ export async function extensionFetch(url, options = {}, connectionId = null) {
 
         // Handle auth expiration from background
         if (response.authExpired) {
-            triggerAuthExpired(response.connectionId || connId);
+            triggerAuthExpired(response.connectionId || connId, response.error);
         }
 
         return response;
@@ -128,6 +128,10 @@ export async function salesforceRequest(endpoint, options = {}) {
     });
 
     if (!response.success && response.status !== 404) {
+        // Use response.error if available (e.g., from auth expiration), otherwise parse response data
+        if (response.error) {
+            throw new Error(response.error);
+        }
         const error = response.data ? JSON.parse(response.data) : { message: response.statusText };
         throw new Error(error[0]?.message || error.message || 'Request failed');
     }

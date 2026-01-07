@@ -52,6 +52,17 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
     if (area !== 'local') return;
     if (changes.connections) {
         await refreshConnectionList();
+
+        // Close auth-expired modal if open and we have a valid connection
+        const overlays = document.querySelectorAll('.auth-expired-overlay');
+        if (overlays.length > 0) {
+            const connections = changes.connections.newValue || [];
+            const validConn = connections.find(c => c.accessToken);
+            if (validConn) {
+                overlays.forEach(o => o.remove());
+                await selectConnection(validConn);
+            }
+        }
     }
 });
 
@@ -64,7 +75,7 @@ function initConnectionSelector() {
     const connectionList = dropdown.querySelector('.connection-list');
 
     // Authorize button (shown when no connections)
-    authorizeBtn.addEventListener('click', startAuthorization);
+    authorizeBtn.addEventListener('click', () => startAuthorization());
 
     // Add connection button in dropdown
     addBtn.addEventListener('click', () => {
@@ -199,16 +210,21 @@ async function handleSelectConnection(connectionId) {
 async function handleRemoveConnection(connectionId) {
     if (!confirm('Remove this connection?')) return;
 
+    // Clear active connection first to prevent auth expiration trigger
+    const wasActive = getActiveConnectionId() === connectionId;
+    if (wasActive) {
+        setActiveConnection(null);
+    }
+
     await removeConnection(connectionId);
     const connections = await loadConnections();
 
     if (connections.length === 0) {
-        setActiveConnection(null);
         showAuthorizeButton();
     } else {
         renderConnectionList(connections);
         // If removed the active one, switch to another
-        if (getActiveConnectionId() === connectionId) {
+        if (wasActive) {
             const mostRecent = connections.reduce((a, b) =>
                 a.lastUsedAt > b.lastUsedAt ? a : b
             );
@@ -235,10 +251,15 @@ async function detectLoginDomain() {
     }
 }
 
-async function startAuthorization() {
-    // Detect login domain from current tab at click time
-    await detectLoginDomain();
-    const loginDomain = detectedLoginDomain;
+async function startAuthorization(overrideLoginDomain = null) {
+    // Use provided domain or detect from current tab
+    let loginDomain;
+    if (overrideLoginDomain) {
+        loginDomain = overrideLoginDomain;
+    } else {
+        await detectLoginDomain();
+        loginDomain = detectedLoginDomain;
+    }
 
     // Check proxy for code flow
     let useCodeFlow = false;
@@ -266,22 +287,44 @@ async function startAuthorization() {
 
 // --- Auth Expiration Handler ---
 function initAuthExpirationHandler() {
-    onAuthExpired(() => {
-        // Show re-auth overlay
+    onAuthExpired(async (expiredConnectionId) => {
+        // Prevent duplicate modals
+        if (document.querySelector('.auth-expired-overlay')) return;
+
+        const connections = await loadConnections();
+        const expiredConnection = connections.find(c => c.id === expiredConnectionId);
+
+        const connectionLabel = expiredConnection?.label || 'Unknown';
+
         const overlay = document.createElement('div');
         overlay.className = 'auth-expired-overlay';
         overlay.innerHTML = `
             <div class="auth-expired-modal">
-                <h2>Session Expired</h2>
-                <p>Your Salesforce session has expired and could not be refreshed.</p>
-                <p>Please re-authorize to continue.</p>
-                <button id="reauth-btn" class="button-brand">Close and Re-authorize</button>
+                <h2>Authorization Lost</h2>
+                <p>The session for <strong>${escapeHtml(connectionLabel)}</strong> has expired and could not be refreshed.</p>
+                <div class="auth-expired-buttons">
+                    <button id="reauth-btn" class="button-brand">Re-authorize</button>
+                    <button id="delete-conn-btn" class="button-neutral">Delete</button>
+                </div>
             </div>
         `;
         document.body.appendChild(overlay);
 
-        document.getElementById('reauth-btn').addEventListener('click', () => {
-            window.close();
+        overlay.querySelector('#reauth-btn').addEventListener('click', async () => {
+            if (!expiredConnection) {
+                console.error('Re-auth failed: expiredConnection is null');
+                return;
+            }
+            await startAuthorization(expiredConnection.instanceUrl);
+        });
+
+        overlay.querySelector('#delete-conn-btn').addEventListener('click', async () => {
+            if (expiredConnectionId) {
+                // Clear active connection first to prevent auth expiration trigger
+                setActiveConnection(null);
+                await removeConnection(expiredConnectionId);
+            }
+            overlay.remove();
         });
     });
 }

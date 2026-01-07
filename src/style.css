@@ -621,6 +621,12 @@ body {
     margin-bottom: 1.5rem;
 }
 
+.auth-expired-buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
 /* --- Auth Modal --- */
 .auth-modal-overlay {
     position: fixed;

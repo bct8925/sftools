@@ -43,12 +43,15 @@ export function onAuthExpired(callback) {
 /**
  * Trigger auth expiration callback and clear local state
  * Called when authExpired message is received or extensionFetch returns authExpired
+ * @param {string} [connectionId] - Optional ID of the connection that expired
  */
-export function triggerAuthExpired() {
+export function triggerAuthExpired(connectionId) {
+    // Capture connection ID before clearing state
+    const expiredConnectionId = connectionId || ACTIVE_CONNECTION_ID;
     ACCESS_TOKEN = '';
     INSTANCE_URL = '';
     if (authExpiredCallback) {
-        authExpiredCallback();
+        authExpiredCallback(expiredConnectionId);
     }
 }
 

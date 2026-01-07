@@ -9,20 +9,22 @@
                 The local proxy enables advanced features like Platform Event streaming via gRPC and automatic token refresh.
             </p>
 
-            <div class="settings-status-row">
-                <span class="settings-proxy-indicator status-indicator disconnected"></span>
-                <div class="status-text">
-                    <div class="label settings-proxy-label">Not Connected</div>
-                    <div class="detail settings-proxy-detail">Click Connect to establish connection</div>
+            <label class="settings-toggle-label">
+                <input type="checkbox" class="settings-proxy-toggle">
+                <span>Enable Local Proxy</span>
+            </label>
+
+            <div class="settings-proxy-status hidden">
+                <div class="settings-status-row">
+                    <span class="settings-proxy-indicator status-indicator disconnected"></span>
+                    <div class="status-text">
+                        <div class="label settings-proxy-label">Not Connected</div>
+                        <div class="detail settings-proxy-detail"></div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="settings-button-row">
-                <button class="settings-connect-btn button-brand">Connect</button>
-                <button class="settings-disconnect-btn button-neutral" style="display: none;">Disconnect</button>
+                <div class="settings-version-info" style="display: none;"></div>
             </div>
-
-            <div class="settings-version-info" style="display: none;"></div>
 
             <details class="settings-install-instructions">
                 <summary>Installation Instructions</summary>
@@ -31,7 +33,7 @@
                     <li>Open a terminal in the <code>sftools-proxy</code> folder</li>
                     <li>Run: <code>npm run install-host</code></li>
                     <li>Restart Chrome completely</li>
-                    <li>Click "Connect" above</li>
+                    <li>Enable the toggle above</li>
                 </ol>
             </details>
         </div>

@@ -32,6 +32,7 @@ let detectedLoginDomain = 'https://login.salesforce.com';
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
+    initMobileMenu();
     initOpenOrgButton();
     initOpenInTabButton();
     initAuthExpirationHandler();
@@ -154,6 +155,9 @@ function showAuthorizeButton() {
     const dropdown = document.querySelector('.connection-dropdown');
     authorizeBtn.classList.remove('hidden');
     dropdown.classList.add('hidden');
+
+    // Sync mobile menu state
+    updateMobileConnections([]);
 }
 
 function showConnectionDropdown(connections) {
@@ -174,6 +178,9 @@ function renderConnectionList(connections) {
             <button class="connection-remove" title="Remove">&times;</button>
         </div>
     `).join('');
+
+    // Also update mobile menu connections
+    updateMobileConnections(connections);
 }
 
 function escapeHtml(str) {
@@ -518,4 +525,173 @@ function initTabs() {
         requestAnimationFrame(updateOverflow);
     });
     window.addEventListener('resize', handleResize);
+}
+
+// --- Mobile Menu ---
+function initMobileMenu() {
+    const hamburgerBtn = document.querySelector('.hamburger-btn');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    const mobileOverlay = document.querySelector('.mobile-menu-overlay');
+    const closeBtn = mobileMenu.querySelector('.mobile-menu-close');
+    const mobileNavItems = mobileMenu.querySelectorAll('.mobile-nav-item[data-tab]');
+    const mobileOpenOrg = document.getElementById('mobile-open-org');
+    const mobileOpenTab = document.getElementById('mobile-open-tab');
+    const mobileAddConnection = mobileMenu.querySelector('.mobile-add-connection');
+    const mobileAuthorize = mobileMenu.querySelector('.mobile-authorize');
+    const mobileConnectionList = mobileMenu.querySelector('.mobile-connection-list');
+
+    function openMenu() {
+        mobileMenu.classList.add('open');
+        mobileOverlay.classList.add('open');
+    }
+
+    function closeMenu() {
+        mobileMenu.classList.remove('open');
+        mobileOverlay.classList.remove('open');
+    }
+
+    // Hamburger button opens menu
+    hamburgerBtn.addEventListener('click', openMenu);
+
+    // Close button and overlay close menu
+    closeBtn.addEventListener('click', closeMenu);
+    mobileOverlay.addEventListener('click', closeMenu);
+
+    // Tab navigation items
+    mobileNavItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetId = item.getAttribute('data-tab');
+            const contents = document.querySelectorAll('.tab-content');
+            const navTabs = document.querySelectorAll('.tab-scroll-container .tab-link[data-tab]');
+
+            // Update mobile nav active state
+            mobileNavItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+
+            // Update desktop nav active state
+            navTabs.forEach(tab => tab.classList.remove('active'));
+            const matchingTab = document.querySelector(`.tab-scroll-container .tab-link[data-tab="${targetId}"]`);
+            if (matchingTab) matchingTab.classList.add('active');
+
+            // Switch content
+            contents.forEach(c => c.classList.remove('active'));
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) targetContent.classList.add('active');
+
+            closeMenu();
+        });
+    });
+
+    // Open Org button
+    mobileOpenOrg.addEventListener('click', () => {
+        if (!isAuthenticated()) {
+            startAuthorization();
+        } else {
+            const instanceUrl = getInstanceUrl();
+            const accessToken = getAccessToken();
+            const frontdoorUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${encodeURIComponent(accessToken)}`;
+            window.open(frontdoorUrl, '_blank');
+        }
+        closeMenu();
+    });
+
+    // Open in Tab button
+    mobileOpenTab.addEventListener('click', () => {
+        chrome.tabs.create({ url: chrome.runtime.getURL('dist/pages/app/app.html') });
+        closeMenu();
+    });
+
+    // Add Connection button
+    mobileAddConnection.addEventListener('click', () => {
+        startAuthorization();
+        closeMenu();
+    });
+
+    // Authorize button (shown when no connections)
+    mobileAuthorize.addEventListener('click', () => {
+        startAuthorization();
+        closeMenu();
+    });
+
+    // Delegate clicks on mobile connection list
+    mobileConnectionList.addEventListener('click', async (e) => {
+        const item = e.target.closest('.mobile-connection-item');
+        if (!item) return;
+
+        const connectionId = item.dataset.id;
+
+        // Handle remove button click
+        if (e.target.closest('.mobile-connection-remove')) {
+            e.stopPropagation();
+            if (!confirm('Remove this connection?')) return;
+
+            const wasActive = getActiveConnectionId() === connectionId;
+            if (wasActive) {
+                setActiveConnection(null);
+            }
+
+            await removeConnection(connectionId);
+            const connections = await loadConnections();
+
+            if (connections.length === 0) {
+                showAuthorizeButton();
+            } else {
+                renderConnectionList(connections);
+                if (wasActive) {
+                    const mostRecent = connections.reduce((a, b) =>
+                        a.lastUsedAt > b.lastUsedAt ? a : b
+                    );
+                    await selectConnection(mostRecent);
+                }
+            }
+            return;
+        }
+
+        // Handle connection select
+        const connections = await loadConnections();
+        const connection = connections.find(c => c.id === connectionId);
+        if (connection) {
+            await selectConnection(connection);
+        }
+        closeMenu();
+    });
+}
+
+function shortenDomain(label) {
+    return label
+        .replace(/\.my\.salesforce\.com$/, '')
+        .replace(/\.lightning\.force\.com$/, '')
+        .replace(/\.salesforce\.com$/, '');
+}
+
+function updateMobileConnections(connections) {
+    const mobileConnectionList = document.querySelector('.mobile-connection-list');
+    const mobileAddConnection = document.querySelector('.mobile-add-connection');
+    const mobileAuthorize = document.querySelector('.mobile-authorize');
+    const activeId = getActiveConnectionId();
+
+    if (connections.length === 0) {
+        mobileConnectionList.innerHTML = '';
+        mobileAddConnection.classList.add('hidden');
+        mobileAuthorize.classList.remove('hidden');
+    } else {
+        mobileConnectionList.innerHTML = connections.map(conn => `
+            <div class="mobile-connection-item ${conn.id === activeId ? 'active' : ''}" data-id="${conn.id}">
+                <span class="mobile-connection-name">${escapeHtml(shortenDomain(conn.label))}</span>
+                <button class="mobile-connection-remove" title="Remove">&times;</button>
+            </div>
+        `).join('');
+        mobileAddConnection.classList.remove('hidden');
+        mobileAuthorize.classList.add('hidden');
+    }
+
+    // Also update mobile nav active state to match current tab
+    const activeContent = document.querySelector('.tab-content.active');
+    if (activeContent) {
+        const activeTabId = activeContent.id;
+        const mobileNavItems = document.querySelectorAll('.mobile-nav-item[data-tab]');
+        mobileNavItems.forEach(item => {
+            item.classList.toggle('active', item.getAttribute('data-tab') === activeTabId);
+        });
+    }
 }

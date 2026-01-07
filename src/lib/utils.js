@@ -39,7 +39,7 @@ export async function extensionFetch(url, options = {}, connectionId = null) {
 
         // Handle auth expiration from background
         if (response.authExpired) {
-            triggerAuthExpired();
+            triggerAuthExpired(response.connectionId || connId);
         }
 
         return response;

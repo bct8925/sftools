@@ -98,11 +98,13 @@ async function findConnectionByDomain(tabUrl) {
 }
 
 async function handleViewEditRecord(tab) {
+    const iconUrl = chrome.runtime.getURL('dist/icon.png');
+
     const parsed = parseLightningUrl(tab.url);
     if (!parsed) {
         chrome.notifications.create({
             type: 'basic',
-            iconUrl: 'dist/icon.png',
+            iconUrl,
             title: 'sftools',
             message: 'Navigate to a Salesforce record page to use this feature.'
         });
@@ -113,7 +115,7 @@ async function handleViewEditRecord(tab) {
     if (!connection) {
         chrome.notifications.create({
             type: 'basic',
-            iconUrl: 'dist/icon.png',
+            iconUrl,
             title: 'sftools',
             message: 'No saved connection for this Salesforce org. Please authorize first.'
         });

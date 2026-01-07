@@ -172,6 +172,9 @@
 .field-preview {
     font-size: 12px;
     color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .field-preview a {
     color: var(--primary-color);

@@ -137,6 +137,7 @@ class RecordPage extends HTMLElement {
             const value = record[field.name];
             const displayValue = this.formatValue(value, field);
             const previewHtml = this.formatPreviewHtml(value, field, record);
+            const previewText = this.formatPreviewText(value, field, record);
             const isEditable = field.updateable && !field.calculated;
 
             const typeDisplay = field.calculated ? `${field.type} (formula)` : field.type;
@@ -168,7 +169,7 @@ class RecordPage extends HTMLElement {
                     <div class="field-api-name" title="${this.escapeAttr(field.name)}">${field.name}</div>
                     <div class="field-type">${typeDisplay}</div>
                     <div class="field-value">${valueHtml}</div>
-                    <div class="field-preview">${previewHtml}</div>
+                    <div class="field-preview" title="${this.escapeAttr(previewText)}">${previewHtml}</div>
                 </div>
             `;
         }).join('');
@@ -220,6 +221,32 @@ class RecordPage extends HTMLElement {
                         const displayType = field.name === 'OwnerId' ? 'User/Group' : relatedType;
                         const url = `record.html?objectType=${encodeURIComponent(relatedType)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(this.connectionId)}`;
                         return `<a href="${url}" target="_blank">${this.escapeHtml(relatedName)} (${this.escapeHtml(displayType)})</a>`;
+                    }
+                }
+            default:
+                return value;
+        }
+    }
+
+    formatPreviewText(value, field, record) {
+        if (value === null || value === undefined) return '';
+
+        switch (field.type) {
+            case 'boolean':
+                return value ? 'true' : 'false';
+            case 'datetime':
+                return new Date(value).toLocaleString();
+            case 'date':
+                return new Date(value + 'T00:00:00').toLocaleDateString();
+            case 'reference':
+                if (field.relationshipName && field.referenceTo?.length > 0) {
+                    const related = record[field.relationshipName];
+                    const relatedType = field.referenceTo[0];
+                    const nameField = this.nameFieldMap[relatedType] || 'Name';
+                    const relatedName = related?.[nameField];
+                    if (relatedName) {
+                        const displayType = field.name === 'OwnerId' ? 'User/Group' : relatedType;
+                        return `${relatedName} (${displayType})`;
                     }
                 }
             default:

@@ -305,9 +305,13 @@ async function handleFetch(request) {
 }
 
 // ============================================================================
-// Auto-connect to Proxy on Startup
+// Auto-connect to Proxy on Startup (if enabled)
 // ============================================================================
 
-connectNative()
-    .then(result => { if (result.success) console.log('Auto-connected to proxy'); })
-    .catch(() => {});
+chrome.storage.local.get(['proxyEnabled']).then(({ proxyEnabled }) => {
+    if (proxyEnabled) {
+        connectNative()
+            .then(result => { if (result.success) console.log('Auto-connected to proxy'); })
+            .catch(() => {});
+    }
+});

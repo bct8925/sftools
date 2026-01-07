@@ -10,11 +10,11 @@ import {
 
 class SettingsTab extends HTMLElement {
     // Proxy DOM references
+    proxyToggle = null;
+    proxyStatus = null;
     proxyIndicator = null;
     proxyLabel = null;
     proxyDetail = null;
-    connectBtn = null;
-    disconnectBtn = null;
     versionInfo = null;
 
     // Custom Connected App DOM references
@@ -28,17 +28,17 @@ class SettingsTab extends HTMLElement {
         this.innerHTML = template;
         this.initElements();
         this.attachEventListeners();
-        this.checkProxyStatus();
+        this.initProxyUI();
         this.initCustomAppUI();
     }
 
     initElements() {
         // Proxy elements
+        this.proxyToggle = this.querySelector('.settings-proxy-toggle');
+        this.proxyStatus = this.querySelector('.settings-proxy-status');
         this.proxyIndicator = this.querySelector('.settings-proxy-indicator');
         this.proxyLabel = this.querySelector('.settings-proxy-label');
         this.proxyDetail = this.querySelector('.settings-proxy-detail');
-        this.connectBtn = this.querySelector('.settings-connect-btn');
-        this.disconnectBtn = this.querySelector('.settings-disconnect-btn');
         this.versionInfo = this.querySelector('.settings-version-info');
 
         // Custom Connected App elements
@@ -50,8 +50,7 @@ class SettingsTab extends HTMLElement {
     }
 
     attachEventListeners() {
-        this.connectBtn.addEventListener('click', () => this.connect());
-        this.disconnectBtn.addEventListener('click', () => this.disconnect());
+        this.proxyToggle.addEventListener('change', () => this.handleProxyToggle());
 
         // Custom Connected App listeners
         this.customAppToggle.addEventListener('change', () => this.handleCustomAppToggle());
@@ -63,6 +62,29 @@ class SettingsTab extends HTMLElement {
     // Proxy Management
     // ============================================================
 
+    async initProxyUI() {
+        const { proxyEnabled } = await chrome.storage.local.get(['proxyEnabled']);
+        this.proxyToggle.checked = proxyEnabled || false;
+
+        if (proxyEnabled) {
+            this.proxyStatus.classList.remove('hidden');
+            await this.checkProxyStatus();
+        }
+    }
+
+    async handleProxyToggle() {
+        const enabled = this.proxyToggle.checked;
+        await chrome.storage.local.set({ proxyEnabled: enabled });
+
+        if (enabled) {
+            this.proxyStatus.classList.remove('hidden');
+            await this.connect();
+        } else {
+            await this.disconnect();
+            this.proxyStatus.classList.add('hidden');
+        }
+    }
+
     updateProxyUI(status) {
         const { connected, httpPort, version, error } = status;
 
@@ -71,8 +93,6 @@ class SettingsTab extends HTMLElement {
         if (connected) {
             this.proxyLabel.textContent = 'Connected';
             this.proxyDetail.textContent = `HTTP server on port ${httpPort}`;
-            this.connectBtn.style.display = 'none';
-            this.disconnectBtn.style.display = 'inline-flex';
 
             if (version) {
                 this.versionInfo.textContent = `Proxy version: ${version}`;
@@ -80,9 +100,7 @@ class SettingsTab extends HTMLElement {
             }
         } else {
             this.proxyLabel.textContent = 'Not Connected';
-            this.proxyDetail.textContent = error || 'Click Connect to establish connection';
-            this.connectBtn.style.display = 'inline-flex';
-            this.disconnectBtn.style.display = 'none';
+            this.proxyDetail.textContent = error || '';
             this.versionInfo.style.display = 'none';
         }
     }
@@ -91,7 +109,6 @@ class SettingsTab extends HTMLElement {
         this.proxyIndicator.className = 'status-indicator connecting';
         this.proxyLabel.textContent = 'Connecting...';
         this.proxyDetail.textContent = 'Establishing connection to local proxy';
-        this.connectBtn.disabled = true;
     }
 
     async checkProxyStatus() {
@@ -123,8 +140,6 @@ class SettingsTab extends HTMLElement {
             }
         } catch (err) {
             this.updateProxyUI({ connected: false, error: err.message });
-        } finally {
-            this.connectBtn.disabled = false;
         }
     }
 

@@ -110,26 +110,43 @@ function renderFields(fields, record) {
 
         const typeDisplay = field.calculated ? `${field.type} (formula)` : field.type;
 
+        let valueHtml;
+        if (field.type === 'picklist' && isEditable) {
+            const options = (field.picklistValues || [])
+                .filter(pv => pv.active)
+                .map(pv => `<option value="${escapeAttr(pv.value)}" ${pv.value === value ? 'selected' : ''}>${escapeHtml(pv.label)}</option>`)
+                .join('');
+            valueHtml = `
+                <select class="select field-input" data-field="${field.name}" data-type="${field.type}">
+                    <option value="">--None--</option>
+                    ${options}
+                </select>`;
+        } else {
+            valueHtml = `
+                <input type="text"
+                       class="input field-input"
+                       value="${escapeAttr(displayValue)}"
+                       ${isEditable ? '' : 'disabled'}
+                       data-field="${field.name}"
+                       data-type="${field.type}">`;
+        }
+
         return `
             <div class="field-row" data-field="${field.name}">
                 <div class="field-label" title="${escapeAttr(field.label)}">${escapeHtml(field.label)}</div>
                 <div class="field-api-name" title="${escapeAttr(field.name)}">${field.name}</div>
                 <div class="field-type">${typeDisplay}</div>
-                <div class="field-value">
-                    <input type="text"
-                           class="input field-input"
-                           value="${escapeAttr(displayValue)}"
-                           ${isEditable ? '' : 'disabled'}
-                           data-field="${field.name}"
-                           data-type="${field.type}">
-                </div>
+                <div class="field-value">${valueHtml}</div>
                 <div class="field-preview">${previewHtml}</div>
             </div>
         `;
     }).join('');
 
-    fieldsContainer.querySelectorAll('.field-input:not([disabled])').forEach(input => {
+    fieldsContainer.querySelectorAll('input.field-input:not([disabled])').forEach(input => {
         input.addEventListener('input', (e) => handleFieldChange(e.target));
+    });
+    fieldsContainer.querySelectorAll('select.field-input').forEach(select => {
+        select.addEventListener('change', (e) => handleFieldChange(e.target));
     });
 }
 

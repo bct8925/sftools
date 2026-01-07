@@ -1,7 +1,7 @@
 // OAuth Callback Handler
 // Supports both authorization code flow (with proxy) and implicit flow (without proxy)
 
-import { addConnection, findConnectionByInstance, updateConnection } from '../../lib/auth.js';
+import { addConnection, findConnectionByInstance, updateConnection, getOAuthCredentials } from '../../lib/auth.js';
 
 const statusEl = document.getElementById('status');
 
@@ -41,11 +41,15 @@ async function handleCodeFlow(code) {
         // Get loginDomain that was stored before auth redirect
         const { loginDomain } = await chrome.storage.local.get(['loginDomain']);
 
+        // Get OAuth credentials for token exchange
+        const { clientId } = await getOAuthCredentials();
+
         const response = await chrome.runtime.sendMessage({
             type: 'tokenExchange',
             code: code,
             redirectUri: CALLBACK_URL,
-            loginDomain: loginDomain
+            loginDomain: loginDomain,
+            clientId: clientId
         });
 
         if (response.success) {

@@ -12,7 +12,9 @@ import {
     getActiveConnectionId,
     removeConnection,
     updateConnection,
-    migrateFromSingleConnection
+    migrateFromSingleConnection,
+    // Custom connected app
+    getOAuthCredentials
 } from '../../lib/utils.js';
 // Self-registering custom element tabs
 import '../../components/query/query-tab.js';
@@ -22,7 +24,6 @@ import '../../components/events/events-tab.js';
 import '../../components/settings/settings-tab.js';
 
 // OAuth constants
-const CLIENT_ID = chrome.runtime.getManifest().oauth2.client_id;
 const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
 // Cached login domain for authorization
@@ -251,9 +252,12 @@ async function startAuthorization() {
     // Store loginDomain before opening auth URL (needed by callback for token exchange)
     await chrome.storage.local.set({ loginDomain });
 
+    // Get OAuth credentials (custom or default)
+    const { clientId } = await getOAuthCredentials();
+
     const responseType = useCodeFlow ? 'code' : 'token';
     const authUrl = `${loginDomain}/services/oauth2/authorize` +
-        `?client_id=${CLIENT_ID}` +
+        `?client_id=${clientId}` +
         `&response_type=${responseType}` +
         `&redirect_uri=${encodeURIComponent(CALLBACK_URL)}`;
 

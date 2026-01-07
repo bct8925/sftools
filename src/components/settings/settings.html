@@ -61,4 +61,42 @@
             </div>
         </div>
     </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon" style="background-color: #9050e9;">A</div>
+            <h2>Connected App</h2>
+        </div>
+        <div class="card-body">
+            <p class="settings-description">
+                Use a custom connected app instead of the built-in sftools app.
+            </p>
+
+            <label class="settings-toggle-label">
+                <input type="checkbox" class="settings-custom-app-toggle">
+                <span>Use Custom Connected App</span>
+            </label>
+
+            <div class="settings-custom-app-fields hidden">
+                <div class="form-element">
+                    <label>CLIENT ID</label>
+                    <input type="text" class="input settings-custom-app-client-id" placeholder="3MVG99...">
+                </div>
+
+                <div class="settings-button-row">
+                    <button class="settings-custom-app-save-btn button-brand">Save</button>
+                    <button class="settings-custom-app-reset-btn button-neutral">Reset to Default</button>
+                </div>
+            </div>
+
+            <details class="settings-install-instructions">
+                <summary>Connected App Configuration</summary>
+                <ol>
+                    <li>In Salesforce Setup, create an External Client App or Connected App</li>
+                    <li>Callback URL: <code>https://sftools.dev/sftools-callback</code></li>
+                    <li>OAuth Scopes: <code>api, web, refresh_token</code></li>
+                </ol>
+            </details>
+        </div>
+    </div>
 </div>

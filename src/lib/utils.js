@@ -20,7 +20,12 @@ export {
     updateConnection,
     removeConnection,
     findConnectionByInstance,
-    migrateFromSingleConnection
+    migrateFromSingleConnection,
+    // Custom connected app exports
+    getOAuthCredentials,
+    loadCustomConnectedApp,
+    saveCustomConnectedApp,
+    clearCustomConnectedApp
 } from './auth.js';
 
 import { getAccessToken, getInstanceUrl, getActiveConnectionId, triggerAuthExpired } from './auth.js';

@@ -71,7 +71,7 @@ class RestApiTab extends HTMLElement {
         }
 
         if (!isAuthenticated()) {
-            alert('Not authenticated. Please authorize via the extension popup first.');
+            alert('Not authenticated. Please authorize via the connection selector.');
             return;
         }
 

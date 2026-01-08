@@ -182,7 +182,7 @@ class SettingsTab extends HTMLElement {
         this.addConnectionForm.classList.add('hidden');
         this.addConnectionBtn.classList.remove('hidden');
         // Reset form
-        this.loginDomainSelect.value = 'https://login.salesforce.com';
+        this.loginDomainSelect.value = 'auto';
         this.customDomainField.classList.add('hidden');
         this.customDomainInput.value = '';
         this.newClientIdInput.value = '';
@@ -199,7 +199,10 @@ class SettingsTab extends HTMLElement {
     async handleAddConnection() {
         let loginDomain = this.loginDomainSelect.value;
 
-        if (loginDomain === 'custom') {
+        if (loginDomain === 'auto') {
+            // Auto-detect from current tab - pass null to let startAuthorization detect
+            loginDomain = null;
+        } else if (loginDomain === 'custom') {
             loginDomain = this.customDomainInput.value.trim();
             if (!loginDomain) {
                 alert('Please enter a custom domain');

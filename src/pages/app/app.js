@@ -71,19 +71,15 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 
 // --- Connection Selector ---
 function initConnectionSelector() {
-    const authorizeBtn = document.getElementById('authorize-btn');
     const dropdown = document.querySelector('.connection-dropdown');
     const trigger = dropdown.querySelector('.connection-dropdown-trigger');
     const addBtn = dropdown.querySelector('.connection-add-btn');
     const connectionList = dropdown.querySelector('.connection-list');
 
-    // Authorize button (shown when no connections)
-    authorizeBtn.addEventListener('click', () => startAuthorization());
-
-    // Add connection button in dropdown
+    // Add connection button - switch to Settings tab
     addBtn.addEventListener('click', () => {
         dropdown.classList.remove('open');
-        startAuthorization();
+        switchToSettingsTab();
     });
 
     // Dropdown toggle
@@ -119,7 +115,7 @@ async function initializeConnections() {
     const connections = await loadConnections();
 
     if (connections.length === 0) {
-        showAuthorizeButton();
+        showNoConnectionsState();
     } else {
         showConnectionDropdown(connections);
         // Auto-select most recently used
@@ -134,7 +130,7 @@ async function refreshConnectionList() {
     const connections = await loadConnections();
 
     if (connections.length === 0) {
-        showAuthorizeButton();
+        showNoConnectionsState();
         setActiveConnection(null);
     } else {
         showConnectionDropdown(connections);
@@ -155,20 +151,26 @@ async function refreshConnectionList() {
     }
 }
 
-function showAuthorizeButton() {
-    const authorizeBtn = document.getElementById('authorize-btn');
+function showNoConnectionsState() {
     const dropdown = document.querySelector('.connection-dropdown');
-    authorizeBtn.classList.remove('hidden');
     dropdown.classList.add('hidden');
 
     // Sync mobile menu state
     updateMobileConnections([]);
+
+    // Switch to Settings tab so user can add a connection
+    switchToSettingsTab();
+}
+
+function switchToSettingsTab() {
+    const settingsTab = document.querySelector('.tab-link[data-tab="settings"]');
+    if (settingsTab) {
+        settingsTab.click();
+    }
 }
 
 function showConnectionDropdown(connections) {
-    const authorizeBtn = document.getElementById('authorize-btn');
     const dropdown = document.querySelector('.connection-dropdown');
-    authorizeBtn.classList.add('hidden');
     dropdown.classList.remove('hidden');
     renderConnectionList(connections);
 }
@@ -232,7 +234,7 @@ async function handleRemoveConnection(connectionId) {
     const connections = await loadConnections();
 
     if (connections.length === 0) {
-        showAuthorizeButton();
+        showNoConnectionsState();
     } else {
         renderConnectionList(connections);
         // If removed the active one, switch to another
@@ -566,7 +568,6 @@ function initMobileMenu() {
     const mobileOpenOrg = document.getElementById('mobile-open-org');
     const mobileOpenTab = document.getElementById('mobile-open-tab');
     const mobileAddConnection = mobileMenu.querySelector('.mobile-add-connection');
-    const mobileAuthorize = mobileMenu.querySelector('.mobile-authorize');
     const mobileConnectionList = mobileMenu.querySelector('.mobile-connection-list');
 
     function openMenu() {
@@ -630,15 +631,9 @@ function initMobileMenu() {
         closeMenu();
     });
 
-    // Add Connection button
+    // Add Connection button - switch to Settings tab
     mobileAddConnection.addEventListener('click', () => {
-        startAuthorization();
-        closeMenu();
-    });
-
-    // Authorize button (shown when no connections)
-    mobileAuthorize.addEventListener('click', () => {
-        startAuthorization();
+        switchToSettingsTab();
         closeMenu();
     });
 
@@ -663,7 +658,7 @@ function initMobileMenu() {
             const connections = await loadConnections();
 
             if (connections.length === 0) {
-                showAuthorizeButton();
+                showNoConnectionsState();
             } else {
                 renderConnectionList(connections);
                 if (wasActive) {
@@ -689,13 +684,11 @@ function initMobileMenu() {
 function updateMobileConnections(connections) {
     const mobileConnectionList = document.querySelector('.mobile-connection-list');
     const mobileAddConnection = document.querySelector('.mobile-add-connection');
-    const mobileAuthorize = document.querySelector('.mobile-authorize');
     const activeId = getActiveConnectionId();
 
     if (connections.length === 0) {
         mobileConnectionList.innerHTML = '';
         mobileAddConnection.classList.add('hidden');
-        mobileAuthorize.classList.remove('hidden');
     } else {
         mobileConnectionList.innerHTML = connections.map(conn => `
             <div class="mobile-connection-item ${conn.id === activeId ? 'active' : ''}" data-id="${conn.id}">
@@ -704,7 +697,6 @@ function updateMobileConnections(connections) {
             </div>
         `).join('');
         mobileAddConnection.classList.remove('hidden');
-        mobileAuthorize.classList.add('hidden');
     }
 
     // Also update mobile nav active state to match current tab

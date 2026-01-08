@@ -60,12 +60,16 @@ async function handleCodeFlow(code) {
         });
 
         if (response.success) {
+            // Derive loginDomain from instanceUrl if auto-detect was used (null loginDomain)
+            // The instanceUrl is the My Domain URL, which is what we want for future re-auths
+            const savedLoginDomain = pendingAuth?.loginDomain || deriveLoginDomain(response.instanceUrl);
+
             // Add or update connection, preserving custom clientId
             await addOrUpdateConnection({
                 instanceUrl: response.instanceUrl,
                 accessToken: response.accessToken,
                 refreshToken: response.refreshToken,
-                loginDomain: response.loginDomain,
+                loginDomain: savedLoginDomain,
                 clientId: pendingAuth?.clientId || null
             }, pendingAuth?.connectionId);
 
@@ -88,7 +92,10 @@ async function handleImplicitFlow(accessToken, instanceUrl) {
     try {
         // Get pending auth parameters (includes loginDomain, clientId, connectionId)
         const pendingAuth = await consumePendingAuth();
-        const loginDomain = pendingAuth?.loginDomain || 'https://login.salesforce.com';
+
+        // Derive loginDomain from instanceUrl if auto-detect was used (null loginDomain)
+        // The instanceUrl is the My Domain URL, which is what we want for future re-auths
+        const loginDomain = pendingAuth?.loginDomain || deriveLoginDomain(instanceUrl);
 
         // Add or update connection, preserving custom clientId
         await addOrUpdateConnection({
@@ -104,6 +111,28 @@ async function handleImplicitFlow(accessToken, instanceUrl) {
     } catch (err) {
         statusEl.innerHTML = `<span class="error">Error storing tokens: ${err.message}</span>`;
     }
+}
+
+/**
+ * Derive login domain from instance URL
+ * For My Domain orgs, the instanceUrl is the login URL
+ * Falls back to standard login.salesforce.com
+ */
+function deriveLoginDomain(instanceUrl) {
+    if (!instanceUrl) return 'https://login.salesforce.com';
+
+    try {
+        const url = new URL(instanceUrl);
+        // My Domain URLs like https://mycompany.my.salesforce.com can be used directly
+        if (url.hostname.includes('.my.salesforce.com') ||
+            url.hostname.includes('.sandbox.my.salesforce.com')) {
+            return url.origin;
+        }
+    } catch {
+        // Invalid URL, use default
+    }
+
+    return 'https://login.salesforce.com';
 }
 
 /**

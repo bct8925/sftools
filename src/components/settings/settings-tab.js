@@ -1,11 +1,13 @@
-// Settings Tab - Proxy Connection & Custom Connected App
+// Settings Tab - Connection Management & Proxy Connection
 import template from './settings.html?raw';
 import './settings.css';
 import {
-    getOAuthCredentials,
-    loadCustomConnectedApp,
-    saveCustomConnectedApp,
-    clearCustomConnectedApp
+    loadConnections,
+    updateConnection,
+    removeConnection,
+    getActiveConnectionId,
+    setActiveConnection,
+    setPendingAuth
 } from '../../lib/utils.js';
 
 class SettingsTab extends HTMLElement {
@@ -17,19 +19,48 @@ class SettingsTab extends HTMLElement {
     proxyDetail = null;
     versionInfo = null;
 
-    // Custom Connected App DOM references
-    customAppToggle = null;
-    customAppClientId = null;
-    customAppSaveBtn = null;
-    customAppResetBtn = null;
-    customAppFields = null;
+    // Connection list DOM references
+    connectionList = null;
+    addConnectionBtn = null;
+    addConnectionForm = null;
+    loginDomainSelect = null;
+    customDomainField = null;
+    customDomainInput = null;
+    newClientIdInput = null;
+    authorizeBtn = null;
+    cancelBtn = null;
+
+    // Edit modal DOM references
+    editModal = null;
+    editLabelInput = null;
+    editClientIdInput = null;
+    editSaveBtn = null;
+    editCancelBtn = null;
+    editingConnectionId = null;
 
     connectedCallback() {
         this.innerHTML = template;
         this.initElements();
         this.attachEventListeners();
         this.initProxyUI();
-        this.initCustomAppUI();
+        this.renderConnectionList();
+
+        // Listen for connection changes from other parts of the app
+        this.connectionChangeHandler = () => this.renderConnectionList();
+        document.addEventListener('connection-changed', this.connectionChangeHandler);
+
+        // Listen for storage changes (new connection from auth)
+        this.storageChangeHandler = (changes, area) => {
+            if (area === 'local' && changes.connections) {
+                this.renderConnectionList();
+            }
+        };
+        chrome.storage.onChanged.addListener(this.storageChangeHandler);
+    }
+
+    disconnectedCallback() {
+        document.removeEventListener('connection-changed', this.connectionChangeHandler);
+        chrome.storage.onChanged.removeListener(this.storageChangeHandler);
     }
 
     initElements() {
@@ -41,21 +72,259 @@ class SettingsTab extends HTMLElement {
         this.proxyDetail = this.querySelector('.settings-proxy-detail');
         this.versionInfo = this.querySelector('.settings-version-info');
 
-        // Custom Connected App elements
-        this.customAppToggle = this.querySelector('.settings-custom-app-toggle');
-        this.customAppClientId = this.querySelector('.settings-custom-app-client-id');
-        this.customAppSaveBtn = this.querySelector('.settings-custom-app-save-btn');
-        this.customAppResetBtn = this.querySelector('.settings-custom-app-reset-btn');
-        this.customAppFields = this.querySelector('.settings-custom-app-fields');
+        // Connection list elements
+        this.connectionList = this.querySelector('.settings-connection-list');
+        this.addConnectionBtn = this.querySelector('.settings-add-connection-btn');
+        this.addConnectionForm = this.querySelector('.settings-add-connection-form');
+        this.loginDomainSelect = this.querySelector('.settings-login-domain');
+        this.customDomainField = this.querySelector('.settings-custom-domain-field');
+        this.customDomainInput = this.querySelector('.settings-custom-domain');
+        this.newClientIdInput = this.querySelector('.settings-new-client-id');
+        this.authorizeBtn = this.querySelector('.settings-authorize-btn');
+        this.cancelBtn = this.querySelector('.settings-cancel-btn');
+
+        // Edit modal elements
+        this.editModal = this.querySelector('.settings-edit-modal');
+        this.editLabelInput = this.querySelector('.settings-edit-label');
+        this.editClientIdInput = this.querySelector('.settings-edit-client-id');
+        this.editSaveBtn = this.querySelector('.settings-edit-save-btn');
+        this.editCancelBtn = this.querySelector('.settings-edit-cancel-btn');
     }
 
     attachEventListeners() {
+        // Proxy listeners
         this.proxyToggle.addEventListener('change', () => this.handleProxyToggle());
 
-        // Custom Connected App listeners
-        this.customAppToggle.addEventListener('change', () => this.handleCustomAppToggle());
-        this.customAppSaveBtn.addEventListener('click', () => this.saveCustomApp());
-        this.customAppResetBtn.addEventListener('click', () => this.resetCustomApp());
+        // Connection list listeners
+        this.addConnectionBtn.addEventListener('click', () => this.showAddConnectionForm());
+        this.cancelBtn.addEventListener('click', () => this.hideAddConnectionForm());
+        this.authorizeBtn.addEventListener('click', () => this.handleAddConnection());
+        this.loginDomainSelect.addEventListener('change', () => this.handleLoginDomainChange());
+
+        // Connection list item actions (delegated)
+        this.connectionList.addEventListener('click', (e) => this.handleConnectionAction(e));
+
+        // Edit modal listeners
+        this.editSaveBtn.addEventListener('click', () => this.handleSaveEdit());
+        this.editCancelBtn.addEventListener('click', () => this.hideEditModal());
+        this.editModal.addEventListener('click', (e) => {
+            if (e.target === this.editModal) this.hideEditModal();
+        });
+    }
+
+    // ============================================================
+    // Connection List Management
+    // ============================================================
+
+    async renderConnectionList() {
+        const connections = await loadConnections();
+        const activeId = getActiveConnectionId();
+
+        if (connections.length === 0) {
+            this.connectionList.innerHTML = '<div class="settings-no-connections">No connections saved</div>';
+            return;
+        }
+
+        this.connectionList.innerHTML = connections.map(conn => `
+            <div class="settings-connection-item ${conn.id === activeId ? 'active' : ''}" data-id="${conn.id}">
+                <div class="settings-connection-info">
+                    <div class="settings-connection-label">${this.escapeHtml(conn.label)}</div>
+                    <div class="settings-connection-detail">
+                        ${conn.clientId ? '<span class="settings-connection-badge">Custom App</span>' : ''}
+                    </div>
+                </div>
+                <div class="settings-connection-actions">
+                    <button class="settings-connection-edit" title="Edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="settings-connection-reauth" title="Re-authorize">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                    <button class="settings-connection-delete" title="Delete">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    handleConnectionAction(e) {
+        const item = e.target.closest('.settings-connection-item');
+        if (!item) return;
+
+        const connectionId = item.dataset.id;
+
+        if (e.target.closest('.settings-connection-edit')) {
+            this.showEditModal(connectionId);
+        } else if (e.target.closest('.settings-connection-reauth')) {
+            this.handleReauthorize(connectionId);
+        } else if (e.target.closest('.settings-connection-delete')) {
+            this.handleDeleteConnection(connectionId);
+        }
+    }
+
+    showAddConnectionForm() {
+        this.addConnectionBtn.classList.add('hidden');
+        this.addConnectionForm.classList.remove('hidden');
+    }
+
+    hideAddConnectionForm() {
+        this.addConnectionForm.classList.add('hidden');
+        this.addConnectionBtn.classList.remove('hidden');
+        // Reset form
+        this.loginDomainSelect.value = 'https://login.salesforce.com';
+        this.customDomainField.classList.add('hidden');
+        this.customDomainInput.value = '';
+        this.newClientIdInput.value = '';
+    }
+
+    handleLoginDomainChange() {
+        if (this.loginDomainSelect.value === 'custom') {
+            this.customDomainField.classList.remove('hidden');
+        } else {
+            this.customDomainField.classList.add('hidden');
+        }
+    }
+
+    async handleAddConnection() {
+        let loginDomain = this.loginDomainSelect.value;
+
+        if (loginDomain === 'custom') {
+            loginDomain = this.customDomainInput.value.trim();
+            if (!loginDomain) {
+                alert('Please enter a custom domain');
+                return;
+            }
+            // Ensure it starts with https://
+            if (!loginDomain.startsWith('https://')) {
+                loginDomain = 'https://' + loginDomain;
+            }
+        }
+
+        const clientId = this.newClientIdInput.value.trim() || null;
+
+        // Store pending auth and start OAuth flow
+        await setPendingAuth({
+            loginDomain,
+            clientId,
+            connectionId: null
+        });
+
+        // Call startAuthorization from app.js (available on window)
+        if (window.startAuthorization) {
+            window.startAuthorization(loginDomain, clientId, null);
+        }
+
+        this.hideAddConnectionForm();
+    }
+
+    async showEditModal(connectionId) {
+        const connections = await loadConnections();
+        const connection = connections.find(c => c.id === connectionId);
+        if (!connection) return;
+
+        this.editingConnectionId = connectionId;
+        this.editLabelInput.value = connection.label;
+        this.editClientIdInput.value = connection.clientId || '';
+        this.editModal.classList.remove('hidden');
+    }
+
+    hideEditModal() {
+        this.editModal.classList.add('hidden');
+        this.editingConnectionId = null;
+    }
+
+    async handleSaveEdit() {
+        const label = this.editLabelInput.value.trim();
+        if (!label) {
+            alert('Label is required');
+            return;
+        }
+
+        const newClientId = this.editClientIdInput.value.trim() || null;
+        const connectionId = this.editingConnectionId; // Save before hideEditModal clears it
+
+        const connections = await loadConnections();
+        const connection = connections.find(c => c.id === connectionId);
+        if (!connection) return;
+
+        const clientIdChanged = connection.clientId !== newClientId;
+
+        await updateConnection(connectionId, {
+            label,
+            clientId: newClientId
+        });
+
+        this.hideEditModal();
+        this.renderConnectionList();
+
+        // Notify other components if label changed
+        document.dispatchEvent(new CustomEvent('connection-updated'));
+
+        // If clientId changed, prompt for re-auth (whether adding custom or reverting to default)
+        if (clientIdChanged) {
+            const message = newClientId
+                ? 'Client ID changed. Re-authorize now to use the new Connected App?'
+                : 'Client ID removed. Re-authorize now to use the default Connected App?';
+            if (confirm(message)) {
+                this.handleReauthorize(connectionId);
+            }
+        }
+    }
+
+    async handleReauthorize(connectionId) {
+        const connections = await loadConnections();
+        const connection = connections.find(c => c.id === connectionId);
+        if (!connection) return;
+
+        // Store pending auth with connection's clientId and ID for re-auth
+        await setPendingAuth({
+            loginDomain: connection.loginDomain || 'https://login.salesforce.com',
+            clientId: connection.clientId,
+            connectionId: connectionId
+        });
+
+        // Call startAuthorization from app.js
+        if (window.startAuthorization) {
+            window.startAuthorization(
+                connection.loginDomain || 'https://login.salesforce.com',
+                connection.clientId,
+                connectionId
+            );
+        }
+    }
+
+    async handleDeleteConnection(connectionId) {
+        if (!confirm('Remove this connection?')) return;
+
+        const wasActive = getActiveConnectionId() === connectionId;
+        if (wasActive) {
+            setActiveConnection(null);
+        }
+
+        await removeConnection(connectionId);
+        this.renderConnectionList();
+
+        // Notify other components
+        document.dispatchEvent(new CustomEvent('connection-removed', {
+            detail: { connectionId }
+        }));
+    }
+
+    escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
     }
 
     // ============================================================
@@ -150,65 +419,6 @@ class SettingsTab extends HTMLElement {
         } catch (err) {
             console.error('Disconnect error:', err);
         }
-    }
-
-    // ============================================================
-    // Custom Connected App Management
-    // ============================================================
-
-    async initCustomAppUI() {
-        const config = await loadCustomConnectedApp();
-
-        if (config) {
-            this.customAppToggle.checked = config.enabled;
-            this.customAppClientId.value = config.clientId || '';
-        }
-
-        this.updateCustomAppFieldsVisibility();
-    }
-
-    handleCustomAppToggle() {
-        this.updateCustomAppFieldsVisibility();
-    }
-
-    updateCustomAppFieldsVisibility() {
-        if (this.customAppToggle.checked) {
-            this.customAppFields.classList.remove('hidden');
-        } else {
-            this.customAppFields.classList.add('hidden');
-        }
-    }
-
-    async saveCustomApp() {
-        const clientId = this.customAppClientId.value.trim();
-
-        if (this.customAppToggle.checked && !clientId) {
-            alert('Client ID is required when using a custom connected app.');
-            return;
-        }
-
-        await saveCustomConnectedApp({
-            enabled: this.customAppToggle.checked,
-            clientId: clientId
-        });
-
-        // Show confirmation
-        this.customAppSaveBtn.textContent = 'Saved!';
-        setTimeout(() => {
-            this.customAppSaveBtn.textContent = 'Save';
-        }, 1500);
-    }
-
-    async resetCustomApp() {
-        if (!confirm('Reset to default connected app? Your custom app settings will be removed.')) {
-            return;
-        }
-
-        await clearCustomConnectedApp();
-
-        this.customAppToggle.checked = false;
-        this.customAppClientId.value = '';
-        this.updateCustomAppFieldsVisibility();
     }
 }
 

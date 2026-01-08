@@ -5,6 +5,145 @@
     color: var(--text-muted);
 }
 
+/* Connection List */
+.settings-connection-list {
+    margin-bottom: 1rem;
+}
+
+.settings-connection-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    transition: all 0.15s;
+}
+
+.settings-connection-item:hover {
+    border-color: var(--primary-color);
+}
+
+.settings-connection-item.active {
+    border-color: var(--primary-color);
+    background: rgba(0, 112, 210, 0.05);
+}
+
+.settings-connection-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-connection-label {
+    font-weight: 500;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-connection-detail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.settings-connection-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #e0f3ff;
+    color: var(--primary-color);
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.settings-connection-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.settings-connection-actions button {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-connection-actions button:hover {
+    border-color: var(--border-color);
+    background: var(--bg-color);
+    color: var(--primary-color);
+}
+
+.settings-connection-actions button.settings-connection-delete:hover {
+    color: #c23934;
+}
+
+.settings-no-connections {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--bg-color);
+    border-radius: 4px;
+}
+
+/* Add Connection Form */
+.settings-add-connection-form {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.settings-add-connection-form .form-element {
+    margin-bottom: 1rem;
+}
+
+.settings-field-hint {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* Edit Modal */
+.settings-edit-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.settings-edit-modal-content {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    width: 400px;
+    max-width: 90vw;
+}
+
+.settings-edit-modal-content h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: var(--text-main);
+}
+
+.settings-edit-modal-content .form-element {
+    margin-bottom: 1rem;
+}
+
+/* Proxy Status */
 .settings-status-row {
     display: flex;
     align-items: center;
@@ -102,7 +241,7 @@
     margin-bottom: 0;
 }
 
-/* Toggle label for custom app checkbox */
+/* Toggle label for proxy checkbox */
 .settings-toggle-label {
     display: flex;
     align-items: center;
@@ -119,15 +258,4 @@
 .settings-toggle-label span {
     font-weight: 500;
     color: var(--text-main);
-}
-
-/* Custom app fields container */
-.settings-custom-app-fields {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.settings-custom-app-fields .form-element {
-    margin-bottom: 1rem;
 }

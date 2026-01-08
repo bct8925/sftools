@@ -13,8 +13,10 @@ import {
     removeConnection,
     updateConnection,
     migrateFromSingleConnection,
-    // Custom connected app
-    getOAuthCredentials
+    // OAuth
+    getOAuthCredentials,
+    setPendingAuth,
+    migrateCustomConnectedApp
 } from '../../lib/utils.js';
 // Self-registering custom element tabs
 import '../../components/query/query-tab.js';
@@ -111,6 +113,8 @@ function initConnectionSelector() {
 async function initializeConnections() {
     // Migrate from old single-connection format if needed
     await migrateFromSingleConnection();
+    // Migrate from global customConnectedApp to per-connection clientId
+    await migrateCustomConnectedApp();
 
     const connections = await loadConnections();
 
@@ -137,15 +141,16 @@ async function refreshConnectionList() {
 
         // If active connection was removed, select the most recent
         const activeId = getActiveConnectionId();
-        const activeExists = connections.some(c => c.id === activeId);
-        if (!activeExists) {
+        const activeConnection = connections.find(c => c.id === activeId);
+        if (!activeConnection) {
             const mostRecent = connections.reduce((a, b) =>
                 a.lastUsedAt > b.lastUsedAt ? a : b
             );
             await selectConnection(mostRecent);
         } else {
-            // Just update the UI
+            // Update the UI and refresh the header label (in case label was edited)
             renderConnectionList(connections);
+            updateConnectionLabel(activeConnection.label);
         }
     }
 }
@@ -258,7 +263,13 @@ async function detectLoginDomain() {
     }
 }
 
-async function startAuthorization(overrideLoginDomain = null) {
+/**
+ * Start OAuth authorization flow
+ * @param {string|null} overrideLoginDomain - Login domain to use (or detect from current tab)
+ * @param {string|null} overrideClientId - Custom client ID to use (or use default)
+ * @param {string|null} connectionId - Connection ID if re-authorizing an existing connection
+ */
+async function startAuthorization(overrideLoginDomain = null, overrideClientId = null, connectionId = null) {
     // Use provided domain or detect from current tab
     let loginDomain;
     if (overrideLoginDomain) {
@@ -277,11 +288,21 @@ async function startAuthorization(overrideLoginDomain = null) {
         console.log('Proxy not available, using implicit flow');
     }
 
-    // Store loginDomain before opening auth URL (needed by callback for token exchange)
-    await chrome.storage.local.set({ loginDomain });
+    // Get client ID - use override, or fall back to default
+    let clientId;
+    if (overrideClientId) {
+        clientId = overrideClientId;
+    } else {
+        const credentials = await getOAuthCredentials();
+        clientId = credentials.clientId;
+    }
 
-    // Get OAuth credentials (custom or default)
-    const { clientId } = await getOAuthCredentials();
+    // Store pending auth state for callback to use
+    await setPendingAuth({
+        loginDomain,
+        clientId: overrideClientId, // Store only if custom (null means use default)
+        connectionId // Set if re-authorizing existing connection
+    });
 
     const responseType = useCodeFlow ? 'code' : 'token';
     const authUrl = `${loginDomain}/services/oauth2/authorize` +
@@ -291,6 +312,9 @@ async function startAuthorization(overrideLoginDomain = null) {
 
     chrome.tabs.create({ url: authUrl });
 }
+
+// Make startAuthorization available globally for Settings tab
+window.startAuthorization = startAuthorization;
 
 // --- Auth Expiration Handler ---
 function initAuthExpirationHandler() {
@@ -322,7 +346,12 @@ function initAuthExpirationHandler() {
                 console.error('Re-auth failed: expiredConnection is null');
                 return;
             }
-            await startAuthorization(expiredConnection.instanceUrl);
+            // Use connection's loginDomain, clientId, and pass connectionId for re-auth
+            await startAuthorization(
+                expiredConnection.loginDomain || expiredConnection.instanceUrl,
+                expiredConnection.clientId,
+                expiredConnection.id
+            );
         });
 
         overlay.querySelector('#delete-conn-btn').addEventListener('click', async () => {
@@ -657,13 +686,6 @@ function initMobileMenu() {
     });
 }
 
-function shortenDomain(label) {
-    return label
-        .replace(/\.my\.salesforce\.com$/, '')
-        .replace(/\.lightning\.force\.com$/, '')
-        .replace(/\.salesforce\.com$/, '');
-}
-
 function updateMobileConnections(connections) {
     const mobileConnectionList = document.querySelector('.mobile-connection-list');
     const mobileAddConnection = document.querySelector('.mobile-add-connection');
@@ -677,7 +699,7 @@ function updateMobileConnections(connections) {
     } else {
         mobileConnectionList.innerHTML = connections.map(conn => `
             <div class="mobile-connection-item ${conn.id === activeId ? 'active' : ''}" data-id="${conn.id}">
-                <span class="mobile-connection-name">${escapeHtml(shortenDomain(conn.label))}</span>
+                <span class="mobile-connection-name">${escapeHtml(conn.label)}</span>
                 <button class="mobile-connection-remove" title="Remove">&times;</button>
             </div>
         `).join('');

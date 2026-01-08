@@ -185,7 +185,7 @@ This installs the native messaging host manifest at:
 
 **Connecting:**
 1. Open sftools Settings tab
-2. Click "Connect to Proxy"
+2. Enable the "Local Proxy" toggle
 3. Status shows "Connected" when successful
 
 **Logging:**
@@ -207,7 +207,7 @@ Side panel support is configured in `manifest.json` via the `sidePanel` permissi
 
 ## Header Features
 
-- **Connection Selector** - Dropdown in the header to switch between saved Salesforce connections. Shows "Authorize" button if no connections exist. Each sftools instance (browser tab or sidepanel) can have its own active connection.
+- **Connection Selector** - Dropdown in the header to switch between saved Salesforce connections. Shows "Authorize" button if no connections exist. Each sftools instance (browser tab or sidepanel) can have its own active connection. Connection labels and Client IDs are managed in Settings → Connections.
 - **Open Org Button** - Icon button that opens the authenticated org in a new browser tab using `frontdoor.jsp` with the current session token
 - **Open in Tab Button** - Icon button that opens sftools in a new browser tab
 - **Responsive Nav** - Tab navigation with overflow dropdown. When tabs don't fit (e.g., in side panel), excess tabs move to a "More" dropdown menu
@@ -418,11 +418,10 @@ import {
     addConnection,
     updateConnection,
     removeConnection,
-    // Custom connected app
+    // OAuth
     getOAuthCredentials,
-    loadCustomConnectedApp,
-    saveCustomConnectedApp,
-    clearCustomConnectedApp
+    setPendingAuth,
+    consumePendingAuth
 } from '../../lib/utils.js';
 ```
 
@@ -457,11 +456,12 @@ Supports multiple saved Salesforce connections. Each sftools instance (browser t
 {
   connections: [{
     id: string,          // UUID
-    label: string,       // Hostname derived from instanceUrl
+    label: string,       // Editable label (defaults to hostname)
     instanceUrl: string,
     loginDomain: string,
     accessToken: string,
     refreshToken: string | null,
+    clientId: string | null,  // Per-connection Client ID (null = use manifest default)
     createdAt: number,
     lastUsedAt: number
   }]
@@ -510,25 +510,19 @@ Supports multiple saved Salesforce connections. Each sftools instance (browser t
 - Callback URL: `https://sftools.dev/sftools-callback`
 - Default Client ID: `manifest.json` `oauth2.client_id`
 
-**Custom Connected App:**
+**Per-Connection Client ID:**
 
-Users can configure their own Salesforce connected app instead of the built-in one via Settings → Connected App.
+Each connection can have its own Client ID for Salesforce External Client Apps (or Connected Apps). This is configured in Settings → Connections.
 
-Storage schema:
-```javascript
-{
-  customConnectedApp: {
-    enabled: boolean,
-    clientId: string
-  }
-}
-```
+- If a connection has a `clientId` set, that ID is used for authorization and token refresh
+- If `clientId` is null, the default Client ID from `manifest.json` is used
+- Changing a connection's Client ID requires re-authorization
 
 Key functions in `src/lib/auth.js`:
-- `getOAuthCredentials()` - Returns custom client ID if enabled, otherwise manifest default
-- `loadCustomConnectedApp()` / `saveCustomConnectedApp()` / `clearCustomConnectedApp()` - Storage management
+- `getOAuthCredentials(connectionId?)` - Returns connection's client ID if set, otherwise manifest default
+- `setPendingAuth(params)` / `consumePendingAuth()` - Store/retrieve OAuth flow state (loginDomain, clientId, connectionId)
 
-All OAuth flows (authorization, token exchange, token refresh) call `getOAuthCredentials()` to get the active client ID. The background service worker has its own `getBackgroundOAuthCredentials()` helper since it can't import from `lib/auth.js`.
+The background service worker has its own `getBackgroundOAuthCredentials(connectionId?)` helper for token refresh.
 
 ## Query Tab Implementation
 

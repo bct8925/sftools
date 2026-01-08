@@ -21,8 +21,14 @@ export {
     removeConnection,
     findConnectionByInstance,
     migrateFromSingleConnection,
-    // Custom connected app exports
+    // Pending auth state
+    setPendingAuth,
+    consumePendingAuth,
+    // OAuth credentials
     getOAuthCredentials,
+    // Migration
+    migrateCustomConnectedApp,
+    // Deprecated custom connected app exports (kept for migration)
     loadCustomConnectedApp,
     saveCustomConnectedApp,
     clearCustomConnectedApp
@@ -32,22 +38,16 @@ import { getAccessToken, getInstanceUrl, getActiveConnectionId, triggerAuthExpir
 
 // --- Background Fetch Proxy ---
 export async function extensionFetch(url, options = {}, connectionId = null) {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-        // Use provided connectionId or get from active connection
-        const connId = connectionId || getActiveConnectionId();
-        const response = await chrome.runtime.sendMessage({ type: 'fetch', url, options, connectionId: connId });
+    // Use provided connectionId or get from active connection
+    const connId = connectionId || getActiveConnectionId();
+    const response = await chrome.runtime.sendMessage({ type: 'fetch', url, options, connectionId: connId });
 
-        // Handle auth expiration from background
-        if (response.authExpired) {
-            triggerAuthExpired(response.connectionId || connId, response.error);
-        }
-
-        return response;
+    // Handle auth expiration from background
+    if (response.authExpired) {
+        triggerAuthExpired(response.connectionId || connId, response.error);
     }
-    // Fallback for development without extension context
-    const response = await fetch(url, options);
-    const data = await response.text();
-    return { success: response.ok, status: response.status, statusText: response.statusText, data };
+
+    return response;
 }
 
 // --- Proxy Connection State ---

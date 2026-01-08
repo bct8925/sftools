@@ -139,11 +139,12 @@ export async function addConnection(connectionData) {
     const connections = await loadConnections();
     const newConnection = {
         id: crypto.randomUUID(),
-        label: new URL(connectionData.instanceUrl).hostname,
+        label: connectionData.label || new URL(connectionData.instanceUrl).hostname,
         instanceUrl: connectionData.instanceUrl,
         loginDomain: connectionData.loginDomain || 'https://login.salesforce.com',
         accessToken: connectionData.accessToken,
         refreshToken: connectionData.refreshToken || null,
+        clientId: connectionData.clientId || null,
         createdAt: Date.now(),
         lastUsedAt: Date.now()
     };
@@ -241,25 +242,51 @@ export async function migrateFromSingleConnection() {
     });
 }
 
-// --- Custom Connected App ---
+// --- Pending Auth State ---
 
 /**
- * Get OAuth credentials (custom app if configured, otherwise manifest default)
+ * Store pending authorization parameters before OAuth redirect
+ * @param {{loginDomain: string, clientId: string|null, connectionId: string|null}} params
+ */
+export async function setPendingAuth(params) {
+    await chrome.storage.local.set({ pendingAuth: params });
+}
+
+/**
+ * Get and clear pending authorization parameters
+ * @returns {Promise<{loginDomain: string, clientId: string|null, connectionId: string|null}|null>}
+ */
+export async function consumePendingAuth() {
+    const { pendingAuth } = await chrome.storage.local.get(['pendingAuth']);
+    await chrome.storage.local.remove(['pendingAuth']);
+    return pendingAuth || null;
+}
+
+// --- OAuth Credentials ---
+
+/**
+ * Get OAuth credentials for a connection or default
+ * @param {string|null} connectionId - Optional connection ID to get specific client ID
  * @returns {Promise<{clientId: string, isCustom: boolean}>}
  */
-export async function getOAuthCredentials() {
-    const { customConnectedApp } = await chrome.storage.local.get(['customConnectedApp']);
-
-    if (customConnectedApp?.enabled && customConnectedApp.clientId) {
-        return { clientId: customConnectedApp.clientId, isCustom: true };
+export async function getOAuthCredentials(connectionId = null) {
+    // Check for per-connection clientId first
+    if (connectionId) {
+        const connections = await loadConnections();
+        const connection = connections.find(c => c.id === connectionId);
+        if (connection?.clientId) {
+            return { clientId: connection.clientId, isCustom: true };
+        }
     }
 
+    // Fall back to manifest default
     return { clientId: chrome.runtime.getManifest().oauth2.client_id, isCustom: false };
 }
 
 /**
  * Load custom connected app config from storage
  * @returns {Promise<{enabled: boolean, clientId: string}|null>}
+ * @deprecated Use per-connection clientId instead
  */
 export async function loadCustomConnectedApp() {
     const { customConnectedApp } = await chrome.storage.local.get(['customConnectedApp']);
@@ -269,6 +296,7 @@ export async function loadCustomConnectedApp() {
 /**
  * Save custom connected app config to storage
  * @param {{enabled: boolean, clientId: string}} config
+ * @deprecated Use per-connection clientId instead
  */
 export async function saveCustomConnectedApp(config) {
     await chrome.storage.local.set({ customConnectedApp: config });
@@ -276,9 +304,55 @@ export async function saveCustomConnectedApp(config) {
 
 /**
  * Clear custom connected app config (revert to default)
+ * @deprecated Use per-connection clientId instead
  */
 export async function clearCustomConnectedApp() {
     await chrome.storage.local.remove(['customConnectedApp']);
+}
+
+/**
+ * Migrate from global customConnectedApp to per-connection clientId
+ * Should be called once during app initialization (after migrateFromSingleConnection)
+ */
+export async function migrateCustomConnectedApp() {
+    return new Promise((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            chrome.storage.local.get(['customConnectedApp', 'connections', 'customAppMigrated'],
+                async (data) => {
+                    // Already migrated or no custom app to migrate
+                    if (data.customAppMigrated || !data.customConnectedApp?.enabled) {
+                        resolve(false);
+                        return;
+                    }
+
+                    const customClientId = data.customConnectedApp.clientId;
+                    const connections = data.connections || [];
+
+                    if (connections.length > 0 && customClientId) {
+                        // Apply custom clientId to all existing connections that don't have one
+                        const updatedConnections = connections.map(conn => ({
+                            ...conn,
+                            clientId: conn.clientId || customClientId
+                        }));
+
+                        await chrome.storage.local.set({
+                            connections: updatedConnections,
+                            customAppMigrated: true
+                        });
+
+                        console.log('Migrated global customConnectedApp to per-connection clientIds');
+                    }
+
+                    // Remove deprecated customConnectedApp
+                    await chrome.storage.local.remove(['customConnectedApp']);
+
+                    resolve(true);
+                }
+            );
+        } else {
+            resolve(false);
+        }
+    });
 }
 
 // Listen for auth expiration broadcasts from background

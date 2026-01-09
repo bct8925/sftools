@@ -142,9 +142,17 @@
 }
 
 /* Button states */
-.card-body .button-brand:disabled {
+.card-body .button-brand:disabled,
+.card-body .button-neutral:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* Button row */
+.debug-logs-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 /* Search Box Component */

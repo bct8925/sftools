@@ -36,10 +36,7 @@ let detectedLoginDomain = 'https://login.salesforce.com';
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
     initMobileMenu();
-    initOpenOrgButton();
-    initOpenInTabButton();
     initAuthExpirationHandler();
-    initConnectionSelector();
 
     await checkProxyStatus();
     await initializeConnections();
@@ -70,43 +67,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
     }
 });
 
-// --- Connection Selector ---
-function initConnectionSelector() {
-    const dropdown = document.querySelector('.connection-dropdown');
-    const trigger = dropdown.querySelector('.connection-dropdown-trigger');
-    const addBtn = dropdown.querySelector('.connection-add-btn');
-    const connectionList = dropdown.querySelector('.connection-list');
-
-    // Add connection button - switch to Settings tab
-    addBtn.addEventListener('click', () => {
-        dropdown.classList.remove('open');
-        switchToSettingsTab();
-    });
-
-    // Dropdown toggle
-    trigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdown.classList.toggle('open');
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', () => dropdown.classList.remove('open'));
-
-    // Delegate clicks on connection list
-    connectionList.addEventListener('click', async (e) => {
-        const item = e.target.closest('.connection-item');
-        if (!item) return;
-
-        if (e.target.closest('.connection-remove')) {
-            e.stopPropagation();
-            await handleRemoveConnection(item.dataset.id);
-        } else {
-            await handleSelectConnection(item.dataset.id);
-            dropdown.classList.remove('open');
-        }
-    });
-}
-
+// --- Connection Management ---
 async function initializeConnections() {
     // Migrate from old single-connection format if needed
     await migrateFromSingleConnection();
@@ -134,8 +95,6 @@ async function refreshConnectionList() {
         showNoConnectionsState();
         setActiveConnection(null);
     } else {
-        showConnectionDropdown(connections);
-
         // If active connection was removed, select the most recent
         const activeId = getActiveConnectionId();
         const activeConnection = connections.find(c => c.id === activeId);
@@ -145,49 +104,24 @@ async function refreshConnectionList() {
             );
             await selectConnection(mostRecent);
         } else {
-            // Update the UI and refresh the header label (in case label was edited)
-            renderConnectionList(connections);
-            updateConnectionLabel(activeConnection.label);
+            updateMobileConnections(connections);
         }
     }
 }
 
 function showNoConnectionsState() {
-    const dropdown = document.querySelector('.connection-dropdown');
-    dropdown.classList.add('hidden');
-
-    // Sync mobile menu state
     updateMobileConnections([]);
-
-    // Switch to Settings tab so user can add a connection
     switchToSettingsTab();
 }
 
 function switchToSettingsTab() {
-    const settingsTab = document.querySelector('.tab-link[data-tab="settings"]');
-    if (settingsTab) {
-        settingsTab.click();
+    const mobileNavItem = document.querySelector('.mobile-nav-item[data-tab="settings"]');
+    if (mobileNavItem) {
+        mobileNavItem.click();
     }
 }
 
 function showConnectionDropdown(connections) {
-    const dropdown = document.querySelector('.connection-dropdown');
-    dropdown.classList.remove('hidden');
-    renderConnectionList(connections);
-}
-
-function renderConnectionList(connections) {
-    const list = document.querySelector('.connection-list');
-    const activeId = getActiveConnectionId();
-
-    list.innerHTML = connections.map(conn => `
-        <div class="connection-item ${conn.id === activeId ? 'active' : ''}" data-id="${conn.id}">
-            <span class="connection-name">${escapeHtml(conn.label)}</span>
-            <button class="connection-remove" title="Remove">&times;</button>
-        </div>
-    `).join('');
-
-    // Also update mobile menu connections
     updateMobileConnections(connections);
 }
 
@@ -199,53 +133,13 @@ function escapeHtml(str) {
 
 async function selectConnection(connection) {
     setActiveConnection(connection);
-    updateConnectionLabel(connection.label);
-    renderConnectionList(await loadConnections());
+    updateMobileConnections(await loadConnections());
 
     // Update lastUsedAt
     await updateConnection(connection.id, {});
 
     // Notify components that connection changed
     document.dispatchEvent(new CustomEvent('connection-changed', { detail: connection }));
-}
-
-function updateConnectionLabel(label) {
-    const labelEl = document.querySelector('.connection-label');
-    labelEl.textContent = label;
-}
-
-async function handleSelectConnection(connectionId) {
-    const connections = await loadConnections();
-    const connection = connections.find(c => c.id === connectionId);
-    if (connection) {
-        await selectConnection(connection);
-    }
-}
-
-async function handleRemoveConnection(connectionId) {
-    if (!confirm('Remove this connection?')) return;
-
-    // Clear active connection first to prevent auth expiration trigger
-    const wasActive = getActiveConnectionId() === connectionId;
-    if (wasActive) {
-        setActiveConnection(null);
-    }
-
-    await removeConnection(connectionId);
-    const connections = await loadConnections();
-
-    if (connections.length === 0) {
-        showNoConnectionsState();
-    } else {
-        renderConnectionList(connections);
-        // If removed the active one, switch to another
-        if (wasActive) {
-            const mostRecent = connections.reduce((a, b) =>
-                a.lastUsedAt > b.lastUsedAt ? a : b
-            );
-            await selectConnection(mostRecent);
-        }
-    }
 }
 
 async function detectLoginDomain() {
@@ -370,12 +264,12 @@ function initAuthExpirationHandler() {
 
 // --- Feature Gating ---
 function updateFeatureGating() {
-    const eventsTab = document.querySelector('.tab-link[data-tab="events"]');
+    const eventsNavItem = document.querySelector('.mobile-nav-item[data-tab="events"]');
     const eventsContent = document.getElementById('events');
 
     if (!isProxyConnected()) {
         // Disable the events tab
-        eventsTab.classList.add('tab-disabled');
+        eventsNavItem.classList.add('tab-disabled');
         eventsContent.classList.add('feature-disabled');
 
         // Add overlay with message
@@ -392,15 +286,12 @@ function updateFeatureGating() {
 
         // Settings button handler - switch to settings tab
         overlay.querySelector('#feature-gate-settings-btn').addEventListener('click', () => {
-            const settingsTab = document.querySelector('.tab-link[data-tab="settings"]');
-            if (settingsTab) {
-                settingsTab.click();
-            }
+            switchToSettingsTab();
         });
 
         // Prevent tab switching to disabled tab
-        eventsTab.addEventListener('click', (e) => {
-            if (eventsTab.classList.contains('tab-disabled')) {
+        eventsNavItem.addEventListener('click', (e) => {
+            if (eventsNavItem.classList.contains('tab-disabled')) {
                 e.stopPropagation();
                 e.preventDefault();
             }
@@ -408,155 +299,10 @@ function updateFeatureGating() {
     }
 }
 
-// --- Open Org Button ---
-function initOpenOrgButton() {
-    const btn = document.getElementById('open-org-btn');
-    btn.addEventListener('click', () => {
-        if (!isAuthenticated()) {
-            // If not authenticated, start authorization instead
-            startAuthorization();
-            return;
-        }
-        const instanceUrl = getInstanceUrl();
-        const accessToken = getAccessToken();
-        const frontdoorUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${encodeURIComponent(accessToken)}`;
-        window.open(frontdoorUrl, '_blank');
-    });
-}
-
-// --- Open in Tab Button ---
-function initOpenInTabButton() {
-    const btn = document.getElementById('open-in-tab-btn');
-    btn.addEventListener('click', () => {
-        chrome.tabs.create({ url: chrome.runtime.getURL('dist/pages/app/app.html') });
-    });
-}
-
 // --- Tab Navigation ---
+// Tab switching is handled by the mobile menu
 function initTabs() {
-    const container = document.querySelector('.tab-scroll-container');
-    const tabs = container.querySelectorAll('.tab-link[data-tab]');
-    const contents = document.querySelectorAll('.tab-content');
-    const dropdown = container.querySelector('.nav-overflow-dropdown');
-    const trigger = dropdown.querySelector('.nav-overflow-trigger');
-    const menu = dropdown.querySelector('.nav-overflow-menu');
-
-    // Tab click handler (works for both nav and dropdown items)
-    function handleTabClick(tab) {
-        const targetId = tab.getAttribute('data-tab');
-
-        // Update all tabs (nav + dropdown clones)
-        container.querySelectorAll('.tab-link[data-tab]').forEach(t => t.classList.remove('active'));
-        menu.querySelectorAll('.tab-link[data-tab]').forEach(t => t.classList.remove('active'));
-
-        // Activate clicked tab and its clone if exists
-        container.querySelectorAll(`.tab-link[data-tab="${targetId}"]`).forEach(t => t.classList.add('active'));
-
-        contents.forEach(c => c.classList.remove('active'));
-        const targetContent = document.getElementById(targetId);
-        if (targetContent) {
-            targetContent.classList.add('active');
-        }
-
-        // Close dropdown
-        dropdown.classList.remove('open');
-    }
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => handleTabClick(tab));
-    });
-
-    // Dropdown toggle
-    trigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdown.classList.toggle('open');
-
-        // Position menu below trigger
-        if (dropdown.classList.contains('open')) {
-            const rect = trigger.getBoundingClientRect();
-            menu.style.left = rect.left + 'px';
-        }
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', () => {
-        dropdown.classList.remove('open');
-    });
-
-    // Overflow detection
-    function updateOverflow() {
-        // Reset all tabs to visible first to measure true widths
-        tabs.forEach(tab => tab.classList.remove('nav-hidden'));
-        dropdown.classList.add('hidden');
-        menu.innerHTML = '';
-
-        // Use container's actual width
-        const containerWidth = container.offsetWidth;
-        const dropdownWidth = 85; // Width of "More" button
-
-        // Measure tab widths
-        let totalWidth = 0;
-        const tabWidths = [];
-        tabs.forEach(tab => {
-            const width = tab.offsetWidth + 5; // include margin
-            tabWidths.push(width);
-            totalWidth += width;
-        });
-
-        // Check if all tabs fit
-        if (totalWidth <= containerWidth) {
-            return; // All tabs fit, no overflow needed
-        }
-
-        // Find how many tabs fit (leaving room for dropdown)
-        let usedWidth = 0;
-        let fitCount = 0;
-        for (let i = 0; i < tabs.length; i++) {
-            if (usedWidth + tabWidths[i] + dropdownWidth <= containerWidth) {
-                usedWidth += tabWidths[i];
-                fitCount++;
-            } else {
-                break;
-            }
-        }
-
-        // At least show the dropdown if nothing fits
-        if (fitCount === tabs.length) {
-            return; // All fit after all
-        }
-
-        // Hide overflowing tabs and show dropdown
-        dropdown.classList.remove('hidden');
-
-        for (let i = fitCount; i < tabs.length; i++) {
-            const tab = tabs[i];
-            tab.classList.add('nav-hidden');
-
-            // Create dropdown item
-            const clone = document.createElement('button');
-            clone.className = 'tab-link';
-            clone.setAttribute('data-tab', tab.getAttribute('data-tab'));
-            clone.textContent = tab.textContent;
-            if (tab.classList.contains('active')) {
-                clone.classList.add('active');
-            }
-            clone.addEventListener('click', () => handleTabClick(clone));
-            menu.appendChild(clone);
-        }
-    }
-
-    // Run on load and resize (with debounce for resize)
-    let resizeTimeout;
-    function handleResize() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(updateOverflow, 50);
-    }
-
-    // Initial run after layout settles
-    requestAnimationFrame(() => {
-        requestAnimationFrame(updateOverflow);
-    });
-    window.addEventListener('resize', handleResize);
+    // No-op: hamburger menu is now the primary navigation
 }
 
 // --- Mobile Menu ---
@@ -593,16 +339,10 @@ function initMobileMenu() {
         item.addEventListener('click', () => {
             const targetId = item.getAttribute('data-tab');
             const contents = document.querySelectorAll('.tab-content');
-            const navTabs = document.querySelectorAll('.tab-scroll-container .tab-link[data-tab]');
 
-            // Update mobile nav active state
+            // Update nav active state
             mobileNavItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
-
-            // Update desktop nav active state
-            navTabs.forEach(tab => tab.classList.remove('active'));
-            const matchingTab = document.querySelector(`.tab-scroll-container .tab-link[data-tab="${targetId}"]`);
-            if (matchingTab) matchingTab.classList.add('active');
 
             // Switch content
             contents.forEach(c => c.classList.remove('active'));

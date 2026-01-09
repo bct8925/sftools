@@ -46,6 +46,15 @@ src/
 │   │   ├── settings-tab.js
 │   │   ├── settings.html
 │   │   └── settings.css
+│   ├── utils/                # Utils tab container
+│   │   ├── utils-tab.js
+│   │   └── utils.html
+│   ├── utils-tools/          # Individual utility tool components
+│   │   ├── utils-tools.css   # Shared styles for all tools
+│   │   ├── debug-logs.js     # <debug-logs> - Trace flags + log deletion
+│   │   ├── debug-logs.html
+│   │   ├── flow-cleanup.js   # <flow-cleanup> - Delete inactive flow versions
+│   │   └── flow-cleanup.html
 │   ├── aura/                 # Aura Debugger page component
 │   │   ├── aura-page.js
 │   │   ├── aura.html
@@ -110,14 +119,11 @@ Root files:
 
 ## Tool Tabs (OAuth-authenticated)
 
-Implemented:
-- **REST API** - Salesforce REST API explorer with Monaco editors
-- **Apex** - Anonymous Apex execution with debug log retrieval
 - **Query** - SOQL query editor with tabbed results
+- **Apex** - Anonymous Apex execution with debug log retrieval
+- **REST API** - Salesforce REST API explorer with Monaco editors
 - **Events** - Unified streaming for Platform Events (gRPC), PushTopics, and System Topics (CometD) - requires local proxy
-
-Planned:
-- **Dev Console** - Debug log viewer
+- **Utils** - Collection of utility tools (debug logs, flow cleanup)
 
 ## Standalone Tools
 
@@ -590,6 +596,85 @@ The Events tab provides unified streaming across multiple Salesforce protocols. 
 - Tab is disabled when proxy is not connected
 - `isProxyConnected()` utility checks connection status
 - Overlay prompts user to connect via Settings
+
+## Utils Tab Implementation
+
+The Utils tab is a container for modular utility tools. Each tool is a self-contained custom element in `src/components/utils-tools/`.
+
+**Architecture:**
+```
+src/components/
+├── utils/
+│   ├── utils-tab.js      # Container that imports tool components
+│   └── utils.html        # Layout with <tool-name> elements
+└── utils-tools/
+    ├── utils-tools.css   # Shared styles (status indicators, results, etc.)
+    ├── debug-logs.js     # <debug-logs> component
+    ├── debug-logs.html
+    ├── flow-cleanup.js   # <flow-cleanup> component
+    └── flow-cleanup.html
+```
+
+**Current Tools:**
+
+1. **Debug Logs** (`<debug-logs>`)
+   - Enable trace flag for current user or search for another user
+   - Bulk delete all ApexLog records
+   - Uses Tooling API for TraceFlag and ApexLog operations
+
+2. **Flow Cleanup** (`<flow-cleanup>`)
+   - Search flows by API name
+   - View all versions with active version highlighted
+   - Delete inactive versions via Tooling API composite delete
+
+**Adding a New Utility Tool:**
+
+1. Create component files in `src/components/utils-tools/`:
+   ```
+   new-tool.js    # Custom element class
+   new-tool.html  # Template (card structure)
+   ```
+
+2. Import shared styles and define the element:
+   ```javascript
+   import template from './new-tool.html?raw';
+   import './utils-tools.css';
+
+   class NewTool extends HTMLElement {
+       connectedCallback() {
+           this.innerHTML = template;
+           // ... init and event listeners
+       }
+   }
+   customElements.define('new-tool', NewTool);
+   ```
+
+3. Register in `utils-tab.js`:
+   ```javascript
+   import '../utils-tools/new-tool.js';
+   ```
+
+4. Add to `utils.html`:
+   ```html
+   <new-tool></new-tool>
+   ```
+
+**Shared Styles** (`utils-tools.css`):
+- `.tool-description` - Muted description text
+- `.tool-status` - Status row with indicator and text
+- `.tool-status-indicator.status-loading/success/error` - Status dot colors
+- `.tool-results`, `.tool-result-item` - Search result list styling
+- `.tool-summary` - Info box with background
+- `.tool-divider` - Horizontal separator
+- `.tool-section-title` - Section heading within a card
+
+**API Helpers** (`src/lib/salesforce.js`):
+- `deleteAllDebugLogs()` - Bulk delete ApexLog records
+- `searchUsers(term)` - Search User by name/username
+- `enableTraceFlagForUser(userId)` - Create/update TraceFlag (30 min)
+- `searchFlows(term)` - Search FlowDefinition by API name
+- `getFlowVersions(flowId)` - Get Flow versions for a definition
+- `deleteInactiveFlowVersions(ids)` - Composite delete inactive versions
 
 ## Styling Conventions
 

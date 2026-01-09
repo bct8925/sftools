@@ -376,11 +376,18 @@
     height: 120px;
 }
 
+.query-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-top: 10px;
+}
+
 .query-tooling-label {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    margin-left: 12px;
     font-size: 13px;
     color: var(--text-main);
     cursor: pointer;

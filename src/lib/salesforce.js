@@ -188,11 +188,13 @@ export async function executeAnonymousApex(apexCode, onProgress) {
  * Execute a SOQL query with column metadata
  * Makes parallel requests for data and column info
  * @param {string} soql - The SOQL query
+ * @param {boolean} useToolingApi - If true, use the Tooling API endpoint
  * @returns {Promise<{records: array, totalSize: number, columnMetadata: array, entityName: string}>}
  */
-export async function executeQueryWithColumns(soql) {
+export async function executeQueryWithColumns(soql, useToolingApi = false) {
     const encodedQuery = encodeURIComponent(soql);
-    const baseUrl = `/services/data/v${API_VERSION}/query/?q=${encodedQuery}`;
+    const apiPath = useToolingApi ? 'tooling/query' : 'query';
+    const baseUrl = `/services/data/v${API_VERSION}/${apiPath}/?q=${encodedQuery}`;
 
     const [columnsResponse, dataResponse] = await Promise.all([
         salesforceRequest(`${baseUrl}&columns=true`),

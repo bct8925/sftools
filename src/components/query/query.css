@@ -376,6 +376,21 @@
     height: 120px;
 }
 
+.query-tooling-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 12px;
+    font-size: 13px;
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+.query-tooling-checkbox {
+    margin: 0;
+    cursor: pointer;
+}
+
 /* ============================================================
    Query Results Table
    ============================================================ */

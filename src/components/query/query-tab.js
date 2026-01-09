@@ -18,6 +18,7 @@ class QueryTab extends HTMLElement {
     tabsContainer = null;
     resultsContainer = null;
     executeBtn = null;
+    toolingCheckbox = null;
     statusSpan = null;
 
     // Dropdown DOM references
@@ -47,6 +48,7 @@ class QueryTab extends HTMLElement {
         this.tabsContainer = this.querySelector('.query-tabs');
         this.resultsContainer = this.querySelector('.query-results');
         this.executeBtn = this.querySelector('.query-execute-btn');
+        this.toolingCheckbox = this.querySelector('.query-tooling-checkbox');
         this.statusSpan = this.querySelector('.query-status');
 
         // Dropdown elements
@@ -498,7 +500,8 @@ LIMIT 10`);
         tabData.error = null;
 
         try {
-            const result = await executeQueryWithColumns(tabData.query);
+            const useToolingApi = this.toolingCheckbox.checked;
+            const result = await executeQueryWithColumns(tabData.query, useToolingApi);
 
             tabData.records = result.records;
             tabData.totalSize = result.totalSize;

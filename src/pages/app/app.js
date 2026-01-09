@@ -24,6 +24,7 @@ import '../../components/apex/apex-tab.js';
 import '../../components/rest-api/rest-api-tab.js';
 import '../../components/events/events-tab.js';
 import '../../components/settings/settings-tab.js';
+import '../../components/utils/utils-tab.js';
 
 // OAuth constants
 const CALLBACK_URL = 'https://sftools.dev/sftools-callback';

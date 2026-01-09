@@ -452,3 +452,237 @@ export async function publishPlatformEvent(eventType, payload) {
 
     return { success: false, id: null, error: errorMsg };
 }
+
+// ============================================================
+// Utils Tab - API Helpers
+// ============================================================
+
+/**
+ * Delete all ApexLog records
+ * @returns {Promise<{deletedCount: number}>}
+ */
+export async function deleteAllDebugLogs() {
+    const query = encodeURIComponent('SELECT Id FROM ApexLog');
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+
+    const logs = response.json.records || [];
+    if (logs.length === 0) {
+        return { deletedCount: 0 };
+    }
+
+    const logIds = logs.map(l => l.Id);
+    let deletedCount = 0;
+
+    // Tooling API composite supports up to 25 subrequests
+    const batchSize = 25;
+    for (let i = 0; i < logIds.length; i += batchSize) {
+        const batch = logIds.slice(i, i + batchSize);
+        const compositeRequest = {
+            allOrNone: false,
+            compositeRequest: batch.map((id, idx) => ({
+                method: 'DELETE',
+                url: `/services/data/v${API_VERSION}/tooling/sobjects/ApexLog/${id}`,
+                referenceId: `delete_${idx}`
+            }))
+        };
+
+        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/composite`, {
+            method: 'POST',
+            body: JSON.stringify(compositeRequest)
+        });
+        deletedCount += batch.length;
+    }
+
+    return { deletedCount };
+}
+
+/**
+ * Search users by name or username
+ * @param {string} searchTerm
+ * @returns {Promise<Array>}
+ */
+export async function searchUsers(searchTerm) {
+    const escaped = searchTerm.replace(/'/g, "\\'");
+    const query = encodeURIComponent(
+        `SELECT Id, Name, Username FROM User WHERE (Name LIKE '%${escaped}%' OR Username LIKE '%${escaped}%') AND IsActive = true ORDER BY Name LIMIT 10`
+    );
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/query/?q=${query}`);
+    return response.json.records || [];
+}
+
+/**
+ * Enable trace flag for a user (30 minutes)
+ * @param {string} userId
+ * @returns {Promise<string>} Trace flag ID
+ */
+export async function enableTraceFlagForUser(userId) {
+    const now = new Date().toISOString();
+    const thirtyMinutesFromNow = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+
+    // Check for existing trace flag
+    const query = encodeURIComponent(
+        `SELECT Id, DebugLevelId, ExpirationDate FROM TraceFlag WHERE TracedEntityId = '${userId}' AND LogType = 'USER_DEBUG' AND ExpirationDate > ${now}`
+    );
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+
+    if (response.json.records && response.json.records.length > 0) {
+        const existing = response.json.records[0];
+        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${existing.Id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ ExpirationDate: thirtyMinutesFromNow })
+        });
+        return existing.Id;
+    }
+
+    // Create new trace flag
+    const debugLevelId = await getOrCreateDebugLevel();
+    const createResponse = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag`, {
+        method: 'POST',
+        body: JSON.stringify({
+            TracedEntityId: userId,
+            DebugLevelId: debugLevelId,
+            LogType: 'USER_DEBUG',
+            StartDate: now,
+            ExpirationDate: thirtyMinutesFromNow
+        })
+    });
+    return createResponse.json.id;
+}
+
+/**
+ * Search flows by name
+ * @param {string} searchTerm
+ * @returns {Promise<Array>}
+ */
+export async function searchFlows(searchTerm) {
+    const escaped = searchTerm.replace(/'/g, "\\'");
+    const query = encodeURIComponent(
+        `SELECT Id, DeveloperName, ActiveVersionId FROM FlowDefinition WHERE DeveloperName LIKE '%${escaped}%' ORDER BY DeveloperName LIMIT 10`
+    );
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    return response.json.records || [];
+}
+
+/**
+ * Get all versions of a flow
+ * @param {string} flowDefinitionId
+ * @returns {Promise<Array>}
+ */
+export async function getFlowVersions(flowDefinitionId) {
+    const query = encodeURIComponent(
+        `SELECT Id, VersionNumber, Status, Description FROM Flow WHERE DefinitionId = '${flowDefinitionId}' ORDER BY VersionNumber DESC`
+    );
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    return response.json.records || [];
+}
+
+/**
+ * Delete inactive flow versions
+ * @param {string[]} versionIds
+ * @returns {Promise<{deletedCount: number}>}
+ */
+export async function deleteInactiveFlowVersions(versionIds) {
+    if (versionIds.length === 0) {
+        return { deletedCount: 0 };
+    }
+
+    let deletedCount = 0;
+    const batchSize = 25;
+
+    for (let i = 0; i < versionIds.length; i += batchSize) {
+        const batch = versionIds.slice(i, i + batchSize);
+        const compositeRequest = {
+            allOrNone: false,
+            compositeRequest: batch.map((id, idx) => ({
+                method: 'DELETE',
+                url: `/services/data/v${API_VERSION}/tooling/sobjects/Flow/${id}`,
+                referenceId: `delete_${idx}`
+            }))
+        };
+
+        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/composite`, {
+            method: 'POST',
+            body: JSON.stringify(compositeRequest)
+        });
+        deletedCount += batch.length;
+    }
+
+    return { deletedCount };
+}
+
+/**
+ * Search Profiles by name
+ * @param {string} searchTerm
+ * @returns {Promise<Array>}
+ */
+export async function searchProfiles(searchTerm) {
+    const escaped = searchTerm.replace(/'/g, "\\'");
+    const query = encodeURIComponent(
+        `SELECT Id, Name FROM Profile WHERE Name LIKE '%${escaped}%' ORDER BY Name LIMIT 10`
+    );
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/query/?q=${query}`);
+    return response.json.records || [];
+}
+
+/**
+ * Grant profile access to all Apex classes
+ * @param {string} profileId
+ * @returns {Promise<{grantedCount: number, skippedCount: number}>}
+ */
+export async function grantApexAccessToProfile(profileId) {
+    // Get all Apex classes (excluding managed packages)
+    const classQuery = encodeURIComponent('SELECT Id, Name FROM ApexClass WHERE NamespacePrefix = null');
+    const classResponse = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${classQuery}`);
+    const allClasses = classResponse.json.records || [];
+
+    if (allClasses.length === 0) {
+        return { grantedCount: 0, skippedCount: 0 };
+    }
+
+    // Get profile's permission set ID
+    const psQuery = encodeURIComponent(
+        `SELECT Id FROM PermissionSet WHERE ProfileId = '${profileId}' AND IsOwnedByProfile = true`
+    );
+    const psResponse = await salesforceRequest(`/services/data/v${API_VERSION}/query/?q=${psQuery}`);
+    const permissionSetId = psResponse.json.records?.[0]?.Id;
+
+    if (!permissionSetId) {
+        throw new Error('Could not find Permission Set for profile');
+    }
+
+    // Get existing access records
+    const accessQuery = encodeURIComponent(
+        `SELECT SetupEntityId FROM SetupEntityAccess WHERE ParentId = '${permissionSetId}' AND SetupEntityType = 'ApexClass'`
+    );
+    const accessResponse = await salesforceRequest(`/services/data/v${API_VERSION}/query/?q=${accessQuery}`);
+    const existingAccess = new Set((accessResponse.json.records || []).map(r => r.SetupEntityId));
+
+    // Filter to classes that don't already have access
+    const classesToGrant = allClasses.filter(c => !existingAccess.has(c.Id));
+    const skippedCount = allClasses.length - classesToGrant.length;
+
+    if (classesToGrant.length === 0) {
+        return { grantedCount: 0, skippedCount };
+    }
+
+    // Create SetupEntityAccess records in batches
+    let grantedCount = 0;
+    const batchSize = 200;
+
+    for (let i = 0; i < classesToGrant.length; i += batchSize) {
+        const batch = classesToGrant.slice(i, i + batchSize);
+        const records = batch.map(c => ({
+            attributes: { type: 'SetupEntityAccess' },
+            ParentId: permissionSetId,
+            SetupEntityId: c.Id
+        }));
+
+        await salesforceRequest(`/services/data/v${API_VERSION}/composite/sobjects`, {
+            method: 'POST',
+            body: JSON.stringify({ allOrNone: false, records })
+        });
+        grantedCount += batch.length;
+    }
+
+    return { grantedCount, skippedCount };
+}

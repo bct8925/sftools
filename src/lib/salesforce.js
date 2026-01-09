@@ -550,6 +550,44 @@ export async function enableTraceFlagForUser(userId) {
 }
 
 /**
+ * Delete all TraceFlag records
+ * @returns {Promise<{deletedCount: number}>}
+ */
+export async function deleteAllTraceFlags() {
+    const query = encodeURIComponent('SELECT Id FROM TraceFlag');
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+
+    const flags = response.json.records || [];
+    if (flags.length === 0) {
+        return { deletedCount: 0 };
+    }
+
+    const flagIds = flags.map(f => f.Id);
+    let deletedCount = 0;
+
+    const batchSize = 25;
+    for (let i = 0; i < flagIds.length; i += batchSize) {
+        const batch = flagIds.slice(i, i + batchSize);
+        const compositeRequest = {
+            allOrNone: false,
+            compositeRequest: batch.map((id, idx) => ({
+                method: 'DELETE',
+                url: `/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${id}`,
+                referenceId: `delete_${idx}`
+            }))
+        };
+
+        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/composite`, {
+            method: 'POST',
+            body: JSON.stringify(compositeRequest)
+        });
+        deletedCount += batch.length;
+    }
+
+    return { deletedCount };
+}
+
+/**
  * Search flows by name
  * @param {string} searchTerm
  * @returns {Promise<Array>}

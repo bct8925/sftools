@@ -2,7 +2,7 @@
 import template from './debug-logs.html?raw';
 import './utils-tools.css';
 import { isAuthenticated } from '../../lib/utils.js';
-import { getCurrentUserId, searchUsers, enableTraceFlagForUser, deleteAllDebugLogs } from '../../lib/salesforce.js';
+import { getCurrentUserId, searchUsers, enableTraceFlagForUser, deleteAllDebugLogs, deleteAllTraceFlags } from '../../lib/salesforce.js';
 
 class DebugLogs extends HTMLElement {
     // Trace flag elements
@@ -11,7 +11,8 @@ class DebugLogs extends HTMLElement {
     userResults = null;
     traceStatus = null;
 
-    // Delete logs elements
+    // Cleanup elements
+    deleteFlagsBtn = null;
     deleteLogsBtn = null;
     deleteStatus = null;
 
@@ -30,7 +31,8 @@ class DebugLogs extends HTMLElement {
         this.userResults = this.querySelector('.user-results');
         this.traceStatus = this.querySelector('.trace-status');
 
-        // Delete logs
+        // Cleanup
+        this.deleteFlagsBtn = this.querySelector('.delete-flags-btn');
         this.deleteLogsBtn = this.querySelector('.delete-logs-btn');
         this.deleteStatus = this.querySelector('.delete-status');
     }
@@ -41,7 +43,8 @@ class DebugLogs extends HTMLElement {
         this.userSearchInput.addEventListener('input', () => this.handleSearchInput());
         this.userResults.addEventListener('click', (e) => this.handleUserSelect(e));
 
-        // Delete logs
+        // Cleanup
+        this.deleteFlagsBtn.addEventListener('click', () => this.handleDeleteFlags());
         this.deleteLogsBtn.addEventListener('click', () => this.handleDeleteLogs());
     }
 
@@ -129,8 +132,32 @@ class DebugLogs extends HTMLElement {
     }
 
     // ============================================================
-    // Delete Logs Methods
+    // Cleanup Methods
     // ============================================================
+
+    async handleDeleteFlags() {
+        if (!isAuthenticated()) {
+            alert('Not authenticated. Please authorize via the connection selector.');
+            return;
+        }
+
+        if (!confirm('Delete ALL trace flags? This cannot be undone.')) {
+            return;
+        }
+
+        this.setStatus(this.deleteStatus, 'loading', 'Deleting trace flags...');
+        this.deleteFlagsBtn.disabled = true;
+
+        try {
+            const result = await deleteAllTraceFlags();
+            const count = result.deletedCount;
+            this.setStatus(this.deleteStatus, 'success', `Deleted ${count} trace flag${count !== 1 ? 's' : ''}`);
+        } catch (error) {
+            this.setStatus(this.deleteStatus, 'error', error.message);
+        } finally {
+            this.deleteFlagsBtn.disabled = false;
+        }
+    }
 
     async handleDeleteLogs() {
         if (!isAuthenticated()) {

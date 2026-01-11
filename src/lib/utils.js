@@ -113,10 +113,11 @@ export async function smartFetch(url, options = {}) {
 /**
  * Make an authenticated Salesforce REST API request
  * Handles URL building, headers, and error parsing
+ * Uses proxy if available, falls back to extension fetch
  */
 export async function salesforceRequest(endpoint, options = {}) {
     const url = `${getInstanceUrl()}${endpoint}`;
-    const response = await extensionFetch(url, {
+    const response = await smartFetch(url, {
         method: options.method || 'GET',
         headers: {
             'Authorization': `Bearer ${getAccessToken()}`,

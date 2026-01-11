@@ -2,7 +2,7 @@
 import template from './aura.html?raw';
 import './aura.css';
 import '../monaco-editor/monaco-editor.js';
-import { extensionFetch } from '../../lib/utils.js';
+import { smartFetch } from '../../lib/utils.js';
 
 const PRESETS = {
     getItems: {
@@ -347,7 +347,7 @@ class AuraPage extends HTMLElement {
 
         const bodyData = `message=${message}&aura.context=${aura}&aura.pageURI=/&aura.token=${tokenVal}`;
 
-        const response = await extensionFetch(`${url}/aura`, {
+        const response = await smartFetch(`${url}/aura`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'

@@ -34,74 +34,18 @@
     color: var(--text-muted);
 }
 
-.apex-search-clear {
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    color: var(--text-muted);
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: all 0.15s;
-}
-
-.apex-search-clear:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: var(--text-main);
-}
-
 /* ============================================================
    History/Favorites Dropdown
    ============================================================ */
 
-.apex-header-dropdown {
+.apex-history-btn {
     margin-left: auto;
-    position: relative;
 }
 
-.apex-dropdown-trigger {
-    width: 32px;
-    height: 32px;
-    border: 1px solid var(--border-color);
-    background: white;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    font-size: 16px;
-    transition: all 0.2s;
-}
-
-.apex-dropdown-trigger:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.apex-dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 8px;
+.apex-history-btn .btn-icon-menu {
     width: 300px;
     max-height: 400px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 200;
-    overflow: hidden;
-}
-
-.apex-header-dropdown.open .apex-dropdown-menu {
-    display: flex;
-    flex-direction: column;
+    padding: 0;
 }
 
 .apex-dropdown-tabs {

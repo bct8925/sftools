@@ -21,7 +21,7 @@ class SchemaBrowserLink extends HTMLElement {
             return;
         }
 
-        const url = `schema.html?connectionId=${encodeURIComponent(connectionId)}`;
+        const url = `/dist/pages/schema/schema.html?connectionId=${encodeURIComponent(connectionId)}`;
         window.open(url, '_blank');
     }
 }

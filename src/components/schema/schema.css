@@ -1,5 +1,37 @@
 /* Schema Browser Page Styles */
 
+/* Standalone Header */
+.standalone-header {
+    display: flex;
+    align-items: center;
+    background: var(--nav-bg);
+    border-bottom: 2px solid var(--border-color);
+    padding: 0 20px;
+    height: 50px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.standalone-header .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--primary-color);
+    letter-spacing: -0.5px;
+}
+.standalone-header .nav-brand img {
+    height: 24px;
+    width: auto;
+}
+.standalone-header .tool-name {
+    font-size: 14px;
+    color: var(--text-muted);
+    border-left: 1px solid var(--border-color);
+    padding-left: 15px;
+    margin-left: 15px;
+}
+
 .schema-card-body {
     padding: 0;
     overflow: hidden;

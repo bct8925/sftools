@@ -42,7 +42,7 @@
     margin-left: auto;
 }
 
-.query-history-btn .btn-icon-menu {
+.query-history-modal .modal-content {
     width: 320px;
     max-height: 400px;
     padding: 0;

@@ -3,6 +3,7 @@ import template from './apex.html?raw';
 import './apex.css';
 import { monaco } from '../monaco-editor/monaco-editor.js';
 import '../button-icon/button-icon.js';
+import '../modal-popup/modal-popup.js';
 import { isAuthenticated } from '../../lib/utils.js';
 import { executeAnonymousApex } from '../../lib/salesforce.js';
 
@@ -16,8 +17,9 @@ class ApexTab extends HTMLElement {
     statusSpan = null;
     searchInput = null;
 
-    // Button component
+    // Button components
     historyBtn = null;
+    historyModal = null;
 
     // History dropdown elements
     historyList = null;
@@ -42,8 +44,9 @@ class ApexTab extends HTMLElement {
         this.statusSpan = this.querySelector('.apex-status');
         this.searchInput = this.querySelector('.apex-search-input');
 
-        // Button component
+        // Button components
         this.historyBtn = this.querySelector('.apex-history-btn');
+        this.historyModal = this.querySelector('.apex-history-modal');
 
         // History dropdown elements
         this.historyList = this.querySelector('.apex-history-list');
@@ -70,6 +73,9 @@ for (Account acc : accounts) {
     attachEventListeners() {
         this.executeBtn.addEventListener('click', () => this.executeApex());
         this.codeEditor.addEventListener('execute', () => this.executeApex());
+
+        // History modal
+        this.historyBtn.addEventListener('toggle', () => this.historyModal.toggle());
 
         // History dropdown tab switching
         this.dropdownTabs.forEach(tab => {
@@ -260,10 +266,10 @@ for (Account acc : accounts) {
 
             if (action.classList.contains('load')) {
                 this.loadScript(scriptData.code);
-                this.historyBtn.close();
+                this.historyModal.close();
             } else if (action.classList.contains('favorite')) {
                 this.showFavoriteModal(scriptData.code);
-                this.historyBtn.close();
+                this.historyModal.close();
             } else if (action.classList.contains('delete')) {
                 if (listType === 'history') {
                     this.removeFromHistory(id);
@@ -274,7 +280,7 @@ for (Account acc : accounts) {
         } else {
             // Click on item itself loads the script
             this.loadScript(scriptData.code);
-            this.historyBtn.close();
+            this.historyModal.close();
         }
     }
 

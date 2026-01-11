@@ -4,6 +4,20 @@
 // Core editor API (no languages included)
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api.js';
 
+// Inline workers for JSON validation and editor features
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker&inline';
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker&inline';
+
+// Configure Monaco to use inline workers
+if (!self.MonacoEnvironment) {
+    self.MonacoEnvironment = {
+        getWorker: function (_, label) {
+            if (label === 'json') return new jsonWorker();
+            return new editorWorker();
+        }
+    };
+}
+
 // Core editor features
 import 'monaco-editor/esm/vs/editor/browser/coreCommands.js';
 import 'monaco-editor/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget.js';

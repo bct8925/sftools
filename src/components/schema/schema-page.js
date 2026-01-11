@@ -11,6 +11,8 @@ class SchemaPage extends HTMLElement {
     allObjects = [];
     filteredObjects = [];
     selectedObject = null;
+    allFields = [];
+    filteredFields = [];
 
     // DOM references
     objectFilterEl = null;
@@ -19,6 +21,7 @@ class SchemaPage extends HTMLElement {
     fieldsPanelEl = null;
     selectedObjectLabelEl = null;
     selectedObjectNameEl = null;
+    fieldFilterEl = null;
     fieldsListEl = null;
     closeFieldsBtnEl = null;
 
@@ -48,6 +51,7 @@ class SchemaPage extends HTMLElement {
         this.fieldsPanelEl = this.querySelector('#fieldsPanel');
         this.selectedObjectLabelEl = this.querySelector('#selectedObjectLabel');
         this.selectedObjectNameEl = this.querySelector('#selectedObjectName');
+        this.fieldFilterEl = this.querySelector('#fieldFilter');
         this.fieldsListEl = this.querySelector('#fieldsList');
         this.closeFieldsBtnEl = this.querySelector('#closeFieldsBtn');
 
@@ -63,6 +67,7 @@ class SchemaPage extends HTMLElement {
 
     attachEventListeners() {
         this.objectFilterEl.addEventListener('input', (e) => this.filterObjects(e.target.value));
+        this.fieldFilterEl.addEventListener('input', (e) => this.filterFields(e.target.value));
         this.closeFieldsBtnEl.addEventListener('click', () => this.closeFieldsPanel());
 
         // Modal event listeners
@@ -196,15 +201,17 @@ class SchemaPage extends HTMLElement {
 
     async loadFields(objectName) {
         this.fieldsListEl.innerHTML = '<div class="loading-container">Loading fields...</div>';
+        this.fieldFilterEl.value = '';
 
         try {
             const describe = await getObjectDescribe(objectName);
             const fields = describe.fields || [];
 
             // Sort fields alphabetically by API name
-            const sortedFields = [...fields].sort((a, b) => a.name.localeCompare(b.name));
+            this.allFields = [...fields].sort((a, b) => a.name.localeCompare(b.name));
+            this.filteredFields = [...this.allFields];
 
-            this.renderFields(sortedFields);
+            this.renderFields();
 
         } catch (error) {
             this.fieldsListEl.innerHTML = `
@@ -216,7 +223,24 @@ class SchemaPage extends HTMLElement {
         }
     }
 
-    renderFields(fields) {
+    filterFields(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+
+        if (!term) {
+            this.filteredFields = [...this.allFields];
+        } else {
+            this.filteredFields = this.allFields.filter(field =>
+                field.name.toLowerCase().includes(term) ||
+                field.label.toLowerCase().includes(term)
+            );
+        }
+
+        this.renderFields();
+    }
+
+    renderFields() {
+        const fields = this.filteredFields;
+
         if (fields.length === 0) {
             this.fieldsListEl.innerHTML = '<div class="loading-container">No fields found</div>';
             return;
@@ -224,13 +248,13 @@ class SchemaPage extends HTMLElement {
 
         this.fieldsListEl.innerHTML = fields.map(field => {
             const typeDisplay = this.getFieldTypeDisplay(field);
-            const isFormulaField = field.calculated;
+            const isFormulaField = field.calculated && field.calculatedFormula;
 
             return `
                 <div class="field-item" data-field-name="${this.escapeAttr(field.name)}">
-                    <div class="field-item-label">${this.escapeHtml(field.label)}</div>
-                    <div class="field-item-name">${this.escapeHtml(field.name)}</div>
-                    <div class="field-item-type">${typeDisplay}</div>
+                    <div class="field-item-label" title="${this.escapeAttr(field.label)}">${this.escapeHtml(field.label)}</div>
+                    <div class="field-item-name" title="${this.escapeAttr(field.name)}">${this.escapeHtml(field.name)}</div>
+                    <div class="field-item-type" title="${this.escapeAttr(typeDisplay)}">${typeDisplay}</div>
                     <div class="field-item-actions">
                         ${isFormulaField ? `
                             <button class="field-menu-button" data-field-name="${this.escapeAttr(field.name)}" aria-label="More options">
@@ -279,7 +303,10 @@ class SchemaPage extends HTMLElement {
     getFieldTypeDisplay(field) {
         // Reuse type recognition logic from record viewer
         if (field.calculated) {
-            return `${field.type} (formula)`;
+            if (field.calculatedFormula) {
+                return `${field.type} (formula)`;
+            }
+            return `${field.type} (rollup)`;
         }
 
         if (field.type === 'reference' && field.referenceTo?.length > 0) {
@@ -359,13 +386,15 @@ class SchemaPage extends HTMLElement {
         // Show modal
         this.formulaModalEl.classList.add('show');
 
-        // Clear status
+        // Clear status and disable save until loaded
         this.modalStatusEl.textContent = '';
         this.modalStatusEl.className = 'modal-status';
+        this.modalSaveBtnEl.disabled = true;
 
         // Load formula metadata
         try {
             this.modalStatusEl.textContent = 'Loading formula...';
+            this.formulaEditorEl.setValue('Loading formula...');
             const metadata = await getFormulaFieldMetadata(this.selectedObject.name, field.name);
 
             this.currentFormulaField.id = metadata.id;
@@ -374,6 +403,7 @@ class SchemaPage extends HTMLElement {
             // Set formula in editor
             this.formulaEditorEl.setValue(metadata.formula || '');
             this.modalStatusEl.textContent = '';
+            this.modalSaveBtnEl.disabled = false;
 
         } catch (error) {
             this.modalStatusEl.textContent = `Error loading formula: ${error.message}`;
@@ -387,6 +417,7 @@ class SchemaPage extends HTMLElement {
         this.formulaEditorEl.clear();
         this.modalStatusEl.textContent = '';
         this.modalStatusEl.className = 'modal-status';
+        this.modalSaveBtnEl.disabled = false;
     }
 
     async saveFormula() {

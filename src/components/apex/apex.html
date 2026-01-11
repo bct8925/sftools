@@ -2,7 +2,8 @@
     <div class="card-header">
         <div class="card-header-icon" style="background-color: #6a67ce;">A</div>
         <h2>Anonymous Apex</h2>
-        <button-icon class="apex-history-btn" icon="&#9776;" title="History & Favorites">
+        <button-icon class="apex-history-btn" icon="&#9776;" title="History & Favorites"></button-icon>
+        <modal-popup class="apex-history-modal">
             <div class="apex-dropdown-tabs">
                 <button class="apex-dropdown-tab active" data-tab="history">History</button>
                 <button class="apex-dropdown-tab" data-tab="favorites">Favorites</button>
@@ -11,14 +12,14 @@
                 <div class="apex-script-list apex-history-list"></div>
                 <div class="apex-script-list apex-favorites-list" style="display: none;"></div>
             </div>
-        </button-icon>
+        </modal-popup>
     </div>
     <div class="card-body">
         <div class="form-element">
             <monaco-editor class="apex-editor monaco-container" language="apex"></monaco-editor>
         </div>
         <div class="m-top_small">
-            <button class="button-brand apex-execute-btn">Execute Apex</button>
+            <button class="button-brand apex-execute-btn">Execute</button>
             <span class="apex-status status-badge"></span>
         </div>
     </div>

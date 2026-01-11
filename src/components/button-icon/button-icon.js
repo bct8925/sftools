@@ -44,6 +44,7 @@ class ButtonIcon extends HTMLElement {
         this.trigger.addEventListener('click', (e) => {
             e.stopPropagation();
             this.classList.toggle('open');
+            this.dispatchEvent(new CustomEvent('toggle', { bubbles: true }));
         });
 
         document.addEventListener('click', (e) => {

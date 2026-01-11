@@ -5,6 +5,7 @@ import { isAuthenticated } from '../../lib/utils.js';
 import '../monaco-editor/monaco-editor.js';
 import '../button-dropdown/button-dropdown.js';
 import '../button-icon/button-icon.js';
+import '../modal-popup/modal-popup.js';
 import { executeQueryWithColumns, executeBulkQueryExport } from '../../lib/salesforce.js';
 
 const MAX_HISTORY = 30;
@@ -27,6 +28,7 @@ class QueryTab extends HTMLElement {
 
     // Button components
     historyBtn = null;
+    historyModal = null;
     settingsBtn = null;
     resultsBtn = null;
     actionBtn = null;
@@ -56,6 +58,7 @@ class QueryTab extends HTMLElement {
 
         // Button components
         this.historyBtn = this.querySelector('.query-history-btn');
+        this.historyModal = this.querySelector('.query-history-modal');
         this.settingsBtn = this.querySelector('.query-settings-btn');
         this.resultsBtn = this.querySelector('.query-results-btn');
         this.actionBtn = this.querySelector('.query-action-btn');
@@ -94,7 +97,10 @@ LIMIT 10`);
         });
         this.editor.addEventListener('execute', () => this.executeQuery());
 
-        // History dropdown tab switching
+        // History modal
+        this.historyBtn.addEventListener('toggle', () => this.historyModal.toggle());
+
+        // History tab switching
         this.dropdownTabs.forEach(tab => {
             tab.addEventListener('click', () => this.switchDropdownTab(tab.dataset.tab));
         });
@@ -288,10 +294,10 @@ LIMIT 10`);
 
             if (action.classList.contains('load')) {
                 this.loadQuery(scriptData.query);
-                this.historyBtn.close();
+                this.historyModal.close();
             } else if (action.classList.contains('favorite')) {
                 this.showFavoriteModal(scriptData.query);
-                this.historyBtn.close();
+                this.historyModal.close();
             } else if (action.classList.contains('delete')) {
                 if (listType === 'history') {
                     this.removeFromHistory(id);
@@ -301,7 +307,7 @@ LIMIT 10`);
             }
         } else {
             this.loadQuery(scriptData.query);
-            this.historyBtn.close();
+            this.historyModal.close();
         }
     }
 

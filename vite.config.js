@@ -21,6 +21,7 @@ export default defineConfig({
     // Output to dist at project root
     outDir: '../dist',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 5000,
     rollupOptions: {
       input: {
         // Main pages

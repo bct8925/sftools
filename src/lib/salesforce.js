@@ -363,9 +363,10 @@ export async function getRecordWithRelationships(objectType, recordId, fields) {
             const describe = describes[index];
             if (describe) {
                 const nameField = describe.fields.find(f => f.nameField);
-                nameFieldMap[type] = nameField?.name || 'Name';
-            } else {
-                nameFieldMap[type] = 'Name';
+                // Only set if a name field exists; don't default to 'Name'
+                if (nameField) {
+                    nameFieldMap[type] = nameField.name;
+                }
             }
         });
     }
@@ -378,8 +379,11 @@ export async function getRecordWithRelationships(objectType, recordId, fields) {
 
         if (field.type === 'reference' && field.relationshipName && field.referenceTo?.length > 0) {
             const refType = field.referenceTo[0];
-            const nameField = nameFieldMap[refType] || 'Name';
-            fieldNames.push(`${field.relationshipName}.${nameField}`);
+            const nameField = nameFieldMap[refType];
+            // Only include relationship field if the referenced object has a name field
+            if (nameField) {
+                fieldNames.push(`${field.relationshipName}.${nameField}`);
+            }
         }
     }
 

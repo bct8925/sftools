@@ -2,41 +2,29 @@
     <div class="card-header">
         <div class="card-header-icon" style="background-color: #0070d2;">S</div>
         <h2>SOQL Query</h2>
-        <div class="query-header-dropdown">
-            <button class="query-dropdown-trigger" title="History & Favorites">&#9776;</button>
-            <div class="query-dropdown-menu">
-                <div class="query-dropdown-tabs">
-                    <button class="query-dropdown-tab active" data-tab="history">History</button>
-                    <button class="query-dropdown-tab" data-tab="favorites">Favorites</button>
-                </div>
-                <div class="query-dropdown-content">
-                    <div class="query-script-list query-history-list"></div>
-                    <div class="query-script-list query-favorites-list" style="display: none;"></div>
-                </div>
+        <button-icon class="query-history-btn" icon="&#9776;" title="History & Favorites">
+            <div class="query-dropdown-tabs">
+                <button class="query-dropdown-tab active" data-tab="history">History</button>
+                <button class="query-dropdown-tab" data-tab="favorites">Favorites</button>
             </div>
-        </div>
-        <div class="query-settings-dropdown">
-            <button class="query-settings-trigger" title="Query Settings">&#9881;</button>
-            <div class="query-settings-menu">
-                <label class="query-settings-option">
-                    <input type="checkbox" class="query-tooling-checkbox">
-                    Tooling API
-                </label>
+            <div class="query-dropdown-content">
+                <div class="query-script-list query-history-list"></div>
+                <div class="query-script-list query-favorites-list" style="display: none;"></div>
             </div>
-        </div>
+        </button-icon>
+        <button-icon class="query-settings-btn" icon="&#9881;" title="Settings">
+            <label class="btn-icon-checkbox">
+                <input type="checkbox" class="query-tooling-checkbox">
+                Tooling API
+            </label>
+        </button-icon>
     </div>
     <div class="card-body">
         <div class="form-element">
             <monaco-editor class="query-editor monaco-container" language="sql"></monaco-editor>
         </div>
         <div class="query-footer">
-            <div class="query-split-btn">
-                <button class="button-brand query-execute-btn">Query</button>
-                <button class="button-brand query-split-trigger" title="More options">&#9662;</button>
-                <div class="query-split-menu">
-                    <button class="query-split-option query-bulk-export-btn">Export</button>
-                </div>
-            </div>
+            <button-dropdown class="query-action-btn" label="Query"></button-dropdown>
             <span class="status-badge query-status"></span>
         </div>
     </div>
@@ -48,12 +36,9 @@
         <div class="query-results-search">
             <input type="text" class="query-search-input" placeholder="Filter...">
         </div>
-        <div class="query-results-dropdown">
-            <button class="query-results-trigger" title="Export Options">&#8942;</button>
-            <div class="query-results-menu">
-                <button class="query-results-option query-export-btn" disabled>Export CSV</button>
-            </div>
-        </div>
+        <button-icon class="query-results-btn" icon="&#8942;" title="Options">
+            <button class="btn-icon-option query-export-btn" disabled>Export CSV</button>
+        </button-icon>
     </div>
     <div class="card-body query-card-body">
         <div class="query-tabs">

@@ -1,0 +1,59 @@
+/* Button Dropdown Component */
+
+button-dropdown {
+    display: inline-flex;
+    position: relative;
+}
+
+button-dropdown .btn-dropdown-main {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+button-dropdown .btn-dropdown-trigger {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding: 8px 10px;
+    font-size: 10px;
+}
+
+button-dropdown .btn-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 200;
+    overflow: hidden;
+}
+
+button-dropdown.open .btn-dropdown-menu {
+    display: block;
+}
+
+button-dropdown .btn-dropdown-option {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 13px;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+button-dropdown .btn-dropdown-option:hover:not(:disabled) {
+    background-color: rgba(0, 112, 210, 0.05);
+}
+
+button-dropdown .btn-dropdown-option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

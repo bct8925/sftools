@@ -724,3 +724,105 @@ export async function grantApexAccessToProfile(profileId) {
 
     return { grantedCount, skippedCount };
 }
+
+// ============================================================
+// Bulk API v2 - Query Export
+// ============================================================
+
+/**
+ * Create a Bulk API v2 query job
+ * @param {string} soql - The SOQL query
+ * @returns {Promise<{id: string, state: string}>}
+ */
+export async function createBulkQueryJob(soql) {
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/jobs/query`, {
+        method: 'POST',
+        body: JSON.stringify({
+            operation: 'query',
+            query: soql
+        })
+    });
+    return response.json;
+}
+
+/**
+ * Get the status of a Bulk API v2 query job
+ * @param {string} jobId - The job ID
+ * @returns {Promise<{id: string, state: string, numberRecordsProcessed: number}>}
+ */
+export async function getBulkQueryJobStatus(jobId) {
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/jobs/query/${jobId}`);
+    return response.json;
+}
+
+/**
+ * Get the CSV results of a completed Bulk API v2 query job
+ * @param {string} jobId - The job ID
+ * @returns {Promise<string>} - CSV content
+ */
+export async function getBulkQueryResults(jobId) {
+    const response = await extensionFetch(
+        `${getInstanceUrl()}/services/data/v${API_VERSION}/jobs/query/${jobId}/results`,
+        {
+            headers: {
+                'Authorization': `Bearer ${getAccessToken()}`,
+                'Accept': 'text/csv'
+            }
+        }
+    );
+
+    if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch results');
+    }
+
+    return response.data;
+}
+
+/**
+ * Abort a Bulk API v2 query job
+ * @param {string} jobId - The job ID
+ * @returns {Promise<void>}
+ */
+export async function abortBulkQueryJob(jobId) {
+    await salesforceRequest(`/services/data/v${API_VERSION}/jobs/query/${jobId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ state: 'Aborted' })
+    });
+}
+
+/**
+ * Execute a bulk query export with polling
+ * Handles job creation, polling, and result retrieval
+ * @param {string} soql - The SOQL query
+ * @param {function} onProgress - Progress callback (state, recordCount)
+ * @returns {Promise<string>} - CSV content
+ */
+export async function executeBulkQueryExport(soql, onProgress) {
+    onProgress?.('Creating job...');
+    const job = await createBulkQueryJob(soql);
+    const jobId = job.id;
+
+    const pollInterval = 2000;
+    const maxAttempts = 150;
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+        const status = await getBulkQueryJobStatus(jobId);
+        onProgress?.(status.state, status.numberRecordsProcessed || 0);
+
+        if (status.state === 'JobComplete') {
+            onProgress?.('Downloading...');
+            return await getBulkQueryResults(jobId);
+        }
+
+        if (status.state === 'Failed' || status.state === 'Aborted') {
+            throw new Error(`Bulk query ${status.state.toLowerCase()}: ${status.errorMessage || 'Unknown error'}`);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        attempts++;
+    }
+
+    await abortBulkQueryJob(jobId).catch(() => {});
+    throw new Error('Bulk query timed out');
+}

@@ -3,7 +3,7 @@ import template from './query.html?raw';
 import './query.css';
 import { isAuthenticated } from '../../lib/utils.js';
 import '../monaco-editor/monaco-editor.js';
-import { executeQueryWithColumns } from '../../lib/salesforce.js';
+import { executeQueryWithColumns, executeBulkQueryExport } from '../../lib/salesforce.js';
 
 const MAX_HISTORY = 30;
 
@@ -12,6 +12,7 @@ class QueryTab extends HTMLElement {
     queryTabs = new Map(); // normalizedQuery -> tabData
     activeTabId = null;
     tabCounter = 0;
+    bulkExportInProgress = false;
 
     // DOM references
     editor = null;
@@ -20,6 +21,8 @@ class QueryTab extends HTMLElement {
     executeBtn = null;
     toolingCheckbox = null;
     statusSpan = null;
+    exportBtn = null;
+    bulkExportBtn = null;
 
     // Dropdown DOM references
     dropdown = null;
@@ -60,7 +63,22 @@ class QueryTab extends HTMLElement {
 
         // Search elements
         this.searchInput = this.querySelector('.query-search-input');
-        this.searchClear = this.querySelector('.query-search-clear');
+
+        // Export buttons
+        this.exportBtn = this.querySelector('.query-export-btn');
+        this.bulkExportBtn = this.querySelector('.query-bulk-export-btn');
+
+        // Settings dropdown
+        this.settingsDropdown = this.querySelector('.query-settings-dropdown');
+        this.settingsTrigger = this.querySelector('.query-settings-trigger');
+
+        // Split button dropdown
+        this.splitBtn = this.querySelector('.query-split-btn');
+        this.splitTrigger = this.querySelector('.query-split-trigger');
+
+        // Results dropdown
+        this.resultsDropdown = this.querySelector('.query-results-dropdown');
+        this.resultsTrigger = this.querySelector('.query-results-trigger');
     }
 
     initEditor() {
@@ -91,16 +109,52 @@ LIMIT 10`);
         this.historyList.addEventListener('click', (e) => this.handleListClick(e, 'history'));
         this.favoritesList.addEventListener('click', (e) => this.handleListClick(e, 'favorites'));
 
-        // Close dropdown on outside click
+        // Close dropdowns on outside click
         document.addEventListener('click', (e) => {
             if (!this.dropdown.contains(e.target)) {
                 this.closeDropdown();
+            }
+            if (!this.settingsDropdown.contains(e.target)) {
+                this.settingsDropdown.classList.remove('open');
+            }
+            if (!this.splitBtn.contains(e.target)) {
+                this.splitBtn.classList.remove('open');
+            }
+            if (!this.resultsDropdown.contains(e.target)) {
+                this.resultsDropdown.classList.remove('open');
             }
         });
 
         // Search filtering
         this.searchInput.addEventListener('input', () => this.applyRowFilter());
-        this.searchClear.addEventListener('click', () => this.clearRowFilter());
+
+        // Export handlers
+        this.exportBtn.addEventListener('click', () => {
+            this.exportCurrentResults();
+            this.resultsDropdown.classList.remove('open');
+        });
+        this.bulkExportBtn.addEventListener('click', () => {
+            this.bulkExport();
+            this.splitBtn.classList.remove('open');
+        });
+
+        // Settings dropdown toggle
+        this.settingsTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.settingsDropdown.classList.toggle('open');
+        });
+
+        // Split button dropdown toggle
+        this.splitTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.splitBtn.classList.toggle('open');
+        });
+
+        // Results dropdown toggle
+        this.resultsTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.resultsDropdown.classList.toggle('open');
+        });
     }
 
     // ============================================================
@@ -529,6 +583,7 @@ LIMIT 10`);
         this.renderResults();
         // Clear search when results change
         this.clearRowFilter();
+        this.updateExportButtonState();
     }
 
     // ============================================================
@@ -558,6 +613,7 @@ LIMIT 10`);
         this.renderResults();
         // Clear search when switching tabs
         this.clearRowFilter();
+        this.updateExportButtonState();
     }
 
     async refreshTab(tabId) {
@@ -596,6 +652,7 @@ LIMIT 10`);
                     this.activeTabId = null;
                     this.renderTabs();
                     this.renderResults();
+                    this.updateExportButtonState();
                 }
             } else {
                 this.renderTabs();
@@ -749,6 +806,125 @@ LIMIT 10`);
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // ============================================================
+    // CSV Export
+    // ============================================================
+
+    exportCurrentResults() {
+        const tabData = this.getTabDataById(this.activeTabId);
+        if (!tabData || tabData.records.length === 0) return;
+
+        const csv = this.recordsToCsv(tabData.records, tabData.columns);
+        this.downloadCsv(csv, this.getExportFilename(tabData));
+    }
+
+    recordsToCsv(records, columns) {
+        const rows = [];
+
+        const headers = columns.map(col => this.escapeCsvField(col.title));
+        rows.push(headers.join(','));
+
+        for (const record of records) {
+            const row = columns.map(col => {
+                const value = this.getValueByPath(record, col.path);
+                return this.escapeCsvField(this.formatCellValue(value, col));
+            });
+            rows.push(row.join(','));
+        }
+
+        return rows.join('\n');
+    }
+
+    escapeCsvField(value) {
+        if (value === null || value === undefined) return '';
+        const str = String(value);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+    }
+
+    getExportFilename(tabData) {
+        const objectName = tabData.objectName || 'query';
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        return `${objectName}_${timestamp}.csv`;
+    }
+
+    downloadCsv(content, filename) {
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async bulkExport() {
+        const query = this.editor.getValue().trim();
+
+        if (!query) {
+            alert('Please enter a SOQL query.');
+            return;
+        }
+
+        if (!isAuthenticated()) {
+            alert('Not authenticated. Please authorize via the connection selector.');
+            return;
+        }
+
+        if (this.toolingCheckbox.checked) {
+            alert('Bulk export is not supported with Tooling API.');
+            return;
+        }
+
+        if (this.bulkExportInProgress) return;
+
+        this.bulkExportInProgress = true;
+        this.bulkExportBtn.disabled = true;
+        this.bulkExportBtn.textContent = 'Exporting';
+
+        try {
+            const csv = await executeBulkQueryExport(query, (state, recordCount) => {
+                if (state === 'InProgress' || state === 'UploadComplete') {
+                    this.updateStatus(`Processing: ${recordCount} records`, 'loading');
+                } else if (state === 'Creating job...') {
+                    this.updateStatus('Creating bulk job...', 'loading');
+                } else if (state === 'Downloading...') {
+                    this.updateStatus('Downloading results...', 'loading');
+                }
+            });
+
+            const objectMatch = query.match(/FROM\s+(\w+)/i);
+            const objectName = objectMatch ? objectMatch[1] : 'export';
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+            const filename = `${objectName}_${timestamp}.csv`;
+
+            this.downloadCsv(csv, filename);
+            this.updateStatus('Export complete', 'success');
+
+        } catch (error) {
+            console.error('Bulk export error:', error);
+            this.updateStatus('Export failed', 'error');
+            alert(`Bulk export failed: ${error.message}`);
+        } finally {
+            this.bulkExportInProgress = false;
+            this.bulkExportBtn.disabled = false;
+            this.bulkExportBtn.textContent = 'Export';
+        }
+    }
+
+    updateExportButtonState() {
+        const tabData = this.getTabDataById(this.activeTabId);
+        const hasResults = tabData && tabData.records && tabData.records.length > 0;
+        this.exportBtn.disabled = !hasResults;
     }
 }
 

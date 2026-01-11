@@ -1,8 +1,9 @@
 // Schema Browser - Custom Element
 import template from './schema.html?raw';
 import './schema.css';
+import '../monaco-editor/monaco-editor.js';
 import { setActiveConnection } from '../../lib/utils.js';
-import { getGlobalDescribe, getObjectDescribe } from '../../lib/salesforce.js';
+import { getGlobalDescribe, getObjectDescribe, getFormulaFieldMetadata, updateFormulaField } from '../../lib/salesforce.js';
 
 class SchemaPage extends HTMLElement {
     // State
@@ -21,6 +22,18 @@ class SchemaPage extends HTMLElement {
     fieldsListEl = null;
     closeFieldsBtnEl = null;
 
+    // Modal references
+    formulaModalEl = null;
+    formulaEditorEl = null;
+    modalFieldInfoEl = null;
+    modalStatusEl = null;
+    modalSaveBtnEl = null;
+    modalCancelBtnEl = null;
+    modalCloseBtnEl = null;
+
+    // Current formula field being edited
+    currentFormulaField = null;
+
     connectedCallback() {
         this.innerHTML = template;
         this.initElements();
@@ -37,11 +50,37 @@ class SchemaPage extends HTMLElement {
         this.selectedObjectNameEl = this.querySelector('#selectedObjectName');
         this.fieldsListEl = this.querySelector('#fieldsList');
         this.closeFieldsBtnEl = this.querySelector('#closeFieldsBtn');
+
+        // Modal elements
+        this.formulaModalEl = this.querySelector('#formulaModal');
+        this.formulaEditorEl = this.querySelector('#formulaEditor');
+        this.modalFieldInfoEl = this.querySelector('#modalFieldInfo');
+        this.modalStatusEl = this.querySelector('#modalStatus');
+        this.modalSaveBtnEl = this.querySelector('#modalSaveBtn');
+        this.modalCancelBtnEl = this.querySelector('#modalCancelBtn');
+        this.modalCloseBtnEl = this.querySelector('#modalCloseBtn');
     }
 
     attachEventListeners() {
         this.objectFilterEl.addEventListener('input', (e) => this.filterObjects(e.target.value));
         this.closeFieldsBtnEl.addEventListener('click', () => this.closeFieldsPanel());
+
+        // Modal event listeners
+        this.modalSaveBtnEl.addEventListener('click', () => this.saveFormula());
+        this.modalCancelBtnEl.addEventListener('click', () => this.closeFormulaModal());
+        this.modalCloseBtnEl.addEventListener('click', () => this.closeFormulaModal());
+        this.formulaModalEl.addEventListener('click', (e) => {
+            if (e.target === this.formulaModalEl) {
+                this.closeFormulaModal();
+            }
+        });
+
+        // Close any open field menus when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.field-menu-button') && !e.target.closest('.field-menu')) {
+                this.closeAllFieldMenus();
+            }
+        });
     }
 
     async initialize() {
@@ -185,14 +224,56 @@ class SchemaPage extends HTMLElement {
 
         this.fieldsListEl.innerHTML = fields.map(field => {
             const typeDisplay = this.getFieldTypeDisplay(field);
+            const isFormulaField = field.calculated;
+
             return `
-                <div class="field-item">
+                <div class="field-item" data-field-name="${this.escapeAttr(field.name)}">
                     <div class="field-item-label">${this.escapeHtml(field.label)}</div>
                     <div class="field-item-name">${this.escapeHtml(field.name)}</div>
                     <div class="field-item-type">${typeDisplay}</div>
+                    <div class="field-item-actions">
+                        ${isFormulaField ? `
+                            <button class="field-menu-button" data-field-name="${this.escapeAttr(field.name)}" aria-label="More options">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <circle cx="8" cy="3" r="1.5"/>
+                                    <circle cx="8" cy="8" r="1.5"/>
+                                    <circle cx="8" cy="13" r="1.5"/>
+                                </svg>
+                            </button>
+                            <div class="field-menu" data-field-name="${this.escapeAttr(field.name)}">
+                                <div class="field-menu-item" data-action="edit" data-field-name="${this.escapeAttr(field.name)}">Edit</div>
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
             `;
         }).join('');
+
+        // Attach event listeners to field menu buttons
+        this.fieldsListEl.querySelectorAll('.field-menu-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleFieldMenu(button.dataset.fieldName);
+            });
+        });
+
+        // Attach event listeners to menu items
+        this.fieldsListEl.querySelectorAll('.field-menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = item.dataset.action;
+                const fieldName = item.dataset.fieldName;
+
+                if (action === 'edit') {
+                    const field = fields.find(f => f.name === fieldName);
+                    if (field) {
+                        this.openFormulaEditor(field);
+                    }
+                }
+
+                this.closeAllFieldMenus();
+            });
+        });
     }
 
     getFieldTypeDisplay(field) {
@@ -245,6 +326,101 @@ class SchemaPage extends HTMLElement {
             .replace(/'/g, '&#39;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
+    }
+
+    // Field menu methods
+    toggleFieldMenu(fieldName) {
+        const menu = this.fieldsListEl.querySelector(`.field-menu[data-field-name="${fieldName}"]`);
+        if (!menu) return;
+
+        // Close all other menus first
+        this.closeAllFieldMenus();
+
+        // Toggle this menu
+        menu.classList.toggle('show');
+    }
+
+    closeAllFieldMenus() {
+        this.fieldsListEl.querySelectorAll('.field-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+
+    // Formula editor modal methods
+    async openFormulaEditor(field) {
+        this.currentFormulaField = {
+            field,
+            objectName: this.selectedObject.name
+        };
+
+        // Update modal header
+        this.modalFieldInfoEl.textContent = `${this.selectedObject.label} > ${field.label} (${field.name})`;
+
+        // Show modal
+        this.formulaModalEl.classList.add('show');
+
+        // Clear status
+        this.modalStatusEl.textContent = '';
+        this.modalStatusEl.className = 'modal-status';
+
+        // Load formula metadata
+        try {
+            this.modalStatusEl.textContent = 'Loading formula...';
+            const metadata = await getFormulaFieldMetadata(this.selectedObject.name, field.name);
+
+            this.currentFormulaField.id = metadata.id;
+            this.currentFormulaField.metadata = metadata.metadata;
+
+            // Set formula in editor
+            this.formulaEditorEl.setValue(metadata.formula || '');
+            this.modalStatusEl.textContent = '';
+
+        } catch (error) {
+            this.modalStatusEl.textContent = `Error loading formula: ${error.message}`;
+            this.modalStatusEl.className = 'modal-status error';
+        }
+    }
+
+    closeFormulaModal() {
+        this.formulaModalEl.classList.remove('show');
+        this.currentFormulaField = null;
+        this.formulaEditorEl.clear();
+        this.modalStatusEl.textContent = '';
+        this.modalStatusEl.className = 'modal-status';
+    }
+
+    async saveFormula() {
+        if (!this.currentFormulaField) return;
+
+        const newFormula = this.formulaEditorEl.getValue();
+
+        // Disable save button during save
+        this.modalSaveBtnEl.disabled = true;
+        this.modalStatusEl.textContent = 'Saving...';
+        this.modalStatusEl.className = 'modal-status';
+
+        try {
+            await updateFormulaField(
+                this.currentFormulaField.id,
+                newFormula,
+                this.currentFormulaField.metadata
+            );
+
+            this.modalStatusEl.textContent = 'Formula saved successfully!';
+            this.modalStatusEl.className = 'modal-status success';
+
+            // Close modal after a brief delay
+            setTimeout(() => {
+                this.closeFormulaModal();
+                // Reload fields to reflect any changes
+                this.loadFields(this.selectedObject.name);
+            }, 1500);
+
+        } catch (error) {
+            this.modalStatusEl.textContent = `Error saving: ${error.message}`;
+            this.modalStatusEl.className = 'modal-status error';
+            this.modalSaveBtnEl.disabled = false;
+        }
     }
 }
 

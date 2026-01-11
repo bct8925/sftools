@@ -3,6 +3,8 @@ import template from './query.html?raw';
 import './query.css';
 import { isAuthenticated } from '../../lib/utils.js';
 import '../monaco-editor/monaco-editor.js';
+import '../button-dropdown/button-dropdown.js';
+import '../button-icon/button-icon.js';
 import { executeQueryWithColumns, executeBulkQueryExport } from '../../lib/salesforce.js';
 
 const MAX_HISTORY = 30;
@@ -18,22 +20,21 @@ class QueryTab extends HTMLElement {
     editor = null;
     tabsContainer = null;
     resultsContainer = null;
-    executeBtn = null;
     toolingCheckbox = null;
     statusSpan = null;
+    searchInput = null;
     exportBtn = null;
-    bulkExportBtn = null;
 
-    // Dropdown DOM references
-    dropdown = null;
-    dropdownTrigger = null;
+    // Button components
+    historyBtn = null;
+    settingsBtn = null;
+    resultsBtn = null;
+    actionBtn = null;
+
+    // History dropdown elements
     historyList = null;
     favoritesList = null;
     dropdownTabs = [];
-
-    // Search DOM references
-    searchInput = null;
-    searchClear = null;
 
     // History/Favorites cache
     history = [];
@@ -50,13 +51,16 @@ class QueryTab extends HTMLElement {
     initElements() {
         this.tabsContainer = this.querySelector('.query-tabs');
         this.resultsContainer = this.querySelector('.query-results');
-        this.executeBtn = this.querySelector('.query-execute-btn');
         this.toolingCheckbox = this.querySelector('.query-tooling-checkbox');
         this.statusSpan = this.querySelector('.query-status');
 
-        // Dropdown elements
-        this.dropdown = this.querySelector('.query-header-dropdown');
-        this.dropdownTrigger = this.querySelector('.query-dropdown-trigger');
+        // Button components
+        this.historyBtn = this.querySelector('.query-history-btn');
+        this.settingsBtn = this.querySelector('.query-settings-btn');
+        this.resultsBtn = this.querySelector('.query-results-btn');
+        this.actionBtn = this.querySelector('.query-action-btn');
+
+        // History dropdown elements
         this.historyList = this.querySelector('.query-history-list');
         this.favoritesList = this.querySelector('.query-favorites-list');
         this.dropdownTabs = this.querySelectorAll('.query-dropdown-tab');
@@ -64,21 +68,13 @@ class QueryTab extends HTMLElement {
         // Search elements
         this.searchInput = this.querySelector('.query-search-input');
 
-        // Export buttons
+        // Export button (inside results dropdown)
         this.exportBtn = this.querySelector('.query-export-btn');
-        this.bulkExportBtn = this.querySelector('.query-bulk-export-btn');
 
-        // Settings dropdown
-        this.settingsDropdown = this.querySelector('.query-settings-dropdown');
-        this.settingsTrigger = this.querySelector('.query-settings-trigger');
-
-        // Split button dropdown
-        this.splitBtn = this.querySelector('.query-split-btn');
-        this.splitTrigger = this.querySelector('.query-split-trigger');
-
-        // Results dropdown
-        this.resultsDropdown = this.querySelector('.query-results-dropdown');
-        this.resultsTrigger = this.querySelector('.query-results-trigger');
+        // Setup action button options
+        this.actionBtn.setOptions([
+            { label: 'Export', disabled: false }
+        ]);
     }
 
     initEditor() {
@@ -91,16 +87,14 @@ LIMIT 10`);
     }
 
     attachEventListeners() {
-        this.executeBtn.addEventListener('click', () => this.executeQuery());
+        // Query execution
+        this.actionBtn.addEventListener('click-main', () => this.executeQuery());
+        this.actionBtn.addEventListener('click-option', (e) => {
+            if (e.detail.index === 0) this.bulkExport();
+        });
         this.editor.addEventListener('execute', () => this.executeQuery());
 
-        // Dropdown trigger
-        this.dropdownTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleDropdown();
-        });
-
-        // Dropdown tab switching
+        // History dropdown tab switching
         this.dropdownTabs.forEach(tab => {
             tab.addEventListener('click', () => this.switchDropdownTab(tab.dataset.tab));
         });
@@ -109,51 +103,13 @@ LIMIT 10`);
         this.historyList.addEventListener('click', (e) => this.handleListClick(e, 'history'));
         this.favoritesList.addEventListener('click', (e) => this.handleListClick(e, 'favorites'));
 
-        // Close dropdowns on outside click
-        document.addEventListener('click', (e) => {
-            if (!this.dropdown.contains(e.target)) {
-                this.closeDropdown();
-            }
-            if (!this.settingsDropdown.contains(e.target)) {
-                this.settingsDropdown.classList.remove('open');
-            }
-            if (!this.splitBtn.contains(e.target)) {
-                this.splitBtn.classList.remove('open');
-            }
-            if (!this.resultsDropdown.contains(e.target)) {
-                this.resultsDropdown.classList.remove('open');
-            }
-        });
-
         // Search filtering
         this.searchInput.addEventListener('input', () => this.applyRowFilter());
 
-        // Export handlers
+        // Export CSV handler
         this.exportBtn.addEventListener('click', () => {
             this.exportCurrentResults();
-            this.resultsDropdown.classList.remove('open');
-        });
-        this.bulkExportBtn.addEventListener('click', () => {
-            this.bulkExport();
-            this.splitBtn.classList.remove('open');
-        });
-
-        // Settings dropdown toggle
-        this.settingsTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.settingsDropdown.classList.toggle('open');
-        });
-
-        // Split button dropdown toggle
-        this.splitTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.splitBtn.classList.toggle('open');
-        });
-
-        // Results dropdown toggle
-        this.resultsTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.resultsDropdown.classList.toggle('open');
+            this.resultsBtn.close();
         });
     }
 
@@ -250,14 +206,6 @@ LIMIT 10`);
     // Dropdown UI
     // ============================================================
 
-    toggleDropdown() {
-        this.dropdown.classList.toggle('open');
-    }
-
-    closeDropdown() {
-        this.dropdown.classList.remove('open');
-    }
-
     switchDropdownTab(tabName) {
         this.dropdownTabs.forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabName);
@@ -340,10 +288,10 @@ LIMIT 10`);
 
             if (action.classList.contains('load')) {
                 this.loadQuery(scriptData.query);
-                this.closeDropdown();
+                this.historyBtn.close();
             } else if (action.classList.contains('favorite')) {
                 this.showFavoriteModal(scriptData.query);
-                this.closeDropdown();
+                this.historyBtn.close();
             } else if (action.classList.contains('delete')) {
                 if (listType === 'history') {
                     this.removeFromHistory(id);
@@ -353,7 +301,7 @@ LIMIT 10`);
             }
         } else {
             this.loadQuery(scriptData.query);
-            this.closeDropdown();
+            this.historyBtn.close();
         }
     }
 
@@ -888,8 +836,7 @@ LIMIT 10`);
         if (this.bulkExportInProgress) return;
 
         this.bulkExportInProgress = true;
-        this.bulkExportBtn.disabled = true;
-        this.bulkExportBtn.textContent = 'Exporting';
+        this.actionBtn.setOptionDisabled(0, true);
 
         try {
             const csv = await executeBulkQueryExport(query, (state, recordCount) => {
@@ -916,8 +863,7 @@ LIMIT 10`);
             alert(`Bulk export failed: ${error.message}`);
         } finally {
             this.bulkExportInProgress = false;
-            this.bulkExportBtn.disabled = false;
-            this.bulkExportBtn.textContent = 'Export';
+            this.actionBtn.setOptionDisabled(0, false);
         }
     }
 

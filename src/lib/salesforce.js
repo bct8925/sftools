@@ -835,3 +835,55 @@ export async function executeBulkQueryExport(soql, onProgress) {
     await abortBulkQueryJob(jobId).catch(() => {});
     throw new Error('Bulk query timed out');
 }
+
+// ============================================================
+// Formula Field Editor
+// ============================================================
+
+/**
+ * Get formula field metadata from Tooling API
+ * @param {string} objectType - The SObject API name
+ * @param {string} fieldName - The field API name
+ * @returns {Promise<{id: string, formula: string, fullName: string, metadata: object}>}
+ */
+export async function getFormulaFieldMetadata(objectType, fieldName) {
+    // Query the CustomField via Tooling API
+    const query = encodeURIComponent(
+        `SELECT Id, FullName, Metadata FROM CustomField WHERE TableEnumOrId = '${objectType}' AND DeveloperName = '${fieldName.replace(/__c$/, '')}'`
+    );
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+
+    if (!response.json.records || response.json.records.length === 0) {
+        throw new Error('Formula field not found');
+    }
+
+    const record = response.json.records[0];
+    return {
+        id: record.Id,
+        formula: record.Metadata?.formula || '',
+        fullName: record.FullName,
+        metadata: record.Metadata
+    };
+}
+
+/**
+ * Update formula field via Tooling API
+ * @param {string} fieldId - The CustomField ID
+ * @param {string} formula - The new formula
+ * @param {object} existingMetadata - Existing metadata to preserve
+ * @returns {Promise<void>}
+ */
+export async function updateFormulaField(fieldId, formula, existingMetadata) {
+    // Update only the formula property, preserve other metadata
+    const updatedMetadata = {
+        ...existingMetadata,
+        formula
+    };
+
+    await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/CustomField/${fieldId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+            Metadata: updatedMetadata
+        })
+    });
+}

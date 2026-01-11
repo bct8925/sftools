@@ -139,6 +139,10 @@
     font-family: 'Courier New', monospace;
 }
 
+.fields-header .filter-input {
+    margin-top: 12px;
+}
+
 .button-icon-only {
     background: transparent;
     border: none;
@@ -158,7 +162,7 @@
 
 .field-header {
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr;
+    grid-template-columns: 2fr 2fr 1fr 32px;
     gap: 12px;
     padding: 12px 16px;
     background-color: var(--bg-secondary);
@@ -176,28 +180,94 @@
 
 .field-item {
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr;
+    grid-template-columns: 2fr 2fr 1fr 32px;
     gap: 12px;
     padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
+    position: relative;
 }
 
 .field-item:hover {
     background-color: var(--bg-hover);
 }
 
+.field-item-actions {
+    display: flex;
+    align-items: center;
+}
+
+.field-menu-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.field-item:hover .field-menu-button {
+    opacity: 1;
+}
+
+.field-menu-button:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.field-menu {
+    position: absolute;
+    top: 100%;
+    right: 16px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 120px;
+    display: none;
+}
+
+.field-menu.show {
+    display: block;
+}
+
+.field-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: background-color 0.15s ease;
+}
+
+.field-menu-item:hover {
+    background-color: var(--bg-hover);
+}
+
 .field-item-label {
     color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .field-item-name {
     font-family: 'Courier New', monospace;
     color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .field-item-type {
     color: var(--text-secondary);
     font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .loading-container {
@@ -219,4 +289,107 @@
 .error-hint {
     color: var(--text-secondary);
     font-size: 13px;
+}
+
+/* Formula Editor Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    max-width: 800px;
+    width: 90%;
+    height: 70vh;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-field-info {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.modal-body {
+    flex: 1;
+    padding: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-editor-container {
+    flex: 1;
+    min-height: 300px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Override global monaco-container fixed height within modal */
+.modal-editor-container .monaco-container {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+    border: none;
+    border-radius: 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+}
+
+.modal-status {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.modal-status.success {
+    color: var(--success-color);
+}
+
+.modal-status.error {
+    color: var(--error-color);
 }

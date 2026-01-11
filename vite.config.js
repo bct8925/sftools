@@ -11,9 +11,9 @@ export default defineConfig({
 
   plugins: [
     monacoEditorPlugin({
-      // Only include the languages we need to reduce bundle size
-      // sql, java (for apex), javascript, typescript, html, css, xml, json
-      languages: ['sql', 'java', 'javascript', 'typescript', 'html', 'css', 'xml', 'json']
+      // Only include JSON worker - other languages are syntax-only
+      // Languages are manually imported in src/lib/monaco-custom.js
+      languageWorkers: ['json']
     })
   ],
 

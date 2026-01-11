@@ -1,8 +1,6 @@
 // Monaco Editor Web Component
-import * as monaco from 'monaco-editor';
-
-// Worker configuration is now handled by vite-plugin-monaco-editor
-// which only includes the languages we need (sql, java, javascript, typescript, html, css, xml, json)
+// Custom import with only the languages we need (sql, apex, json, xml, javascript)
+import { monaco } from '../../lib/monaco-custom.js';
 
 const defaultOptions = {
     theme: 'vs-dark',

@@ -26,7 +26,6 @@ export default defineConfig({
         // Main pages
         app: resolve(__dirname, 'src/pages/app/app.html'),
         callback: resolve(__dirname, 'src/pages/callback/callback.html'),
-        aura: resolve(__dirname, 'src/pages/aura/aura.html'),
         record: resolve(__dirname, 'src/pages/record/record.html'),
         schema: resolve(__dirname, 'src/pages/schema/schema.html'),
         // Background service worker

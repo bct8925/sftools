@@ -57,10 +57,6 @@ src/
 │   │   ├── flow-cleanup.html
 │   │   ├── schema-browser-link.js  # <schema-browser-link> - Link to open Schema Browser
 │   │   └── schema-browser-link.html
-│   ├── aura/                 # Aura Debugger page component
-│   │   ├── aura-page.js
-│   │   ├── aura.html
-│   │   └── aura.css
 │   ├── record/               # Record Viewer page component
 │   │   ├── record-page.js
 │   │   ├── record.html
@@ -76,9 +72,6 @@ src/
 │   ├── callback/             # OAuth callback
 │   │   ├── callback.html
 │   │   └── callback.js
-│   ├── aura/                 # Aura Debugger entry (loads <aura-page>)
-│   │   ├── aura.html
-│   │   └── aura.js
 │   ├── record/               # Record Viewer entry (loads <record-page>)
 │   │   ├── record.html
 │   │   └── record.js
@@ -105,7 +98,6 @@ dist/
 ├── pages/
 │   ├── app/app.html, app.js
 │   ├── callback/callback.html, callback.js
-│   ├── aura/aura.html, aura.js
 │   ├── record/record.html, record.js
 │   └── schema/schema.html, schema.js
 ├── chunks/                   # Shared code chunks
@@ -113,7 +105,6 @@ dist/
 ├── background.js             # Service worker
 ├── style.css                 # Global styles
 ├── app.css                   # Tab component styles (bundled)
-├── aura.css                  # Aura page component styles
 ├── record.css                # Record page component styles
 ├── schema.css                # Schema page component styles
 └── icon.png                  # Copied from public/
@@ -139,23 +130,6 @@ Root files:
 ## Standalone Tools
 
 Standalone tools use the same custom element pattern as tabs. Each tool has a component in `src/components/` and a minimal entry point in `src/pages/`.
-
-### Aura Debugger (`src/components/aura/`)
-
-A standalone tool for making Aura framework requests to Salesforce communities/orgs. Does not use OAuth - handles its own authentication.
-
-**Features:**
-- Community URL input for any Salesforce domain
-- Unauthenticated/Authenticated mode toggle
-- Aura Token and Session ID (SID) inputs for authenticated requests
-- Preset action types: SelectableListDataProvider, RecordUiController, HostConfigController, Component Definition, ApexActionController, Custom
-- Monaco editors for request parameters and response
-- FWUID configuration in advanced settings
-
-**Authentication Flow:**
-1. If SID is provided manually, sets cookie before request and removes it after
-2. If SID is blank, checks for existing browser cookie via `chrome.cookies` API
-3. Aura token is passed in request body as `aura.token` parameter
 
 ### Record Viewer (`src/components/record/`)
 
@@ -374,35 +348,35 @@ customElements.define('query-tab', QueryTab);
 Standalone pages use the same custom element pattern as tabs. The page entry point is a minimal HTML shell that loads a custom element:
 
 ```html
-<!-- src/pages/aura/aura.html (entry point - minimal shell) -->
+<!-- src/pages/record/record.html (entry point - minimal shell) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Aura Debugger - sftools</title>
+    <title>Record Viewer - sftools</title>
     <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
-    <aura-page></aura-page>
-    <script type="module" src="aura.js"></script>
+    <record-page></record-page>
+    <script type="module" src="record.js"></script>
 </body>
 </html>
 ```
 
 ```javascript
-// src/pages/aura/aura.js (entry point - single import)
-import '../../components/aura/aura-page.js';
+// src/pages/record/record.js (entry point - single import)
+import '../../components/record/record-page.js';
 ```
 
 ```javascript
-// src/components/aura/aura-page.js (component)
-import template from './aura.html?raw';
-import './aura.css';
+// src/components/record/record-page.js (component)
+import template from './record.html?raw';
+import './record.css';
 
-class AuraPage extends HTMLElement {
+class RecordPage extends HTMLElement {
     // State as class properties
-    communityUrl = null;
-    paramsEditor = null;
+    objectType = null;
+    recordId = null;
 
     connectedCallback() {
         this.innerHTML = template;
@@ -411,13 +385,13 @@ class AuraPage extends HTMLElement {
     }
 
     initElements() {
-        this.paramsEditor = this.querySelector('#paramsEditor');
+        this.fieldsTable = this.querySelector('.fields-table');
         // ...
     }
     // ...
 }
 
-customElements.define('aura-page', AuraPage);
+customElements.define('record-page', RecordPage);
 ```
 
 ### Adding a New Standalone Tool

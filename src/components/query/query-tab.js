@@ -7,6 +7,13 @@ import '../button-dropdown/button-dropdown.js';
 import '../button-icon/button-icon.js';
 import '../modal-popup/modal-popup.js';
 import { executeQueryWithColumns, executeBulkQueryExport, getObjectDescribe, updateRecord } from '../../lib/salesforce.js';
+import {
+    registerSOQLCompletionProvider,
+    activateSOQLAutocomplete,
+    deactivateSOQLAutocomplete,
+    loadGlobalDescribe,
+    clearState as clearAutocompleteState
+} from '../../lib/soql-autocomplete.js';
 
 const MAX_HISTORY = 30;
 
@@ -45,12 +52,33 @@ class QueryTab extends HTMLElement {
     history = [];
     favorites = [];
 
+    // Bound event handlers for cleanup
+    boundConnectionHandler = this.handleConnectionChange.bind(this);
+
     connectedCallback() {
         this.innerHTML = template;
         this.initElements();
         this.initEditor();
         this.attachEventListeners();
         this.loadStoredData();
+
+        // Initialize SOQL autocomplete
+        registerSOQLCompletionProvider();
+        activateSOQLAutocomplete();
+        loadGlobalDescribe();
+
+        // Listen for connection changes
+        document.addEventListener('connection-changed', this.boundConnectionHandler);
+    }
+
+    disconnectedCallback() {
+        deactivateSOQLAutocomplete();
+        document.removeEventListener('connection-changed', this.boundConnectionHandler);
+    }
+
+    handleConnectionChange() {
+        clearAutocompleteState();
+        loadGlobalDescribe();
     }
 
     initElements() {

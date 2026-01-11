@@ -1,7 +1,67 @@
 // Salesforce Service Module
 // All Salesforce API operations for the application
 
-import { salesforceRequest, smartFetch, getAccessToken, getInstanceUrl, API_VERSION } from './utils.js';
+import { salesforceRequest, smartFetch, getAccessToken, getInstanceUrl, getActiveConnectionId, API_VERSION } from './utils.js';
+
+// ============================================================
+// Describe Cache
+// ============================================================
+
+const DESCRIBE_CACHE_KEY = 'describeCache';
+
+/**
+ * Get the describe cache for the current connection
+ * @returns {Promise<{global: object|null, objects: object}>}
+ */
+async function getDescribeCache() {
+    const connectionId = getActiveConnectionId();
+    if (!connectionId) return { global: null, objects: {} };
+
+    const data = await chrome.storage.local.get([DESCRIBE_CACHE_KEY]);
+    const cache = data[DESCRIBE_CACHE_KEY] || {};
+    return cache[connectionId] || { global: null, objects: {} };
+}
+
+/**
+ * Save describe data to cache for the current connection
+ * @param {string} type - 'global' or object API name
+ * @param {object} data - Describe data to cache
+ */
+async function setDescribeCache(type, data) {
+    const connectionId = getActiveConnectionId();
+    if (!connectionId) return;
+
+    const stored = await chrome.storage.local.get([DESCRIBE_CACHE_KEY]);
+    const cache = stored[DESCRIBE_CACHE_KEY] || {};
+
+    if (!cache[connectionId]) {
+        cache[connectionId] = { global: null, objects: {} };
+    }
+
+    if (type === 'global') {
+        cache[connectionId].global = data;
+    } else {
+        cache[connectionId].objects[type] = data;
+    }
+
+    await chrome.storage.local.set({ [DESCRIBE_CACHE_KEY]: cache });
+}
+
+/**
+ * Clear describe cache for the current connection
+ * @returns {Promise<void>}
+ */
+export async function clearDescribeCache() {
+    const connectionId = getActiveConnectionId();
+    if (!connectionId) return;
+
+    const stored = await chrome.storage.local.get([DESCRIBE_CACHE_KEY]);
+    const cache = stored[DESCRIBE_CACHE_KEY] || {};
+
+    delete cache[connectionId];
+
+    await chrome.storage.local.set({ [DESCRIBE_CACHE_KEY]: cache });
+}
 
 // ============================================================
 // Constants
@@ -218,21 +278,49 @@ export async function executeQueryWithColumns(soql, useToolingApi = false) {
 
 /**
  * Get global describe metadata (all objects)
+ * Uses cache if available, otherwise fetches and caches
+ * @param {boolean} bypassCache - If true, skip cache lookup (still saves to cache)
  * @returns {Promise<{sobjects: array}>}
  */
-export async function getGlobalDescribe() {
+export async function getGlobalDescribe(bypassCache = false) {
+    if (!bypassCache) {
+        const cache = await getDescribeCache();
+        if (cache.global) {
+            return cache.global;
+        }
+    }
+
     const response = await salesforceRequest(`/services/data/v${API_VERSION}/sobjects`);
-    return response.json;
+    const data = response.json;
+
+    // Cache the result
+    await setDescribeCache('global', data);
+
+    return data;
 }
 
 /**
  * Get object describe metadata (field definitions, etc.)
+ * Uses cache if available, otherwise fetches and caches
  * @param {string} objectType - The SObject API name
+ * @param {boolean} bypassCache - If true, skip cache lookup (still saves to cache)
  * @returns {Promise<object>} Describe result with fields array
  */
-export async function getObjectDescribe(objectType) {
+export async function getObjectDescribe(objectType, bypassCache = false) {
+    if (!bypassCache) {
+        const cache = await getDescribeCache();
+        if (cache.objects[objectType]) {
+            return cache.objects[objectType];
+        }
+    }
+
     const response = await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/${objectType}/describe`);
-    return response.json;
+    const data = response.json;
+
+    // Cache the result
+    await setDescribeCache(objectType, data);
+
+    return data;
 }
 
 /**

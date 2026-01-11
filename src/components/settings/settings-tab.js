@@ -7,8 +7,10 @@ import {
     removeConnection,
     getActiveConnectionId,
     setActiveConnection,
-    setPendingAuth
+    setPendingAuth,
+    isAuthenticated
 } from '../../lib/utils.js';
+import { clearDescribeCache } from '../../lib/salesforce.js';
 
 class SettingsTab extends HTMLElement {
     // Proxy DOM references
@@ -37,6 +39,10 @@ class SettingsTab extends HTMLElement {
     editSaveBtn = null;
     editCancelBtn = null;
     editingConnectionId = null;
+
+    // Cache management DOM references
+    refreshCacheBtn = null;
+    cacheStatus = null;
 
     connectedCallback() {
         this.innerHTML = template;
@@ -89,6 +95,10 @@ class SettingsTab extends HTMLElement {
         this.editClientIdInput = this.querySelector('.settings-edit-client-id');
         this.editSaveBtn = this.querySelector('.settings-edit-save-btn');
         this.editCancelBtn = this.querySelector('.settings-edit-cancel-btn');
+
+        // Cache management elements
+        this.refreshCacheBtn = this.querySelector('.settings-refresh-cache-btn');
+        this.cacheStatus = this.querySelector('.settings-cache-status');
     }
 
     attachEventListeners() {
@@ -110,6 +120,9 @@ class SettingsTab extends HTMLElement {
         this.editModal.addEventListener('click', (e) => {
             if (e.target === this.editModal) this.hideEditModal();
         });
+
+        // Cache management listeners
+        this.refreshCacheBtn.addEventListener('click', () => this.handleRefreshCache());
     }
 
     // ============================================================
@@ -421,6 +434,39 @@ class SettingsTab extends HTMLElement {
             this.updateProxyUI({ connected: false });
         } catch (err) {
             console.error('Disconnect error:', err);
+        }
+    }
+
+    // ============================================================
+    // Cache Management
+    // ============================================================
+
+    async handleRefreshCache() {
+        if (!isAuthenticated()) {
+            this.cacheStatus.textContent = 'Please connect to an org first';
+            this.cacheStatus.className = 'settings-cache-status error';
+            return;
+        }
+
+        this.refreshCacheBtn.disabled = true;
+        this.cacheStatus.textContent = 'Clearing cache...';
+        this.cacheStatus.className = 'settings-cache-status';
+
+        try {
+            await clearDescribeCache();
+            this.cacheStatus.textContent = 'Cache cleared successfully';
+            this.cacheStatus.className = 'settings-cache-status success';
+
+            // Clear status after a few seconds
+            setTimeout(() => {
+                this.cacheStatus.textContent = '';
+                this.cacheStatus.className = 'settings-cache-status';
+            }, 3000);
+        } catch (err) {
+            this.cacheStatus.textContent = `Error: ${err.message}`;
+            this.cacheStatus.className = 'settings-cache-status error';
+        } finally {
+            this.refreshCacheBtn.disabled = false;
         }
     }
 }

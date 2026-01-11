@@ -1,10 +1,12 @@
-// Button Icon - Icon button with dropdown menu
+// Button Icon - Icon button with optional dropdown menu
 import './button-icon.css';
 
 class ButtonIcon extends HTMLElement {
     static get observedAttributes() {
-        return ['icon', 'title'];
+        return ['icon', 'title', 'disabled'];
     }
+
+    hasMenu = false;
 
     connectedCallback() {
         this.render();
@@ -15,12 +17,17 @@ class ButtonIcon extends HTMLElement {
         if (this.isConnected && oldValue !== newValue) {
             if (name === 'icon') this.updateIcon();
             if (name === 'title') this.updateTitle();
+            if (name === 'disabled') this.updateDisabled();
         }
     }
 
     render() {
         const icon = this.getAttribute('icon') || '&#8942;';
         const title = this.getAttribute('title') || '';
+        const disabled = this.hasAttribute('disabled');
+
+        // Check if there are menu items (children)
+        this.hasMenu = this.children.length > 0;
 
         // Move existing children (menu content) to a temp container
         const menuContent = document.createDocumentFragment();
@@ -28,30 +35,42 @@ class ButtonIcon extends HTMLElement {
             menuContent.appendChild(this.firstChild);
         }
 
-        this.innerHTML = `
-            <button class="btn-icon-trigger"${title ? ` title="${title}"` : ''}>${icon}</button>
-            <div class="btn-icon-menu"></div>
-        `;
+        if (this.hasMenu) {
+            this.innerHTML = `
+                <button class="btn-icon-trigger"${title ? ` title="${title}"` : ''}${disabled ? ' disabled' : ''}>${icon}</button>
+                <div class="btn-icon-menu"></div>
+            `;
+            this.menu = this.querySelector('.btn-icon-menu');
+            this.menu.appendChild(menuContent);
+        } else {
+            this.innerHTML = `
+                <button class="btn-icon-trigger"${title ? ` title="${title}"` : ''}${disabled ? ' disabled' : ''}>${icon}</button>
+            `;
+        }
 
         this.trigger = this.querySelector('.btn-icon-trigger');
-        this.menu = this.querySelector('.btn-icon-menu');
-
-        // Restore menu content
-        this.menu.appendChild(menuContent);
     }
 
     attachEventListeners() {
-        this.trigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.classList.toggle('open');
-            this.dispatchEvent(new CustomEvent('toggle', { bubbles: true }));
-        });
+        if (this.hasMenu) {
+            // Dropdown behavior
+            this.trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.classList.toggle('open');
+                this.dispatchEvent(new CustomEvent('toggle', { bubbles: true }));
+            });
 
-        document.addEventListener('click', (e) => {
-            if (!this.contains(e.target)) {
-                this.classList.remove('open');
-            }
-        });
+            document.addEventListener('click', (e) => {
+                if (!this.contains(e.target)) {
+                    this.classList.remove('open');
+                }
+            });
+        } else {
+            // Simple button - dispatch click event
+            this.trigger.addEventListener('click', (e) => {
+                this.dispatchEvent(new CustomEvent('click', { bubbles: true }));
+            });
+        }
     }
 
     updateIcon() {
@@ -67,6 +86,16 @@ class ButtonIcon extends HTMLElement {
                 this.trigger.setAttribute('title', title);
             } else {
                 this.trigger.removeAttribute('title');
+            }
+        }
+    }
+
+    updateDisabled() {
+        if (this.trigger) {
+            if (this.hasAttribute('disabled')) {
+                this.trigger.setAttribute('disabled', '');
+            } else {
+                this.trigger.removeAttribute('disabled');
             }
         }
     }

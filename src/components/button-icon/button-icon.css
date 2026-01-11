@@ -20,9 +20,14 @@ button-icon .btn-icon-trigger {
     transition: all 0.2s;
 }
 
-button-icon .btn-icon-trigger:hover {
+button-icon .btn-icon-trigger:hover:not(:disabled) {
     border-color: var(--primary-color);
     color: var(--primary-color);
+}
+
+button-icon .btn-icon-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 button-icon .btn-icon-menu {

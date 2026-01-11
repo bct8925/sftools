@@ -259,3 +259,23 @@
     font-weight: 500;
     color: var(--text-main);
 }
+
+/* Cache Management */
+.settings-cache-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.settings-cache-status {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.settings-cache-status.success {
+    color: #4bca81;
+}
+
+.settings-cache-status.error {
+    color: #c23934;
+}

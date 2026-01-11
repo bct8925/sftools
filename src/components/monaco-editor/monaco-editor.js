@@ -1,18 +1,6 @@
 // Monaco Editor Web Component
-import * as monaco from 'monaco-editor';
-
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker&inline';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker&inline';
-
-// Configure Monaco workers (only once)
-if (!self.MonacoEnvironment) {
-    self.MonacoEnvironment = {
-        getWorker: function (_, label) {
-            if (label === 'json') return new jsonWorker();
-            return new editorWorker();
-        }
-    };
-}
+// Custom import with only the languages we need (sql, apex, json, xml, javascript)
+import { monaco } from '../../lib/monaco-custom.js';
 
 const defaultOptions = {
     theme: 'vs-dark',

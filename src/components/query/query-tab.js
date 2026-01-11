@@ -27,6 +27,7 @@ class QueryTab extends HTMLElement {
     searchInput = null;
     exportBtn = null;
     saveBtn = null;
+    clearBtn = null;
 
     // Button components
     historyBtn = null;
@@ -74,9 +75,10 @@ class QueryTab extends HTMLElement {
         // Search elements
         this.searchInput = this.querySelector('.query-search-input');
 
-        // Export and Save buttons (inside results dropdown)
+        // Export, Save, and Clear buttons (inside results dropdown)
         this.exportBtn = this.querySelector('.query-export-btn');
         this.saveBtn = this.querySelector('.query-save-btn');
+        this.clearBtn = this.querySelector('.query-clear-btn');
 
         // Setup action button options
         this.actionBtn.setOptions([
@@ -125,6 +127,12 @@ LIMIT 10`);
         // Save changes handler
         this.saveBtn.addEventListener('click', () => {
             this.saveChanges();
+            this.resultsBtn.close();
+        });
+
+        // Clear changes handler
+        this.clearBtn.addEventListener('click', () => {
+            this.clearChanges();
             this.resultsBtn.close();
         });
 
@@ -967,6 +975,7 @@ LIMIT 10`);
         const isEditMode = this.editingCheckbox.checked && tabData?.isEditable;
         const hasModifications = tabData && tabData.modifiedRecords.size > 0;
         this.saveBtn.disabled = !isEditMode || !hasModifications;
+        this.clearBtn.disabled = !isEditMode || !hasModifications;
     }
 
     // ============================================================
@@ -1170,6 +1179,17 @@ LIMIT 10`);
             alert(`Failed to save some records:\n\n${errorMsg}`);
         }
 
+        this.updateSaveButtonState();
+    }
+
+    clearChanges() {
+        const tabData = this.getTabDataById(this.activeTabId);
+        if (!tabData || tabData.modifiedRecords.size === 0) {
+            return;
+        }
+
+        tabData.modifiedRecords.clear();
+        this.renderResults();
         this.updateSaveButtonState();
     }
 }

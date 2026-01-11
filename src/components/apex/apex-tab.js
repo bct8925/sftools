@@ -2,6 +2,7 @@
 import template from './apex.html?raw';
 import './apex.css';
 import { monaco } from '../monaco-editor/monaco-editor.js';
+import '../button-icon/button-icon.js';
 import { isAuthenticated } from '../../lib/utils.js';
 import { executeAnonymousApex } from '../../lib/salesforce.js';
 
@@ -13,17 +14,15 @@ class ApexTab extends HTMLElement {
     outputEditor = null;
     executeBtn = null;
     statusSpan = null;
+    searchInput = null;
 
-    // Dropdown DOM references
-    dropdown = null;
-    dropdownTrigger = null;
+    // Button component
+    historyBtn = null;
+
+    // History dropdown elements
     historyList = null;
     favoritesList = null;
     dropdownTabs = [];
-
-    // Search DOM references
-    searchInput = null;
-    searchClear = null;
 
     // In-memory cache
     history = [];
@@ -41,17 +40,15 @@ class ApexTab extends HTMLElement {
     initElements() {
         this.executeBtn = this.querySelector('.apex-execute-btn');
         this.statusSpan = this.querySelector('.apex-status');
+        this.searchInput = this.querySelector('.apex-search-input');
 
-        // Dropdown elements
-        this.dropdown = this.querySelector('.apex-header-dropdown');
-        this.dropdownTrigger = this.querySelector('.apex-dropdown-trigger');
+        // Button component
+        this.historyBtn = this.querySelector('.apex-history-btn');
+
+        // History dropdown elements
         this.historyList = this.querySelector('.apex-history-list');
         this.favoritesList = this.querySelector('.apex-favorites-list');
         this.dropdownTabs = this.querySelectorAll('.apex-dropdown-tab');
-
-        // Search elements
-        this.searchInput = this.querySelector('.apex-search-input');
-        this.searchClear = this.querySelector('.apex-search-clear');
     }
 
     initEditors() {
@@ -74,13 +71,7 @@ for (Account acc : accounts) {
         this.executeBtn.addEventListener('click', () => this.executeApex());
         this.codeEditor.addEventListener('execute', () => this.executeApex());
 
-        // Dropdown trigger
-        this.dropdownTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleDropdown();
-        });
-
-        // Dropdown tab switching
+        // History dropdown tab switching
         this.dropdownTabs.forEach(tab => {
             tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
         });
@@ -89,16 +80,8 @@ for (Account acc : accounts) {
         this.historyList.addEventListener('click', (e) => this.handleListClick(e, 'history'));
         this.favoritesList.addEventListener('click', (e) => this.handleListClick(e, 'favorites'));
 
-        // Close dropdown on outside click
-        document.addEventListener('click', (e) => {
-            if (!this.dropdown.contains(e.target)) {
-                this.closeDropdown();
-            }
-        });
-
         // Search filtering
         this.searchInput.addEventListener('input', () => this.applyFilter());
-        this.searchClear.addEventListener('click', () => this.clearFilter());
     }
 
     // ============================================================
@@ -194,14 +177,6 @@ for (Account acc : accounts) {
     // Dropdown UI
     // ============================================================
 
-    toggleDropdown() {
-        this.dropdown.classList.toggle('open');
-    }
-
-    closeDropdown() {
-        this.dropdown.classList.remove('open');
-    }
-
     switchTab(tabName) {
         this.dropdownTabs.forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabName);
@@ -285,10 +260,10 @@ for (Account acc : accounts) {
 
             if (action.classList.contains('load')) {
                 this.loadScript(scriptData.code);
-                this.closeDropdown();
+                this.historyBtn.close();
             } else if (action.classList.contains('favorite')) {
                 this.showFavoriteModal(scriptData.code);
-                this.closeDropdown();
+                this.historyBtn.close();
             } else if (action.classList.contains('delete')) {
                 if (listType === 'history') {
                     this.removeFromHistory(id);
@@ -299,7 +274,7 @@ for (Account acc : accounts) {
         } else {
             // Click on item itself loads the script
             this.loadScript(scriptData.code);
-            this.closeDropdown();
+            this.historyBtn.close();
         }
     }
 

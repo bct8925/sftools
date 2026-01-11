@@ -48,7 +48,7 @@
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border-color);
-    transition: flex 0.3s ease;
+    transition: flex 0.3s linear;
 }
 
 .objects-panel.with-fields {
@@ -64,6 +64,12 @@
 .filter-input {
     width: 100%;
     margin-bottom: 8px;
+}
+
+.objects-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .object-count {
@@ -133,6 +139,27 @@
     color: var(--text-primary);
 }
 
+.fields-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    color: var(--primary-color);
+}
+
 .selected-object-name {
     font-size: 12px;
     color: var(--text-secondary);
@@ -141,23 +168,6 @@
 
 .fields-header .filter-input {
     margin-top: 12px;
-}
-
-.button-icon-only {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.button-icon-only:hover {
-    background-color: var(--bg-hover);
-    color: var(--text-primary);
 }
 
 .field-header {

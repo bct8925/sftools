@@ -69,13 +69,26 @@ function parseLightningUrl(url) {
 
 function extractOrgIdentifier(hostname) {
     // Extract org-specific part from Salesforce domain formats
+    // Order matters - more specific patterns first
     const patterns = [
-        /^([^.]+)\.lightning\.force\.com$/,
-        /^([^.]+)\.my\.salesforce\.com$/,
+        // Developer Edition orgs (e.g., orgname.develop.my.salesforce.com)
+        /^([^.]+)\.develop\.lightning\.force\.com$/,
+        /^([^.]+)\.develop\.my\.salesforce\.com$/,
+        // Sandbox orgs
         /^([^.]+)\.sandbox\.lightning\.force\.com$/,
         /^([^.]+)\.sandbox\.my\.salesforce\.com$/,
+        // Scratch orgs
         /^([^.]+)\.scratch\.lightning\.force\.com$/,
-        /^([^.]+)\.scratch\.my\.salesforce\.com$/
+        /^([^.]+)\.scratch\.my\.salesforce\.com$/,
+        // Demo orgs
+        /^([^.]+)\.demo\.lightning\.force\.com$/,
+        /^([^.]+)\.demo\.my\.salesforce\.com$/,
+        // Trailhead playgrounds
+        /^([^.]+)\.trailblaze\.lightning\.force\.com$/,
+        /^([^.]+)\.trailblaze\.my\.salesforce\.com$/,
+        // Standard production/enterprise orgs (most common - check last)
+        /^([^.]+)\.lightning\.force\.com$/,
+        /^([^.]+)\.my\.salesforce\.com$/
     ];
 
     for (const pattern of patterns) {

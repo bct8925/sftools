@@ -1,9 +1,219 @@
 // Schema Browser - Custom Element
 import template from './schema.html?raw';
 import './schema.css';
-import '../monaco-editor/monaco-editor.js';
+import '../button-icon/button-icon.js';
+import { monaco } from '../monaco-editor/monaco-editor.js';
 import { setActiveConnection } from '../../lib/utils.js';
 import { getGlobalDescribe, getObjectDescribe, getFormulaFieldMetadata, updateFormulaField } from '../../lib/salesforce.js';
+
+// Completion provider state - shared with Monaco
+let completionState = {
+    fields: [],           // Direct fields on the object
+    relationshipFields: [], // Fields from related objects (e.g., Account.Name)
+    active: false
+};
+
+// Common Salesforce formula functions with signatures and descriptions
+const FORMULA_FUNCTIONS = [
+    // Logical Functions
+    { name: 'IF', signature: 'IF(logical_test, value_if_true, value_if_false)', description: 'Returns one value if a condition is true and another if false' },
+    { name: 'CASE', signature: 'CASE(expression, value1, result1, value2, result2, ..., else_result)', description: 'Compares an expression to a series of values and returns the corresponding result' },
+    { name: 'AND', signature: 'AND(logical1, logical2, ...)', description: 'Returns TRUE if all arguments are true' },
+    { name: 'OR', signature: 'OR(logical1, logical2, ...)', description: 'Returns TRUE if any argument is true' },
+    { name: 'NOT', signature: 'NOT(logical)', description: 'Returns TRUE if the argument is false' },
+    { name: 'ISBLANK', signature: 'ISBLANK(expression)', description: 'Returns TRUE if the expression is blank' },
+    { name: 'ISNULL', signature: 'ISNULL(expression)', description: 'Returns TRUE if the expression is null' },
+    { name: 'ISCHANGED', signature: 'ISCHANGED(field)', description: 'Returns TRUE if the field value has changed (validation/workflow only)' },
+    { name: 'ISNEW', signature: 'ISNEW()', description: 'Returns TRUE if the record is new (validation/workflow only)' },
+    { name: 'PRIORVALUE', signature: 'PRIORVALUE(field)', description: 'Returns the previous value of a field (validation/workflow only)' },
+    { name: 'BLANKVALUE', signature: 'BLANKVALUE(expression, substitute)', description: 'Returns substitute if expression is blank, otherwise returns expression' },
+    { name: 'NULLVALUE', signature: 'NULLVALUE(expression, substitute)', description: 'Returns substitute if expression is null, otherwise returns expression' },
+
+    // Text Functions
+    { name: 'TEXT', signature: 'TEXT(value)', description: 'Converts a value to text' },
+    { name: 'VALUE', signature: 'VALUE(text)', description: 'Converts text to a number' },
+    { name: 'LEN', signature: 'LEN(text)', description: 'Returns the number of characters in a text string' },
+    { name: 'LEFT', signature: 'LEFT(text, num_chars)', description: 'Returns the leftmost characters from a text string' },
+    { name: 'RIGHT', signature: 'RIGHT(text, num_chars)', description: 'Returns the rightmost characters from a text string' },
+    { name: 'MID', signature: 'MID(text, start_num, num_chars)', description: 'Returns characters from the middle of a text string' },
+    { name: 'LOWER', signature: 'LOWER(text)', description: 'Converts text to lowercase' },
+    { name: 'UPPER', signature: 'UPPER(text)', description: 'Converts text to uppercase' },
+    { name: 'TRIM', signature: 'TRIM(text)', description: 'Removes leading and trailing spaces' },
+    { name: 'CONTAINS', signature: 'CONTAINS(text, compare_text)', description: 'Returns TRUE if text contains compare_text' },
+    { name: 'BEGINS', signature: 'BEGINS(text, compare_text)', description: 'Returns TRUE if text begins with compare_text' },
+    { name: 'FIND', signature: 'FIND(search_text, text, start_num)', description: 'Returns the position of search_text within text' },
+    { name: 'SUBSTITUTE', signature: 'SUBSTITUTE(text, old_text, new_text)', description: 'Substitutes new_text for old_text in a text string' },
+    { name: 'BR', signature: 'BR()', description: 'Inserts a line break in a text string' },
+    { name: 'HYPERLINK', signature: 'HYPERLINK(url, friendly_name, target)', description: 'Creates a hyperlink' },
+    { name: 'IMAGE', signature: 'IMAGE(image_url, alt_text, height, width)', description: 'Inserts an image' },
+    { name: 'ISPICKVAL', signature: 'ISPICKVAL(picklist_field, text_literal)', description: 'Returns TRUE if picklist value equals text' },
+    { name: 'REGEX', signature: 'REGEX(text, regex_text)', description: 'Returns TRUE if text matches the regular expression' },
+    { name: 'LPAD', signature: 'LPAD(text, padded_length, pad_string)', description: 'Pads text on the left with specified characters' },
+    { name: 'RPAD', signature: 'RPAD(text, padded_length, pad_string)', description: 'Pads text on the right with specified characters' },
+
+    // Date/Time Functions
+    { name: 'TODAY', signature: 'TODAY()', description: 'Returns the current date' },
+    { name: 'NOW', signature: 'NOW()', description: 'Returns the current date and time' },
+    { name: 'DATE', signature: 'DATE(year, month, day)', description: 'Creates a date from year, month, and day' },
+    { name: 'DATEVALUE', signature: 'DATEVALUE(expression)', description: 'Converts a datetime or text to a date' },
+    { name: 'DATETIMEVALUE', signature: 'DATETIMEVALUE(expression)', description: 'Converts text to a datetime' },
+    { name: 'YEAR', signature: 'YEAR(date)', description: 'Returns the year of a date' },
+    { name: 'MONTH', signature: 'MONTH(date)', description: 'Returns the month of a date (1-12)' },
+    { name: 'DAY', signature: 'DAY(date)', description: 'Returns the day of the month (1-31)' },
+    { name: 'WEEKDAY', signature: 'WEEKDAY(date)', description: 'Returns the day of the week (1=Sunday, 7=Saturday)' },
+    { name: 'ADDMONTHS', signature: 'ADDMONTHS(date, num)', description: 'Adds months to a date' },
+    { name: 'HOUR', signature: 'HOUR(datetime)', description: 'Returns the hour of a datetime (0-23)' },
+    { name: 'MINUTE', signature: 'MINUTE(datetime)', description: 'Returns the minute of a datetime (0-59)' },
+    { name: 'SECOND', signature: 'SECOND(datetime)', description: 'Returns the second of a datetime (0-59)' },
+    { name: 'MILLISECOND', signature: 'MILLISECOND(datetime)', description: 'Returns the millisecond of a datetime (0-999)' },
+    { name: 'TIMENOW', signature: 'TIMENOW()', description: 'Returns the current time' },
+    { name: 'TIMEVALUE', signature: 'TIMEVALUE(text)', description: 'Converts text to a time' },
+
+    // Math Functions
+    { name: 'ABS', signature: 'ABS(number)', description: 'Returns the absolute value of a number' },
+    { name: 'CEILING', signature: 'CEILING(number)', description: 'Rounds a number up to the nearest integer' },
+    { name: 'FLOOR', signature: 'FLOOR(number)', description: 'Rounds a number down to the nearest integer' },
+    { name: 'ROUND', signature: 'ROUND(number, num_digits)', description: 'Rounds a number to a specified number of digits' },
+    { name: 'MCEILING', signature: 'MCEILING(number)', description: 'Rounds a number up, away from zero' },
+    { name: 'MFLOOR', signature: 'MFLOOR(number)', description: 'Rounds a number down, toward zero' },
+    { name: 'MAX', signature: 'MAX(number1, number2, ...)', description: 'Returns the largest value' },
+    { name: 'MIN', signature: 'MIN(number1, number2, ...)', description: 'Returns the smallest value' },
+    { name: 'MOD', signature: 'MOD(number, divisor)', description: 'Returns the remainder after division' },
+    { name: 'SQRT', signature: 'SQRT(number)', description: 'Returns the square root of a number' },
+    { name: 'EXP', signature: 'EXP(number)', description: 'Returns e raised to the power of number' },
+    { name: 'LN', signature: 'LN(number)', description: 'Returns the natural logarithm of a number' },
+    { name: 'LOG', signature: 'LOG(number)', description: 'Returns the base-10 logarithm of a number' },
+    { name: 'TRUNC', signature: 'TRUNC(number, num_digits)', description: 'Truncates a number to specified digits' },
+    { name: 'GEOLOCATION', signature: 'GEOLOCATION(latitude, longitude)', description: 'Creates a geolocation value' },
+    { name: 'DISTANCE', signature: 'DISTANCE(location1, location2, unit)', description: 'Returns the distance between two locations' },
+
+    // Advanced Functions
+    { name: 'CURRENCYRATE', signature: 'CURRENCYRATE(IsoCode)', description: 'Returns the conversion rate to the corporate currency' },
+    { name: 'GETRECORDIDS', signature: 'GETRECORDIDS(object_type)', description: 'Returns an array of record IDs (Flow only)' },
+    { name: 'HTMLENCODE', signature: 'HTMLENCODE(text)', description: 'Encodes text for HTML' },
+    { name: 'JSENCODE', signature: 'JSENCODE(text)', description: 'Encodes text for JavaScript' },
+    { name: 'JSINHTMLENCODE', signature: 'JSINHTMLENCODE(text)', description: 'Encodes text for JavaScript inside HTML' },
+    { name: 'URLENCODE', signature: 'URLENCODE(text)', description: 'Encodes text for URLs' },
+    { name: 'INCLUDE', signature: 'INCLUDE(s_control_name, inputs)', description: 'Includes an S-Control (legacy)' },
+    { name: 'GETSESSIONID', signature: 'GETSESSIONID()', description: 'Returns the current session ID' },
+    { name: 'LINKTO', signature: 'LINKTO(label, target, id, inputs, no_override)', description: 'Creates a relative URL link' },
+    { name: 'URLFOR', signature: 'URLFOR(target, id, inputs, no_override)', description: 'Returns a relative URL' },
+    { name: 'REQUIRESCRIPT', signature: 'REQUIRESCRIPT(url)', description: 'Includes a JavaScript file' },
+    { name: 'IMAGEPROXYURL', signature: 'IMAGEPROXYURL(url)', description: 'Returns a proxied image URL' },
+    { name: 'PARENTGROUPVAL', signature: 'PARENTGROUPVAL(summary_field, grouping_level)', description: 'Returns parent grouping value (reports only)' },
+    { name: 'PREVGROUPVAL', signature: 'PREVGROUPVAL(summary_field, grouping_level, increment)', description: 'Returns previous grouping value (reports only)' },
+
+    // Picklist Functions
+    { name: 'INCLUDES', signature: 'INCLUDES(multiselect_picklist, text_literal)', description: 'Returns TRUE if multi-select picklist includes value' }
+];
+
+// Map Salesforce field types to Monaco completion item kinds
+function getCompletionKind(field) {
+    if (field.calculated) {
+        return monaco.languages.CompletionItemKind.Constant; // Formula/rollup fields
+    }
+    if (field.type === 'reference') {
+        return monaco.languages.CompletionItemKind.Reference;
+    }
+    if (field.type === 'boolean') {
+        return monaco.languages.CompletionItemKind.Value;
+    }
+    if (field.type === 'picklist' || field.type === 'multipicklist') {
+        return monaco.languages.CompletionItemKind.Enum;
+    }
+    if (field.type === 'id') {
+        return monaco.languages.CompletionItemKind.Keyword;
+    }
+    if (['int', 'double', 'currency', 'percent'].includes(field.type)) {
+        return monaco.languages.CompletionItemKind.Unit;
+    }
+    if (['date', 'datetime', 'time'].includes(field.type)) {
+        return monaco.languages.CompletionItemKind.Event;
+    }
+    return monaco.languages.CompletionItemKind.Field;
+}
+
+// Register completion provider for formula fields (once, globally for 'apex' language)
+monaco.languages.registerCompletionItemProvider('apex', {
+    triggerCharacters: ['.'],
+    provideCompletionItems: (model, position) => {
+        if (!completionState.active) {
+            return { suggestions: [] };
+        }
+
+        const word = model.getWordUntilPosition(position);
+        const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn
+        };
+
+        // Check if we're after a dot (relationship traversal)
+        const lineContent = model.getLineContent(position.lineNumber);
+        const textBeforeCursor = lineContent.substring(0, position.column - 1);
+        const dotMatch = textBeforeCursor.match(/(\w+)\.$/);
+
+        let suggestions = [];
+
+        if (dotMatch) {
+            // After a dot - show relationship fields for that relationship
+            const relationshipName = dotMatch[1];
+            const relatedFields = completionState.relationshipFields
+                .filter(rf => rf.relationshipName.toLowerCase() === relationshipName.toLowerCase());
+
+            suggestions = relatedFields.map(rf => ({
+                label: rf.fieldName,
+                kind: getCompletionKind(rf.field),
+                detail: `${rf.relationshipName}.${rf.fieldName} (${rf.field.type})`,
+                documentation: rf.field.label,
+                insertText: rf.fieldName,
+                range
+            }));
+        } else {
+            // Direct fields
+            const fieldSuggestions = completionState.fields.map(field => ({
+                label: field.name,
+                kind: getCompletionKind(field),
+                detail: field.type + (field.calculated ? ' (formula)' : ''),
+                documentation: field.label,
+                insertText: field.name,
+                range,
+                sortText: '1_' + field.name // Sort fields first
+            }));
+
+            // Relationship names (for traversal)
+            const relationshipNames = [...new Set(
+                completionState.relationshipFields.map(rf => rf.relationshipName)
+            )];
+            const relationshipSuggestions = relationshipNames.map(name => ({
+                label: name,
+                kind: monaco.languages.CompletionItemKind.Module,
+                detail: 'Relationship',
+                documentation: `Access fields from related ${name} record`,
+                insertText: name,
+                range,
+                sortText: '2_' + name // Sort relationships second
+            }));
+
+            // Formula functions
+            const functionSuggestions = FORMULA_FUNCTIONS.map(fn => ({
+                label: fn.name,
+                kind: monaco.languages.CompletionItemKind.Function,
+                detail: fn.signature,
+                documentation: fn.description,
+                insertText: fn.name + '($0)',
+                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                range,
+                sortText: '3_' + fn.name // Sort functions third
+            }));
+
+            suggestions = [...fieldSuggestions, ...relationshipSuggestions, ...functionSuggestions];
+        }
+
+        return { suggestions };
+    }
+});
 
 class SchemaPage extends HTMLElement {
     // State
@@ -18,11 +228,13 @@ class SchemaPage extends HTMLElement {
     objectFilterEl = null;
     objectCountEl = null;
     objectsListEl = null;
+    refreshObjectsBtnEl = null;
     fieldsPanelEl = null;
     selectedObjectLabelEl = null;
     selectedObjectNameEl = null;
     fieldFilterEl = null;
     fieldsListEl = null;
+    refreshFieldsBtnEl = null;
     closeFieldsBtnEl = null;
 
     // Modal references
@@ -48,11 +260,13 @@ class SchemaPage extends HTMLElement {
         this.objectFilterEl = this.querySelector('#objectFilter');
         this.objectCountEl = this.querySelector('#objectCount');
         this.objectsListEl = this.querySelector('#objectsList');
+        this.refreshObjectsBtnEl = this.querySelector('#refreshObjectsBtn');
         this.fieldsPanelEl = this.querySelector('#fieldsPanel');
         this.selectedObjectLabelEl = this.querySelector('#selectedObjectLabel');
         this.selectedObjectNameEl = this.querySelector('#selectedObjectName');
         this.fieldFilterEl = this.querySelector('#fieldFilter');
         this.fieldsListEl = this.querySelector('#fieldsList');
+        this.refreshFieldsBtnEl = this.querySelector('#refreshFieldsBtn');
         this.closeFieldsBtnEl = this.querySelector('#closeFieldsBtn');
 
         // Modal elements
@@ -67,7 +281,9 @@ class SchemaPage extends HTMLElement {
 
     attachEventListeners() {
         this.objectFilterEl.addEventListener('input', (e) => this.filterObjects(e.target.value));
+        this.refreshObjectsBtnEl.addEventListener('click', () => this.refreshObjects());
         this.fieldFilterEl.addEventListener('input', (e) => this.filterFields(e.target.value));
+        this.refreshFieldsBtnEl.addEventListener('click', () => this.refreshFields());
         this.closeFieldsBtnEl.addEventListener('click', () => this.closeFieldsPanel());
 
         // Modal event listeners
@@ -181,30 +397,35 @@ class SchemaPage extends HTMLElement {
             item.classList.toggle('selected', item.dataset.name === objectName);
         });
 
-        // Adjust panel widths
-        this.objectsListEl.closest('.objects-panel').classList.add('with-fields');
-
         // Find object metadata
         const obj = this.allObjects.find(o => o.name === objectName);
         if (!obj) return;
 
         this.selectedObject = obj;
-
-        // Show fields panel
-        this.fieldsPanelEl.style.display = 'flex';
         this.selectedObjectLabelEl.textContent = obj.label;
         this.selectedObjectNameEl.textContent = obj.name;
+
+        // Show fields panel instantly (no transition on open)
+        const objectsPanel = this.objectsListEl.closest('.objects-panel');
+        objectsPanel.style.transition = 'none';
+        objectsPanel.classList.add('with-fields');
+        this.fieldsPanelEl.style.display = 'flex';
+
+        // Re-enable transition for close animation
+        requestAnimationFrame(() => {
+            objectsPanel.style.transition = '';
+        });
 
         // Load fields
         await this.loadFields(objectName);
     }
 
-    async loadFields(objectName) {
+    async loadFields(objectName, bypassCache = false) {
         this.fieldsListEl.innerHTML = '<div class="loading-container">Loading fields...</div>';
         this.fieldFilterEl.value = '';
 
         try {
-            const describe = await getObjectDescribe(objectName);
+            const describe = await getObjectDescribe(objectName, bypassCache);
             const fields = describe.fields || [];
 
             // Sort fields alphabetically by API name
@@ -220,6 +441,39 @@ class SchemaPage extends HTMLElement {
                     <p class="error-hint">Could not load field information.</p>
                 </div>
             `;
+        }
+    }
+
+    async refreshObjects() {
+        this.refreshObjectsBtnEl.setAttribute('disabled', '');
+        this.objectsListEl.innerHTML = '<div class="loading-container">Refreshing objects...</div>';
+
+        try {
+            const describe = await getGlobalDescribe(true); // bypass cache
+            this.allObjects = describe.sobjects
+                .filter(obj => obj.queryable)
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            this.filteredObjects = [...this.allObjects];
+            this.filterObjects(this.objectFilterEl.value); // re-apply current filter
+            this.updateObjectCount();
+
+        } catch (error) {
+            this.showError(error.message);
+        } finally {
+            this.refreshObjectsBtnEl.removeAttribute('disabled');
+        }
+    }
+
+    async refreshFields() {
+        if (!this.selectedObject) return;
+
+        this.refreshFieldsBtnEl.setAttribute('disabled', '');
+
+        try {
+            await this.loadFields(this.selectedObject.name, true); // bypass cache
+        } finally {
+            this.refreshFieldsBtnEl.removeAttribute('disabled');
         }
     }
 
@@ -380,6 +634,13 @@ class SchemaPage extends HTMLElement {
             objectName: this.selectedObject.name
         };
 
+        // Set fields for autocompletion
+        completionState.fields = this.allFields;
+        completionState.active = true;
+
+        // Load relationship fields asynchronously (don't block modal opening)
+        this.loadRelationshipFields();
+
         // Update modal header
         this.modalFieldInfoEl.textContent = `${this.selectedObject.label} > ${field.label} (${field.name})`;
 
@@ -411,6 +672,52 @@ class SchemaPage extends HTMLElement {
         }
     }
 
+    async loadRelationshipFields() {
+        // Find reference fields with relationship names
+        const referenceFields = this.allFields.filter(
+            f => f.type === 'reference' && f.relationshipName && f.referenceTo?.length > 0
+        );
+
+        // Clear existing relationship fields
+        completionState.relationshipFields = [];
+
+        // Load fields for each related object (in parallel, but limit concurrency)
+        const relatedObjectNames = [...new Set(
+            referenceFields.flatMap(f => f.referenceTo)
+        )];
+
+        // Fetch describes for all related objects
+        const describePromises = relatedObjectNames.map(async (objectName) => {
+            try {
+                const describe = await getObjectDescribe(objectName);
+                return { objectName, fields: describe.fields || [] };
+            } catch {
+                return { objectName, fields: [] };
+            }
+        });
+
+        const describes = await Promise.all(describePromises);
+        const fieldsByObject = new Map(describes.map(d => [d.objectName, d.fields]));
+
+        // Build relationship field suggestions
+        for (const refField of referenceFields) {
+            const relationshipName = refField.relationshipName;
+
+            for (const targetObject of refField.referenceTo) {
+                const targetFields = fieldsByObject.get(targetObject) || [];
+
+                for (const targetField of targetFields) {
+                    completionState.relationshipFields.push({
+                        relationshipName,
+                        fieldName: targetField.name,
+                        field: targetField,
+                        targetObject
+                    });
+                }
+            }
+        }
+    }
+
     closeFormulaModal() {
         this.formulaModalEl.classList.remove('show');
         this.currentFormulaField = null;
@@ -418,6 +725,11 @@ class SchemaPage extends HTMLElement {
         this.modalStatusEl.textContent = '';
         this.modalStatusEl.className = 'modal-status';
         this.modalSaveBtnEl.disabled = false;
+
+        // Clear autocompletion state
+        completionState.fields = [];
+        completionState.relationshipFields = [];
+        completionState.active = false;
     }
 
     async saveFormula() {

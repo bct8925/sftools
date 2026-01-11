@@ -1,7 +1,7 @@
 // Salesforce Service Module
 // All Salesforce API operations for the application
 
-import { salesforceRequest, extensionFetch, getAccessToken, getInstanceUrl, API_VERSION } from './utils.js';
+import { salesforceRequest, smartFetch, getAccessToken, getInstanceUrl, API_VERSION } from './utils.js';
 
 // ============================================================
 // Constants
@@ -132,7 +132,7 @@ async function getLatestAnonymousLog() {
 
     const logId = response.json.records[0].Id;
 
-    const logResponse = await extensionFetch(
+    const logResponse = await smartFetch(
         `${getInstanceUrl()}/services/data/v${API_VERSION}/tooling/sobjects/ApexLog/${logId}/Body`,
         {
             headers: {
@@ -323,7 +323,7 @@ export async function updateRecord(objectType, recordId, fields) {
  * @returns {Promise<{success: boolean, status: number, data: any, raw: string}>}
  */
 export async function executeRestRequest(endpoint, method, body = null) {
-    const response = await extensionFetch(`${getInstanceUrl()}${endpoint}`, {
+    const response = await smartFetch(`${getInstanceUrl()}${endpoint}`, {
         method,
         headers: {
             'Authorization': `Bearer ${getAccessToken()}`,
@@ -423,7 +423,7 @@ export async function getAllStreamingChannels() {
  * @returns {Promise<{success: boolean, id: string|null, error: string|null}>}
  */
 export async function publishPlatformEvent(eventType, payload) {
-    const response = await extensionFetch(
+    const response = await smartFetch(
         `${getInstanceUrl()}/services/data/v${API_VERSION}/sobjects/${eventType}`,
         {
             method: 'POST',
@@ -761,7 +761,7 @@ export async function getBulkQueryJobStatus(jobId) {
  * @returns {Promise<string>} - CSV content
  */
 export async function getBulkQueryResults(jobId) {
-    const response = await extensionFetch(
+    const response = await smartFetch(
         `${getInstanceUrl()}/services/data/v${API_VERSION}/jobs/query/${jobId}/results`,
         {
             headers: {

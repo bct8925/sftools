@@ -54,15 +54,21 @@ src/
 │   │   ├── debug-logs.js     # <debug-logs> - Trace flags + log deletion
 │   │   ├── debug-logs.html
 │   │   ├── flow-cleanup.js   # <flow-cleanup> - Delete inactive flow versions
-│   │   └── flow-cleanup.html
+│   │   ├── flow-cleanup.html
+│   │   ├── schema-browser-link.js  # <schema-browser-link> - Link to open Schema Browser
+│   │   └── schema-browser-link.html
 │   ├── aura/                 # Aura Debugger page component
 │   │   ├── aura-page.js
 │   │   ├── aura.html
 │   │   └── aura.css
-│   └── record/               # Record Viewer page component
-│       ├── record-page.js
-│       ├── record.html
-│       └── record.css
+│   ├── record/               # Record Viewer page component
+│   │   ├── record-page.js
+│   │   ├── record.html
+│   │   └── record.css
+│   └── schema/               # Schema Browser page component
+│       ├── schema-page.js
+│       ├── schema.html
+│       └── schema.css
 ├── pages/                    # Page entry points (minimal shells)
 │   ├── app/                  # Main tabbed interface
 │   │   ├── app.html
@@ -73,9 +79,12 @@ src/
 │   ├── aura/                 # Aura Debugger entry (loads <aura-page>)
 │   │   ├── aura.html
 │   │   └── aura.js
-│   └── record/               # Record Viewer entry (loads <record-page>)
-│       ├── record.html
-│       └── record.js
+│   ├── record/               # Record Viewer entry (loads <record-page>)
+│   │   ├── record.html
+│   │   └── record.js
+│   └── schema/               # Schema Browser entry (loads <schema-page>)
+│       ├── schema.html
+│       └── schema.js
 ├── background/               # Service worker
 │   ├── background.js
 │   ├── native-messaging.js
@@ -97,7 +106,8 @@ dist/
 │   ├── app/app.html, app.js
 │   ├── callback/callback.html, callback.js
 │   ├── aura/aura.html, aura.js
-│   └── record/record.html, record.js
+│   ├── record/record.html, record.js
+│   └── schema/schema.html, schema.js
 ├── chunks/                   # Shared code chunks
 ├── assets/                   # Monaco workers, fonts
 ├── background.js             # Service worker
@@ -105,6 +115,7 @@ dist/
 ├── app.css                   # Tab component styles (bundled)
 ├── aura.css                  # Aura page component styles
 ├── record.css                # Record page component styles
+├── schema.css                # Schema page component styles
 └── icon.png                  # Copied from public/
 ```
 
@@ -175,9 +186,38 @@ A standalone tool for viewing and editing field values on a Salesforce record. A
 - `getRecord(objectType, recordId)` - Gets record data
 - `updateRecord(objectType, recordId, fields)` - Updates record fields
 
+### Schema Browser (`src/components/schema/`)
+
+A standalone tool for browsing Salesforce object metadata and editing formula fields. Accessed via a link in the Utils tab.
+
+**How to Use:**
+1. Open sftools and go to the Utils tab
+2. Click "Open Schema Browser" link
+3. Browse objects on the left, click to view fields on the right
+
+**Features:**
+- Lists all queryable Salesforce objects sorted by API name
+- Filter objects by name with search input
+- Click object to view fields in side panel (2/3 width)
+- Fields display Label, API Name, and Type columns
+- Formula fields show edit button (triple-dot menu on hover)
+- Edit formula fields in Monaco editor modal with save/cancel
+
+**Formula Field Editing:**
+- Triple-dot menu appears on hover for formula fields
+- "Edit" opens modal with Monaco editor pre-loaded with formula code
+- Save updates formula via Tooling API (CustomField metadata)
+- Fields automatically reload after successful save
+
+**API Methods** (`src/lib/salesforce.js`):
+- `getGlobalDescribe()` - Gets all sObject metadata
+- `getObjectDescribe(objectType)` - Gets field metadata for an object
+- `getFormulaFieldMetadata(objectType, fieldName)` - Gets formula field details from Tooling API
+- `updateFormulaField(objectType, fieldName, formula)` - Updates formula via Tooling API
+
 ## Local Proxy Setup
 
-The local proxy enables gRPC and CometD streaming connections for all Salesforce event types.
+The local proxy enables gRPC and CometD streaming connections for all Salesforce event types. When connected, it also handles all Salesforce API requests to bypass CORS restrictions (useful for orgs with restrictive CORS settings).
 
 **Installation:**
 ```bash
@@ -414,6 +454,7 @@ chrome.runtime.sendMessage({ type: 'fetch', url, options });
 ```javascript
 import {
     extensionFetch,
+    smartFetch,         // Uses proxy when available, falls back to extensionFetch
     getAccessToken,
     getInstanceUrl,
     isAuthenticated,
@@ -430,6 +471,11 @@ import {
     consumePendingAuth
 } from '../../lib/utils.js';
 ```
+
+**Fetch routing:**
+- `smartFetch(url, options)` automatically routes through proxy when connected, otherwise uses extension fetch
+- All `salesforceRequest()` calls use `smartFetch` for CORS bypass when proxy is enabled
+- Direct API calls in `salesforce.js` also use `smartFetch`
 
 **Connection change events:**
 ```javascript
@@ -539,6 +585,7 @@ The Query tab uses the REST Query API with the `columns=true` parameter to get a
    - `?q=...` - Returns actual query results
 2. **Column Metadata** - The `columnMetadata` array provides column names, display names, and nested `joinColumns` for relationship fields
 3. **Nested Relationships** - Relationship fields (e.g., `Account.Owner.Name`) are flattened recursively from the `joinColumns` structure, with the full path used as the column header
+4. **Subquery Support** - Subqueries (e.g., `SELECT Id, (SELECT Id FROM Contacts) FROM Account`) are detected via `aggregate=true` + `joinColumns` in column metadata. Results display as expandable "▶ N records" buttons that toggle nested tables inline.
 
 This approach is more reliable than client-side SOQL parsing, especially for aggregate functions (`COUNT()`, `SUM()`) and complex relationship queries.
 
@@ -612,7 +659,9 @@ src/components/
     ├── debug-logs.js     # <debug-logs> component
     ├── debug-logs.html
     ├── flow-cleanup.js   # <flow-cleanup> component
-    └── flow-cleanup.html
+    ├── flow-cleanup.html
+    ├── schema-browser-link.js  # <schema-browser-link> component
+    └── schema-browser-link.html
 ```
 
 **Current Tools:**
@@ -626,6 +675,10 @@ src/components/
    - Search flows by API name
    - View all versions with active version highlighted
    - Delete inactive versions via Tooling API composite delete
+
+3. **Schema Browser Link** (`<schema-browser-link>`)
+   - Simple link component to open Schema Browser in new tab
+   - Opens the standalone Schema Browser page
 
 **Adding a New Utility Tool:**
 

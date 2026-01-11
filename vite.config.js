@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 
 export default defineConfig({
   // Use src as root so output paths are cleaner
@@ -7,6 +8,14 @@ export default defineConfig({
 
   // Crucial for Chrome Extensions: ensures assets load from relative paths
   base: './',
+
+  plugins: [
+    monacoEditorPlugin({
+      // Only include the languages we need to reduce bundle size
+      // sql, java (for apex), javascript, typescript, html, css, xml, json
+      languages: ['sql', 'java', 'javascript', 'typescript', 'html', 'css', 'xml', 'json']
+    })
+  ],
 
   build: {
     // Output to dist at project root

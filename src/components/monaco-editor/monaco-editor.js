@@ -1,18 +1,8 @@
 // Monaco Editor Web Component
 import * as monaco from 'monaco-editor';
 
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker&inline';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker&inline';
-
-// Configure Monaco workers (only once)
-if (!self.MonacoEnvironment) {
-    self.MonacoEnvironment = {
-        getWorker: function (_, label) {
-            if (label === 'json') return new jsonWorker();
-            return new editorWorker();
-        }
-    };
-}
+// Worker configuration is now handled by vite-plugin-monaco-editor
+// which only includes the languages we need (sql, java, javascript, typescript, html, css, xml, json)
 
 const defaultOptions = {
     theme: 'vs-dark',

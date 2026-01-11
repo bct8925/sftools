@@ -218,8 +218,8 @@ class RecordPage extends HTMLElement {
                 if (field.relationshipName && field.referenceTo?.length > 0) {
                     const related = record[field.relationshipName];
                     const relatedType = field.referenceTo[0];
-                    const nameField = this.nameFieldMap[relatedType] || 'Name';
-                    const relatedName = related?.[nameField];
+                    const nameField = this.nameFieldMap[relatedType];
+                    const relatedName = nameField ? related?.[nameField] : null;
                     if (relatedName) {
                         const displayType = field.name === 'OwnerId' ? 'User/Group' : relatedType;
                         const url = `record.html?objectType=${encodeURIComponent(relatedType)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(this.connectionId)}`;
@@ -245,8 +245,8 @@ class RecordPage extends HTMLElement {
                 if (field.relationshipName && field.referenceTo?.length > 0) {
                     const related = record[field.relationshipName];
                     const relatedType = field.referenceTo[0];
-                    const nameField = this.nameFieldMap[relatedType] || 'Name';
-                    const relatedName = related?.[nameField];
+                    const nameField = this.nameFieldMap[relatedType];
+                    const relatedName = nameField ? related?.[nameField] : null;
                     if (relatedName) {
                         const displayType = field.name === 'OwnerId' ? 'User/Group' : relatedType;
                         return `${relatedName} (${displayType})`;

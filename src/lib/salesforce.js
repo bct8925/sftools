@@ -217,6 +217,15 @@ export async function executeQueryWithColumns(soql, useToolingApi = false) {
 // ============================================================
 
 /**
+ * Get global describe metadata (all objects)
+ * @returns {Promise<{sobjects: array}>}
+ */
+export async function getGlobalDescribe() {
+    const response = await salesforceRequest(`/services/data/v${API_VERSION}/sobjects`);
+    return response.json;
+}
+
+/**
  * Get object describe metadata (field definitions, etc.)
  * @param {string} objectType - The SObject API name
  * @returns {Promise<object>} Describe result with fields array

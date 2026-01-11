@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 
 export default defineConfig({
   // Use src as root so output paths are cleaner
@@ -9,18 +8,13 @@ export default defineConfig({
   // Crucial for Chrome Extensions: ensures assets load from relative paths
   base: './',
 
-  plugins: [
-    monacoEditorPlugin({
-      // Only include JSON worker - other languages are syntax-only
-      // Languages are manually imported in src/lib/monaco-custom.js
-      languageWorkers: ['json']
-    })
-  ],
+  plugins: [],
 
   build: {
     // Output to dist at project root
     outDir: '../dist',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 5000,
     rollupOptions: {
       input: {
         // Main pages

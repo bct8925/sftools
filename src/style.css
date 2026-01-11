@@ -8,6 +8,17 @@
     --text-muted: #54698d;
     --border-color: #dddbda;
     --nav-bg: #ffffff;
+
+    /* Extended palette */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f4f6f9;
+    --bg-hover: #f3f3f3;
+    --bg-selected: #e0f0ff;
+    --brand-color: #0070d2;
+    --text-primary: #16325c;
+    --text-secondary: #54698d;
+    --error-color: #c23934;
+    --success-color: #04844b;
 }
 
 html {
@@ -190,6 +201,11 @@ body {
 .button-brand:hover {
     background-color: var(--primary-hover);
     border-color: var(--primary-hover);
+}
+
+.button-brand:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .button-neutral {

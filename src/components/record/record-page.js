@@ -140,7 +140,10 @@ class RecordPage extends HTMLElement {
             const previewText = this.formatPreviewText(value, field, record);
             const isEditable = field.updateable && !field.calculated;
 
-            const typeDisplay = field.calculated ? `${field.type} (formula)` : field.type;
+            let typeDisplay = field.type;
+            if (field.calculated) {
+                typeDisplay = field.calculatedFormula ? `${field.type} (formula)` : `${field.type} (rollup)`;
+            }
 
             let valueHtml;
             if (field.type === 'picklist' && isEditable) {

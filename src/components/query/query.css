@@ -396,3 +396,86 @@
     display: none;
 }
 
+/* ============================================================
+   Subquery Rendering
+   ============================================================ */
+
+.query-subquery-cell {
+    padding: 4px 8px !important;
+}
+
+.query-subquery-toggle {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.query-subquery-toggle:hover {
+    background: #005fb8;
+}
+
+.query-subquery-empty {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.query-subquery-detail {
+    background-color: #f8f9fa;
+}
+
+.query-subquery-detail td {
+    padding: 12px !important;
+}
+
+.query-subquery-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.query-subquery-table th,
+.query-subquery-table td {
+    border-bottom: 1px solid #e9ecef;
+    border-right: 1px solid #e9ecef;
+    padding: 6px 10px;
+    text-align: left;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.query-subquery-table th {
+    background-color: #e9ecef;
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.query-subquery-table th:last-child,
+.query-subquery-table td:last-child {
+    border-right: 0;
+}
+
+.query-subquery-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.query-subquery-table tr:hover {
+    background-color: #f5f5f5;
+}
+

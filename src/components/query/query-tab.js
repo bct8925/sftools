@@ -423,9 +423,25 @@ LIMIT 10`);
             const columnName = col.columnName;
             const path = prefix ? `${prefix}.${columnName}` : columnName;
 
-            if (col.joinColumns && col.joinColumns.length > 0) {
+            // Check if this is a subquery (has aggregate=true and joinColumns)
+            // Subqueries in Salesforce are marked as aggregate even though they're not actual aggregates
+            const isSubquery = col.aggregate && col.joinColumns && col.joinColumns.length > 0;
+
+            if (isSubquery) {
+                // For subqueries, add a single column representing the entire subquery
+                const title = prefix ? path : col.displayName;
+                columns.push({
+                    title: title,
+                    path: path,
+                    aggregate: false,
+                    isSubquery: true,
+                    subqueryColumns: col.joinColumns // Store subquery columns for later rendering
+                });
+            } else if (col.joinColumns && col.joinColumns.length > 0) {
+                // Regular parent relationship - flatten it
                 columns.push(...this.flattenColumnMetadata(col.joinColumns, path));
             } else {
+                // Regular scalar column
                 const title = prefix ? path : col.displayName;
                 columns.push({
                     title: title,
@@ -716,13 +732,22 @@ LIMIT 10`);
         table.appendChild(thead);
 
         const tbody = document.createElement('tbody');
-        for (const record of tabData.records) {
+        for (let i = 0; i < tabData.records.length; i++) {
+            const record = tabData.records[i];
             const row = document.createElement('tr');
+            row.dataset.recordIndex = i;
+
             for (const col of tabData.columns) {
                 const td = document.createElement('td');
                 const value = this.getValueByPath(record, col.path);
-                td.textContent = this.formatCellValue(value, col);
-                td.title = this.formatCellValue(value, col);
+
+                if (col.isSubquery) {
+                    // Render subquery cell with expand/collapse functionality
+                    this.renderSubqueryCell(td, value, col, row);
+                } else {
+                    td.textContent = this.formatCellValue(value, col);
+                    td.title = this.formatCellValue(value, col);
+                }
                 row.appendChild(td);
             }
             tbody.appendChild(row);
@@ -731,6 +756,103 @@ LIMIT 10`);
 
         this.resultsContainer.innerHTML = '';
         this.resultsContainer.appendChild(table);
+    }
+
+    renderSubqueryCell(td, value, col, parentRow) {
+        td.className = 'query-subquery-cell';
+
+        if (!value || !value.records || value.records.length === 0) {
+            td.textContent = '(0 records)';
+            td.classList.add('query-subquery-empty');
+            return;
+        }
+
+        const count = value.totalSize || value.records.length;
+        const button = document.createElement('button');
+        button.className = 'query-subquery-toggle';
+        button.textContent = `▶ ${count} record${count !== 1 ? 's' : ''}`;
+        button.dataset.expanded = 'false';
+
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isExpanded = button.dataset.expanded === 'true';
+
+            if (isExpanded) {
+                // Collapse - remove the detail row
+                button.textContent = `▶ ${count} record${count !== 1 ? 's' : ''}`;
+                button.dataset.expanded = 'false';
+                const detailRow = parentRow.nextElementSibling;
+                if (detailRow && detailRow.classList.contains('query-subquery-detail')) {
+                    detailRow.remove();
+                }
+            } else {
+                // Expand - insert detail row
+                button.textContent = `▼ ${count} record${count !== 1 ? 's' : ''}`;
+                button.dataset.expanded = 'true';
+                this.insertSubqueryDetailRow(parentRow, value, col);
+            }
+        });
+
+        td.appendChild(button);
+    }
+
+    insertSubqueryDetailRow(parentRow, subqueryData, col) {
+        // Remove existing detail row if any
+        const existingDetail = parentRow.nextElementSibling;
+        if (existingDetail && existingDetail.classList.contains('query-subquery-detail')) {
+            existingDetail.remove();
+        }
+
+        const detailRow = document.createElement('tr');
+        detailRow.className = 'query-subquery-detail';
+
+        const detailCell = document.createElement('td');
+        detailCell.colSpan = parentRow.children.length;
+
+        // Create nested table for subquery results
+        const nestedTable = document.createElement('table');
+        nestedTable.className = 'query-subquery-table';
+
+        // Get column names from subqueryColumns metadata
+        const subqueryColumns = col.subqueryColumns || [];
+        const flattenedSubCols = this.flattenColumnMetadata(subqueryColumns);
+
+        // If no metadata, infer from first record
+        const columns = flattenedSubCols.length > 0
+            ? flattenedSubCols
+            : this.extractColumnsFromRecord(subqueryData.records[0]);
+
+        // Build header
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        for (const subCol of columns) {
+            const th = document.createElement('th');
+            th.textContent = subCol.title;
+            headerRow.appendChild(th);
+        }
+        thead.appendChild(headerRow);
+        nestedTable.appendChild(thead);
+
+        // Build rows
+        const tbody = document.createElement('tbody');
+        for (const record of subqueryData.records) {
+            const row = document.createElement('tr');
+            for (const subCol of columns) {
+                const td = document.createElement('td');
+                const value = this.getValueByPath(record, subCol.path);
+                td.textContent = this.formatCellValue(value, subCol);
+                td.title = this.formatCellValue(value, subCol);
+                row.appendChild(td);
+            }
+            tbody.appendChild(row);
+        }
+        nestedTable.appendChild(tbody);
+
+        detailCell.appendChild(nestedTable);
+        detailRow.appendChild(detailCell);
+
+        // Insert after parent row
+        parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
     }
 
     formatCellValue(value, col) {

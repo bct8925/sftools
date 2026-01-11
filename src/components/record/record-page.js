@@ -24,6 +24,10 @@ class RecordPage extends HTMLElement {
     refreshBtn = null;
     changeCountEl = null;
     openInOrgBtn = null;
+    richTextModalEl = null;
+    modalFieldInfoEl = null;
+    modalContentEl = null;
+    modalCloseBtnEl = null;
 
     connectedCallback() {
         this.innerHTML = template;
@@ -41,12 +45,31 @@ class RecordPage extends HTMLElement {
         this.refreshBtn = this.querySelector('#refreshBtn');
         this.changeCountEl = this.querySelector('#changeCount');
         this.openInOrgBtn = this.querySelector('#openInOrgBtn');
+        this.richTextModalEl = this.querySelector('#richTextModal');
+        this.modalFieldInfoEl = this.querySelector('#modalFieldInfo');
+        this.modalContentEl = this.querySelector('#modalContent');
+        this.modalCloseBtnEl = this.querySelector('#modalCloseBtn');
     }
 
     attachEventListeners() {
         this.saveBtn.addEventListener('click', () => this.saveChanges());
         this.refreshBtn.addEventListener('click', () => this.loadRecord());
         this.openInOrgBtn.addEventListener('click', () => this.openInOrg());
+
+        // Modal event listeners
+        this.modalCloseBtnEl.addEventListener('click', () => this.closeRichTextModal());
+        this.richTextModalEl.addEventListener('click', (e) => {
+            if (e.target === this.richTextModalEl) {
+                this.closeRichTextModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.richTextModalEl.classList.contains('show')) {
+                this.closeRichTextModal();
+            }
+        });
     }
 
     async initialize() {
@@ -183,6 +206,11 @@ class RecordPage extends HTMLElement {
         this.fieldsContainer.querySelectorAll('select.field-input').forEach(select => {
             select.addEventListener('change', (e) => this.handleFieldChange(e.target));
         });
+
+        // Add event listeners for preview buttons
+        this.fieldsContainer.querySelectorAll('.field-preview-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => this.handlePreviewClick(e.target));
+        });
     }
 
     formatValue(value, field) {
@@ -206,6 +234,12 @@ class RecordPage extends HTMLElement {
 
     formatPreviewHtml(value, field, record) {
         if (value === null || value === undefined) return '';
+
+        // Check if this is a rich text/textarea field that should have a preview button
+        const richTextTypes = ['textarea', 'html', 'encryptedstring'];
+        if (richTextTypes.includes(field.type) && value && String(value).trim()) {
+            return `<button class="field-preview-btn" data-field="${field.name}" data-field-label="${this.escapeAttr(field.label)}">Preview</button>`;
+        }
 
         switch (field.type) {
             case 'boolean':
@@ -400,6 +434,38 @@ class RecordPage extends HTMLElement {
             .replace(/'/g, '&#39;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
+    }
+
+    handlePreviewClick(button) {
+        const fieldName = button.dataset.field;
+        const fieldLabel = button.dataset.fieldLabel;
+        const field = this.fieldDescribe[fieldName];
+        const value = this.currentValues[fieldName];
+
+        if (!value) return;
+
+        // Set modal header
+        this.modalFieldInfoEl.textContent = `${fieldLabel} (${fieldName})`;
+
+        // Set modal content
+        // For security, we'll display HTML content as-is since it comes from Salesforce
+        // If field type is 'html', render as HTML; otherwise show as plain text
+        if (field.type === 'html') {
+            this.modalContentEl.innerHTML = value;
+        } else {
+            // For textarea and encryptedstring, display as plain text with preserved formatting
+            this.modalContentEl.textContent = value;
+            this.modalContentEl.style.whiteSpace = 'pre-wrap';
+        }
+
+        // Show modal
+        this.richTextModalEl.classList.add('show');
+    }
+
+    closeRichTextModal() {
+        this.richTextModalEl.classList.remove('show');
+        this.modalContentEl.innerHTML = '';
+        this.modalContentEl.style.whiteSpace = '';
     }
 }
 

@@ -6,7 +6,7 @@ import '../monaco-editor/monaco-editor.js';
 import '../button-dropdown/button-dropdown.js';
 import '../button-icon/button-icon.js';
 import '../modal-popup/modal-popup.js';
-import { executeQueryWithColumns, executeBulkQueryExport } from '../../lib/salesforce.js';
+import { executeQueryWithColumns, executeBulkQueryExport, getObjectDescribe, updateRecord } from '../../lib/salesforce.js';
 
 const MAX_HISTORY = 30;
 
@@ -22,9 +22,11 @@ class QueryTab extends HTMLElement {
     tabsContainer = null;
     resultsContainer = null;
     toolingCheckbox = null;
+    editingCheckbox = null;
     statusSpan = null;
     searchInput = null;
     exportBtn = null;
+    saveBtn = null;
 
     // Button components
     historyBtn = null;
@@ -54,6 +56,7 @@ class QueryTab extends HTMLElement {
         this.tabsContainer = this.querySelector('.query-tabs');
         this.resultsContainer = this.querySelector('.query-results');
         this.toolingCheckbox = this.querySelector('.query-tooling-checkbox');
+        this.editingCheckbox = this.querySelector('.query-editing-checkbox');
         this.statusSpan = this.querySelector('.query-status');
 
         // Button components
@@ -71,8 +74,9 @@ class QueryTab extends HTMLElement {
         // Search elements
         this.searchInput = this.querySelector('.query-search-input');
 
-        // Export button (inside results dropdown)
+        // Export and Save buttons (inside results dropdown)
         this.exportBtn = this.querySelector('.query-export-btn');
+        this.saveBtn = this.querySelector('.query-save-btn');
 
         // Setup action button options
         this.actionBtn.setOptions([
@@ -116,6 +120,18 @@ LIMIT 10`);
         this.exportBtn.addEventListener('click', () => {
             this.exportCurrentResults();
             this.resultsBtn.close();
+        });
+
+        // Save changes handler
+        this.saveBtn.addEventListener('click', () => {
+            this.saveChanges();
+            this.resultsBtn.close();
+        });
+
+        // Editing checkbox handler
+        this.editingCheckbox.addEventListener('change', () => {
+            this.renderResults();
+            this.updateSaveButtonState();
         });
     }
 
@@ -523,6 +539,23 @@ LIMIT 10`);
                 tabData.columns = [];
             }
 
+            // Check if query is editable (has Id column, non-aggregate, single object)
+            tabData.isEditable = this.checkIfEditable(tabData);
+
+            // Fetch field metadata if editable
+            if (tabData.isEditable && tabData.objectName) {
+                try {
+                    const describe = await getObjectDescribe(tabData.objectName);
+                    tabData.fieldDescribe = {};
+                    for (const field of describe.fields) {
+                        tabData.fieldDescribe[field.name] = field;
+                    }
+                } catch (err) {
+                    console.warn('Failed to fetch field metadata:', err);
+                    tabData.isEditable = false;
+                }
+            }
+
             this.updateStatus(`${tabData.totalSize} record${tabData.totalSize !== 1 ? 's' : ''}`, 'success');
             this.renderTabs();
 
@@ -530,6 +563,7 @@ LIMIT 10`);
             tabData.records = [];
             tabData.columns = [];
             tabData.error = error.message;
+            tabData.isEditable = false;
             this.updateStatus('Error', 'error');
             console.error('Query error:', error);
         }
@@ -538,6 +572,22 @@ LIMIT 10`);
         // Clear search when results change
         this.clearRowFilter();
         this.updateExportButtonState();
+        this.updateSaveButtonState();
+    }
+
+    checkIfEditable(tabData) {
+        // Must have Id column
+        const hasIdColumn = tabData.columns.some(col => col.path === 'Id');
+        if (!hasIdColumn) return false;
+
+        // Must not have aggregate functions
+        const hasAggregate = tabData.columns.some(col => col.aggregate);
+        if (hasAggregate) return false;
+
+        // Must have a single object name
+        if (!tabData.objectName) return false;
+
+        return true;
     }
 
     // ============================================================
@@ -553,7 +603,10 @@ LIMIT 10`);
             objectName: null,
             records: [],
             columns: [],
-            totalSize: 0
+            totalSize: 0,
+            fieldDescribe: null,
+            modifiedRecords: new Map(), // recordId -> { fieldName: newValue }
+            isEditable: false
         };
 
         this.queryTabs.set(normalizedQuery, tabData);
@@ -702,8 +755,13 @@ LIMIT 10`);
             return;
         }
 
+        const isEditMode = this.editingCheckbox.checked && tabData.isEditable;
+
         const table = document.createElement('table');
         table.className = 'query-results-table';
+        if (isEditMode) {
+            table.classList.add('query-results-editable');
+        }
 
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
@@ -717,12 +775,32 @@ LIMIT 10`);
 
         const tbody = document.createElement('tbody');
         for (const record of tabData.records) {
+            const recordId = this.getValueByPath(record, 'Id');
             const row = document.createElement('tr');
+            row.dataset.recordId = recordId;
+
             for (const col of tabData.columns) {
                 const td = document.createElement('td');
                 const value = this.getValueByPath(record, col.path);
-                td.textContent = this.formatCellValue(value, col);
-                td.title = this.formatCellValue(value, col);
+
+                if (isEditMode && this.isFieldEditable(col.path, tabData)) {
+                    // Render as editable field
+                    const field = tabData.fieldDescribe[col.path];
+                    const modifiedValue = tabData.modifiedRecords.get(recordId)?.[col.path];
+                    const displayValue = modifiedValue !== undefined ? modifiedValue : value;
+
+                    const input = this.createEditableInput(field, displayValue, recordId, col.path);
+                    td.appendChild(input);
+
+                    if (modifiedValue !== undefined) {
+                        td.classList.add('modified');
+                    }
+                } else {
+                    // Render as read-only text
+                    td.textContent = this.formatCellValue(value, col);
+                    td.title = this.formatCellValue(value, col);
+                }
+
                 row.appendChild(td);
             }
             tbody.appendChild(row);
@@ -731,6 +809,11 @@ LIMIT 10`);
 
         this.resultsContainer.innerHTML = '';
         this.resultsContainer.appendChild(table);
+
+        // Attach event listeners to editable inputs
+        if (isEditMode) {
+            this.attachEditableListeners(tabData);
+        }
     }
 
     formatCellValue(value, col) {
@@ -877,6 +960,217 @@ LIMIT 10`);
         const tabData = this.getTabDataById(this.activeTabId);
         const hasResults = tabData && tabData.records && tabData.records.length > 0;
         this.exportBtn.disabled = !hasResults;
+    }
+
+    updateSaveButtonState() {
+        const tabData = this.getTabDataById(this.activeTabId);
+        const isEditMode = this.editingCheckbox.checked && tabData?.isEditable;
+        const hasModifications = tabData && tabData.modifiedRecords.size > 0;
+        this.saveBtn.disabled = !isEditMode || !hasModifications;
+    }
+
+    // ============================================================
+    // Field Editing
+    // ============================================================
+
+    isFieldEditable(fieldPath, tabData) {
+        // Only direct fields (not relationships) are editable
+        if (fieldPath.includes('.')) return false;
+
+        const field = tabData.fieldDescribe?.[fieldPath];
+        if (!field) return false;
+
+        return field.updateable && !field.calculated;
+    }
+
+    createEditableInput(field, value, recordId, fieldName) {
+        const formattedValue = this.formatValueForInput(value, field);
+
+        if (field.type === 'boolean') {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'query-field-input';
+            checkbox.checked = value === true;
+            checkbox.dataset.recordId = recordId;
+            checkbox.dataset.fieldName = fieldName;
+            checkbox.dataset.fieldType = field.type;
+            return checkbox;
+        }
+
+        if (field.type === 'picklist') {
+            const select = document.createElement('select');
+            select.className = 'query-field-input';
+            select.dataset.recordId = recordId;
+            select.dataset.fieldName = fieldName;
+            select.dataset.fieldType = field.type;
+
+            const noneOption = document.createElement('option');
+            noneOption.value = '';
+            noneOption.textContent = '--None--';
+            select.appendChild(noneOption);
+
+            for (const pv of (field.picklistValues || [])) {
+                if (pv.active) {
+                    const option = document.createElement('option');
+                    option.value = pv.value;
+                    option.textContent = pv.label;
+                    if (pv.value === value) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                }
+            }
+
+            return select;
+        }
+
+        // Default: text input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'query-field-input';
+        input.value = formattedValue;
+        input.dataset.recordId = recordId;
+        input.dataset.fieldName = fieldName;
+        input.dataset.fieldType = field.type;
+        return input;
+    }
+
+    formatValueForInput(value, field) {
+        if (value === null || value === undefined) return '';
+
+        switch (field.type) {
+            case 'boolean':
+                return value ? 'true' : 'false';
+            case 'datetime':
+            case 'date':
+            case 'double':
+            case 'currency':
+            case 'percent':
+            case 'int':
+                return String(value);
+            default:
+                return String(value);
+        }
+    }
+
+    parseValueFromInput(stringValue, field) {
+        if (stringValue === '' || stringValue === null) return null;
+
+        switch (field.type) {
+            case 'boolean':
+                return stringValue === 'true' || stringValue === true;
+            case 'int':
+                const intVal = parseInt(stringValue, 10);
+                return isNaN(intVal) ? null : intVal;
+            case 'double':
+            case 'currency':
+            case 'percent':
+                const floatVal = parseFloat(stringValue);
+                return isNaN(floatVal) ? null : floatVal;
+            default:
+                return stringValue;
+        }
+    }
+
+    attachEditableListeners(tabData) {
+        const inputs = this.resultsContainer.querySelectorAll('.query-field-input');
+
+        inputs.forEach(input => {
+            const handler = (e) => {
+                const recordId = e.target.dataset.recordId;
+                const fieldName = e.target.dataset.fieldName;
+                const fieldType = e.target.dataset.fieldType;
+                const field = tabData.fieldDescribe[fieldName];
+
+                let newValue;
+                if (fieldType === 'boolean') {
+                    newValue = e.target.checked;
+                } else {
+                    newValue = this.parseValueFromInput(e.target.value, field);
+                }
+
+                // Get original value from record
+                const record = tabData.records.find(r => this.getValueByPath(r, 'Id') === recordId);
+                const originalValue = this.getValueByPath(record, fieldName);
+
+                // Compare values
+                const isChanged = (originalValue === null || originalValue === undefined)
+                    ? (newValue !== null && newValue !== undefined && newValue !== '')
+                    : String(originalValue) !== String(newValue ?? '');
+
+                if (isChanged) {
+                    // Mark as modified
+                    if (!tabData.modifiedRecords.has(recordId)) {
+                        tabData.modifiedRecords.set(recordId, {});
+                    }
+                    tabData.modifiedRecords.get(recordId)[fieldName] = newValue;
+                    e.target.closest('td').classList.add('modified');
+                } else {
+                    // Remove modification
+                    if (tabData.modifiedRecords.has(recordId)) {
+                        delete tabData.modifiedRecords.get(recordId)[fieldName];
+                        if (Object.keys(tabData.modifiedRecords.get(recordId)).length === 0) {
+                            tabData.modifiedRecords.delete(recordId);
+                        }
+                    }
+                    e.target.closest('td').classList.remove('modified');
+                }
+
+                this.updateSaveButtonState();
+            };
+
+            if (input.type === 'checkbox') {
+                input.addEventListener('change', handler);
+            } else {
+                input.addEventListener('input', handler);
+            }
+        });
+    }
+
+    async saveChanges() {
+        const tabData = this.getTabDataById(this.activeTabId);
+        if (!tabData || tabData.modifiedRecords.size === 0) {
+            return;
+        }
+
+        this.updateStatus('Saving...', 'loading');
+        this.saveBtn.disabled = true;
+
+        const updatePromises = [];
+        const errors = [];
+
+        for (const [recordId, fields] of tabData.modifiedRecords.entries()) {
+            updatePromises.push(
+                updateRecord(tabData.objectName, recordId, fields)
+                    .then(() => {
+                        // Update the original record data
+                        const record = tabData.records.find(r => this.getValueByPath(r, 'Id') === recordId);
+                        if (record) {
+                            for (const [fieldName, value] of Object.entries(fields)) {
+                                record[fieldName] = value;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        errors.push({ recordId, error: error.message });
+                    })
+            );
+        }
+
+        await Promise.all(updatePromises);
+
+        if (errors.length === 0) {
+            // Clear all modifications
+            tabData.modifiedRecords.clear();
+            this.updateStatus('Saved', 'success');
+            this.renderResults();
+        } else {
+            this.updateStatus('Save Failed', 'error');
+            const errorMsg = errors.map(e => `Record ${e.recordId}: ${e.error}`).join('\n');
+            alert(`Failed to save some records:\n\n${errorMsg}`);
+        }
+
+        this.updateSaveButtonState();
     }
 }
 

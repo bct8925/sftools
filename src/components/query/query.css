@@ -396,3 +396,42 @@
     display: none;
 }
 
+/* ============================================================
+   Editable Table Styles
+   ============================================================ */
+
+.query-results-editable td {
+    padding: 4px 6px;
+}
+
+.query-field-input {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    font-size: 13px;
+    font-family: inherit;
+    background: white;
+    box-sizing: border-box;
+}
+
+.query-field-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color) inset;
+}
+
+.query-field-input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}
+
+.query-results-table td.modified {
+    background-color: #fff4e5;
+    border-left: 3px solid #ff9500;
+}
+
+.query-results-table td.modified .query-field-input {
+    background-color: #fff4e5;
+}
+

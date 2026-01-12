@@ -748,69 +748,6 @@ export async function searchProfiles(searchTerm) {
     return response.json.records || [];
 }
 
-/**
- * Grant profile access to all Apex classes
- * @param {string} profileId
- * @returns {Promise<{grantedCount: number, skippedCount: number}>}
- */
-export async function grantApexAccessToProfile(profileId) {
-    // Get all Apex classes (excluding managed packages)
-    const classQuery = encodeURIComponent('SELECT Id, Name FROM ApexClass WHERE NamespacePrefix = null');
-    const classResponse = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${classQuery}`);
-    const allClasses = classResponse.json.records || [];
-
-    if (allClasses.length === 0) {
-        return { grantedCount: 0, skippedCount: 0 };
-    }
-
-    // Get profile's permission set ID
-    const psQuery = encodeURIComponent(
-        `SELECT Id FROM PermissionSet WHERE ProfileId = '${profileId}' AND IsOwnedByProfile = true`
-    );
-    const psResponse = await salesforceRequest(`/services/data/v${API_VERSION}/query/?q=${psQuery}`);
-    const permissionSetId = psResponse.json.records?.[0]?.Id;
-
-    if (!permissionSetId) {
-        throw new Error('Could not find Permission Set for profile');
-    }
-
-    // Get existing access records
-    const accessQuery = encodeURIComponent(
-        `SELECT SetupEntityId FROM SetupEntityAccess WHERE ParentId = '${permissionSetId}' AND SetupEntityType = 'ApexClass'`
-    );
-    const accessResponse = await salesforceRequest(`/services/data/v${API_VERSION}/query/?q=${accessQuery}`);
-    const existingAccess = new Set((accessResponse.json.records || []).map(r => r.SetupEntityId));
-
-    // Filter to classes that don't already have access
-    const classesToGrant = allClasses.filter(c => !existingAccess.has(c.Id));
-    const skippedCount = allClasses.length - classesToGrant.length;
-
-    if (classesToGrant.length === 0) {
-        return { grantedCount: 0, skippedCount };
-    }
-
-    // Create SetupEntityAccess records in batches
-    let grantedCount = 0;
-    const batchSize = 200;
-
-    for (let i = 0; i < classesToGrant.length; i += batchSize) {
-        const batch = classesToGrant.slice(i, i + batchSize);
-        const records = batch.map(c => ({
-            attributes: { type: 'SetupEntityAccess' },
-            ParentId: permissionSetId,
-            SetupEntityId: c.Id
-        }));
-
-        await salesforceRequest(`/services/data/v${API_VERSION}/composite/sobjects`, {
-            method: 'POST',
-            body: JSON.stringify({ allOrNone: false, records })
-        });
-        grantedCount += batch.length;
-    }
-
-    return { grantedCount, skippedCount };
-}
-
 // ============================================================
 // Bulk API v2 - Query Export
 // ============================================================

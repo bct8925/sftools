@@ -8,9 +8,13 @@
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     flex: 0 1 auto;
     min-width: 0;
+}
+
+.query-results-btn {
+    flex-shrink: 0;
 }
 
 .query-search-input {
@@ -40,6 +44,11 @@
 
 .query-history-btn {
     margin-left: auto;
+    flex-shrink: 0;
+}
+
+.query-settings-btn {
+    flex-shrink: 0;
 }
 
 .query-history-modal .modal-content {
@@ -286,12 +295,15 @@
 .query-tab-close {
     background: none;
     border: none;
-    padding: 0 2px;
-    font-size: 14px;
+    padding: 2px;
     cursor: pointer;
     opacity: 0.6;
     color: inherit;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .query-tab-refresh:hover,
@@ -358,6 +370,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.query-results-table td {
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
 }
 
 .query-results-table th {
@@ -458,6 +474,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.query-subquery-table td {
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
 }
 
 .query-subquery-table th {

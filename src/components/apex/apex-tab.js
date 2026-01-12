@@ -79,7 +79,7 @@ for (Account acc : accounts) {
         this.codeEditor.addEventListener('execute', () => this.executeApex());
 
         // History modal
-        this.historyBtn.addEventListener('toggle', () => this.historyModal.toggle());
+        this.historyBtn.addEventListener('click', () => this.historyModal.toggle());
 
         // History dropdown tab switching
         this.dropdownTabs.forEach(tab => {

@@ -1,14 +1,21 @@
 /* Modal Popup Component */
 
 modal-popup {
-    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 999;
 }
 
 modal-popup.open {
-    display: block;
+    pointer-events: auto;
 }
 
 modal-popup .modal-backdrop {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -18,7 +25,12 @@ modal-popup .modal-backdrop {
     z-index: 999;
 }
 
+modal-popup.open .modal-backdrop {
+    display: block;
+}
+
 modal-popup .modal-content {
+    display: none;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -29,4 +41,8 @@ modal-popup .modal-content {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
     z-index: 1000;
     overflow: hidden;
+}
+
+modal-popup.open .modal-content {
+    display: block;
 }

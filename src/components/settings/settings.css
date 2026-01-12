@@ -50,13 +50,25 @@
 }
 
 .settings-connection-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
     padding: 2px 6px;
     background: #e0f3ff;
     color: var(--primary-color);
     border-radius: 3px;
     font-size: 0.75rem;
     font-weight: 500;
+    margin-right: 4px;
+}
+
+.settings-connection-badge.refresh-enabled {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.settings-connection-badge svg {
+    flex-shrink: 0;
 }
 
 .settings-connection-actions {

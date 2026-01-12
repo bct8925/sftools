@@ -44,6 +44,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Apply feature gating based on proxy status
     updateFeatureGating();
 
+    // Listen for proxy status changes
+    document.addEventListener('proxy-status-changed', async (e) => {
+        await checkProxyStatus(); // Update PROXY_CONNECTED state
+        updateFeatureGating();     // Re-apply feature gating
+    });
+
     // Notify components that auth is ready
     document.dispatchEvent(new CustomEvent('auth-ready'));
 });
@@ -272,30 +278,34 @@ function updateFeatureGating() {
         eventsNavItem.classList.add('tab-disabled');
         eventsContent.classList.add('feature-disabled');
 
-        // Add overlay with message
-        const overlay = document.createElement('div');
-        overlay.className = 'feature-gate-overlay';
-        overlay.innerHTML = `
-            <div class="feature-gate-message">
-                <h3>Local Proxy Required</h3>
-                <p>Platform Events streaming requires the local proxy to be installed and connected.</p>
-                <button id="feature-gate-settings-btn">Open Settings</button>
-            </div>
-        `;
-        eventsContent.appendChild(overlay);
+        // Add overlay with message if not already present
+        if (!eventsContent.querySelector('.feature-gate-overlay')) {
+            const overlay = document.createElement('div');
+            overlay.className = 'feature-gate-overlay';
+            overlay.innerHTML = `
+                <div class="feature-gate-message">
+                    <h3>Local Proxy Required</h3>
+                    <p>Platform Events streaming requires the local proxy to be installed and connected.</p>
+                    <button id="feature-gate-settings-btn">Open Settings</button>
+                </div>
+            `;
+            eventsContent.appendChild(overlay);
 
-        // Settings button handler - switch to settings tab
-        overlay.querySelector('#feature-gate-settings-btn').addEventListener('click', () => {
-            switchToSettingsTab();
-        });
+            // Settings button handler - switch to settings tab
+            overlay.querySelector('#feature-gate-settings-btn').addEventListener('click', () => {
+                switchToSettingsTab();
+            });
+        }
+    } else {
+        // Enable the events tab
+        eventsNavItem.classList.remove('tab-disabled');
+        eventsContent.classList.remove('feature-disabled');
 
-        // Prevent tab switching to disabled tab
-        eventsNavItem.addEventListener('click', (e) => {
-            if (eventsNavItem.classList.contains('tab-disabled')) {
-                e.stopPropagation();
-                e.preventDefault();
-            }
-        }, true);
+        // Remove overlay if present
+        const overlay = eventsContent.querySelector('.feature-gate-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
     }
 }
 

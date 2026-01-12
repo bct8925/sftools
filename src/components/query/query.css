@@ -13,6 +13,10 @@
     min-width: 0;
 }
 
+.query-results-btn {
+    flex-shrink: 0;
+}
+
 .query-search-input {
     width: 120px;
     min-width: 50px;
@@ -40,6 +44,11 @@
 
 .query-history-btn {
     margin-left: auto;
+    flex-shrink: 0;
+}
+
+.query-settings-btn {
+    flex-shrink: 0;
 }
 
 .query-history-modal .modal-content {

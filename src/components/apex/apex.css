@@ -40,6 +40,7 @@
 
 .apex-history-btn {
     margin-left: auto;
+    flex-shrink: 0;
 }
 
 .apex-history-modal .modal-content {

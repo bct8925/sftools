@@ -6,6 +6,7 @@ import { monaco } from '../monaco-editor/monaco-editor.js';
 import { setActiveConnection } from '../../lib/utils.js';
 import { getGlobalDescribe, getObjectDescribe, getFormulaFieldMetadata, updateFormulaField } from '../../lib/salesforce.js';
 import { escapeHtml } from '../../lib/text-utils.js';
+import { icons, replaceIcons } from '../../lib/icons.js';
 
 // Completion provider state - shared with Monaco
 let completionState = {
@@ -251,7 +252,7 @@ class SchemaPage extends HTMLElement {
     currentFormulaField = null;
 
     connectedCallback() {
-        this.innerHTML = template;
+        this.innerHTML = replaceIcons(template);
         this.initElements();
         this.attachEventListeners();
         this.initialize();
@@ -513,11 +514,7 @@ class SchemaPage extends HTMLElement {
                     <div class="field-item-actions">
                         ${isFormulaField ? `
                             <button class="field-menu-button" data-field-name="${this.escapeAttr(field.name)}" aria-label="More options">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                    <circle cx="8" cy="3" r="1.5"/>
-                                    <circle cx="8" cy="8" r="1.5"/>
-                                    <circle cx="8" cy="13" r="1.5"/>
-                                </svg>
+                                ${icons.verticalDots}
                             </button>
                             <div class="field-menu" data-field-name="${this.escapeAttr(field.name)}">
                                 <div class="field-menu-item" data-action="edit" data-field-name="${this.escapeAttr(field.name)}">Edit</div>

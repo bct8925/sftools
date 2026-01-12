@@ -12,6 +12,7 @@ import {
 } from '../../lib/utils.js';
 import { clearDescribeCache } from '../../lib/salesforce.js';
 import { escapeHtml } from '../../lib/text-utils.js';
+import { icons } from '../../lib/icons.js';
 
 class SettingsTab extends HTMLElement {
     // Proxy DOM references
@@ -147,7 +148,7 @@ class SettingsTab extends HTMLElement {
     createConnectionCardHtml(conn, activeId) {
         const isActive = conn.id === activeId;
         const refreshBadge = conn.refreshToken
-            ? '<span class="settings-connection-badge refresh-enabled" title="Auto-refresh enabled"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Auto-refresh</span>'
+            ? `<span class="settings-connection-badge refresh-enabled" title="Auto-refresh enabled">${icons.refreshSmall} Auto-refresh</span>`
             : '';
         const customAppBadge = conn.clientId
             ? '<span class="settings-connection-badge">Custom App</span>'
@@ -164,23 +165,13 @@ class SettingsTab extends HTMLElement {
                 </div>
                 <div class="settings-connection-actions">
                     <button class="settings-connection-edit" title="Edit">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
+                        ${icons.edit}
                     </button>
                     <button class="settings-connection-reauth" title="Re-authorize">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M23 4v6h-6"></path>
-                            <path d="M1 20v-6h6"></path>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
+                        ${icons.refresh}
                     </button>
                     <button class="settings-connection-delete" title="Delete">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
+                        ${icons.trash}
                     </button>
                 </div>
             </div>

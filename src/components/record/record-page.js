@@ -5,6 +5,7 @@ import { setActiveConnection } from '../../lib/utils.js';
 import { getObjectDescribe, getRecordWithRelationships, updateRecord } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { escapeHtml } from '../../lib/text-utils.js';
+import { replaceIcons } from '../../lib/icons.js';
 
 class RecordPage extends HTMLElement {
     // State
@@ -32,7 +33,7 @@ class RecordPage extends HTMLElement {
     modalCloseBtnEl = null;
 
     connectedCallback() {
-        this.innerHTML = template;
+        this.innerHTML = replaceIcons(template);
         this.initElements();
         this.attachEventListeners();
         this.initialize();

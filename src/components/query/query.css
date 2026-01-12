@@ -6,6 +6,7 @@
 
 .query-results-search {
     margin-left: auto;
+    margin-right: 8px;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -40,6 +41,10 @@
 
 .query-history-btn {
     margin-left: auto;
+}
+
+.query-settings-btn {
+    margin-left: 8px;
 }
 
 .query-history-modal .modal-content {

@@ -505,30 +505,11 @@ LIMIT 10`);
             tabData.totalSize = result.totalSize;
             tabData.objectName = result.entityName;
 
-            if (result.columnMetadata.length > 0) {
-                tabData.columns = this.flattenColumnMetadata(result.columnMetadata);
-            } else if (tabData.records.length > 0) {
-                tabData.columns = this.extractColumnsFromRecord(tabData.records[0]);
-            } else {
-                tabData.columns = [];
-            }
+            this.processColumnMetadata(result, tabData);
 
-            // Check if query is editable (has Id column, non-aggregate, single object)
             tabData.isEditable = this.checkIfEditable(tabData);
 
-            // Fetch field metadata if editable
-            if (tabData.isEditable && tabData.objectName) {
-                try {
-                    const describe = await getObjectDescribe(tabData.objectName);
-                    tabData.fieldDescribe = {};
-                    for (const field of describe.fields) {
-                        tabData.fieldDescribe[field.name] = field;
-                    }
-                } catch (err) {
-                    console.warn('Failed to fetch field metadata:', err);
-                    tabData.isEditable = false;
-                }
-            }
+            await this.fetchFieldMetadataIfEditable(tabData);
 
             this.updateStatus(`${tabData.totalSize} record${tabData.totalSize !== 1 ? 's' : ''}`, 'success');
             this.renderTabs();
@@ -543,10 +524,36 @@ LIMIT 10`);
         }
 
         this.renderResults();
-        // Clear search when results change
         this.clearRowFilter();
         this.updateExportButtonState();
         this.updateSaveButtonState();
+    }
+
+    processColumnMetadata(result, tabData) {
+        if (result.columnMetadata.length > 0) {
+            tabData.columns = this.flattenColumnMetadata(result.columnMetadata);
+        } else if (tabData.records.length > 0) {
+            tabData.columns = this.extractColumnsFromRecord(tabData.records[0]);
+        } else {
+            tabData.columns = [];
+        }
+    }
+
+    async fetchFieldMetadataIfEditable(tabData) {
+        if (!tabData.isEditable || !tabData.objectName) {
+            return;
+        }
+
+        try {
+            const describe = await getObjectDescribe(tabData.objectName);
+            tabData.fieldDescribe = {};
+            for (const field of describe.fields) {
+                tabData.fieldDescribe[field.name] = field;
+            }
+        } catch (err) {
+            console.warn('Failed to fetch field metadata:', err);
+            tabData.isEditable = false;
+        }
     }
 
     checkIfEditable(tabData) {
@@ -726,81 +733,115 @@ LIMIT 10`);
         }
 
         const isEditMode = this.editingCheckbox.checked && tabData.isEditable;
+        const table = this.createResultsTable(tabData, isEditMode);
 
+        this.resultsContainer.innerHTML = '';
+        this.resultsContainer.appendChild(table);
+
+        if (isEditMode) {
+            this.attachEditableListeners(tabData);
+        }
+    }
+
+    createResultsTable(tabData, isEditMode) {
         const table = document.createElement('table');
         table.className = 'query-results-table';
         if (isEditMode) {
             table.classList.add('query-results-editable');
         }
 
+        table.appendChild(this.createTableHeader(tabData.columns));
+        table.appendChild(this.createTableBody(tabData, isEditMode));
+
+        return table;
+    }
+
+    createTableHeader(columns) {
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
-        for (const col of tabData.columns) {
+
+        for (const col of columns) {
             const th = document.createElement('th');
             th.textContent = col.title;
             headerRow.appendChild(th);
         }
+
         thead.appendChild(headerRow);
-        table.appendChild(thead);
+        return thead;
+    }
 
+    createTableBody(tabData, isEditMode) {
         const tbody = document.createElement('tbody');
+
         for (const record of tabData.records) {
-            const recordId = this.getValueByPath(record, 'Id');
-            const row = document.createElement('tr');
-            row.dataset.recordId = recordId;
-
-            for (const col of tabData.columns) {
-                const td = document.createElement('td');
-                const value = this.getValueByPath(record, col.path);
-
-                if (col.isSubquery) {
-                    // Render subquery cell with expand/collapse functionality
-                    this.renderSubqueryCell(td, value, col, row);
-                } else if (col.path === 'Id' && value && tabData.objectName) {
-                    // Render Id as clickable link to record-viewer
-                    const connectionId = getActiveConnectionId();
-                    if (connectionId) {
-                        const link = document.createElement('a');
-                        link.href = `../../pages/record/record.html?objectType=${encodeURIComponent(tabData.objectName)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(connectionId)}`;
-                        link.target = '_blank';
-                        link.textContent = value;
-                        link.className = 'query-id-link';
-                        td.appendChild(link);
-                    } else {
-                        td.textContent = this.formatCellValue(value, col);
-                        td.title = this.formatCellValue(value, col);
-                    }
-                } else if (isEditMode && this.isFieldEditable(col.path, tabData)) {
-                    // Render as editable field
-                    const field = tabData.fieldDescribe[col.path];
-                    const modifiedValue = tabData.modifiedRecords.get(recordId)?.[col.path];
-                    const displayValue = modifiedValue !== undefined ? modifiedValue : value;
-
-                    const input = this.createEditableInput(field, displayValue, recordId, col.path);
-                    td.appendChild(input);
-
-                    if (modifiedValue !== undefined) {
-                        td.classList.add('modified');
-                    }
-                } else {
-                    // Render as read-only text
-                    td.textContent = this.formatCellValue(value, col);
-                    td.title = this.formatCellValue(value, col);
-                }
-
-                row.appendChild(td);
-            }
+            const row = this.createRecordRow(record, tabData, isEditMode);
             tbody.appendChild(row);
         }
-        table.appendChild(tbody);
 
-        this.resultsContainer.innerHTML = '';
-        this.resultsContainer.appendChild(table);
+        return tbody;
+    }
 
-        // Attach event listeners to editable inputs
-        if (isEditMode) {
-            this.attachEditableListeners(tabData);
+    createRecordRow(record, tabData, isEditMode) {
+        const recordId = this.getValueByPath(record, 'Id');
+        const row = document.createElement('tr');
+        row.dataset.recordId = recordId;
+
+        for (const col of tabData.columns) {
+            const td = this.createCell(record, col, tabData, isEditMode, recordId, row);
+            row.appendChild(td);
         }
+
+        return row;
+    }
+
+    createCell(record, col, tabData, isEditMode, recordId, row) {
+        const td = document.createElement('td');
+        const value = this.getValueByPath(record, col.path);
+
+        if (col.isSubquery) {
+            this.renderSubqueryCell(td, value, col, row);
+        } else if (col.path === 'Id' && value && tabData.objectName) {
+            this.renderIdCell(td, value, tabData.objectName);
+        } else if (isEditMode && this.isFieldEditable(col.path, tabData)) {
+            this.renderEditableCell(td, value, col, tabData, recordId);
+        } else {
+            this.renderReadOnlyCell(td, value, col);
+        }
+
+        return td;
+    }
+
+    renderIdCell(td, value, objectName) {
+        const connectionId = getActiveConnectionId();
+        if (connectionId) {
+            const link = document.createElement('a');
+            link.href = `../../pages/record/record.html?objectType=${encodeURIComponent(objectName)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(connectionId)}`;
+            link.target = '_blank';
+            link.textContent = value;
+            link.className = 'query-id-link';
+            td.appendChild(link);
+        } else {
+            td.textContent = value;
+            td.title = value;
+        }
+    }
+
+    renderEditableCell(td, value, col, tabData, recordId) {
+        const field = tabData.fieldDescribe[col.path];
+        const modifiedValue = tabData.modifiedRecords.get(recordId)?.[col.path];
+        const displayValue = modifiedValue !== undefined ? modifiedValue : value;
+
+        const input = this.createEditableInput(field, displayValue, recordId, col.path);
+        td.appendChild(input);
+
+        if (modifiedValue !== undefined) {
+            td.classList.add('modified');
+        }
+    }
+
+    renderReadOnlyCell(td, value, col) {
+        td.textContent = this.formatCellValue(value, col);
+        td.title = this.formatCellValue(value, col);
     }
 
     renderSubqueryCell(td, value, col, parentRow) {

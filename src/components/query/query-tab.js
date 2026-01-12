@@ -132,7 +132,7 @@ LIMIT 10`);
         this.editor.addEventListener('execute', () => this.executeQuery());
 
         // History modal
-        this.historyBtn.addEventListener('toggle', () => this.historyModal.toggle());
+        this.historyBtn.addEventListener('click', () => this.historyModal.toggle());
 
         // History tab switching
         this.dropdownTabs.forEach(tab => {

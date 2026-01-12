@@ -111,12 +111,14 @@ async function refreshConnectionList() {
             await selectConnection(mostRecent);
         } else {
             updateMobileConnections(connections);
+            updateConnectionGating();
         }
     }
 }
 
 function showNoConnectionsState() {
     updateMobileConnections([]);
+    updateConnectionGating();
     switchToSettingsTab();
 }
 
@@ -140,6 +142,7 @@ function escapeHtml(str) {
 async function selectConnection(connection) {
     setActiveConnection(connection);
     updateMobileConnections(await loadConnections());
+    updateConnectionGating();
 
     // Update lastUsedAt
     await updateConnection(connection.id, {});
@@ -307,6 +310,38 @@ function updateFeatureGating() {
             overlay.remove();
         }
     }
+
+    // Update connection-gated features
+    updateConnectionGating();
+}
+
+// --- Connection Gating ---
+function updateConnectionGating() {
+    const hasConnections = isAuthenticated();
+
+    // List of menu items that require a connection
+    const connectionRequiredTabs = ['query', 'apex', 'rest-api', 'events', 'utils'];
+
+    connectionRequiredTabs.forEach(tabId => {
+        const navItem = document.querySelector(`.mobile-nav-item[data-tab="${tabId}"]`);
+        if (navItem) {
+            if (hasConnections) {
+                navItem.classList.remove('tab-disabled');
+            } else {
+                navItem.classList.add('tab-disabled');
+            }
+        }
+    });
+
+    // Disable "Open Org" button without connection
+    const mobileOpenOrg = document.getElementById('mobile-open-org');
+    if (mobileOpenOrg) {
+        if (hasConnections) {
+            mobileOpenOrg.classList.remove('tab-disabled');
+        } else {
+            mobileOpenOrg.classList.add('tab-disabled');
+        }
+    }
 }
 
 // --- Tab Navigation ---
@@ -347,6 +382,11 @@ function initMobileMenu() {
     // Tab navigation items
     mobileNavItems.forEach(item => {
         item.addEventListener('click', () => {
+            // Prevent navigation if tab is disabled
+            if (item.classList.contains('tab-disabled')) {
+                return;
+            }
+
             const targetId = item.getAttribute('data-tab');
             const contents = document.querySelectorAll('.tab-content');
 
@@ -365,6 +405,11 @@ function initMobileMenu() {
 
     // Open Org button
     mobileOpenOrg.addEventListener('click', () => {
+        // Prevent action if button is disabled
+        if (mobileOpenOrg.classList.contains('tab-disabled')) {
+            return;
+        }
+
         if (!isAuthenticated()) {
             startAuthorization();
         } else {

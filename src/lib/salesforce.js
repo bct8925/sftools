@@ -1,7 +1,10 @@
 // Salesforce Service Module
 // All Salesforce API operations for the application
 
-import { salesforceRequest, smartFetch, getAccessToken, getInstanceUrl, getActiveConnectionId, API_VERSION } from './utils.js';
+import { salesforceRequest } from './salesforce-request.js';
+import { smartFetch } from './fetch.js';
+import { getAccessToken, getInstanceUrl, getActiveConnectionId } from './auth.js';
+import { API_VERSION } from './utils.js';
 
 // ============================================================
 // Tooling API Utilities

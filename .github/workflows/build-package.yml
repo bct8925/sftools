@@ -22,10 +22,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: |
-          rm -f package-lock.json
-          rm -f sftools-proxy/package-lock.json
-          npm install
+        run: npm install
 
       - name: Build and package
         run: npm run package

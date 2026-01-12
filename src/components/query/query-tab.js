@@ -14,8 +14,8 @@ import {
     loadGlobalDescribe,
     clearState as clearAutocompleteState
 } from '../../lib/soql-autocomplete.js';
-
-const MAX_HISTORY = 30;
+import { updateStatusBadge } from '../../lib/ui-helpers.js';
+import { HistoryManager } from '../../lib/history-manager.js';
 
 class QueryTab extends HTMLElement {
     // State
@@ -48,15 +48,18 @@ class QueryTab extends HTMLElement {
     favoritesList = null;
     dropdownTabs = [];
 
-    // History/Favorites cache
-    history = [];
-    favorites = [];
+    // History/Favorites manager
+    historyManager = null;
 
     // Bound event handlers for cleanup
     boundConnectionHandler = this.handleConnectionChange.bind(this);
 
     connectedCallback() {
         this.innerHTML = template;
+        this.historyManager = new HistoryManager(
+            { history: 'queryHistory', favorites: 'queryFavorites' },
+            { contentProperty: 'query' }
+        );
         this.initElements();
         this.initEditor();
         this.attachEventListeners();
@@ -176,18 +179,8 @@ LIMIT 10`);
     // ============================================================
 
     async loadStoredData() {
-        const data = await chrome.storage.local.get(['queryHistory', 'queryFavorites']);
-        this.history = data.queryHistory || [];
-        this.favorites = data.queryFavorites || [];
+        await this.historyManager.load();
         this.renderLists();
-    }
-
-    async saveHistory() {
-        await chrome.storage.local.set({ queryHistory: this.history });
-    }
-
-    async saveFavorites() {
-        await chrome.storage.local.set({ queryFavorites: this.favorites });
     }
 
     // ============================================================
@@ -195,64 +188,22 @@ LIMIT 10`);
     // ============================================================
 
     async saveToHistory(query) {
-        const trimmedQuery = query.trim();
-        if (!trimmedQuery) return;
-
-        // If already in favorites, just update the timestamp
-        const favoriteIndex = this.favorites.findIndex(item => item.query.trim() === trimmedQuery);
-        if (favoriteIndex !== -1) {
-            this.favorites[favoriteIndex].timestamp = Date.now();
-            await this.saveFavorites();
-            this.renderLists();
-            return;
-        }
-
-        // Remove duplicate if exists
-        const existingIndex = this.history.findIndex(item => item.query.trim() === trimmedQuery);
-        if (existingIndex !== -1) {
-            this.history.splice(existingIndex, 1);
-        }
-
-        // Add to beginning
-        this.history.unshift({
-            id: Date.now().toString(),
-            query: trimmedQuery,
-            timestamp: Date.now()
-        });
-
-        // Trim to max size
-        if (this.history.length > MAX_HISTORY) {
-            this.history = this.history.slice(0, MAX_HISTORY);
-        }
-
-        await this.saveHistory();
+        await this.historyManager.saveToHistory(query);
         this.renderLists();
     }
 
     async addToFavorites(query, label) {
-        const trimmedQuery = query.trim();
-        if (!trimmedQuery || !label.trim()) return;
-
-        this.favorites.unshift({
-            id: Date.now().toString(),
-            query: trimmedQuery,
-            label: label.trim(),
-            timestamp: Date.now()
-        });
-
-        await this.saveFavorites();
+        await this.historyManager.addToFavorites(query, label);
         this.renderLists();
     }
 
     async removeFromHistory(id) {
-        this.history = this.history.filter(item => item.id !== id);
-        await this.saveHistory();
+        await this.historyManager.removeFromHistory(id);
         this.renderLists();
     }
 
     async removeFromFavorites(id) {
-        this.favorites = this.favorites.filter(item => item.id !== id);
-        await this.saveFavorites();
+        await this.historyManager.removeFromFavorites(id);
         this.renderLists();
     }
 
@@ -283,7 +234,9 @@ LIMIT 10`);
     }
 
     renderHistoryList() {
-        if (this.history.length === 0) {
+        const history = this.historyManager.history;
+
+        if (history.length === 0) {
             this.historyList.innerHTML = `
                 <div class="query-script-empty">
                     No queries yet.<br>Execute some SOQL to see history here.
@@ -292,11 +245,11 @@ LIMIT 10`);
             return;
         }
 
-        this.historyList.innerHTML = this.history.map(item => `
+        this.historyList.innerHTML = history.map(item => `
             <div class="query-script-item" data-id="${item.id}">
-                <div class="query-script-preview">${this.escapeHtml(this.getPreview(item.query))}</div>
+                <div class="query-script-preview">${this.escapeHtml(this.historyManager.getPreview(item.query))}</div>
                 <div class="query-script-meta">
-                    <span>${this.formatRelativeTime(item.timestamp)}</span>
+                    <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="query-script-actions">
                         <button class="query-script-action load" title="Load query">&#8629;</button>
                         <button class="query-script-action favorite" title="Add to favorites">&#9733;</button>
@@ -308,7 +261,9 @@ LIMIT 10`);
     }
 
     renderFavoritesList() {
-        if (this.favorites.length === 0) {
+        const favorites = this.historyManager.favorites;
+
+        if (favorites.length === 0) {
             this.favoritesList.innerHTML = `
                 <div class="query-script-empty">
                     No favorites yet.<br>Click &#9733; on a query to save it.
@@ -317,11 +272,11 @@ LIMIT 10`);
             return;
         }
 
-        this.favoritesList.innerHTML = this.favorites.map(item => `
+        this.favoritesList.innerHTML = favorites.map(item => `
             <div class="query-script-item" data-id="${item.id}">
                 <div class="query-script-label">${this.escapeHtml(item.label)}</div>
                 <div class="query-script-meta">
-                    <span>${this.formatRelativeTime(item.timestamp)}</span>
+                    <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="query-script-actions">
                         <button class="query-script-action load" title="Load query">&#8629;</button>
                         <button class="query-script-action delete" title="Delete">&times;</button>
@@ -336,7 +291,7 @@ LIMIT 10`);
         if (!item) return;
 
         const id = item.dataset.id;
-        const list = listType === 'history' ? this.history : this.favorites;
+        const list = listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
         const scriptData = list.find(s => s.id === id);
         if (!scriptData) return;
 
@@ -364,7 +319,7 @@ LIMIT 10`);
     }
 
     showFavoriteModal(query) {
-        const defaultLabel = this.getPreview(query);
+        const defaultLabel = this.historyManager.getPreview(query);
 
         const modal = document.createElement('div');
         modal.className = 'query-favorite-modal';
@@ -436,29 +391,6 @@ LIMIT 10`);
         rows.forEach(row => row.classList.remove('hidden'));
     }
 
-    // ============================================================
-    // Utility Methods
-    // ============================================================
-
-    getPreview(query) {
-        // Get first meaningful part of query
-        const cleaned = query.replace(/\s+/g, ' ').trim();
-        return cleaned.length > 60 ? cleaned.substring(0, 60) + '...' : cleaned;
-    }
-
-    formatRelativeTime(timestamp) {
-        const now = Date.now();
-        const diff = now - timestamp;
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
-
-        if (minutes < 1) return 'Just now';
-        if (minutes < 60) return `${minutes}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        if (days < 7) return `${days}d ago`;
-        return new Date(timestamp).toLocaleDateString();
-    }
 
     // ============================================================
     // Data Transformations
@@ -734,11 +666,7 @@ LIMIT 10`);
     // ============================================================
 
     updateStatus(status, type = '') {
-        this.statusSpan.textContent = status;
-        this.statusSpan.className = 'status-badge';
-        if (type) {
-            this.statusSpan.classList.add(`status-${type}`);
-        }
+        updateStatusBadge(this.statusSpan, status, type);
     }
 
     renderTabs() {

@@ -4,6 +4,51 @@
 import { salesforceRequest, smartFetch, getAccessToken, getInstanceUrl, getActiveConnectionId, API_VERSION } from './utils.js';
 
 // ============================================================
+// Tooling API Utilities
+// ============================================================
+
+/**
+ * Bulk delete records using Tooling API composite endpoint
+ * Batches deletes into groups of 25 (Tooling API composite limit)
+ * @param {string} sobjectType - SObject type to delete (e.g., 'ApexLog', 'TraceFlag', 'Flow')
+ * @param {string[]} ids - Array of record IDs to delete
+ * @returns {Promise<number>} - Number of records deleted
+ */
+async function bulkDeleteTooling(sobjectType, ids) {
+    let deletedCount = 0;
+    const batchSize = 25;
+
+    for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        const compositeRequest = {
+            allOrNone: false,
+            compositeRequest: batch.map((id, idx) => ({
+                method: 'DELETE',
+                url: `/services/data/v${API_VERSION}/tooling/sobjects/${sobjectType}/${id}`,
+                referenceId: `delete_${idx}`
+            }))
+        };
+
+        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/composite`, {
+            method: 'POST',
+            body: JSON.stringify(compositeRequest)
+        });
+        deletedCount += batch.length;
+    }
+
+    return deletedCount;
+}
+
+/**
+ * Escape single quotes for SOQL queries
+ * @param {string} str - String to escape
+ * @returns {string} - Escaped string safe for SOQL
+ */
+function escapeSoql(str) {
+    return str.replace(/'/g, "\\'");
+}
+
+// ============================================================
 // Describe Cache
 // ============================================================
 
@@ -566,34 +611,12 @@ export async function deleteAllDebugLogs() {
     const query = encodeURIComponent('SELECT Id FROM ApexLog');
     const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
 
-    const logs = response.json.records || [];
-    if (logs.length === 0) {
+    const logIds = (response.json.records || []).map(l => l.Id);
+    if (logIds.length === 0) {
         return { deletedCount: 0 };
     }
 
-    const logIds = logs.map(l => l.Id);
-    let deletedCount = 0;
-
-    // Tooling API composite supports up to 25 subrequests
-    const batchSize = 25;
-    for (let i = 0; i < logIds.length; i += batchSize) {
-        const batch = logIds.slice(i, i + batchSize);
-        const compositeRequest = {
-            allOrNone: false,
-            compositeRequest: batch.map((id, idx) => ({
-                method: 'DELETE',
-                url: `/services/data/v${API_VERSION}/tooling/sobjects/ApexLog/${id}`,
-                referenceId: `delete_${idx}`
-            }))
-        };
-
-        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/composite`, {
-            method: 'POST',
-            body: JSON.stringify(compositeRequest)
-        });
-        deletedCount += batch.length;
-    }
-
+    const deletedCount = await bulkDeleteTooling('ApexLog', logIds);
     return { deletedCount };
 }
 
@@ -603,7 +626,7 @@ export async function deleteAllDebugLogs() {
  * @returns {Promise<Array>}
  */
 export async function searchUsers(searchTerm) {
-    const escaped = searchTerm.replace(/'/g, "\\'");
+    const escaped = escapeSoql(searchTerm);
     const query = encodeURIComponent(
         `SELECT Id, Name, Username FROM User WHERE (Name LIKE '%${escaped}%' OR Username LIKE '%${escaped}%') AND IsActive = true ORDER BY Name LIMIT 10`
     );
@@ -658,33 +681,12 @@ export async function deleteAllTraceFlags() {
     const query = encodeURIComponent('SELECT Id FROM TraceFlag');
     const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
 
-    const flags = response.json.records || [];
-    if (flags.length === 0) {
+    const flagIds = (response.json.records || []).map(f => f.Id);
+    if (flagIds.length === 0) {
         return { deletedCount: 0 };
     }
 
-    const flagIds = flags.map(f => f.Id);
-    let deletedCount = 0;
-
-    const batchSize = 25;
-    for (let i = 0; i < flagIds.length; i += batchSize) {
-        const batch = flagIds.slice(i, i + batchSize);
-        const compositeRequest = {
-            allOrNone: false,
-            compositeRequest: batch.map((id, idx) => ({
-                method: 'DELETE',
-                url: `/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${id}`,
-                referenceId: `delete_${idx}`
-            }))
-        };
-
-        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/composite`, {
-            method: 'POST',
-            body: JSON.stringify(compositeRequest)
-        });
-        deletedCount += batch.length;
-    }
-
+    const deletedCount = await bulkDeleteTooling('TraceFlag', flagIds);
     return { deletedCount };
 }
 
@@ -694,7 +696,7 @@ export async function deleteAllTraceFlags() {
  * @returns {Promise<Array>}
  */
 export async function searchFlows(searchTerm) {
-    const escaped = searchTerm.replace(/'/g, "\\'");
+    const escaped = escapeSoql(searchTerm);
     const query = encodeURIComponent(
         `SELECT Id, DeveloperName, ActiveVersionId FROM FlowDefinition WHERE DeveloperName LIKE '%${escaped}%' ORDER BY DeveloperName LIMIT 10`
     );
@@ -725,27 +727,7 @@ export async function deleteInactiveFlowVersions(versionIds) {
         return { deletedCount: 0 };
     }
 
-    let deletedCount = 0;
-    const batchSize = 25;
-
-    for (let i = 0; i < versionIds.length; i += batchSize) {
-        const batch = versionIds.slice(i, i + batchSize);
-        const compositeRequest = {
-            allOrNone: false,
-            compositeRequest: batch.map((id, idx) => ({
-                method: 'DELETE',
-                url: `/services/data/v${API_VERSION}/tooling/sobjects/Flow/${id}`,
-                referenceId: `delete_${idx}`
-            }))
-        };
-
-        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/composite`, {
-            method: 'POST',
-            body: JSON.stringify(compositeRequest)
-        });
-        deletedCount += batch.length;
-    }
-
+    const deletedCount = await bulkDeleteTooling('Flow', versionIds);
     return { deletedCount };
 }
 
@@ -755,7 +737,7 @@ export async function deleteInactiveFlowVersions(versionIds) {
  * @returns {Promise<Array>}
  */
 export async function searchProfiles(searchTerm) {
-    const escaped = searchTerm.replace(/'/g, "\\'");
+    const escaped = escapeSoql(searchTerm);
     const query = encodeURIComponent(
         `SELECT Id, Name FROM Profile WHERE Name LIKE '%${escaped}%' ORDER BY Name LIMIT 10`
     );

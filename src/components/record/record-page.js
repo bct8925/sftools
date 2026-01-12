@@ -3,6 +3,7 @@ import template from './record.html?raw';
 import './record.css';
 import { setActiveConnection } from '../../lib/utils.js';
 import { getObjectDescribe, getRecordWithRelationships, updateRecord } from '../../lib/salesforce.js';
+import { updateStatusBadge } from '../../lib/ui-helpers.js';
 
 class RecordPage extends HTMLElement {
     // State
@@ -397,12 +398,8 @@ class RecordPage extends HTMLElement {
         }
     }
 
-    setStatus(text, type) {
-        this.statusEl.textContent = text;
-        this.statusEl.className = 'status-badge';
-        if (type) {
-            this.statusEl.classList.add(`status-${type}`);
-        }
+    setStatus(text, type = '') {
+        updateStatusBadge(this.statusEl, text, type);
     }
 
     showError(message) {

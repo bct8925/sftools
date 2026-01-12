@@ -6,8 +6,8 @@ import '../button-icon/button-icon.js';
 import '../modal-popup/modal-popup.js';
 import { isAuthenticated } from '../../lib/utils.js';
 import { executeAnonymousApex } from '../../lib/salesforce.js';
-
-const MAX_HISTORY = 30;
+import { updateStatusBadge } from '../../lib/ui-helpers.js';
+import { HistoryManager } from '../../lib/history-manager.js';
 
 class ApexTab extends HTMLElement {
     // DOM references
@@ -26,13 +26,16 @@ class ApexTab extends HTMLElement {
     favoritesList = null;
     dropdownTabs = [];
 
-    // In-memory cache
-    history = [];
-    favorites = [];
+    // History/Favorites manager
+    historyManager = null;
     fullOutput = '';  // Store unfiltered output for search
 
     connectedCallback() {
         this.innerHTML = template;
+        this.historyManager = new HistoryManager(
+            { history: 'apexHistory', favorites: 'apexFavorites' },
+            { contentProperty: 'code' }
+        );
         this.initElements();
         this.initEditors();
         this.attachEventListeners();
@@ -95,18 +98,8 @@ for (Account acc : accounts) {
     // ============================================================
 
     async loadStoredData() {
-        const data = await chrome.storage.local.get(['apexHistory', 'apexFavorites']);
-        this.history = data.apexHistory || [];
-        this.favorites = data.apexFavorites || [];
+        await this.historyManager.load();
         this.renderLists();
-    }
-
-    async saveHistory() {
-        await chrome.storage.local.set({ apexHistory: this.history });
-    }
-
-    async saveFavorites() {
-        await chrome.storage.local.set({ apexFavorites: this.favorites });
     }
 
     // ============================================================
@@ -114,64 +107,22 @@ for (Account acc : accounts) {
     // ============================================================
 
     async saveToHistory(code) {
-        const trimmedCode = code.trim();
-        if (!trimmedCode) return;
-
-        // If already in favorites, just update the timestamp
-        const favoriteIndex = this.favorites.findIndex(item => item.code.trim() === trimmedCode);
-        if (favoriteIndex !== -1) {
-            this.favorites[favoriteIndex].timestamp = Date.now();
-            await this.saveFavorites();
-            this.renderLists();
-            return;
-        }
-
-        // Remove duplicate if exists
-        const existingIndex = this.history.findIndex(item => item.code.trim() === trimmedCode);
-        if (existingIndex !== -1) {
-            this.history.splice(existingIndex, 1);
-        }
-
-        // Add to beginning
-        this.history.unshift({
-            id: Date.now().toString(),
-            code: trimmedCode,
-            timestamp: Date.now()
-        });
-
-        // Trim to max size
-        if (this.history.length > MAX_HISTORY) {
-            this.history = this.history.slice(0, MAX_HISTORY);
-        }
-
-        await this.saveHistory();
+        await this.historyManager.saveToHistory(code);
         this.renderLists();
     }
 
     async addToFavorites(code, label) {
-        const trimmedCode = code.trim();
-        if (!trimmedCode || !label.trim()) return;
-
-        this.favorites.unshift({
-            id: Date.now().toString(),
-            code: trimmedCode,
-            label: label.trim(),
-            timestamp: Date.now()
-        });
-
-        await this.saveFavorites();
+        await this.historyManager.addToFavorites(code, label);
         this.renderLists();
     }
 
     async removeFromHistory(id) {
-        this.history = this.history.filter(item => item.id !== id);
-        await this.saveHistory();
+        await this.historyManager.removeFromHistory(id);
         this.renderLists();
     }
 
     async removeFromFavorites(id) {
-        this.favorites = this.favorites.filter(item => item.id !== id);
-        await this.saveFavorites();
+        await this.historyManager.removeFromFavorites(id);
         this.renderLists();
     }
 
@@ -202,7 +153,9 @@ for (Account acc : accounts) {
     }
 
     renderHistoryList() {
-        if (this.history.length === 0) {
+        const history = this.historyManager.history;
+
+        if (history.length === 0) {
             this.historyList.innerHTML = `
                 <div class="apex-script-empty">
                     No scripts yet.<br>Execute some Apex to see history here.
@@ -211,11 +164,11 @@ for (Account acc : accounts) {
             return;
         }
 
-        this.historyList.innerHTML = this.history.map(item => `
+        this.historyList.innerHTML = history.map(item => `
             <div class="apex-script-item" data-id="${item.id}">
                 <div class="apex-script-preview">${this.escapeHtml(this.getPreview(item.code))}</div>
                 <div class="apex-script-meta">
-                    <span>${this.formatRelativeTime(item.timestamp)}</span>
+                    <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="apex-script-actions">
                         <button class="apex-script-action load" title="Load script">&#8629;</button>
                         <button class="apex-script-action favorite" title="Add to favorites">&#9733;</button>
@@ -227,7 +180,9 @@ for (Account acc : accounts) {
     }
 
     renderFavoritesList() {
-        if (this.favorites.length === 0) {
+        const favorites = this.historyManager.favorites;
+
+        if (favorites.length === 0) {
             this.favoritesList.innerHTML = `
                 <div class="apex-script-empty">
                     No favorites yet.<br>Click &#9733; on a script to save it.
@@ -236,11 +191,11 @@ for (Account acc : accounts) {
             return;
         }
 
-        this.favoritesList.innerHTML = this.favorites.map(item => `
+        this.favoritesList.innerHTML = favorites.map(item => `
             <div class="apex-script-item" data-id="${item.id}">
                 <div class="apex-script-label">${this.escapeHtml(item.label)}</div>
                 <div class="apex-script-meta">
-                    <span>${this.formatRelativeTime(item.timestamp)}</span>
+                    <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="apex-script-actions">
                         <button class="apex-script-action load" title="Load script">&#8629;</button>
                         <button class="apex-script-action delete" title="Delete">&times;</button>
@@ -255,7 +210,7 @@ for (Account acc : accounts) {
         if (!item) return;
 
         const id = item.dataset.id;
-        const list = listType === 'history' ? this.history : this.favorites;
+        const list = listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
         const scriptData = list.find(s => s.id === id);
         if (!scriptData) return;
 
@@ -379,20 +334,6 @@ for (Account acc : accounts) {
         return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
     }
 
-    formatRelativeTime(timestamp) {
-        const now = Date.now();
-        const diff = now - timestamp;
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
-
-        if (minutes < 1) return 'Just now';
-        if (minutes < 60) return `${minutes}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        if (days < 7) return `${days}d ago`;
-        return new Date(timestamp).toLocaleDateString();
-    }
-
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -471,9 +412,8 @@ for (Account acc : accounts) {
         return lines.join('\n');
     }
 
-    updateStatus(text, type) {
-        this.statusSpan.textContent = text;
-        this.statusSpan.className = `status-badge${type ? ` status-${type}` : ''}`;
+    updateStatus(text, type = '') {
+        updateStatusBadge(this.statusSpan, text, type);
     }
 
     // ============================================================

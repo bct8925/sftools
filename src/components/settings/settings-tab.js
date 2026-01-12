@@ -11,6 +11,7 @@ import {
     isAuthenticated
 } from '../../lib/utils.js';
 import { clearDescribeCache } from '../../lib/salesforce.js';
+import { escapeHtml } from '../../lib/text-utils.js';
 
 class SettingsTab extends HTMLElement {
     // Proxy DOM references
@@ -141,7 +142,7 @@ class SettingsTab extends HTMLElement {
         this.connectionList.innerHTML = connections.map(conn => `
             <div class="settings-connection-item ${conn.id === activeId ? 'active' : ''}" data-id="${conn.id}">
                 <div class="settings-connection-info">
-                    <div class="settings-connection-label">${this.escapeHtml(conn.label)}</div>
+                    <div class="settings-connection-label">${escapeHtml(conn.label)}</div>
                     <div class="settings-connection-detail">
                         ${conn.refreshToken ? '<span class="settings-connection-badge refresh-enabled" title="Auto-refresh enabled"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Auto-refresh</span>' : ''}
                         ${conn.clientId ? '<span class="settings-connection-badge">Custom App</span>' : ''}
@@ -338,11 +339,6 @@ class SettingsTab extends HTMLElement {
         }));
     }
 
-    escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
 
     // ============================================================
     // Proxy Management

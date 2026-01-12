@@ -8,6 +8,7 @@ import { isAuthenticated } from '../../lib/utils.js';
 import { executeAnonymousApex } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { HistoryManager } from '../../lib/history-manager.js';
+import { escapeHtml } from '../../lib/text-utils.js';
 
 class ApexTab extends HTMLElement {
     // DOM references
@@ -166,7 +167,7 @@ for (Account acc : accounts) {
 
         this.historyList.innerHTML = history.map(item => `
             <div class="apex-script-item" data-id="${item.id}">
-                <div class="apex-script-preview">${this.escapeHtml(this.getPreview(item.code))}</div>
+                <div class="apex-script-preview">${escapeHtml(this.getPreview(item.code))}</div>
                 <div class="apex-script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="apex-script-actions">
@@ -193,7 +194,7 @@ for (Account acc : accounts) {
 
         this.favoritesList.innerHTML = favorites.map(item => `
             <div class="apex-script-item" data-id="${item.id}">
-                <div class="apex-script-label">${this.escapeHtml(item.label)}</div>
+                <div class="apex-script-label">${escapeHtml(item.label)}</div>
                 <div class="apex-script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="apex-script-actions">
@@ -247,7 +248,7 @@ for (Account acc : accounts) {
         modal.innerHTML = `
             <div class="apex-favorite-dialog">
                 <h3>Add to Favorites</h3>
-                <input type="text" class="apex-favorite-input" placeholder="Enter a label for this script" value="${this.escapeHtml(defaultLabel)}">
+                <input type="text" class="apex-favorite-input" placeholder="Enter a label for this script" value="${escapeHtml(defaultLabel)}">
                 <div class="apex-favorite-buttons">
                     <button class="button-neutral apex-favorite-cancel">Cancel</button>
                     <button class="button-brand apex-favorite-save">Save</button>
@@ -334,11 +335,6 @@ for (Account acc : accounts) {
         return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
     }
 
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
 
     // ============================================================
     // UI Helpers

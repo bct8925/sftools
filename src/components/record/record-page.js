@@ -4,6 +4,7 @@ import './record.css';
 import { setActiveConnection } from '../../lib/utils.js';
 import { getObjectDescribe, getRecordWithRelationships, updateRecord } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
+import { escapeHtml } from '../../lib/text-utils.js';
 
 class RecordPage extends HTMLElement {
     // State
@@ -173,7 +174,7 @@ class RecordPage extends HTMLElement {
             if (field.type === 'picklist' && isEditable) {
                 const options = (field.picklistValues || [])
                     .filter(pv => pv.active)
-                    .map(pv => `<option value="${this.escapeAttr(pv.value)}" ${pv.value === value ? 'selected' : ''}>${this.escapeHtml(pv.label)}</option>`)
+                    .map(pv => `<option value="${this.escapeAttr(pv.value)}" ${pv.value === value ? 'selected' : ''}>${escapeHtml(pv.label)}</option>`)
                     .join('');
                 valueHtml = `
                     <select class="select field-input" data-field="${field.name}" data-type="${field.type}">
@@ -192,7 +193,7 @@ class RecordPage extends HTMLElement {
 
             return `
                 <div class="field-row" data-field="${field.name}">
-                    <div class="field-label" title="${this.escapeAttr(field.label)}">${this.escapeHtml(field.label)}</div>
+                    <div class="field-label" title="${this.escapeAttr(field.label)}">${escapeHtml(field.label)}</div>
                     <div class="field-api-name" title="${this.escapeAttr(field.name)}">${field.name}</div>
                     <div class="field-type">${typeDisplay}</div>
                     <div class="field-value">${valueHtml}</div>
@@ -246,9 +247,9 @@ class RecordPage extends HTMLElement {
             case 'boolean':
                 return `<input type="checkbox" ${value ? 'checked' : ''} disabled>`;
             case 'datetime':
-                return this.escapeHtml(new Date(value).toLocaleString());
+                return escapeHtml(new Date(value).toLocaleString());
             case 'date':
-                return this.escapeHtml(new Date(value + 'T00:00:00').toLocaleDateString());
+                return escapeHtml(new Date(value + 'T00:00:00').toLocaleDateString());
             case 'reference':
                 if (field.relationshipName && field.referenceTo?.length > 0) {
                     const related = record[field.relationshipName];
@@ -258,7 +259,7 @@ class RecordPage extends HTMLElement {
                     if (relatedName) {
                         const displayType = field.name === 'OwnerId' ? 'User/Group' : relatedType;
                         const url = `record.html?objectType=${encodeURIComponent(relatedType)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(this.connectionId)}`;
-                        return `<a href="${url}" target="_blank">${this.escapeHtml(relatedName)} (${this.escapeHtml(displayType)})</a>`;
+                        return `<a href="${url}" target="_blank">${escapeHtml(relatedName)} (${escapeHtml(displayType)})</a>`;
                     }
                 }
             default:
@@ -406,7 +407,7 @@ class RecordPage extends HTMLElement {
         this.setStatus('Error', 'error');
         this.fieldsContainer.innerHTML = `
             <div class="error-container">
-                <p class="error-message">${this.escapeHtml(message)}</p>
+                <p class="error-message">${escapeHtml(message)}</p>
                 <p class="error-hint">Please check the connection and try again.</p>
             </div>
         `;
@@ -416,12 +417,6 @@ class RecordPage extends HTMLElement {
         alert(`Error saving record: ${message}`);
     }
 
-    escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        const div = document.createElement('div');
-        div.textContent = String(str);
-        return div.innerHTML;
-    }
 
     escapeAttr(str) {
         if (str === null || str === undefined) return '';

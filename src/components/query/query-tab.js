@@ -16,6 +16,7 @@ import {
 } from '../../lib/soql-autocomplete.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { HistoryManager } from '../../lib/history-manager.js';
+import { escapeHtml } from '../../lib/text-utils.js';
 
 class QueryTab extends HTMLElement {
     // State
@@ -247,7 +248,7 @@ LIMIT 10`);
 
         this.historyList.innerHTML = history.map(item => `
             <div class="query-script-item" data-id="${item.id}">
-                <div class="query-script-preview">${this.escapeHtml(this.historyManager.getPreview(item.query))}</div>
+                <div class="query-script-preview">${escapeHtml(this.historyManager.getPreview(item.query))}</div>
                 <div class="query-script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="query-script-actions">
@@ -274,7 +275,7 @@ LIMIT 10`);
 
         this.favoritesList.innerHTML = favorites.map(item => `
             <div class="query-script-item" data-id="${item.id}">
-                <div class="query-script-label">${this.escapeHtml(item.label)}</div>
+                <div class="query-script-label">${escapeHtml(item.label)}</div>
                 <div class="query-script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="query-script-actions">
@@ -326,7 +327,7 @@ LIMIT 10`);
         modal.innerHTML = `
             <div class="query-favorite-dialog">
                 <h3>Add to Favorites</h3>
-                <input type="text" class="query-favorite-input" placeholder="Enter a label for this query" value="${this.escapeHtml(defaultLabel)}">
+                <input type="text" class="query-favorite-input" placeholder="Enter a label for this query" value="${escapeHtml(defaultLabel)}">
                 <div class="query-favorite-buttons">
                     <button class="button-neutral query-favorite-cancel">Cancel</button>
                     <button class="button-brand query-favorite-save">Save</button>
@@ -726,7 +727,7 @@ LIMIT 10`);
         }
 
         if (tabData.error) {
-            this.resultsContainer.innerHTML = `<div class="query-results-error">${this.escapeHtml(tabData.error)}</div>`;
+            this.resultsContainer.innerHTML = `<div class="query-results-error">${escapeHtml(tabData.error)}</div>`;
             return;
         }
 
@@ -931,12 +932,6 @@ LIMIT 10`);
         }
 
         return String(value);
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     // ============================================================

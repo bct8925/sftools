@@ -51,6 +51,7 @@ class QueryTab extends HTMLElement {
 
     // History/Favorites manager
     historyManager = null;
+    pendingFavoriteQuery = null;
 
     // Bound event handlers for cleanup
     boundConnectionHandler = this.handleConnectionChange.bind(this);
@@ -104,6 +105,12 @@ class QueryTab extends HTMLElement {
         this.favoritesList = this.querySelector('.query-favorites-list');
         this.dropdownTabs = this.querySelectorAll('.query-dropdown-tab');
 
+        // Favorite modal elements
+        this.favoriteModal = this.querySelector('.query-favorite-modal');
+        this.favoriteInput = this.querySelector('.query-favorite-input');
+        this.favoriteCancelBtn = this.querySelector('.query-favorite-cancel');
+        this.favoriteSaveBtn = this.querySelector('.query-favorite-save');
+
         // Search elements
         this.searchInput = this.querySelector('.query-search-input');
 
@@ -146,6 +153,17 @@ LIMIT 10`);
         // List click delegation
         this.historyList.addEventListener('click', (e) => this.handleListClick(e, 'history'));
         this.favoritesList.addEventListener('click', (e) => this.handleListClick(e, 'favorites'));
+
+        // Favorite modal
+        this.favoriteCancelBtn.addEventListener('click', () => this.favoriteModal.close());
+        this.favoriteSaveBtn.addEventListener('click', () => this.handleFavoriteSave());
+        this.favoriteInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.handleFavoriteSave();
+            } else if (e.key === 'Escape') {
+                this.favoriteModal.close();
+            }
+        });
 
         // Search filtering
         this.searchInput.addEventListener('input', () => this.applyRowFilter());
@@ -320,51 +338,22 @@ LIMIT 10`);
     }
 
     showFavoriteModal(query) {
+        this.pendingFavoriteQuery = query;
         const defaultLabel = this.historyManager.getPreview(query);
 
-        const modal = document.createElement('div');
-        modal.className = 'query-favorite-modal';
-        modal.innerHTML = `
-            <div class="query-favorite-dialog">
-                <h3>Add to Favorites</h3>
-                <input type="text" class="query-favorite-input" placeholder="Enter a label for this query" value="${escapeHtml(defaultLabel)}">
-                <div class="query-favorite-buttons">
-                    <button class="button-neutral query-favorite-cancel">Cancel</button>
-                    <button class="button-brand query-favorite-save">Save</button>
-                </div>
-            </div>
-        `;
+        this.favoriteInput.value = defaultLabel;
+        this.favoriteModal.open();
+        this.favoriteInput.focus();
+        this.favoriteInput.select();
+    }
 
-        const input = modal.querySelector('.query-favorite-input');
-        const cancelBtn = modal.querySelector('.query-favorite-cancel');
-        const saveBtn = modal.querySelector('.query-favorite-save');
-
-        const close = () => modal.remove();
-
-        cancelBtn.addEventListener('click', close);
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) close();
-        });
-
-        saveBtn.addEventListener('click', () => {
-            const label = input.value.trim();
-            if (label) {
-                this.addToFavorites(query, label);
-                close();
-            }
-        });
-
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                saveBtn.click();
-            } else if (e.key === 'Escape') {
-                close();
-            }
-        });
-
-        document.body.appendChild(modal);
-        input.focus();
-        input.select();
+    handleFavoriteSave() {
+        const label = this.favoriteInput.value.trim();
+        if (label && this.pendingFavoriteQuery) {
+            this.addToFavorites(this.pendingFavoriteQuery, label);
+            this.favoriteModal.close();
+            this.pendingFavoriteQuery = null;
+        }
     }
 
     // ============================================================

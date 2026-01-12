@@ -1,7 +1,7 @@
 // Query Tab - SOQL Query Editor with tabbed results
 import template from './query.html?raw';
 import './query.css';
-import { isAuthenticated } from '../../lib/utils.js';
+import { isAuthenticated, getActiveConnectionId } from '../../lib/utils.js';
 import '../monaco-editor/monaco-editor.js';
 import '../button-dropdown/button-dropdown.js';
 import '../button-icon/button-icon.js';
@@ -838,6 +838,20 @@ LIMIT 10`);
                 if (col.isSubquery) {
                     // Render subquery cell with expand/collapse functionality
                     this.renderSubqueryCell(td, value, col, row);
+                } else if (col.path === 'Id' && value && tabData.objectName) {
+                    // Render Id as clickable link to record-viewer
+                    const connectionId = getActiveConnectionId();
+                    if (connectionId) {
+                        const link = document.createElement('a');
+                        link.href = `../../pages/record/record.html?objectType=${encodeURIComponent(tabData.objectName)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(connectionId)}`;
+                        link.target = '_blank';
+                        link.textContent = value;
+                        link.className = 'query-id-link';
+                        td.appendChild(link);
+                    } else {
+                        td.textContent = this.formatCellValue(value, col);
+                        td.title = this.formatCellValue(value, col);
+                    }
                 } else if (isEditMode && this.isFieldEditable(col.path, tabData)) {
                     // Render as editable field
                     const field = tabData.fieldDescribe[col.path];

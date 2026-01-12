@@ -17,6 +17,7 @@ import {
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { HistoryManager } from '../../lib/history-manager.js';
 import { escapeHtml } from '../../lib/text-utils.js';
+import { icons } from '../../lib/icons.js';
 
 class QueryTab extends HTMLElement {
     // State
@@ -687,7 +688,7 @@ LIMIT 10`);
 
             const refreshBtn = document.createElement('button');
             refreshBtn.className = 'query-tab-refresh';
-            refreshBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>';
+            refreshBtn.innerHTML = icons.refreshTab;
             refreshBtn.title = 'Refresh';
             refreshBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -696,7 +697,7 @@ LIMIT 10`);
 
             const closeBtn = document.createElement('button');
             closeBtn.className = 'query-tab-close';
-            closeBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/></svg>';
+            closeBtn.innerHTML = icons.closeTab;
             closeBtn.title = 'Close';
             closeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();

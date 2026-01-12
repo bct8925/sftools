@@ -372,6 +372,10 @@
     white-space: nowrap;
 }
 
+.query-results-table td {
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
 .query-results-table th {
     border-bottom: 0;
     background-color: #f8f9fa;
@@ -470,6 +474,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.query-subquery-table td {
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
 }
 
 .query-subquery-table th {

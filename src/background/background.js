@@ -178,29 +178,138 @@ function proxyRequired(handler) {
     };
 }
 
+/**
+ * Generic fetch wrapper with 401 retry logic
+ * @param {Function} fetchFn - Function that makes the request, receives headers
+ * @param {Function} convertFn - Function to convert response to standard format (async)
+ * @param {object} headers - Request headers (may include Authorization)
+ * @param {string|null} connectionId - Connection ID
+ * @returns {Promise<object>} - Response with 401 retry handling
+ */
+async function fetchWithRetry(fetchFn, convertFn, headers, connectionId) {
+    const hasAuth = !!headers?.Authorization;
+
+    try {
+        const response = await fetchFn(headers);
+        const converted = await convertFn(response);
+
+        return await handle401WithRefresh(
+            converted,
+            connectionId,
+            hasAuth,
+            async (newAccessToken) => {
+                const retryResponse = await fetchFn({
+                    ...headers,
+                    Authorization: `Bearer ${newAccessToken}`
+                });
+                return await convertFn(retryResponse);
+            }
+        );
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Handle 401 response with automatic token refresh
+ * Generic wrapper that attempts refresh and retries the request
+ * @param {object} response - The response object with status 401
+ * @param {string|null} connectionId - Connection ID for the request
+ * @param {boolean} hasAuth - Whether the request had Authorization header
+ * @param {Function} retryFn - Function to retry the request with new token (receives newAccessToken)
+ * @returns {Promise<object>} - Updated response or authExpired response
+ */
+async function handle401WithRefresh(response, connectionId, hasAuth, retryFn) {
+    if (response.status !== 401 || !connectionId || !hasAuth) {
+        return response;
+    }
+
+    const { connections } = await chrome.storage.local.get(['connections']);
+    const connection = connections?.find(c => c.id === connectionId);
+
+    if (connection?.refreshToken && isProxyConnected()) {
+        console.log('Got 401, attempting token refresh for connection:', connectionId);
+        const refreshResult = await refreshAccessToken(connection);
+
+        if (refreshResult.success) {
+            console.log('Token refresh succeeded, retrying request');
+            await updateConnectionToken(connectionId, refreshResult.accessToken);
+            return await retryFn(refreshResult.accessToken);
+        } else {
+            console.log('Token refresh failed:', refreshResult.error);
+            return {
+                success: false,
+                status: 401,
+                statusText: 'Unauthorized',
+                authExpired: true,
+                connectionId: connectionId,
+                error: refreshResult.error
+            };
+        }
+    } else {
+        console.log('Cannot refresh - refreshToken:', !!connection?.refreshToken, 'proxy:', isProxyConnected());
+        return {
+            success: false,
+            status: 401,
+            statusText: 'Unauthorized',
+            authExpired: true,
+            connectionId: connectionId,
+            error: 'Session expired'
+        };
+    }
+}
+
 // ============================================================================
 // Message Handlers
 // ============================================================================
 
 const handlers = {
-    fetch: handleFetch,
+    fetch: async (request) => {
+        return await fetchWithRetry(
+            (headers) => fetch(request.url, {
+                ...request.options,
+                headers
+            }),
+            async (response) => {
+                const headers = {};
+                response.headers.forEach((value, key) => { headers[key.toLowerCase()] = value; });
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers,
+                    data: await response.text()
+                };
+            },
+            request.options.headers,
+            request.connectionId
+        );
+    },
 
     connectProxy: () => connectNative(),
+
     disconnectProxy: () => { disconnectNative(); return { success: true }; },
+
     checkProxyConnection: () => ({ connected: isProxyConnected(), ...getProxyInfo() }),
+
     getProxyInfo: () => getProxyInfo(),
 
     tokenExchange: (req) => exchangeCodeForTokens(req.code, req.redirectUri, req.loginDomain, req.clientId),
 
-    proxyFetch: proxyRequired((req) =>
-        sendProxyRequest({
-            type: 'rest',
-            url: req.url,
-            method: req.method,
-            headers: req.headers,
-            body: req.body
-        })
-    ),
+    proxyFetch: proxyRequired(async (req) => {
+        return await fetchWithRetry(
+            (headers) => sendProxyRequest({
+                type: 'rest',
+                url: req.url,
+                method: req.method,
+                headers,
+                body: req.body
+            }),
+            (response) => response,
+            req.headers,
+            req.connectionId
+        );
+    }),
 
     subscribe: proxyRequired(async (req) => {
         const subscriptionId = crypto.randomUUID();
@@ -250,72 +359,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
 });
-
-// ============================================================================
-// Fetch Handler (with 401 retry logic)
-// ============================================================================
-
-async function handleFetch(request) {
-    try {
-        let response = await fetch(request.url, request.options);
-
-        if (response.status === 401 && request.options?.headers?.Authorization && request.connectionId) {
-            // Find the connection in storage
-            const { connections } = await chrome.storage.local.get(['connections']);
-            const connection = connections?.find(c => c.id === request.connectionId);
-
-            if (connection?.refreshToken && isProxyConnected()) {
-                console.log('Got 401, attempting token refresh for connection:', request.connectionId);
-                const refreshResult = await refreshAccessToken(connection);
-
-                if (refreshResult.success) {
-                    // Update the connection's token in storage
-                    await updateConnectionToken(request.connectionId, refreshResult.accessToken);
-
-                    // Retry with new token
-                    response = await fetch(request.url, {
-                        ...request.options,
-                        headers: {
-                            ...request.options.headers,
-                            Authorization: `Bearer ${refreshResult.accessToken}`
-                        }
-                    });
-                } else {
-                    return {
-                        success: false,
-                        status: 401,
-                        statusText: 'Unauthorized',
-                        authExpired: true,
-                        connectionId: request.connectionId,
-                        error: refreshResult.error
-                    };
-                }
-            } else {
-                return {
-                    success: false,
-                    status: 401,
-                    statusText: 'Unauthorized',
-                    authExpired: true,
-                    connectionId: request.connectionId,
-                    error: 'Session expired'
-                };
-            }
-        }
-
-        const headers = {};
-        response.headers.forEach((value, key) => { headers[key.toLowerCase()] = value; });
-
-        return {
-            success: response.ok,
-            status: response.status,
-            statusText: response.statusText,
-            headers,
-            data: await response.text()
-        };
-    } catch (error) {
-        return { success: false, error: error.message };
-    }
-}
 
 // ============================================================================
 // Auto-connect to Proxy on Startup (if enabled)

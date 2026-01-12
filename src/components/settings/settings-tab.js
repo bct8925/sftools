@@ -143,6 +143,7 @@ class SettingsTab extends HTMLElement {
                 <div class="settings-connection-info">
                     <div class="settings-connection-label">${this.escapeHtml(conn.label)}</div>
                     <div class="settings-connection-detail">
+                        ${conn.refreshToken ? '<span class="settings-connection-badge refresh-enabled" title="Auto-refresh enabled"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Auto-refresh</span>' : ''}
                         ${conn.clientId ? '<span class="settings-connection-badge">Custom App</span>' : ''}
                     </div>
                 </div>
@@ -417,14 +418,29 @@ class SettingsTab extends HTMLElement {
                     httpPort: response.httpPort,
                     version: response.version
                 });
+
+                // Notify the app that proxy status changed
+                document.dispatchEvent(new CustomEvent('proxy-status-changed', {
+                    detail: { connected: true }
+                }));
             } else {
                 this.updateProxyUI({
                     connected: false,
                     error: response.error || 'Connection failed'
                 });
+
+                // Notify the app that proxy status changed
+                document.dispatchEvent(new CustomEvent('proxy-status-changed', {
+                    detail: { connected: false }
+                }));
             }
         } catch (err) {
             this.updateProxyUI({ connected: false, error: err.message });
+
+            // Notify the app that proxy status changed
+            document.dispatchEvent(new CustomEvent('proxy-status-changed', {
+                detail: { connected: false }
+            }));
         }
     }
 
@@ -432,6 +448,11 @@ class SettingsTab extends HTMLElement {
         try {
             await chrome.runtime.sendMessage({ type: 'disconnectProxy' });
             this.updateProxyUI({ connected: false });
+
+            // Notify the app that proxy status changed
+            document.dispatchEvent(new CustomEvent('proxy-status-changed', {
+                detail: { connected: false }
+            }));
         } catch (err) {
             console.error('Disconnect error:', err);
         }

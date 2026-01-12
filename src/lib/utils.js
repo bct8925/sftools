@@ -36,18 +36,37 @@ export {
 
 import { getAccessToken, getInstanceUrl, getActiveConnectionId, triggerAuthExpired } from './auth.js';
 
-// --- Background Fetch Proxy ---
-export async function extensionFetch(url, options = {}, connectionId = null) {
-    // Use provided connectionId or get from active connection
-    const connId = connectionId || getActiveConnectionId();
-    const response = await chrome.runtime.sendMessage({ type: 'fetch', url, options, connectionId: connId });
+// --- Background Fetch Helpers ---
 
-    // Handle auth expiration from background
+/**
+ * Helper to handle auth expiration from background responses
+ * @param {object} response - Background response
+ * @param {string} connectionId - Connection ID used for the request
+ * @returns {object} - Same response object
+ */
+function handleAuthExpired(response, connectionId) {
     if (response.authExpired) {
-        triggerAuthExpired(response.connectionId || connId, response.error);
+        triggerAuthExpired(response.connectionId || connectionId, response.error);
     }
-
     return response;
+}
+
+/**
+ * Background fetch proxy (uses Chrome extension fetch to bypass CORS)
+ * @param {string} url - URL to fetch
+ * @param {object} options - Fetch options
+ * @param {string|null} connectionId - Optional connection ID
+ * @returns {Promise<object>} - Response object
+ */
+export async function extensionFetch(url, options = {}, connectionId = null) {
+    const connId = connectionId || getActiveConnectionId();
+    const response = await chrome.runtime.sendMessage({
+        type: 'fetch',
+        url,
+        options,
+        connectionId: connId
+    });
+    return handleAuthExpired(response, connId);
 }
 
 // --- Proxy Connection State ---
@@ -84,13 +103,19 @@ export async function checkProxyStatus() {
  */
 export async function proxyFetch(url, options = {}) {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-        return await chrome.runtime.sendMessage({
+        const connId = getActiveConnectionId();
+        console.log('[proxyFetch]', options.method || 'GET', url);
+
+        const response = await chrome.runtime.sendMessage({
             type: 'proxyFetch',
             url,
             method: options.method,
             headers: options.headers,
-            body: options.body
+            body: options.body,
+            connectionId: connId
         });
+
+        return handleAuthExpired(response, connId);
     }
     throw new Error('Proxy fetch requires extension context');
 }
@@ -129,6 +154,13 @@ export async function salesforceRequest(endpoint, options = {}) {
     });
 
     if (!response.success && response.status !== 404) {
+        // Check for 401 Unauthorized (session expired)
+        if (response.status === 401 && !response.authExpired) {
+            // Trigger auth expiration flow (proxy requests don't set authExpired flag)
+            const connectionId = getActiveConnectionId();
+            triggerAuthExpired(connectionId, 'Session expired');
+        }
+
         // Use response.error if available (e.g., from auth expiration), otherwise parse response data
         if (response.error) {
             throw new Error(response.error);

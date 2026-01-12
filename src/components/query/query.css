@@ -397,6 +397,21 @@
 }
 
 /* ============================================================
+   Id Link Styles
+   ============================================================ */
+
+.query-id-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.query-id-link:hover {
+    text-decoration: underline;
+}
+
+/* ============================================================
    Subquery Rendering
    ============================================================ */
 

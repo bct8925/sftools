@@ -8,7 +8,7 @@
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     flex: 0 1 auto;
     min-width: 0;
 }

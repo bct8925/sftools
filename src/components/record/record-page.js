@@ -1,14 +1,15 @@
 // Record Viewer - Custom Element
 import template from './record.html?raw';
 import './record.css';
-import { setActiveConnection } from '../../lib/utils.js';
 import { getObjectDescribe, getRecordWithRelationships, updateRecord } from '../../lib/salesforce.js';
+import { setActiveConnection } from '../../lib/auth.js';
 
 class RecordPage extends HTMLElement {
     // State
     objectType = null;
     recordId = null;
     connectionId = null;
+    connection = null;  // Store full connection object
     instanceUrl = null;
     fieldDescribe = {};
     nameFieldMap = {};
@@ -86,14 +87,18 @@ class RecordPage extends HTMLElement {
         this.recordIdEl.textContent = this.recordId;
         this.objectNameEl.textContent = this.objectType;
 
-        const connection = await this.loadConnection(this.connectionId);
-        if (!connection) {
+        this.connection = await this.loadConnection(this.connectionId);
+        if (!this.connection) {
             this.showError('Connection not found. Please re-authorize.');
             return;
         }
 
-        this.instanceUrl = connection.instanceUrl;
-        setActiveConnection(connection);
+        this.instanceUrl = this.connection.instanceUrl;
+
+        // Configure auth context for this Record Viewer tab
+        // This does NOT change the active connection in other sftools tabs/windows
+        // since each extension page has its own isolated JavaScript module context
+        setActiveConnection(this.connection);
 
         await this.loadRecord();
     }

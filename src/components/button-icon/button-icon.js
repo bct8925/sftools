@@ -68,7 +68,13 @@ class ButtonIcon extends HTMLElement {
             }
 
             // If click is not on the trigger button itself, delegate it
+            // But allow clicks inside the menu to work normally
             if (e.target !== this.trigger) {
+                // If we have a menu and the click is inside it, allow normal behavior
+                if (this.hasMenu && this.menu.contains(e.target)) {
+                    return;
+                }
+                // Otherwise delegate to trigger
                 e.stopPropagation();
                 e.preventDefault();
                 this.trigger.click();

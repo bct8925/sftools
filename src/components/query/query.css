@@ -8,9 +8,13 @@
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     flex: 0 1 auto;
     min-width: 0;
+}
+
+.query-results-btn {
+    flex-shrink: 0;
 }
 
 .query-search-input {
@@ -40,6 +44,11 @@
 
 .query-history-btn {
     margin-left: auto;
+    flex-shrink: 0;
+}
+
+.query-settings-btn {
+    flex-shrink: 0;
 }
 
 .query-history-modal .modal-content {

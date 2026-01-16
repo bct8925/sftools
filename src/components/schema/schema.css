@@ -280,6 +280,18 @@
     white-space: nowrap;
 }
 
+.field-item-type .reference-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.field-item-type .reference-link:hover {
+    color: var(--brand-color);
+    text-decoration: underline;
+}
+
 .loading-container {
     padding: 32px;
     text-align: center;

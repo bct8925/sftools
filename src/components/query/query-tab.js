@@ -668,6 +668,13 @@ LIMIT 10`);
 
     switchToTab(tabId) {
         this.activeTabId = tabId;
+
+        // Restore the query to the editor when switching tabs
+        const tabData = this.getTabDataById(tabId);
+        if (tabData && tabData.query) {
+            this.editor.setValue(tabData.query);
+        }
+
         this.renderTabs();
         this.renderResults();
         // Clear search when switching tabs

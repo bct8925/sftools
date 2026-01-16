@@ -5,80 +5,77 @@
 ## Languages
 
 **Primary:**
-- JavaScript (ES6+ modules) - All application code in `src/**/*.js`, `sftools-proxy/src/**/*.js`
+- JavaScript (ES6 modules) - All application code in `src/`
+- Node.js (CommonJS) - Local proxy in `sftools-proxy/`
 
 **Secondary:**
-- Proto3 - gRPC service definitions in `sftools-proxy/proto/pubsub_api.proto`
-- HTML5 - Component templates in `src/components/**/*.html`, `src/pages/**/*.html`
-- CSS3 - Styling in `src/**/*.css`, `src/style.css`
-- JSON - Configuration in `manifest.json`, `package.json`, `rules.json`
+- Protobuf - gRPC definitions in `sftools-proxy/proto/pubsub_api.proto`
 
 ## Runtime
 
 **Environment:**
-- Node.js >= 18.0.0 - `sftools-proxy/package.json` engines field
-- Chrome/Chromium (Manifest V3 Extension) - `manifest.json`
-- Browser APIs: Chrome Extension APIs (service workers, native messaging, storage, tabs, etc.)
+- Chrome Extension (Manifest V3) - `manifest.json`
+- Node.js 18+ (for local proxy) - `sftools-proxy/package.json` engines field
+- Browser runtime (Chrome)
 
 **Package Manager:**
 - npm
-- Lockfiles: `package-lock.json`, `sftools-proxy/package-lock.json`
-- Registry: `https://registry.npmjs.org` - `.npmrc`
+- Lockfile: `package-lock.json` present in both root and `sftools-proxy/`
 
 ## Frameworks
 
 **Core:**
-- Custom Elements (Web Components) - All UI components, no Shadow DOM
-- Chrome Extension Manifest V3 - `manifest.json`
+- Web Components (Custom Elements) without Shadow DOM - `src/components/*/`
+- No external UI framework (Lightning-inspired CSS)
 
 **Testing:**
 - None configured
 
 **Build/Dev:**
-- Vite 7.2.7 - `vite.config.js` (bundler with code splitting)
-- Monaco Editor 0.55.1 - `src/components/monaco-editor/` (code/JSON editing)
+- Vite 7.2.7 - Build tool and dev server - `vite.config.js`
+- Rollup (via Vite) - Multi-entry bundling
 
 ## Key Dependencies
 
-**Critical (Extension):**
-- monaco-editor 0.55.1 - Code editing with syntax highlighting, error markers - `package.json`
-- @jetstreamapp/soql-parser-js 6.3.1 - SOQL query parsing for autocomplete - `package.json`
+**Critical:**
+- monaco-editor 0.55.1 - Code editor for SOQL, Apex, JSON - `src/components/monaco-editor/`
+- @jetstreamapp/soql-parser-js 6.3.1 - SOQL parsing for autocomplete - `src/lib/soql-autocomplete.js`
 
-**Critical (Proxy):**
-- @grpc/grpc-js 1.12.0 - gRPC client for Salesforce Pub/Sub API - `sftools-proxy/package.json`
-- @grpc/proto-loader 0.7.13 - Dynamic .proto file loading - `sftools-proxy/package.json`
-- faye 1.4.0 - CometD/Bayeux client for PushTopics - `sftools-proxy/package.json`
-- avsc 5.7.7 - Avro schema parsing for event payloads - `sftools-proxy/package.json`
+**Proxy Dependencies:**
+- @grpc/grpc-js 1.12.0 - gRPC client for Pub/Sub API - `sftools-proxy/src/grpc/pubsub-client.js`
+- @grpc/proto-loader 0.7.13 - Proto file loading - `sftools-proxy/src/grpc/pubsub-client.js`
+- faye 1.4.0 - CometD/Bayeux client for streaming - `sftools-proxy/src/cometd/cometd-client.js`
+- avsc 5.7.7 - Avro schema encoding/decoding - `sftools-proxy/src/grpc/schema-cache.js`
 
 **Infrastructure:**
-- Chrome Extension APIs - Storage, native messaging, tabs, context menus
-- Node.js built-ins - File system, child process (proxy only)
+- Chrome Extension APIs (storage, runtime, contextMenus, sidePanel)
+- Native Messaging protocol - `src/background/native-messaging.js`
 
 ## Configuration
 
 **Environment:**
-- No `.env` files required - secrets stored in Chrome extension storage
-- OAuth tokens managed via `chrome.storage.local`
-- Per-connection configuration (clientId, loginDomain)
+- No environment variables required for extension
+- OAuth Client ID in `manifest.json`
+- Per-connection Client IDs stored in Chrome storage
 
 **Build:**
-- `vite.config.js` - Build configuration (root: src/, output: dist/)
-- `manifest.json` - Extension manifest with OAuth2 config
+- `vite.config.js` - Build configuration with multi-entry points
+- `manifest.json` - Extension manifest with permissions, OAuth, service worker
+
+**Extension Manifest:**
+- `manifest.json` - MV3 configuration, OAuth2, permissions
 - `rules.json` - Declarative net request rules for CORS header manipulation
-- `.npmrc` - NPM registry configuration
 
 ## Platform Requirements
 
 **Development:**
-- macOS/Linux/Windows (any platform with Node.js 18+)
-- Chrome browser for extension testing
-- No external services required for basic functionality
+- macOS/Linux/Windows (any platform with Node.js and Chrome)
+- Chrome browser with Developer Mode enabled
+- Node.js 18+ for local proxy features
 
 **Production:**
-- Chrome browser with Developer mode or Chrome Web Store install
-- Optional: Local proxy for gRPC streaming and CORS bypass
-  - Native messaging host installed via `sftools-proxy/install.js`
-  - Runs on localhost (127.0.0.1)
+- Chrome browser
+- Optional: Local proxy installed via native messaging host
 
 ---
 

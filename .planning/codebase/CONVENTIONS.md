@@ -5,153 +5,195 @@
 ## Naming Patterns
 
 **Files:**
-- kebab-case for all files: `query-tab.js`, `salesforce-request.js`, `text-utils.js`
-- Component files paired with template: `query-tab.js` + `query.html` + `query.css`
-- Entry points match directory: `app/app.js`, `record/record.js`
+- `kebab-case.js` for all JavaScript files: `query-tab.js`, `salesforce-request.js`
+- `{name}-tab.js` for tab components: `query-tab.js`, `apex-tab.js`
+- `{name}-page.js` for page components: `record-page.js`, `schema-page.js`
+- Co-located assets: `{name}.js`, `{name}.html`, `{name}.css`
 
 **Functions:**
-- camelCase for all functions: `getAccessToken()`, `executeQuery()`, `handleConnectionChange()`
-- Async functions: No special prefix (async/await used throughout)
-- Event handlers: `handle*` prefix: `handleClick()`, `handleSubmit()`, `handleConnectionChange()`
+- camelCase for all functions
+- `get*` for retrieval: `getDescribeCache()`, `getAccessToken()`
+- `set*` for assignment: `setDescribeCache()`, `setActiveConnection()`
+- `execute*` for operations: `executeQuery()`, `executeApex()`
+- `handle*` for event handlers: `handleConnectionChange()`, `handleClick()`
+- `is*`, `has*`, `can*` for booleans: `isAuthenticated()`, `isProxyConnected()`
 
 **Variables:**
-- camelCase for variables: `accessToken`, `instanceUrl`, `queryTabs`
-- Constants: UPPER_SNAKE_CASE: `API_VERSION`, `STORAGE_KEYS`, `CALLBACK_URL`
-- Private state: Module-level variables (no underscore prefix)
+- camelCase for variables: `activeTabId`, `queryTabs`
+- UPPER_SNAKE_CASE for constants: `API_VERSION`, `STORAGE_KEYS`
+- Descriptive names: `boundConnectionHandler`, `bulkExportInProgress`
 
 **Types:**
-- Not applicable (JavaScript codebase, no TypeScript)
+- PascalCase for classes: `QueryTab`, `RecordPage`, `HistoryManager`
+- No I prefix for interfaces (not using TypeScript)
 
 ## Code Style
 
 **Formatting:**
-- 4-space indentation for JavaScript
-- 2-space indentation for CSS
+- 4-space indentation
 - Single quotes for strings
-- Semicolons required at statement endings
-- Template literals for multi-line strings
+- Semicolons required
+- No external formatter (Prettier not configured)
 
 **Linting:**
 - No ESLint configuration
-- No Prettier configuration
 - Manual code review for consistency
 
 ## Import Organization
 
 **Order:**
-1. External packages (none typically - Web APIs used directly)
-2. Relative imports from lib: `import { ... } from '../lib/auth.js'`
-3. Component imports: `import '../monaco-editor/monaco-editor.js'`
-4. Template imports: `import template from './query.html?raw'`
-5. CSS imports: `import './query.css'`
+1. External packages (if any)
+2. Template imports (`import template from './name.html?raw'`)
+3. CSS imports (`import './name.css'`)
+4. Internal lib modules (`import { ... } from '../../lib/utils.js'`)
+5. Component imports (`import '../monaco-editor/monaco-editor.js'`)
 
-**Grouping:**
-- Single blank line between groups
-- No alphabetical sorting enforced
+**Example from `src/components/query/query-tab.js`:**
+```javascript
+import template from './query.html?raw';
+import './query.css';
+import { isAuthenticated, getActiveConnectionId } from '../../lib/utils.js';
+import '../monaco-editor/monaco-editor.js';
+import { executeQueryWithColumns } from '../../lib/salesforce.js';
+```
 
 **Path Aliases:**
-- No path aliases configured
-- Relative paths used throughout: `../../lib/`, `../components/`
+- None configured (relative paths used)
 
 ## Error Handling
 
 **Patterns:**
-- Service layer throws exceptions via `throw new Error()`
-- Components wrap API calls in try/catch
-- Auth expiration triggers callback: `triggerAuthExpired(connectionId, error)`
+- Try/catch at async operation boundaries
+- Error messages shown in UI status elements
+- console.error for debugging
+
+**Example:**
+```javascript
+async executeQuery() {
+    try {
+        const results = await executeQueryWithColumns(soql);
+        this.displayResults(results);
+    } catch (error) {
+        this.showError(error.message);
+    }
+}
+```
 
 **Error Types:**
-- Standard Error objects: `throw new Error('message')`
-- No custom error classes
-
-**Async:**
-- async/await pattern (no .then() chains)
-- try/catch for error handling
+- Throw Error with descriptive message
+- 401 handled specially: trigger auth expiration flow
 
 ## Logging
 
 **Framework:**
-- Console logging (console.log, console.error, console.warn)
-- No structured logging library
+- Console logging (console.log, console.error)
+- No external logging library
 
 **Patterns:**
-- `console.error()` for errors with context: `console.error('Query error:', error)`
-- `console.warn()` for warnings: `console.warn('Failed to fetch metadata:', err)`
-- `console.log()` for debug output (sparse usage)
-- Prefix pattern for proxy: `console.log('[proxyFetch]', method, url)`
+- Debug info: `console.log('Loaded auth for instance:', instanceUrl)`
+- Errors: `console.error('Failed to fetch:', error)`
+- Proxy: File logging to `/tmp/sftools-proxy.log`
 
 ## Comments
 
 **When to Comment:**
-- File headers: Single-line description at top
-- Section headers: Double-line format for major sections
-- Complex logic: Explain why, not what
-- Business rules: Document edge cases and quirks
+- JSDoc for exported functions with complex signatures
+- Section headers for logical grouping
+- Inline comments for non-obvious business logic
 
-**JSDoc/TSDoc:**
-- Required for exported functions in lib/
-- Format: `@param`, `@returns`, `@deprecated` tags
-- Example from `src/lib/auth.js`:
-  ```javascript
-  /**
-   * Register a callback to be called when auth expires
-   * @param {Function} callback - Function to call when auth expires
-   */
-  ```
+**JSDoc Example:**
+```javascript
+/**
+ * Escape single quotes for SOQL queries
+ * @param {string} str - String to escape
+ * @returns {string} - Escaped string safe for SOQL
+ */
+function escapeSoql(str) {
+    return str.replace(/'/g, "\\'");
+}
+```
 
 **Section Headers:**
 ```javascript
 // ============================================================
-// Storage Operations
+// Describe Cache
 // ============================================================
 ```
 
 **TODO Comments:**
 - Format: `// TODO: description`
-- No tracking convention (use git blame for attribution)
+- No tracking system (use git blame for attribution)
 
 ## Function Design
 
 **Size:**
-- Target under 50 lines
-- Large components exist (query-tab.js is 1309 lines)
-- Extract helpers for complex logic
+- No strict limit enforced
+- Large components exist (query-tab.js: 1309 lines)
 
 **Parameters:**
-- Options objects for multiple optional params: `function execute(options = {})`
-- Destructuring in callbacks: `(e) => { const { target } = e; }`
+- Use object destructuring for multiple options
+- Required params first, optional with defaults
 
 **Return Values:**
-- Explicit returns (no implicit undefined)
-- Return early for guard clauses
-- Async functions return Promises
+- Async functions return promises
+- Return meaningful values or throw errors
 
 ## Module Design
 
 **Exports:**
-- Named exports for all public functions: `export function getAccessToken() {}`
-- Named exports for constants: `export const API_VERSION = '62.0'`
+- Named exports preferred: `export async function getDescribeCache()`
 - No default exports
+- Central re-export in `utils.js` for common imports
 
-**Barrel Files:**
-- `src/lib/utils.js` re-exports from auth.js (legacy pattern)
-- Otherwise, import directly from source module
+**Custom Elements:**
+- Pattern: Class extends HTMLElement
+- Registration: `customElements.define('element-name', ClassName)`
+- Methods: `connectedCallback()`, `disconnectedCallback()`, `initElements()`, `attachEventListeners()`
 
-**Component Pattern:**
+**Template:**
 ```javascript
 import template from './name.html?raw';
 import './name.css';
 
 class ComponentName extends HTMLElement {
+    // State properties
+    element = null;
+
     connectedCallback() {
         this.innerHTML = template;
         this.initElements();
         this.attachEventListeners();
     }
+
+    disconnectedCallback() {
+        // Cleanup listeners
+    }
+
+    initElements() {
+        this.element = this.querySelector('.element-class');
+    }
+
+    attachEventListeners() {
+        this.element.addEventListener('click', () => this.handleClick());
+    }
 }
 
 customElements.define('component-name', ComponentName);
 ```
+
+## DOM & CSS Conventions
+
+**CSS Class Naming:**
+- Component prefix: `.query-editor`, `.settings-proxy-toggle`
+- kebab-case: `.card-header`, `.button-brand`
+- State classes: `.active`, `.loading`, `.error`
+
+**CSS Variables:**
+- Defined in `:root` in `src/style.css`
+- Example: `--primary-color`, `--text-main`, `--bg-color`
+
+**CSS Specificity:**
+- Compound selectors for overrides: `.card-body.query-card-body`
 
 ---
 

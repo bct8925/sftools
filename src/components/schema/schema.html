@@ -16,7 +16,7 @@
                         <input type="text" id="objectFilter" class="input filter-input" placeholder="Filter objects...">
                         <div class="objects-header-row">
                             <div id="objectCount" class="object-count"></div>
-                            <button-icon id="refreshObjectsBtn" icon="&#8635;" title="Refresh objects"></button-icon>
+                            <button-icon id="refreshObjectsBtn" data-icon="refresh" title="Refresh objects"></button-icon>
                         </div>
                     </div>
                     <div id="objectsList" class="objects-list">
@@ -28,11 +28,9 @@
                         <div class="fields-header-top">
                             <h3 id="selectedObjectLabel"></h3>
                             <div class="fields-header-actions">
-                                <button-icon id="refreshFieldsBtn" icon="&#8635;" title="Refresh fields"></button-icon>
+                                <button-icon id="refreshFieldsBtn" data-icon="refresh" title="Refresh fields"></button-icon>
                                 <button class="close-btn" id="closeFieldsBtn" title="Close">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                        <path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/>
-                                    </svg>
+                                    {{icon:close}}
                                 </button>
                             </div>
                         </div>
@@ -62,9 +60,7 @@
                 <div class="modal-field-info" id="modalFieldInfo"></div>
             </div>
             <button class="close-btn" id="modalCloseBtn" title="Close">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/>
-                </svg>
+                {{icon:close}}
             </button>
         </div>
         <div class="modal-body">

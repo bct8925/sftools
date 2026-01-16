@@ -3,6 +3,9 @@ import template from './record.html?raw';
 import './record.css';
 import { setActiveConnection } from '../../lib/utils.js';
 import { getObjectDescribe, getRecordWithRelationships, updateRecord } from '../../lib/salesforce.js';
+import { updateStatusBadge } from '../../lib/ui-helpers.js';
+import { escapeHtml } from '../../lib/text-utils.js';
+import { replaceIcons } from '../../lib/icons.js';
 
 class RecordPage extends HTMLElement {
     // State
@@ -30,7 +33,7 @@ class RecordPage extends HTMLElement {
     modalCloseBtnEl = null;
 
     connectedCallback() {
-        this.innerHTML = template;
+        this.innerHTML = replaceIcons(template);
         this.initElements();
         this.attachEventListeners();
         this.initialize();
@@ -139,75 +142,97 @@ class RecordPage extends HTMLElement {
     }
 
     renderFields(fields, record) {
-        // Sort: Id first, name field second, then alphabetically by API name
-        const sortedFields = [...fields].sort((a, b) => {
+        const sortedFields = this.sortFields(fields);
+        const filteredFields = this.filterFields(sortedFields);
+
+        this.fieldsContainer.innerHTML = filteredFields
+            .map(field => this.createFieldRowHtml(field, record))
+            .join('');
+
+        this.attachFieldEventListeners();
+    }
+
+    sortFields(fields) {
+        return [...fields].sort((a, b) => {
             if (a.name === 'Id') return -1;
             if (b.name === 'Id') return 1;
             if (a.nameField) return -1;
             if (b.nameField) return 1;
             return a.name.localeCompare(b.name);
         });
+    }
 
-        // Filter out compound and internal fields
+    filterFields(fields) {
         const excludeTypes = ['address', 'location'];
         const excludeNames = ['attributes'];
-        const filteredFields = sortedFields.filter(f =>
+        return fields.filter(f =>
             !excludeNames.includes(f.name) &&
             !excludeTypes.includes(f.type)
         );
+    }
 
-        this.fieldsContainer.innerHTML = filteredFields.map(field => {
-            const value = record[field.name];
-            const displayValue = this.formatValue(value, field);
-            const previewHtml = this.formatPreviewHtml(value, field, record);
-            const previewText = this.formatPreviewText(value, field, record);
-            const isEditable = field.updateable && !field.calculated;
+    createFieldRowHtml(field, record) {
+        const value = record[field.name];
+        const displayValue = this.formatValue(value, field);
+        const previewHtml = this.formatPreviewHtml(value, field, record);
+        const previewText = this.formatPreviewText(value, field, record);
+        const isEditable = field.updateable && !field.calculated;
 
-            let typeDisplay = field.type;
-            if (field.calculated) {
-                typeDisplay = field.calculatedFormula ? `${field.type} (formula)` : `${field.type} (rollup)`;
-            }
+        const typeDisplay = this.getTypeDisplay(field);
+        const valueHtml = this.createValueInputHtml(field, value, displayValue, isEditable);
 
-            let valueHtml;
-            if (field.type === 'picklist' && isEditable) {
-                const options = (field.picklistValues || [])
-                    .filter(pv => pv.active)
-                    .map(pv => `<option value="${this.escapeAttr(pv.value)}" ${pv.value === value ? 'selected' : ''}>${this.escapeHtml(pv.label)}</option>`)
-                    .join('');
-                valueHtml = `
-                    <select class="select field-input" data-field="${field.name}" data-type="${field.type}">
-                        <option value="">--None--</option>
-                        ${options}
-                    </select>`;
-            } else {
-                valueHtml = `
-                    <input type="text"
-                           class="input field-input"
-                           value="${this.escapeAttr(displayValue)}"
-                           ${isEditable ? '' : 'disabled'}
-                           data-field="${field.name}"
-                           data-type="${field.type}">`;
-            }
+        return `
+            <div class="field-row" data-field="${field.name}">
+                <div class="field-label" title="${this.escapeAttr(field.label)}">${escapeHtml(field.label)}</div>
+                <div class="field-api-name" title="${this.escapeAttr(field.name)}">${field.name}</div>
+                <div class="field-type">${typeDisplay}</div>
+                <div class="field-value">${valueHtml}</div>
+                <div class="field-preview" title="${this.escapeAttr(previewText)}">${previewHtml}</div>
+            </div>
+        `;
+    }
+
+    getTypeDisplay(field) {
+        if (field.calculated) {
+            return field.calculatedFormula
+                ? `${field.type} (formula)`
+                : `${field.type} (rollup)`;
+        }
+        return field.type;
+    }
+
+    createValueInputHtml(field, value, displayValue, isEditable) {
+        if (field.type === 'picklist' && isEditable) {
+            const options = (field.picklistValues || [])
+                .filter(pv => pv.active)
+                .map(pv => `<option value="${this.escapeAttr(pv.value)}" ${pv.value === value ? 'selected' : ''}>${escapeHtml(pv.label)}</option>`)
+                .join('');
 
             return `
-                <div class="field-row" data-field="${field.name}">
-                    <div class="field-label" title="${this.escapeAttr(field.label)}">${this.escapeHtml(field.label)}</div>
-                    <div class="field-api-name" title="${this.escapeAttr(field.name)}">${field.name}</div>
-                    <div class="field-type">${typeDisplay}</div>
-                    <div class="field-value">${valueHtml}</div>
-                    <div class="field-preview" title="${this.escapeAttr(previewText)}">${previewHtml}</div>
-                </div>
-            `;
-        }).join('');
+                <select class="select field-input" data-field="${field.name}" data-type="${field.type}">
+                    <option value="">--None--</option>
+                    ${options}
+                </select>`;
+        }
 
+        return `
+            <input type="text"
+                   class="input field-input"
+                   value="${this.escapeAttr(displayValue)}"
+                   ${isEditable ? '' : 'disabled'}
+                   data-field="${field.name}"
+                   data-type="${field.type}">`;
+    }
+
+    attachFieldEventListeners() {
         this.fieldsContainer.querySelectorAll('input.field-input:not([disabled])').forEach(input => {
             input.addEventListener('input', (e) => this.handleFieldChange(e.target));
         });
+
         this.fieldsContainer.querySelectorAll('select.field-input').forEach(select => {
             select.addEventListener('change', (e) => this.handleFieldChange(e.target));
         });
 
-        // Add event listeners for preview buttons
         this.fieldsContainer.querySelectorAll('.field-preview-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.handlePreviewClick(e.target));
         });
@@ -245,9 +270,9 @@ class RecordPage extends HTMLElement {
             case 'boolean':
                 return `<input type="checkbox" ${value ? 'checked' : ''} disabled>`;
             case 'datetime':
-                return this.escapeHtml(new Date(value).toLocaleString());
+                return escapeHtml(new Date(value).toLocaleString());
             case 'date':
-                return this.escapeHtml(new Date(value + 'T00:00:00').toLocaleDateString());
+                return escapeHtml(new Date(value + 'T00:00:00').toLocaleDateString());
             case 'reference':
                 if (field.relationshipName && field.referenceTo?.length > 0) {
                     const related = record[field.relationshipName];
@@ -257,7 +282,7 @@ class RecordPage extends HTMLElement {
                     if (relatedName) {
                         const displayType = field.name === 'OwnerId' ? 'User/Group' : relatedType;
                         const url = `record.html?objectType=${encodeURIComponent(relatedType)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(this.connectionId)}`;
-                        return `<a href="${url}" target="_blank">${this.escapeHtml(relatedName)} (${this.escapeHtml(displayType)})</a>`;
+                        return `<a href="${url}" target="_blank">${escapeHtml(relatedName)} (${escapeHtml(displayType)})</a>`;
                     }
                 }
             default:
@@ -397,19 +422,15 @@ class RecordPage extends HTMLElement {
         }
     }
 
-    setStatus(text, type) {
-        this.statusEl.textContent = text;
-        this.statusEl.className = 'status-badge';
-        if (type) {
-            this.statusEl.classList.add(`status-${type}`);
-        }
+    setStatus(text, type = '') {
+        updateStatusBadge(this.statusEl, text, type);
     }
 
     showError(message) {
         this.setStatus('Error', 'error');
         this.fieldsContainer.innerHTML = `
             <div class="error-container">
-                <p class="error-message">${this.escapeHtml(message)}</p>
+                <p class="error-message">${escapeHtml(message)}</p>
                 <p class="error-hint">Please check the connection and try again.</p>
             </div>
         `;
@@ -419,12 +440,6 @@ class RecordPage extends HTMLElement {
         alert(`Error saving record: ${message}`);
     }
 
-    escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        const div = document.createElement('div');
-        div.textContent = String(str);
-        return div.innerHTML;
-    }
 
     escapeAttr(str) {
         if (str === null || str === undefined) return '';

@@ -2,26 +2,7 @@
 // Handles OAuth token exchange and refresh in the service worker
 
 import { isProxyConnected, sendProxyRequest } from './native-messaging.js';
-
-/**
- * Get OAuth credentials for a specific connection or default
- * Uses per-connection clientId if available, otherwise falls back to manifest default
- * @param {string|null} connectionId - Optional connection ID to look up
- * @returns {Promise<{clientId: string}>}
- */
-async function getBackgroundOAuthCredentials(connectionId = null) {
-    // Check for per-connection clientId first
-    if (connectionId) {
-        const { connections } = await chrome.storage.local.get(['connections']);
-        const connection = connections?.find(c => c.id === connectionId);
-        if (connection?.clientId) {
-            return { clientId: connection.clientId };
-        }
-    }
-
-    // Fall back to manifest default
-    return { clientId: chrome.runtime.getManifest().oauth2.client_id };
-}
+import { getOAuthCredentials } from '../lib/oauth-credentials.js';
 
 /**
  * Exchange authorization code for tokens via proxy
@@ -124,7 +105,7 @@ export async function refreshAccessToken(connection) {
             const loginDomain = connection.loginDomain || 'https://login.salesforce.com';
             const tokenUrl = `${loginDomain}/services/oauth2/token`;
             // Use connection's clientId if set, otherwise fall back to default
-            const { clientId } = await getBackgroundOAuthCredentials(connection.id);
+            const { clientId } = await getOAuthCredentials(connection.id);
 
             const body = new URLSearchParams({
                 grant_type: 'refresh_token',

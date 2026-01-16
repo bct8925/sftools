@@ -5,6 +5,8 @@ import '../button-icon/button-icon.js';
 import { monaco } from '../monaco-editor/monaco-editor.js';
 import { setActiveConnection } from '../../lib/utils.js';
 import { getGlobalDescribe, getObjectDescribe, getFormulaFieldMetadata, updateFormulaField } from '../../lib/salesforce.js';
+import { escapeHtml } from '../../lib/text-utils.js';
+import { icons, replaceIcons } from '../../lib/icons.js';
 
 // Completion provider state - shared with Monaco
 let completionState = {
@@ -250,7 +252,7 @@ class SchemaPage extends HTMLElement {
     currentFormulaField = null;
 
     connectedCallback() {
-        this.innerHTML = template;
+        this.innerHTML = replaceIcons(template);
         this.initElements();
         this.attachEventListeners();
         this.initialize();
@@ -370,8 +372,8 @@ class SchemaPage extends HTMLElement {
 
         this.objectsListEl.innerHTML = this.filteredObjects.map(obj => `
             <div class="object-item" data-name="${this.escapeAttr(obj.name)}">
-                <div class="object-item-label">${this.escapeHtml(obj.label)}</div>
-                <div class="object-item-name">${this.escapeHtml(obj.name)}</div>
+                <div class="object-item-label">${escapeHtml(obj.label)}</div>
+                <div class="object-item-name">${escapeHtml(obj.name)}</div>
             </div>
         `).join('');
 
@@ -459,7 +461,7 @@ class SchemaPage extends HTMLElement {
         } catch (error) {
             this.fieldsListEl.innerHTML = `
                 <div class="error-container">
-                    <p class="error-message">${this.escapeHtml(error.message)}</p>
+                    <p class="error-message">${escapeHtml(error.message)}</p>
                     <p class="error-hint">Could not load field information.</p>
                 </div>
             `;
@@ -531,26 +533,22 @@ class SchemaPage extends HTMLElement {
             if (typeDisplay.isReference && typeDisplay.referenceTo) {
                 // Create clickable links for each referenced object
                 const links = typeDisplay.referenceTo.map(objName =>
-                    `<a href="#" class="reference-link" data-object="${this.escapeAttr(objName)}">${this.escapeHtml(objName)}</a>`
+                    `<a href="#" class="reference-link" data-object="${this.escapeAttr(objName)}">${escapeHtml(objName)}</a>`
                 ).join(', ');
                 typeHtml = `reference (${links})`;
             } else {
-                typeHtml = this.escapeHtml(typeDisplay.text);
+                typeHtml = escapeHtml(typeDisplay.text);
             }
 
             return `
                 <div class="field-item" data-field-name="${this.escapeAttr(field.name)}">
-                    <div class="field-item-label" title="${this.escapeAttr(field.label)}">${this.escapeHtml(field.label)}</div>
-                    <div class="field-item-name" title="${this.escapeAttr(field.name)}">${this.escapeHtml(field.name)}</div>
-                    <div class="field-item-type" title="${this.escapeAttr(typeDisplay.text)}">${typeHtml}</div>
+                    <div class="field-item-label" title="${this.escapeAttr(field.label)}">${escapeHtml(field.label)}</div>
+                    <div class="field-item-name" title="${this.escapeAttr(field.name)}">${escapeHtml(field.name)}</div>
+                    <div class="field-item-type" title="${this.escapeAttr(typeDisplay)}">${typeDisplay}</div>
                     <div class="field-item-actions">
                         ${isFormulaField ? `
                             <button class="field-menu-button" data-field-name="${this.escapeAttr(field.name)}" aria-label="More options">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                    <circle cx="8" cy="3" r="1.5"/>
-                                    <circle cx="8" cy="8" r="1.5"/>
-                                    <circle cx="8" cy="13" r="1.5"/>
-                                </svg>
+                                ${icons.verticalDots}
                             </button>
                             <div class="field-menu" data-field-name="${this.escapeAttr(field.name)}">
                                 <div class="field-menu-item" data-action="edit" data-field-name="${this.escapeAttr(field.name)}">Edit</div>
@@ -640,18 +638,12 @@ class SchemaPage extends HTMLElement {
     showError(message) {
         this.objectsListEl.innerHTML = `
             <div class="error-container">
-                <p class="error-message">${this.escapeHtml(message)}</p>
+                <p class="error-message">${escapeHtml(message)}</p>
                 <p class="error-hint">Please check the connection and try again.</p>
             </div>
         `;
     }
 
-    escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        const div = document.createElement('div');
-        div.textContent = String(str);
-        return div.innerHTML;
-    }
 
     escapeAttr(str) {
         if (str === null || str === undefined) return '';

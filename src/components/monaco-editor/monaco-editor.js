@@ -46,8 +46,13 @@ class MonacoEditor extends HTMLElement {
         });
 
         // Dispatch execute event on Ctrl/Cmd+Enter
-        this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-            this.dispatchEvent(new CustomEvent('execute', { bubbles: true }));
+        this.editor.addAction({
+            id: 'execute',
+            label: 'Execute',
+            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+            run: () => {
+                this.dispatchEvent(new CustomEvent('execute', { bubbles: true }));
+            }
         });
     }
 

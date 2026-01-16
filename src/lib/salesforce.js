@@ -622,15 +622,24 @@ export async function enableTraceFlagForUser(userId) {
 
     // Check for existing trace flag
     const query = encodeURIComponent(
-        `SELECT Id, DebugLevelId, ExpirationDate FROM TraceFlag WHERE TracedEntityId = '${userId}' AND LogType = 'USER_DEBUG' AND ExpirationDate > ${now}`
+        `SELECT Id, DebugLevelId, DebugLevel.DeveloperName, ExpirationDate FROM TraceFlag WHERE TracedEntityId = '${userId}' AND LogType = 'USER_DEBUG' AND ExpirationDate > ${now}`
     );
     const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
 
     if (response.json.records && response.json.records.length > 0) {
         const existing = response.json.records[0];
+        const hasCorrectDebugLevel = existing.DebugLevel?.DeveloperName === DEBUG_LEVEL_NAME;
+
+        // Get the correct debug level ID (reuse existing if correct, otherwise fetch/create)
+        const debugLevelId = hasCorrectDebugLevel ? existing.DebugLevelId : await getOrCreateDebugLevel();
+
+        // Update existing trace flag with new expiration and correct debug level
         await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${existing.Id}`, {
             method: 'PATCH',
-            body: JSON.stringify({ ExpirationDate: thirtyMinutesFromNow })
+            body: JSON.stringify({
+                ExpirationDate: thirtyMinutesFromNow,
+                DebugLevelId: debugLevelId
+            })
         });
         return existing.Id;
     }

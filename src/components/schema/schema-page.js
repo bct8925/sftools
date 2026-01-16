@@ -537,7 +537,7 @@ class SchemaPage extends HTMLElement {
                 ).join(', ');
                 typeHtml = `reference (${links})`;
             } else {
-                typeHtml = this.escapeHtml(typeDisplay.text);
+                typeHtml = escapeHtml(typeDisplay.text);
             }
 
             return `

@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "install-host": "node install.js"
+    "install-host": "node install.js",
+    "logs": ": > /tmp/sftools-proxy.log && tail -f /tmp/sftools-proxy.log"
   },
   "keywords": ["salesforce", "chrome-extension", "native-messaging", "grpc"],
   "license": "MIT",

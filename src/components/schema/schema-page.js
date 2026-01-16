@@ -422,6 +422,28 @@ class SchemaPage extends HTMLElement {
         await this.loadFields(objectName);
     }
 
+    navigateToObject(objectName) {
+        // Check if object exists
+        const obj = this.allObjects.find(o => o.name === objectName);
+        if (!obj) {
+            console.warn(`Object ${objectName} not found`);
+            return;
+        }
+
+        // Clear object filter to ensure the object is visible
+        this.objectFilterEl.value = '';
+        this.filteredObjects = [...this.allObjects];
+        this.renderObjects();
+        this.updateObjectCount();
+
+        // Scroll to and select the object
+        const objectItem = this.objectsListEl.querySelector(`.object-item[data-name="${objectName}"]`);
+        if (objectItem) {
+            objectItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            this.selectObject(objectName);
+        }
+    }
+
     async loadFields(objectName, bypassCache = false) {
         this.fieldsListEl.innerHTML = '<div class="loading-container">Loading fields...</div>';
         this.fieldFilterEl.value = '';
@@ -506,6 +528,18 @@ class SchemaPage extends HTMLElement {
             const typeDisplay = this.getFieldTypeDisplay(field);
             const isFormulaField = field.calculated && field.calculatedFormula;
 
+            // Generate type display HTML - with links for reference fields
+            let typeHtml;
+            if (typeDisplay.isReference && typeDisplay.referenceTo) {
+                // Create clickable links for each referenced object
+                const links = typeDisplay.referenceTo.map(objName =>
+                    `<a href="#" class="reference-link" data-object="${this.escapeAttr(objName)}">${escapeHtml(objName)}</a>`
+                ).join(', ');
+                typeHtml = `reference (${links})`;
+            } else {
+                typeHtml = this.escapeHtml(typeDisplay.text);
+            }
+
             return `
                 <div class="field-item" data-field-name="${this.escapeAttr(field.name)}">
                     <div class="field-item-label" title="${this.escapeAttr(field.label)}">${escapeHtml(field.label)}</div>
@@ -524,6 +558,15 @@ class SchemaPage extends HTMLElement {
                 </div>
             `;
         }).join('');
+
+        // Attach event listeners to reference links
+        this.fieldsListEl.querySelectorAll('.reference-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const objectName = link.dataset.object;
+                this.navigateToObject(objectName);
+            });
+        });
 
         // Attach event listeners to field menu buttons
         this.fieldsListEl.querySelectorAll('.field-menu-button').forEach(button => {
@@ -556,20 +599,31 @@ class SchemaPage extends HTMLElement {
         // Reuse type recognition logic from record viewer
         if (field.calculated) {
             if (field.calculatedFormula) {
-                return `${field.type} (formula)`;
+                return { text: `${field.type} (formula)`, isReference: false };
             }
-            return `${field.type} (rollup)`;
+            return { text: `${field.type} (rollup)`, isReference: false };
         }
 
         if (field.type === 'reference' && field.referenceTo?.length > 0) {
+            // Return structured data for reference fields (except OwnerId)
+            const isOwnerId = field.name === 'OwnerId';
+
             if (field.referenceTo.length === 1) {
-                return `reference (${field.referenceTo[0]})`;
+                return {
+                    text: `reference (${field.referenceTo[0]})`,
+                    isReference: !isOwnerId,
+                    referenceTo: field.referenceTo
+                };
             } else {
-                return `reference (${field.referenceTo.join(', ')})`;
+                return {
+                    text: `reference (${field.referenceTo.join(', ')})`,
+                    isReference: !isOwnerId,
+                    referenceTo: field.referenceTo
+                };
             }
         }
 
-        return field.type;
+        return { text: field.type, isReference: false };
     }
 
     closeFieldsPanel() {

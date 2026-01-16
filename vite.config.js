@@ -42,6 +42,12 @@ export default defineConfig({
           }
           return 'assets/[name].[ext]';
         },
+        manualChunks: (id) => {
+          // Explicitly chunk Monaco to avoid auto-generated names
+          if (id.includes('node_modules/monaco-editor')) {
+            return 'monaco';
+          }
+        },
         format: 'es'
       }
     }

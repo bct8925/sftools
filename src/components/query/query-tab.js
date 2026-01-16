@@ -13,8 +13,10 @@ import {
     loadGlobalDescribe,
     clearState as clearAutocompleteState
 } from '../../lib/soql-autocomplete.js';
-
-const MAX_HISTORY = 30;
+import { updateStatusBadge } from '../../lib/ui-helpers.js';
+import { HistoryManager } from '../../lib/history-manager.js';
+import { escapeHtml } from '../../lib/text-utils.js';
+import { icons } from '../../lib/icons.js';
 
 class QueryTab extends HTMLElement {
     // State
@@ -47,15 +49,19 @@ class QueryTab extends HTMLElement {
     favoritesList = null;
     dropdownTabs = [];
 
-    // History/Favorites cache
-    history = [];
-    favorites = [];
+    // History/Favorites manager
+    historyManager = null;
+    pendingFavoriteQuery = null;
 
     // Bound event handlers for cleanup
     boundConnectionHandler = this.handleConnectionChange.bind(this);
 
     connectedCallback() {
         this.innerHTML = template;
+        this.historyManager = new HistoryManager(
+            { history: 'queryHistory', favorites: 'queryFavorites' },
+            { contentProperty: 'query' }
+        );
         this.initElements();
         this.initEditor();
         this.attachEventListeners();
@@ -99,6 +105,12 @@ class QueryTab extends HTMLElement {
         this.favoritesList = this.querySelector('.query-favorites-list');
         this.dropdownTabs = this.querySelectorAll('.query-dropdown-tab');
 
+        // Favorite modal elements
+        this.favoriteModal = this.querySelector('.query-favorite-modal');
+        this.favoriteInput = this.querySelector('.query-favorite-input');
+        this.favoriteCancelBtn = this.querySelector('.query-favorite-cancel');
+        this.favoriteSaveBtn = this.querySelector('.query-favorite-save');
+
         // Search elements
         this.searchInput = this.querySelector('.query-search-input');
 
@@ -134,6 +146,17 @@ LIMIT 10`);
         // List click delegation
         this.historyList.addEventListener('click', (e) => this.handleListClick(e, 'history'));
         this.favoritesList.addEventListener('click', (e) => this.handleListClick(e, 'favorites'));
+
+        // Favorite modal
+        this.favoriteCancelBtn.addEventListener('click', () => this.favoriteModal.close());
+        this.favoriteSaveBtn.addEventListener('click', () => this.handleFavoriteSave());
+        this.favoriteInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.handleFavoriteSave();
+            } else if (e.key === 'Escape') {
+                this.favoriteModal.close();
+            }
+        });
 
         // Search filtering
         this.searchInput.addEventListener('input', () => this.applyRowFilter());
@@ -174,18 +197,8 @@ LIMIT 10`);
     // ============================================================
 
     async loadStoredData() {
-        const data = await chrome.storage.local.get(['queryHistory', 'queryFavorites']);
-        this.history = data.queryHistory || [];
-        this.favorites = data.queryFavorites || [];
+        await this.historyManager.load();
         this.renderLists();
-    }
-
-    async saveHistory() {
-        await chrome.storage.local.set({ queryHistory: this.history });
-    }
-
-    async saveFavorites() {
-        await chrome.storage.local.set({ queryFavorites: this.favorites });
     }
 
     // ============================================================
@@ -193,64 +206,22 @@ LIMIT 10`);
     // ============================================================
 
     async saveToHistory(query) {
-        const trimmedQuery = query.trim();
-        if (!trimmedQuery) return;
-
-        // If already in favorites, just update the timestamp
-        const favoriteIndex = this.favorites.findIndex(item => item.query.trim() === trimmedQuery);
-        if (favoriteIndex !== -1) {
-            this.favorites[favoriteIndex].timestamp = Date.now();
-            await this.saveFavorites();
-            this.renderLists();
-            return;
-        }
-
-        // Remove duplicate if exists
-        const existingIndex = this.history.findIndex(item => item.query.trim() === trimmedQuery);
-        if (existingIndex !== -1) {
-            this.history.splice(existingIndex, 1);
-        }
-
-        // Add to beginning
-        this.history.unshift({
-            id: Date.now().toString(),
-            query: trimmedQuery,
-            timestamp: Date.now()
-        });
-
-        // Trim to max size
-        if (this.history.length > MAX_HISTORY) {
-            this.history = this.history.slice(0, MAX_HISTORY);
-        }
-
-        await this.saveHistory();
+        await this.historyManager.saveToHistory(query);
         this.renderLists();
     }
 
     async addToFavorites(query, label) {
-        const trimmedQuery = query.trim();
-        if (!trimmedQuery || !label.trim()) return;
-
-        this.favorites.unshift({
-            id: Date.now().toString(),
-            query: trimmedQuery,
-            label: label.trim(),
-            timestamp: Date.now()
-        });
-
-        await this.saveFavorites();
+        await this.historyManager.addToFavorites(query, label);
         this.renderLists();
     }
 
     async removeFromHistory(id) {
-        this.history = this.history.filter(item => item.id !== id);
-        await this.saveHistory();
+        await this.historyManager.removeFromHistory(id);
         this.renderLists();
     }
 
     async removeFromFavorites(id) {
-        this.favorites = this.favorites.filter(item => item.id !== id);
-        await this.saveFavorites();
+        await this.historyManager.removeFromFavorites(id);
         this.renderLists();
     }
 
@@ -281,7 +252,9 @@ LIMIT 10`);
     }
 
     renderHistoryList() {
-        if (this.history.length === 0) {
+        const history = this.historyManager.history;
+
+        if (history.length === 0) {
             this.historyList.innerHTML = `
                 <div class="query-script-empty">
                     No queries yet.<br>Execute some SOQL to see history here.
@@ -290,11 +263,11 @@ LIMIT 10`);
             return;
         }
 
-        this.historyList.innerHTML = this.history.map(item => `
+        this.historyList.innerHTML = history.map(item => `
             <div class="query-script-item" data-id="${item.id}">
-                <div class="query-script-preview">${this.escapeHtml(this.getPreview(item.query))}</div>
+                <div class="query-script-preview">${escapeHtml(this.historyManager.getPreview(item.query))}</div>
                 <div class="query-script-meta">
-                    <span>${this.formatRelativeTime(item.timestamp)}</span>
+                    <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="query-script-actions">
                         <button class="query-script-action load" title="Load query">&#8629;</button>
                         <button class="query-script-action favorite" title="Add to favorites">&#9733;</button>
@@ -306,7 +279,9 @@ LIMIT 10`);
     }
 
     renderFavoritesList() {
-        if (this.favorites.length === 0) {
+        const favorites = this.historyManager.favorites;
+
+        if (favorites.length === 0) {
             this.favoritesList.innerHTML = `
                 <div class="query-script-empty">
                     No favorites yet.<br>Click &#9733; on a query to save it.
@@ -315,11 +290,11 @@ LIMIT 10`);
             return;
         }
 
-        this.favoritesList.innerHTML = this.favorites.map(item => `
+        this.favoritesList.innerHTML = favorites.map(item => `
             <div class="query-script-item" data-id="${item.id}">
-                <div class="query-script-label">${this.escapeHtml(item.label)}</div>
+                <div class="query-script-label">${escapeHtml(item.label)}</div>
                 <div class="query-script-meta">
-                    <span>${this.formatRelativeTime(item.timestamp)}</span>
+                    <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="query-script-actions">
                         <button class="query-script-action load" title="Load query">&#8629;</button>
                         <button class="query-script-action delete" title="Delete">&times;</button>
@@ -334,7 +309,7 @@ LIMIT 10`);
         if (!item) return;
 
         const id = item.dataset.id;
-        const list = listType === 'history' ? this.history : this.favorites;
+        const list = listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
         const scriptData = list.find(s => s.id === id);
         if (!scriptData) return;
 
@@ -362,51 +337,22 @@ LIMIT 10`);
     }
 
     showFavoriteModal(query) {
-        const defaultLabel = this.getPreview(query);
+        this.pendingFavoriteQuery = query;
+        const defaultLabel = this.historyManager.getPreview(query);
 
-        const modal = document.createElement('div');
-        modal.className = 'query-favorite-modal';
-        modal.innerHTML = `
-            <div class="query-favorite-dialog">
-                <h3>Add to Favorites</h3>
-                <input type="text" class="query-favorite-input" placeholder="Enter a label for this query" value="${this.escapeHtml(defaultLabel)}">
-                <div class="query-favorite-buttons">
-                    <button class="button-neutral query-favorite-cancel">Cancel</button>
-                    <button class="button-brand query-favorite-save">Save</button>
-                </div>
-            </div>
-        `;
+        this.favoriteInput.value = defaultLabel;
+        this.favoriteModal.open();
+        this.favoriteInput.focus();
+        this.favoriteInput.select();
+    }
 
-        const input = modal.querySelector('.query-favorite-input');
-        const cancelBtn = modal.querySelector('.query-favorite-cancel');
-        const saveBtn = modal.querySelector('.query-favorite-save');
-
-        const close = () => modal.remove();
-
-        cancelBtn.addEventListener('click', close);
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) close();
-        });
-
-        saveBtn.addEventListener('click', () => {
-            const label = input.value.trim();
-            if (label) {
-                this.addToFavorites(query, label);
-                close();
-            }
-        });
-
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                saveBtn.click();
-            } else if (e.key === 'Escape') {
-                close();
-            }
-        });
-
-        document.body.appendChild(modal);
-        input.focus();
-        input.select();
+    handleFavoriteSave() {
+        const label = this.favoriteInput.value.trim();
+        if (label && this.pendingFavoriteQuery) {
+            this.addToFavorites(this.pendingFavoriteQuery, label);
+            this.favoriteModal.close();
+            this.pendingFavoriteQuery = null;
+        }
     }
 
     // ============================================================
@@ -434,29 +380,6 @@ LIMIT 10`);
         rows.forEach(row => row.classList.remove('hidden'));
     }
 
-    // ============================================================
-    // Utility Methods
-    // ============================================================
-
-    getPreview(query) {
-        // Get first meaningful part of query
-        const cleaned = query.replace(/\s+/g, ' ').trim();
-        return cleaned.length > 60 ? cleaned.substring(0, 60) + '...' : cleaned;
-    }
-
-    formatRelativeTime(timestamp) {
-        const now = Date.now();
-        const diff = now - timestamp;
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
-
-        if (minutes < 1) return 'Just now';
-        if (minutes < 60) return `${minutes}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        if (days < 7) return `${days}d ago`;
-        return new Date(timestamp).toLocaleDateString();
-    }
 
     // ============================================================
     // Data Transformations
@@ -581,30 +504,11 @@ LIMIT 10`);
             tabData.totalSize = result.totalSize;
             tabData.objectName = result.entityName;
 
-            if (result.columnMetadata.length > 0) {
-                tabData.columns = this.flattenColumnMetadata(result.columnMetadata);
-            } else if (tabData.records.length > 0) {
-                tabData.columns = this.extractColumnsFromRecord(tabData.records[0]);
-            } else {
-                tabData.columns = [];
-            }
+            this.processColumnMetadata(result, tabData);
 
-            // Check if query is editable (has Id column, non-aggregate, single object)
             tabData.isEditable = this.checkIfEditable(tabData);
 
-            // Fetch field metadata if editable
-            if (tabData.isEditable && tabData.objectName) {
-                try {
-                    const describe = await getObjectDescribe(tabData.objectName);
-                    tabData.fieldDescribe = {};
-                    for (const field of describe.fields) {
-                        tabData.fieldDescribe[field.name] = field;
-                    }
-                } catch (err) {
-                    console.warn('Failed to fetch field metadata:', err);
-                    tabData.isEditable = false;
-                }
-            }
+            await this.fetchFieldMetadataIfEditable(tabData);
 
             this.updateStatus(`${tabData.totalSize} record${tabData.totalSize !== 1 ? 's' : ''}`, 'success');
             this.renderTabs();
@@ -619,10 +523,36 @@ LIMIT 10`);
         }
 
         this.renderResults();
-        // Clear search when results change
         this.clearRowFilter();
         this.updateExportButtonState();
         this.updateSaveButtonState();
+    }
+
+    processColumnMetadata(result, tabData) {
+        if (result.columnMetadata.length > 0) {
+            tabData.columns = this.flattenColumnMetadata(result.columnMetadata);
+        } else if (tabData.records.length > 0) {
+            tabData.columns = this.extractColumnsFromRecord(tabData.records[0]);
+        } else {
+            tabData.columns = [];
+        }
+    }
+
+    async fetchFieldMetadataIfEditable(tabData) {
+        if (!tabData.isEditable || !tabData.objectName) {
+            return;
+        }
+
+        try {
+            const describe = await getObjectDescribe(tabData.objectName);
+            tabData.fieldDescribe = {};
+            for (const field of describe.fields) {
+                tabData.fieldDescribe[field.name] = field;
+            }
+        } catch (err) {
+            console.warn('Failed to fetch field metadata:', err);
+            tabData.isEditable = false;
+        }
     }
 
     checkIfEditable(tabData) {
@@ -666,6 +596,13 @@ LIMIT 10`);
 
     switchToTab(tabId) {
         this.activeTabId = tabId;
+
+        // Restore the query to the editor when switching tabs
+        const tabData = this.getTabDataById(tabId);
+        if (tabData && tabData.query) {
+            this.editor.setValue(tabData.query);
+        }
+
         this.renderTabs();
         this.renderResults();
         // Clear search when switching tabs
@@ -732,11 +669,7 @@ LIMIT 10`);
     // ============================================================
 
     updateStatus(status, type = '') {
-        this.statusSpan.textContent = status;
-        this.statusSpan.className = 'status-badge';
-        if (type) {
-            this.statusSpan.classList.add(`status-${type}`);
-        }
+        updateStatusBadge(this.statusSpan, status, type);
     }
 
     renderTabs() {
@@ -760,7 +693,7 @@ LIMIT 10`);
 
             const refreshBtn = document.createElement('button');
             refreshBtn.className = 'query-tab-refresh';
-            refreshBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>';
+            refreshBtn.innerHTML = icons.refreshTab;
             refreshBtn.title = 'Refresh';
             refreshBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -769,7 +702,7 @@ LIMIT 10`);
 
             const closeBtn = document.createElement('button');
             closeBtn.className = 'query-tab-close';
-            closeBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/></svg>';
+            closeBtn.innerHTML = icons.closeTab;
             closeBtn.title = 'Close';
             closeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -796,7 +729,7 @@ LIMIT 10`);
         }
 
         if (tabData.error) {
-            this.resultsContainer.innerHTML = `<div class="query-results-error">${this.escapeHtml(tabData.error)}</div>`;
+            this.resultsContainer.innerHTML = `<div class="query-results-error">${escapeHtml(tabData.error)}</div>`;
             return;
         }
 
@@ -806,81 +739,115 @@ LIMIT 10`);
         }
 
         const isEditMode = this.editingCheckbox.checked && tabData.isEditable;
+        const table = this.createResultsTable(tabData, isEditMode);
 
+        this.resultsContainer.innerHTML = '';
+        this.resultsContainer.appendChild(table);
+
+        if (isEditMode) {
+            this.attachEditableListeners(tabData);
+        }
+    }
+
+    createResultsTable(tabData, isEditMode) {
         const table = document.createElement('table');
         table.className = 'query-results-table';
         if (isEditMode) {
             table.classList.add('query-results-editable');
         }
 
+        table.appendChild(this.createTableHeader(tabData.columns));
+        table.appendChild(this.createTableBody(tabData, isEditMode));
+
+        return table;
+    }
+
+    createTableHeader(columns) {
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
-        for (const col of tabData.columns) {
+
+        for (const col of columns) {
             const th = document.createElement('th');
             th.textContent = col.title;
             headerRow.appendChild(th);
         }
+
         thead.appendChild(headerRow);
-        table.appendChild(thead);
+        return thead;
+    }
 
+    createTableBody(tabData, isEditMode) {
         const tbody = document.createElement('tbody');
+
         for (const record of tabData.records) {
-            const recordId = this.getValueByPath(record, 'Id');
-            const row = document.createElement('tr');
-            row.dataset.recordId = recordId;
-
-            for (const col of tabData.columns) {
-                const td = document.createElement('td');
-                const value = this.getValueByPath(record, col.path);
-
-                if (col.isSubquery) {
-                    // Render subquery cell with expand/collapse functionality
-                    this.renderSubqueryCell(td, value, col, row);
-                } else if (col.path === 'Id' && value && tabData.objectName) {
-                    // Render Id as clickable link to record-viewer
-                    const connectionId = getActiveConnectionId();
-                    if (connectionId) {
-                        const link = document.createElement('a');
-                        link.href = `../../pages/record/record.html?objectType=${encodeURIComponent(tabData.objectName)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(connectionId)}`;
-                        link.target = '_blank';
-                        link.textContent = value;
-                        link.className = 'query-id-link';
-                        td.appendChild(link);
-                    } else {
-                        td.textContent = this.formatCellValue(value, col);
-                        td.title = this.formatCellValue(value, col);
-                    }
-                } else if (isEditMode && this.isFieldEditable(col.path, tabData)) {
-                    // Render as editable field
-                    const field = tabData.fieldDescribe[col.path];
-                    const modifiedValue = tabData.modifiedRecords.get(recordId)?.[col.path];
-                    const displayValue = modifiedValue !== undefined ? modifiedValue : value;
-
-                    const input = this.createEditableInput(field, displayValue, recordId, col.path);
-                    td.appendChild(input);
-
-                    if (modifiedValue !== undefined) {
-                        td.classList.add('modified');
-                    }
-                } else {
-                    // Render as read-only text
-                    td.textContent = this.formatCellValue(value, col);
-                    td.title = this.formatCellValue(value, col);
-                }
-
-                row.appendChild(td);
-            }
+            const row = this.createRecordRow(record, tabData, isEditMode);
             tbody.appendChild(row);
         }
-        table.appendChild(tbody);
 
-        this.resultsContainer.innerHTML = '';
-        this.resultsContainer.appendChild(table);
+        return tbody;
+    }
 
-        // Attach event listeners to editable inputs
-        if (isEditMode) {
-            this.attachEditableListeners(tabData);
+    createRecordRow(record, tabData, isEditMode) {
+        const recordId = this.getValueByPath(record, 'Id');
+        const row = document.createElement('tr');
+        row.dataset.recordId = recordId;
+
+        for (const col of tabData.columns) {
+            const td = this.createCell(record, col, tabData, isEditMode, recordId, row);
+            row.appendChild(td);
         }
+
+        return row;
+    }
+
+    createCell(record, col, tabData, isEditMode, recordId, row) {
+        const td = document.createElement('td');
+        const value = this.getValueByPath(record, col.path);
+
+        if (col.isSubquery) {
+            this.renderSubqueryCell(td, value, col, row);
+        } else if (col.path === 'Id' && value && tabData.objectName) {
+            this.renderIdCell(td, value, tabData.objectName);
+        } else if (isEditMode && this.isFieldEditable(col.path, tabData)) {
+            this.renderEditableCell(td, value, col, tabData, recordId);
+        } else {
+            this.renderReadOnlyCell(td, value, col);
+        }
+
+        return td;
+    }
+
+    renderIdCell(td, value, objectName) {
+        const connectionId = getActiveConnectionId();
+        if (connectionId) {
+            const link = document.createElement('a');
+            link.href = `../../pages/record/record.html?objectType=${encodeURIComponent(objectName)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(connectionId)}`;
+            link.target = '_blank';
+            link.textContent = value;
+            link.className = 'query-id-link';
+            td.appendChild(link);
+        } else {
+            td.textContent = value;
+            td.title = value;
+        }
+    }
+
+    renderEditableCell(td, value, col, tabData, recordId) {
+        const field = tabData.fieldDescribe[col.path];
+        const modifiedValue = tabData.modifiedRecords.get(recordId)?.[col.path];
+        const displayValue = modifiedValue !== undefined ? modifiedValue : value;
+
+        const input = this.createEditableInput(field, displayValue, recordId, col.path);
+        td.appendChild(input);
+
+        if (modifiedValue !== undefined) {
+            td.classList.add('modified');
+        }
+    }
+
+    renderReadOnlyCell(td, value, col) {
+        td.textContent = this.formatCellValue(value, col);
+        td.title = this.formatCellValue(value, col);
     }
 
     renderSubqueryCell(td, value, col, parentRow) {
@@ -1001,12 +968,6 @@ LIMIT 10`);
         }
 
         return String(value);
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     // ============================================================

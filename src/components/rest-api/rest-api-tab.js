@@ -3,6 +3,7 @@ import template from './rest-api.html?raw';
 import '../monaco-editor/monaco-editor.js';
 import { isAuthenticated } from '../../lib/utils.js';
 import { executeRestRequest } from '../../lib/salesforce.js';
+import { updateStatusBadge } from '../../lib/ui-helpers.js';
 
 class RestApiTab extends HTMLElement {
     // DOM references
@@ -54,11 +55,7 @@ class RestApiTab extends HTMLElement {
     }
 
     updateStatus(status, type = '') {
-        this.statusSpan.textContent = status;
-        this.statusSpan.className = 'status-badge';
-        if (type) {
-            this.statusSpan.classList.add(`status-${type}`);
-        }
+        updateStatusBadge(this.statusSpan, status, type);
     }
 
     async executeRequest() {

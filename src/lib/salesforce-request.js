@@ -2,6 +2,7 @@
 
 import { smartFetch } from './fetch.js';
 import { getAccessToken, getInstanceUrl, getActiveConnectionId, triggerAuthExpired } from './auth.js';
+import { isCorsError, showCorsErrorModal } from './cors-detection.js';
 
 /**
  * Make an authenticated Salesforce REST API request
@@ -22,6 +23,12 @@ export async function salesforceRequest(endpoint, options = {}) {
     });
 
     if (!response.success && response.status !== 404) {
+        // Check for CORS errors first
+        if (isCorsError(response)) {
+            showCorsErrorModal();
+            throw new Error('CORS error - please configure CORS settings or enable the local proxy');
+        }
+
         // Check for 401 Unauthorized (session expired)
         if (response.status === 401 && !response.authExpired) {
             // Trigger auth expiration flow (proxy requests don't set authExpired flag)

@@ -12,21 +12,28 @@ const defaultOptions = {
 };
 
 class MonacoEditor extends HTMLElement {
-    static observedAttributes = ['language', 'readonly', 'value'];
+    static observedAttributes = ['language', 'readonly', 'value', 'resizable'];
 
     editor = null;
+    resizeHandle = null;
+    isResizing = false;
+    startY = 0;
+    startHeight = 0;
 
     constructor() {
         super();
         // Custom elements are inline by default - need block to take up space
         this.style.display = 'block';
+        this.style.position = 'relative';
     }
 
     connectedCallback() {
         this.initEditor();
+        this.initResize();
     }
 
     disconnectedCallback() {
+        this.cleanupResize();
         if (this.editor) {
             this.editor.dispose();
             this.editor = null;
@@ -54,6 +61,66 @@ class MonacoEditor extends HTMLElement {
                 this.dispatchEvent(new CustomEvent('execute', { bubbles: true }));
             }
         });
+    }
+
+    initResize() {
+        // Check if resizable attribute is present and set to false
+        const resizable = this.getAttribute('resizable');
+        if (resizable === 'false') {
+            return;
+        }
+
+        // Create resize handle
+        this.resizeHandle = document.createElement('div');
+        this.resizeHandle.className = 'monaco-resize-handle';
+        this.appendChild(this.resizeHandle);
+
+        // Bind event handlers
+        this.handleMouseDown = this.onResizeStart.bind(this);
+        this.handleMouseMove = this.onResizeMove.bind(this);
+        this.handleMouseUp = this.onResizeEnd.bind(this);
+
+        this.resizeHandle.addEventListener('mousedown', this.handleMouseDown);
+    }
+
+    cleanupResize() {
+        if (this.resizeHandle) {
+            this.resizeHandle.removeEventListener('mousedown', this.handleMouseDown);
+            this.resizeHandle.remove();
+            this.resizeHandle = null;
+        }
+        document.removeEventListener('mousemove', this.handleMouseMove);
+        document.removeEventListener('mouseup', this.handleMouseUp);
+    }
+
+    onResizeStart(e) {
+        e.preventDefault();
+        this.isResizing = true;
+        this.startY = e.clientY;
+        this.startHeight = this.offsetHeight;
+
+        document.addEventListener('mousemove', this.handleMouseMove);
+        document.addEventListener('mouseup', this.handleMouseUp);
+        document.body.style.cursor = 'ns-resize';
+        document.body.style.userSelect = 'none';
+    }
+
+    onResizeMove(e) {
+        if (!this.isResizing) return;
+
+        const deltaY = e.clientY - this.startY;
+        const newHeight = Math.max(100, this.startHeight + deltaY); // Min height 100px
+        this.style.height = `${newHeight}px`;
+    }
+
+    onResizeEnd() {
+        if (!this.isResizing) return;
+
+        this.isResizing = false;
+        document.removeEventListener('mousemove', this.handleMouseMove);
+        document.removeEventListener('mouseup', this.handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
     }
 
     attributeChangedCallback(name, oldValue, newValue) {

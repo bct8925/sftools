@@ -266,6 +266,28 @@ body {
     height: 300px;
 }
 
+/* Monaco resize handle */
+.monaco-resize-handle {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+    background: transparent;
+    z-index: 10;
+}
+
+.monaco-resize-handle:hover {
+    background: var(--brand-color);
+    opacity: 0.3;
+}
+
+.monaco-resize-handle:active {
+    background: var(--brand-color);
+    opacity: 0.5;
+}
+
 /* Ensure Monaco hover widgets appear above other content */
 .monaco-editor .monaco-hover {
     z-index: 1000 !important;

@@ -8,6 +8,8 @@ import rowsIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-syst
 import threedotsVerticalIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/threedots_vertical.svg?raw';
 import editIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/edit.svg?raw';
 import deleteIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/delete.svg?raw';
+import clockIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/clock.svg?raw';
+import settingsIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/settings.svg?raw';
 
 /**
  * Process raw SVG for consistent rendering
@@ -47,5 +49,9 @@ export const icons = {
 
     // Smaller icons for tabs and inline use
     refreshTab: processSvg(refreshIcon, { size: 14 }),
-    closeTab: processSvg(closeIcon, { size: 14 })
+    closeTab: processSvg(closeIcon, { size: 14 }),
+
+    // Button-icon replacements (for HTML entity migration)
+    clock: processSvg(clockIcon, { size: 16 }),
+    settings: processSvg(settingsIcon, { size: 16 })
 };

@@ -6,6 +6,7 @@ import { getObjectDescribe, getRecordWithRelationships, updateRecord } from '../
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { escapeHtml } from '../../lib/text-utils.js';
 import { replaceIcons } from '../../lib/icons.js';
+import '../modal-popup/modal-popup.js';
 
 class RecordPage extends HTMLElement {
     // State
@@ -36,6 +37,7 @@ class RecordPage extends HTMLElement {
         this.innerHTML = replaceIcons(template);
         this.initElements();
         this.attachEventListeners();
+        this.initCorsModal();
         this.initialize();
     }
 
@@ -73,6 +75,21 @@ class RecordPage extends HTMLElement {
                 this.closeRichTextModal();
             }
         });
+    }
+
+    initCorsModal() {
+        const modal = document.getElementById('cors-error-modal');
+        const closeBtn = document.getElementById('cors-modal-close');
+
+        if (modal && closeBtn) {
+            document.addEventListener('show-cors-error', () => {
+                modal.open();
+            });
+
+            closeBtn.addEventListener('click', () => {
+                modal.close();
+            });
+        }
     }
 
     async initialize() {

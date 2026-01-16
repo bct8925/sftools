@@ -206,7 +206,9 @@ async function fetchWithRetry(fetchFn, convertFn, headers, connectionId) {
             }
         );
     } catch (error) {
-        return { success: false, error: error.message };
+        // CORS errors manifest as network failures with status 0
+        // Include status: 0 so CORS detection logic can identify these errors
+        return { success: false, status: 0, error: error.message };
     }
 }
 

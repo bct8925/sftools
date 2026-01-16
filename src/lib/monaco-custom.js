@@ -35,7 +35,8 @@ import 'monaco-editor/esm/vs/editor/contrib/linesOperations/browser/linesOperati
 import 'monaco-editor/esm/vs/editor/contrib/multicursor/browser/multicursor.js';
 import 'monaco-editor/esm/vs/editor/contrib/contextmenu/browser/contextmenu.js';
 
-// Standalone features
+// Standalone features - includes command service for editor.addCommand()
+import 'monaco-editor/esm/vs/editor/standalone/browser/standaloneEditor.js';
 import 'monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneCommandsQuickAccess.js';
 
 // Languages with advanced features (workers)

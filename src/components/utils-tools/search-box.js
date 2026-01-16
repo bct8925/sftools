@@ -1,5 +1,6 @@
 // Reusable Search Box Component
 import template from './search-box.html?raw';
+import { escapeHtml } from '../../lib/text-utils.js';
 
 class SearchBox extends HTMLElement {
     input = null;
@@ -116,8 +117,8 @@ class SearchBox extends HTMLElement {
                 const data = this.renderFn ? this.renderFn(item) : this.defaultRender(item);
                 return `
                     <div class="search-box-item" data-id="${data.id}" data-value='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
-                        <span class="search-box-item-name">${this.escapeHtml(data.name)}</span>
-                        ${data.detail ? `<span class="search-box-item-detail">${this.escapeHtml(data.detail)}</span>` : ''}
+                        <span class="search-box-item-name">${escapeHtml(data.name)}</span>
+                        ${data.detail ? `<span class="search-box-item-detail">${escapeHtml(data.detail)}</span>` : ''}
                     </div>
                 `;
             }).join('');
@@ -183,11 +184,6 @@ class SearchBox extends HTMLElement {
         this.input.value = text;
     }
 
-    escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
 }
 
 customElements.define('search-box', SearchBox);

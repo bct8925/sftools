@@ -3,6 +3,7 @@ import template from './debug-logs.html?raw';
 import './utils-tools.css';
 import { isAuthenticated } from '../../lib/utils.js';
 import { getCurrentUserId, searchUsers, enableTraceFlagForUser, deleteAllDebugLogs, deleteAllTraceFlags } from '../../lib/salesforce.js';
+import { escapeHtml } from '../../lib/text-utils.js';
 
 class DebugLogs extends HTMLElement {
     // Trace flag elements
@@ -102,8 +103,8 @@ class DebugLogs extends HTMLElement {
             this.userResults.innerHTML = users.map(u => `
                 <div class="tool-result-item" data-id="${u.Id}">
                     <div>
-                        <span class="tool-result-name">${this.escapeHtml(u.Name)}</span>
-                        <span class="tool-result-detail">${this.escapeHtml(u.Username)}</span>
+                        <span class="tool-result-name">${escapeHtml(u.Name)}</span>
+                        <span class="tool-result-detail">${escapeHtml(u.Username)}</span>
                     </div>
                 </div>
             `).join('');
@@ -195,11 +196,6 @@ class DebugLogs extends HTMLElement {
         text.textContent = message;
     }
 
-    escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
 }
 
 customElements.define('debug-logs', DebugLogs);

@@ -26,6 +26,7 @@ import '../../components/rest-api/rest-api-tab.js';
 import '../../components/events/events-tab.js';
 import '../../components/settings/settings-tab.js';
 import '../../components/utils/utils-tab.js';
+import '../../components/modal-popup/modal-popup.js';
 
 // OAuth constants
 const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
     initMobileMenu();
     initAuthExpirationHandler();
+    initCorsErrorModal();
 
     await checkProxyStatus();
     await initializeConnections();
@@ -508,4 +510,25 @@ function updateMobileConnections(connections) {
             item.classList.toggle('active', item.getAttribute('data-tab') === activeTabId);
         });
     }
+}
+
+// ============================================================================
+// CORS Error Modal
+// ============================================================================
+
+function initCorsErrorModal() {
+    const modal = document.getElementById('cors-error-modal');
+    const closeBtn = document.getElementById('cors-modal-close');
+
+    if (!modal || !closeBtn) return;
+
+    // Listen for CORS error events from anywhere in the app
+    document.addEventListener('show-cors-error', () => {
+        modal.open();
+    });
+
+    // Close button handler
+    closeBtn.addEventListener('click', () => {
+        modal.close();
+    });
 }

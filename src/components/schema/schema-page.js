@@ -7,6 +7,7 @@ import { setActiveConnection } from '../../lib/utils.js';
 import { getGlobalDescribe, getObjectDescribe, getFormulaFieldMetadata, updateFormulaField } from '../../lib/salesforce.js';
 import { escapeHtml } from '../../lib/text-utils.js';
 import { icons, replaceIcons } from '../../lib/icons.js';
+import '../modal-popup/modal-popup.js';
 
 // Completion provider state - shared with Monaco
 let completionState = {
@@ -255,6 +256,7 @@ class SchemaPage extends HTMLElement {
         this.innerHTML = replaceIcons(template);
         this.initElements();
         this.attachEventListeners();
+        this.initCorsModal();
         this.initialize();
     }
 
@@ -304,6 +306,21 @@ class SchemaPage extends HTMLElement {
                 this.closeAllFieldMenus();
             }
         });
+    }
+
+    initCorsModal() {
+        const modal = document.getElementById('cors-error-modal');
+        const closeBtn = document.getElementById('cors-modal-close');
+
+        if (modal && closeBtn) {
+            document.addEventListener('show-cors-error', () => {
+                modal.open();
+            });
+
+            closeBtn.addEventListener('click', () => {
+                modal.close();
+            });
+        }
     }
 
     async initialize() {

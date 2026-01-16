@@ -125,10 +125,18 @@ function findNodePath() {
 
 /**
  * Create the shell wrapper script with correct node path
+ * Uses ~/bin to avoid macOS security restrictions on scripts in Documents/Downloads
  */
 function createWrapperScript(nodePath) {
-    const wrapperPath = path.resolve(__dirname, 'sftools-proxy.sh');
+    const userBin = path.join(os.homedir(), 'bin');
+    const wrapperPath = path.join(userBin, 'sftools-proxy');
     const scriptDir = path.resolve(__dirname);
+
+    // Create ~/bin if it doesn't exist
+    if (!fs.existsSync(userBin)) {
+        fs.mkdirSync(userBin, { recursive: true });
+        console.log(`Created directory: ${userBin}`);
+    }
 
     const content = `#!/bin/bash
 # Native messaging host wrapper for sftools-proxy
@@ -137,11 +145,20 @@ function createWrapperScript(nodePath) {
 NODE_PATH="${nodePath}"
 SCRIPT_DIR="${scriptDir}"
 
-exec "$NODE_PATH" "$SCRIPT_DIR/src/index.js"
+cd "$SCRIPT_DIR"
+exec "$NODE_PATH" "$SCRIPT_DIR/src/index.js" 2>> /tmp/sftools-proxy.log
 `;
 
     fs.writeFileSync(wrapperPath, content);
     fs.chmodSync(wrapperPath, '755');
+
+    // Clear any quarantine attributes
+    try {
+        require('child_process').execSync(`xattr -c "${wrapperPath}"`, { stdio: 'ignore' });
+    } catch (err) {
+        // Ignore if xattr fails
+    }
+
     return wrapperPath;
 }
 

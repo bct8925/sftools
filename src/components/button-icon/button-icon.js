@@ -1,9 +1,10 @@
 // Button Icon - Icon button with optional dropdown menu
 import './button-icon.css';
+import { icons } from '../../lib/icons.js';
 
 class ButtonIcon extends HTMLElement {
     static get observedAttributes() {
-        return ['icon', 'title', 'disabled'];
+        return ['icon', 'data-icon', 'title', 'disabled'];
     }
 
     hasMenu = false;
@@ -15,14 +16,23 @@ class ButtonIcon extends HTMLElement {
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (this.isConnected && oldValue !== newValue) {
-            if (name === 'icon') this.updateIcon();
+            if (name === 'icon' || name === 'data-icon') this.updateIcon();
             if (name === 'title') this.updateTitle();
             if (name === 'disabled') this.updateDisabled();
         }
     }
 
+    getIconContent() {
+        // Check data-icon (SLDS) first, fall back to icon (HTML entity)
+        const dataIcon = this.getAttribute('data-icon');
+        if (dataIcon && icons[dataIcon]) {
+            return icons[dataIcon];
+        }
+        return this.getAttribute('icon') || '&#8942;';
+    }
+
     render() {
-        const icon = this.getAttribute('icon') || '&#8942;';
+        const icon = this.getIconContent();
         const title = this.getAttribute('title') || '';
         const disabled = this.hasAttribute('disabled');
 
@@ -105,7 +115,7 @@ class ButtonIcon extends HTMLElement {
 
     updateIcon() {
         if (this.trigger) {
-            this.trigger.innerHTML = this.getAttribute('icon') || '&#8942;';
+            this.trigger.innerHTML = this.getIconContent();
         }
     }
 

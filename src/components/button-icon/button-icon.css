@@ -33,6 +33,11 @@ button-icon .btn-icon-trigger:disabled {
     cursor: not-allowed;
 }
 
+button-icon .btn-icon-trigger svg {
+    vertical-align: middle;
+    fill: currentColor;
+}
+
 button-icon .btn-icon-menu {
     display: none;
     position: absolute;

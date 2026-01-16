@@ -73,6 +73,31 @@ body {
     width: auto;
 }
 
+.current-connection-display {
+    margin-left: auto;
+    font-size: 14px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+/* Responsive: smaller screens */
+@media (max-width: 480px) {
+    .current-connection-display {
+        max-width: 120px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 320px) {
+    .current-connection-display {
+        max-width: 80px;
+        font-size: 12px;
+    }
+}
+
 /* --- Content Area --- */
 .content-area {
     flex: 1;

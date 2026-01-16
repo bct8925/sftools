@@ -124,6 +124,7 @@ async function refreshConnectionList() {
 
 function showNoConnectionsState() {
     updateMobileConnections([]);
+    updateHeaderConnectionDisplay(null);
     updateConnectionGating();
     switchToSettingsTab();
 }
@@ -150,11 +151,27 @@ async function selectConnection(connection) {
     updateMobileConnections(await loadConnections());
     updateConnectionGating();
 
+    // Update header connection display
+    updateHeaderConnectionDisplay(connection);
+
     // Update lastUsedAt
     await updateConnection(connection.id, {});
 
     // Notify components that connection changed
     document.dispatchEvent(new CustomEvent('connection-changed', { detail: connection }));
+}
+
+function updateHeaderConnectionDisplay(connection) {
+    const displayElement = document.querySelector('.current-connection-display');
+    if (displayElement) {
+        if (connection && connection.label) {
+            displayElement.textContent = connection.label;
+            displayElement.title = connection.label; // Show full text on hover
+        } else {
+            displayElement.textContent = '';
+            displayElement.title = '';
+        }
+    }
 }
 
 async function detectLoginDomain() {

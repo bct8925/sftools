@@ -29,7 +29,7 @@
             <monaco-editor class="query-editor monaco-container" language="sql"></monaco-editor>
         </div>
         <div class="query-footer">
-            <button-dropdown class="query-action-btn" label="Query"></button-dropdown>
+            <button class="button-brand query-action-btn">Query</button>
             <span class="status-badge query-status"></span>
         </div>
     </div>
@@ -42,7 +42,8 @@
             <input type="text" class="query-search-input" placeholder="Filter...">
         </div>
         <button-icon class="query-results-btn" icon="&#8942;" title="Options">
-            <button class="btn-icon-option query-export-btn" disabled>Export CSV</button>
+            <button class="btn-icon-option query-export-btn" disabled>Export</button>
+            <button class="btn-icon-option query-bulk-export-btn" disabled>Bulk Export</button>
             <button class="btn-icon-option query-save-btn" disabled>Save Changes</button>
             <button class="btn-icon-option query-clear-btn" disabled>Clear Changes</button>
         </button-icon>

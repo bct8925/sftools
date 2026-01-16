@@ -3,7 +3,6 @@ import template from './query.html?raw';
 import './query.css';
 import { isAuthenticated, getActiveConnectionId } from '../../lib/utils.js';
 import '../monaco-editor/monaco-editor.js';
-import '../button-dropdown/button-dropdown.js';
 import '../button-icon/button-icon.js';
 import '../modal-popup/modal-popup.js';
 import { executeQueryWithColumns, executeBulkQueryExport, getObjectDescribe, updateRecord } from '../../lib/salesforce.js';
@@ -105,13 +104,9 @@ class QueryTab extends HTMLElement {
 
         // Export, Save, and Clear buttons (inside results dropdown)
         this.exportBtn = this.querySelector('.query-export-btn');
+        this.bulkExportBtn = this.querySelector('.query-bulk-export-btn');
         this.saveBtn = this.querySelector('.query-save-btn');
         this.clearBtn = this.querySelector('.query-clear-btn');
-
-        // Setup action button options
-        this.actionBtn.setOptions([
-            { label: 'Export', disabled: false }
-        ]);
     }
 
     initEditor() {
@@ -125,10 +120,7 @@ LIMIT 10`);
 
     attachEventListeners() {
         // Query execution
-        this.actionBtn.addEventListener('click-main', () => this.executeQuery());
-        this.actionBtn.addEventListener('click-option', (e) => {
-            if (e.detail.index === 0) this.bulkExport();
-        });
+        this.actionBtn.addEventListener('click', () => this.executeQuery());
         this.editor.addEventListener('execute', () => this.executeQuery());
 
         // History modal
@@ -149,6 +141,12 @@ LIMIT 10`);
         // Export CSV handler
         this.exportBtn.addEventListener('click', () => {
             this.exportCurrentResults();
+            this.resultsBtn.close();
+        });
+
+        // Bulk Export handler
+        this.bulkExportBtn.addEventListener('click', () => {
+            this.bulkExport();
             this.resultsBtn.close();
         });
 
@@ -1091,7 +1089,7 @@ LIMIT 10`);
         if (this.bulkExportInProgress) return;
 
         this.bulkExportInProgress = true;
-        this.actionBtn.setOptionDisabled(0, true);
+        this.bulkExportBtn.disabled = true;
 
         try {
             const csv = await executeBulkQueryExport(query, (state, recordCount) => {
@@ -1118,14 +1116,15 @@ LIMIT 10`);
             alert(`Bulk export failed: ${error.message}`);
         } finally {
             this.bulkExportInProgress = false;
-            this.actionBtn.setOptionDisabled(0, false);
+            this.bulkExportBtn.disabled = false;
         }
     }
 
     updateExportButtonState() {
         const tabData = this.getTabDataById(this.activeTabId);
-        const hasResults = tabData && tabData.records && tabData.records.length > 0;
+        const hasResults = tabData && tabData.records && tabData.records.length > 0 && !tabData.error;
         this.exportBtn.disabled = !hasResults;
+        this.bulkExportBtn.disabled = !hasResults;
     }
 
     updateSaveButtonState() {

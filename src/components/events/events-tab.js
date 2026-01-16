@@ -3,6 +3,7 @@ import template from './events.html?raw';
 import '../monaco-editor/monaco-editor.js';
 import { isAuthenticated, isProxyConnected, getInstanceUrl, getAccessToken } from '../../lib/utils.js';
 import { getAllStreamingChannels, publishPlatformEvent } from '../../lib/salesforce.js';
+import { updateStatusBadge } from '../../lib/ui-helpers.js';
 
 class EventsTab extends HTMLElement {
     // DOM references
@@ -426,9 +427,7 @@ class EventsTab extends HTMLElement {
     // ============================================================
 
     updateStreamStatus(text, type = '') {
-        this.streamStatus.textContent = text;
-        this.streamStatus.className = 'status-badge';
-        if (type) this.streamStatus.classList.add(`status-${type}`);
+        updateStatusBadge(this.streamStatus, text, type);
     }
 
     updatePublishStatus(text, type = '') {

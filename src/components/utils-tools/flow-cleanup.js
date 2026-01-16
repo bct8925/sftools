@@ -3,6 +3,7 @@ import template from './flow-cleanup.html?raw';
 import './utils-tools.css';
 import './search-box.js';
 import { searchFlows, getFlowVersions, deleteInactiveFlowVersions } from '../../lib/salesforce.js';
+import { escapeHtml } from '../../lib/text-utils.js';
 
 class FlowCleanup extends HTMLElement {
     flowSearch = null;
@@ -62,7 +63,7 @@ class FlowCleanup extends HTMLElement {
         const inactiveCount = inactiveVersions.length;
 
         this.flowInfo.innerHTML = `
-            <strong>${this.escapeHtml(this.selectedFlowName)}</strong><br>
+            <strong>${escapeHtml(this.selectedFlowName)}</strong><br>
             Total versions: ${this.versions.length}<br>
             Active version: ${activeVersion?.VersionNumber || 'None'}<br>
             Inactive versions: ${inactiveCount}
@@ -105,11 +106,6 @@ class FlowCleanup extends HTMLElement {
         text.textContent = message;
     }
 
-    escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
 }
 
 customElements.define('flow-cleanup', FlowCleanup);

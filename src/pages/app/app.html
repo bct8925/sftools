@@ -13,9 +13,7 @@
         
         <nav class="tab-nav">
             <button class="hamburger-btn" aria-label="Menu">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2 4.5h16a.5.5 0 010 1H2a.5.5 0 010-1zm0 5h16a.5.5 0 010 1H2a.5.5 0 010-1zm0 5h16a.5.5 0 010 1H2a.5.5 0 010-1z"/>
-                </svg>
+                {{icon:hamburger}}
             </button>
             <div class="nav-brand"><img src="../../icon.png" alt="" class="nav-brand-icon">sftools</div>
             <div class="current-connection-display"></div>
@@ -26,9 +24,7 @@
             <div class="mobile-menu-header">
                 <div class="nav-brand"><img src="../../icon.png" alt="" class="nav-brand-icon">sftools</div>
                 <button class="mobile-menu-close" aria-label="Close menu">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M4.646 4.646a.5.5 0 01.708 0L10 9.293l4.646-4.647a.5.5 0 01.708.708L10.707 10l4.647 4.646a.5.5 0 01-.708.708L10 10.707l-4.646 4.647a.5.5 0 01-.708-.708L9.293 10 4.646 5.354a.5.5 0 010-.708z"/>
-                    </svg>
+                    {{icon:closeLarge}}
                 </button>
             </div>
             <div class="mobile-menu-content">
@@ -67,6 +63,35 @@
             <settings-tab id="settings" class="tab-content"></settings-tab>
         </main>
     </div>
+
+    <!-- CORS Error Modal -->
+    <modal-popup id="cors-error-modal">
+        <div style="padding: 24px; max-width: 600px;">
+            <h3 style="margin-top: 0; margin-bottom: 16px; color: var(--error-color);">CORS Configuration Required</h3>
+            <p style="margin-bottom: 16px;">
+                To allow the Chrome extension to make requests to your Salesforce org, you need to add a CORS entry or enable the local proxy.
+            </p>
+            <p style="margin-bottom: 12px; font-weight: 600;">Option 1: Configure CORS in Salesforce (Recommended for Quick Setup)</p>
+            <ol style="margin-bottom: 20px; padding-left: 24px;">
+                <li>In Salesforce Setup, search for "CORS"</li>
+                <li>Click "CORS" under Security</li>
+                <li>Click "New" to add an allowed origin pattern</li>
+                <li>Enter: <code style="background: var(--bg-secondary); padding: 2px 6px; border-radius: 3px;">chrome-extension://mckblnkfhlgocgmehmnihmagmhbnjioj</code></li>
+                <li>Save the CORS entry</li>
+            </ol>
+            <p style="margin-bottom: 12px; font-weight: 600;">Option 2: Enable Local Proxy (Bypasses CORS Automatically)</p>
+            <ol style="margin-bottom: 20px; padding-left: 24px;">
+                <li>Install <a href="https://nodejs.org/" target="_blank" style="color: var(--primary-color);">Node.js 18</a> or later</li>
+                <li>Open a terminal in the <code style="background: var(--bg-secondary); padding: 2px 6px; border-radius: 3px;">sftools-proxy</code> folder</li>
+                <li>Run: <code style="background: var(--bg-secondary); padding: 2px 6px; border-radius: 3px;">npm run install-host</code></li>
+                <li>Restart Chrome completely</li>
+                <li>Go to Settings tab and enable the "Local Proxy" toggle</li>
+            </ol>
+            <div style="text-align: right;">
+                <button class="button-brand" id="cors-modal-close">Close</button>
+            </div>
+        </div>
+    </modal-popup>
 
     <script type="module" src="app.js"></script>
 </body>

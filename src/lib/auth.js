@@ -264,24 +264,8 @@ export async function consumePendingAuth() {
 
 // --- OAuth Credentials ---
 
-/**
- * Get OAuth credentials for a connection or default
- * @param {string|null} connectionId - Optional connection ID to get specific client ID
- * @returns {Promise<{clientId: string, isCustom: boolean}>}
- */
-export async function getOAuthCredentials(connectionId = null) {
-    // Check for per-connection clientId first
-    if (connectionId) {
-        const connections = await loadConnections();
-        const connection = connections.find(c => c.id === connectionId);
-        if (connection?.clientId) {
-            return { clientId: connection.clientId, isCustom: true };
-        }
-    }
-
-    // Fall back to manifest default
-    return { clientId: chrome.runtime.getManifest().oauth2.client_id, isCustom: false };
-}
+// Re-export OAuth credentials helper (shared with service worker)
+export { getOAuthCredentials } from './oauth-credentials.js';
 
 /**
  * Load custom connected app config from storage

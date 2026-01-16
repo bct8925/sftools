@@ -1,48 +1,40 @@
 /* Modal Popup Component */
 
 modal-popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 0;
-    height: 0;
-    pointer-events: none;
-    z-index: 999;
-}
-
-modal-popup.open {
-    pointer-events: auto;
-}
-
-modal-popup .modal-backdrop {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
     z-index: 999;
 }
 
-modal-popup.open .modal-backdrop {
-    display: block;
+modal-popup.open {
+    display: flex;
+    pointer-events: auto;
+}
+
+modal-popup .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: -1;
 }
 
 modal-popup .modal-content {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-    z-index: 1000;
-    overflow: hidden;
-}
-
-modal-popup.open .modal-content {
-    display: block;
+    max-height: 90vh;
+    max-width: 90vw;
+    overflow: auto;
 }

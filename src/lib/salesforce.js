@@ -629,11 +629,11 @@ export async function enableTraceFlagForUser(userId) {
     if (response.json.records && response.json.records.length > 0) {
         const existing = response.json.records[0];
 
-        // Update existing trace flag with new expiration
         await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${existing.Id}`, {
             method: 'PATCH',
-            body: JSON.stringify({
-                ExpirationDate: thirtyMinutesFromNow
+            body: JSON.stringify({ 
+                StartDate: now,
+                ExpirationDate: thirtyMinutesFromNow 
             })
         });
         return existing.Id;

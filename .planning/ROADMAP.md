@@ -38,7 +38,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 02-01: Audit all existing icons and map to SLDS equivalents
+- [x] 02-01: Audit all existing icons and map to SLDS equivalents
 - [ ] 02-02: Replace icons in header and navigation
 - [ ] 02-03: Replace icons in tool tabs and standalone pages
 
@@ -59,5 +59,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete | 2026-01-16 |
-| 2. Icon Replacement | 0/3 | Not started | - |
+| 2. Icon Replacement | 1/3 | In progress | - |
 | 3. Verification | 0/1 | Not started | - |

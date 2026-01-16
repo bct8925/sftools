@@ -1,12 +1,38 @@
 ---
 description: Triage all open GitHub issues
-allowed-tools: Read, Write, Edit, Bash, AskUserQuestion, mcp__github__*
+allowed-tools: Read, Write, Edit, Bash, AskUserQuestion, mcp__github__*, Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh issue comment:*), Bash(gh pr list:*), Bash(gh pr create:*), Bash(git ls-remote:*), Bash(git fetch:*), Bash(git rev-list:*), Bash(command -v gh:*)
 model: sonnet
 ---
 
 # GitHub Issue Triage Workflow
 
 Process all open GitHub issues in the repository one at a time, allowing the user to choose actions for each issue.
+
+## Step 0: Detect GitHub Access Method
+
+Before starting, determine which GitHub access method is available.
+
+**Check for GitHub MCP:**
+Try using any `mcp__github__*` tool. If the tool exists and works, use MCP for all GitHub operations.
+
+**Check for gh CLI:**
+If MCP is not available, use Bash tool:
+```bash
+command -v gh && gh auth status
+```
+
+If gh CLI is available and authenticated, use it for all GitHub operations.
+
+**If neither is available:**
+Display message to user:
+```
+GitHub access is required for issue triage. Please either:
+1. Configure the GitHub MCP server, or
+2. Install and authenticate gh CLI: brew install gh && gh auth login
+```
+Then exit.
+
+**Store the access method** (either "mcp" or "cli") for use throughout the workflow.
 
 ## Step 1: Get Repository Info
 
@@ -21,10 +47,11 @@ Parse the URL to extract owner and repo:
 - SSH format: `git@github.com:owner/repo.git`
 - HTTPS format: `https://github.com/owner/repo.git`
 
-Store the owner and repo values for use in GitHub MCP tool calls.
+Store the owner and repo values for use in GitHub operations.
 
 ## Step 2: Fetch All Open Issues
 
+### If using MCP:
 Use the `mcp__github__list_issues` tool to get all open issues:
 - `owner`: extracted owner
 - `repo`: extracted repo
@@ -32,6 +59,16 @@ Use the `mcp__github__list_issues` tool to get all open issues:
 - `perPage`: 30
 
 If there are more than 30 issues, handle pagination by calling the tool multiple times with the `page` parameter (page 2, 3, etc.) until all issues are retrieved.
+
+### If using gh CLI:
+Use Bash tool:
+```bash
+gh issue list --repo {owner}/{repo} --state open --json number,title,body,comments,url,createdAt,author --limit 100
+```
+
+If there are more than 100 issues, the output will indicate truncation. Increase the limit or paginate as needed.
+
+---
 
 Store the complete list of issues.
 
@@ -43,19 +80,22 @@ For each issue in the list, follow this sequence:
 
 ### 3.1 Fetch Full Issue Details
 
-Use `mcp__github__issue_read` twice to get complete context:
+#### If using MCP:
+Use `mcp__github__get_issue` to get issue details:
+- `owner`: repo owner
+- `repo`: repo name
+- `issue_number`: current issue number
 
-1. Get issue details:
-   - `method`: "get"
-   - `owner`: repo owner
-   - `repo`: repo name
-   - `issue_number`: current issue number
+Use `mcp__github__list_issue_comments` to get comments:
+- `owner`: repo owner
+- `repo`: repo name
+- `issue_number`: current issue number
 
-2. Get issue comments:
-   - `method`: "get_comments"
-   - `owner`: repo owner
-   - `repo`: repo name
-   - `issue_number`: current issue number
+#### If using gh CLI:
+Use Bash tool to get issue details and comments:
+```bash
+gh issue view {number} --repo {owner}/{repo} --json number,title,body,comments,state,author,createdAt
+```
 
 ### 3.2 Present Summary to User
 
@@ -115,11 +155,20 @@ Based on user's selection, execute the corresponding action:
    - If user provided context: `@claude {user's context}`
    - If no context: `@claude`
 
-3. Use `mcp__github__add_issue_comment`:
+3. Post the comment:
+
+   **If using MCP:**
+   Use `mcp__github__create_issue_comment`:
    - `owner`: repo owner
    - `repo`: repo name
    - `issue_number`: current issue number
    - `body`: the comment text from step 2
+
+   **If using gh CLI:**
+   Use Bash tool:
+   ```bash
+   gh issue comment {number} --repo {owner}/{repo} --body "{comment_text}"
+   ```
 
 4. Display confirmation:
    ```
@@ -144,20 +193,36 @@ Based on user's selection, execute the corresponding action:
      - Allow user to enter the branch name
 
 2. **Verify Branch Exists**:
-   - Use `mcp__github__list_branches` to get all branches
-   - Check if the specified branch exists in the list
-   - If branch doesn't exist:
-     ```
-     ✗ Branch "{branch}" not found in repository
-     Skipping PR creation for issue #{number}
-     ```
-     Continue to next issue
+
+   **If using MCP:**
+   Use `mcp__github__list_branches` to get all branches and check if the specified branch exists.
+
+   **If using gh CLI:**
+   Use Bash tool:
+   ```bash
+   git ls-remote --heads origin {branch}
+   ```
+
+   If branch doesn't exist (empty output for CLI, not in list for MCP):
+   ```
+   ✗ Branch "{branch}" not found in repository
+   Skipping PR creation for issue #{number}
+   ```
+   Continue to next issue
 
 3. **Check if Branch is Up-to-Date with Main**:
+
+   **If using MCP:**
    - Use `mcp__github__list_commits` with `sha: "main"` and `perPage: 1` to get latest main commit
    - Use `mcp__github__list_commits` with `sha: "{branch}"` and `perPage: 10` to get branch commits
    - Check if the latest main commit is in the branch's commit list
-   - If main commit is NOT in branch commits, the branch is behind main
+
+   **If using gh CLI:**
+   Use Bash tool:
+   ```bash
+   git fetch origin && git rev-list --left-right --count origin/main...origin/{branch}
+   ```
+   The output shows `behind ahead` counts. If behind > 0, the branch is behind main.
 
 4. **Merge Main into Branch if Behind**:
 
@@ -217,36 +282,65 @@ Based on user's selection, execute the corresponding action:
         ```
 
 5. **Check if PR Already Exists**:
-   - Use `mcp__github__search_pull_requests`:
-     - `owner`: repo owner
-     - `repo`: repo name
-     - `query`: `head:{branch} base:main`
 
-   - If PR already exists:
-     ```
-     ℹ A pull request already exists for branch "{branch}"
-     PR: {pr_url}
-     Skipping PR creation for issue #{number}
-     ```
-     Continue to next issue
+   **If using MCP:**
+   Use `mcp__github__list_pull_requests`:
+   - `owner`: repo owner
+   - `repo`: repo name
+   - `head`: `{owner}:{branch}`
+   - `base`: "main"
+   - `state`: "open"
+
+   **If using gh CLI:**
+   Use Bash tool:
+   ```bash
+   gh pr list --repo {owner}/{repo} --head {branch} --base main --state open --json number,url
+   ```
+
+   If PR already exists:
+   ```
+   ℹ A pull request already exists for branch "{branch}"
+   PR: {pr_url}
+   Skipping PR creation for issue #{number}
+   ```
+   Continue to next issue
 
 6. **Create Pull Request**:
-   - Use `mcp__github__create_pull_request`:
-     - `owner`: repo owner
-     - `repo`: repo name
-     - `title`: `Closes #{issue_number}: {issue_title}`
-     - `body`: Generate body with:
-       ```
-       Closes #{issue_number}
 
-       {First 500 characters of issue description}
+   **If using MCP:**
+   Use `mcp__github__create_pull_request`:
+   - `owner`: repo owner
+   - `repo`: repo name
+   - `title`: `Closes #{issue_number}: {issue_title}`
+   - `body`: (see below)
+   - `base`: "main"
+   - `head`: "{branch}"
 
-       ---
+   **If using gh CLI:**
+   Use Bash tool:
+   ```bash
+   gh pr create --repo {owner}/{repo} --title "Closes #{issue_number}: {issue_title}" --body "$(cat <<'EOF'
+   Closes #{issue_number}
 
-       This PR was created by the /issue-triage command.
-       ```
-     - `base`: "main"
-     - `head`: "{branch}"
+   {First 500 characters of issue description}
+
+   ---
+
+   This PR was created by the /issue-triage command.
+   EOF
+   )" --base main --head {branch}
+   ```
+
+   PR body content:
+   ```
+   Closes #{issue_number}
+
+   {First 500 characters of issue description}
+
+   ---
+
+   This PR was created by the /issue-triage command.
+   ```
 
 7. **Display Confirmation**:
    ```
@@ -383,11 +477,11 @@ Branches Created:
 
 ## Important Notes
 
-- **Error Handling**: If any GitHub MCP tool call fails, display the error message and ask user if they want to retry, skip, or abort the entire triage process.
+- **Error Handling**: If any GitHub operation fails, display the error message and ask user if they want to retry, skip, or abort the entire triage process.
 
 - **Git Operations**: All git operations should handle potential errors (permission issues, network failures, etc.) and ask user how to proceed.
 
-- **Pagination**: When fetching issues, ensure all pages are retrieved if there are more than 30 issues.
+- **Pagination**: When fetching issues, ensure all pages are retrieved if there are more than the page limit.
 
 - **Issue State**: Only fetch OPEN issues. Closed issues are not included in triage.
 
@@ -398,3 +492,5 @@ Branches Created:
 - **Context Preservation**: Keep track of summary statistics throughout the process for the final summary.
 
 - **User Control**: The user can stop the process at any time. Make sure to show the summary with statistics up to that point.
+
+- **Access Method Consistency**: Once an access method (MCP or CLI) is determined at the start, use it consistently throughout the entire workflow to avoid mixing approaches.

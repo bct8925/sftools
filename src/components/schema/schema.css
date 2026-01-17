@@ -1,42 +1,12 @@
 /* Schema Browser Page Styles */
 
-/* Standalone Header */
-.standalone-header {
-    display: flex;
-    align-items: center;
-    background: var(--nav-bg);
-    border-bottom: 2px solid var(--border-color);
-    padding: 0 20px;
-    height: 50px;
-    flex-shrink: 0;
-    box-shadow: 0 2px 2px 0 var(--shadow-sm);
-}
-.standalone-header .nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--primary-color);
-    letter-spacing: -0.5px;
-}
-.standalone-header .nav-brand img {
-    height: 24px;
-    width: auto;
-}
-.standalone-header .tool-name {
-    font-size: 14px;
-    color: var(--text-muted);
-    border-left: 1px solid var(--border-color);
-    padding-left: 15px;
-    margin-left: 15px;
-}
-
+/* Schema-specific card override */
 .schema-card-body {
     padding: 0;
     overflow: hidden;
 }
 
+/* Layout */
 .schema-container {
     display: flex;
     height: calc(100vh - 180px);
@@ -55,6 +25,7 @@
     flex: 0 0 33.333%;
 }
 
+/* Objects Panel */
 .objects-header {
     padding: 16px;
     border-bottom: 1px solid var(--border-color);
@@ -109,9 +80,10 @@
 .object-item-name {
     font-size: 12px;
     color: var(--text-secondary);
-    font-family: 'Courier New', monospace;
+    font-family: var(--font-mono);
 }
 
+/* Fields Panel */
 .fields-panel {
     flex: 0 0 66.666%;
     display: flex;
@@ -163,7 +135,7 @@
 .selected-object-name {
     font-size: 12px;
     color: var(--text-secondary);
-    font-family: 'Courier New', monospace;
+    font-family: var(--font-mono);
 }
 
 .fields-header .filter-input {
@@ -210,7 +182,7 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     color: var(--text-secondary);
     display: flex;
     align-items: center;
@@ -234,7 +206,7 @@
     right: 16px;
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     box-shadow: 0 2px 8px var(--shadow-lg);
     z-index: 1000;
     min-width: 120px;
@@ -257,6 +229,7 @@
     background-color: var(--bg-hover);
 }
 
+/* Field Items */
 .field-item-label {
     color: var(--text-primary);
     overflow: hidden;
@@ -265,7 +238,7 @@
 }
 
 .field-item-name {
-    font-family: 'Courier New', monospace;
+    font-family: var(--font-mono);
     color: var(--text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -292,6 +265,7 @@
     text-decoration: underline;
 }
 
+/* Status States */
 .loading-container {
     padding: 32px;
     text-align: center;
@@ -313,27 +287,14 @@
     font-size: 13px;
 }
 
-/* Formula Editor Modal */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--overlay-bg);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-}
-
+/* Formula Editor Modal (uses global .modal-overlay from style.css) */
 .modal-overlay.show {
     display: flex;
 }
 
 .modal {
     background: var(--bg-primary);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 4px 16px var(--shadow-lg);
     max-width: 800px;
     width: 90%;
@@ -376,7 +337,7 @@
     flex: 1;
     min-height: 300px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     overflow: hidden;
     display: flex;
     flex-direction: column;

@@ -100,9 +100,9 @@ class FlowCleanup extends HTMLElement {
 
     setStatus(type, message) {
         this.status.classList.remove('hidden');
-        const indicator = this.status.querySelector('.tool-status-indicator');
+        const indicator = this.status.querySelector('.status-indicator');
         const text = this.status.querySelector('.tool-status-text');
-        indicator.className = `tool-status-indicator status-${type}`;
+        indicator.className = `status-indicator status-${type}`;
         text.textContent = message;
     }
 

@@ -1,37 +1,5 @@
 /* Record Viewer Styles */
 
-/* Standalone Header */
-.standalone-header {
-    display: flex;
-    align-items: center;
-    background: var(--nav-bg);
-    border-bottom: 2px solid var(--border-color);
-    padding: 0 20px;
-    height: 50px;
-    flex-shrink: 0;
-    box-shadow: 0 2px 2px 0 var(--shadow-sm);
-}
-.standalone-header .nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--primary-color);
-    letter-spacing: -0.5px;
-}
-.standalone-header .nav-brand img {
-    height: 24px;
-    width: auto;
-}
-.standalone-header .tool-name {
-    font-size: 14px;
-    color: var(--text-muted);
-    border-left: 1px solid var(--border-color);
-    padding-left: 15px;
-    margin-left: 15px;
-}
-
 /* Record Info */
 .record-info {
     display: flex;
@@ -40,14 +8,14 @@
     margin-bottom: 15px;
     padding: 10px 15px;
     background: var(--card-header-bg);
-    border-radius: 4px;
+    border-radius: var(--radius-md);
 }
 .record-info .object-name {
     font-weight: 600;
     color: var(--primary-color);
 }
 .record-info .record-id {
-    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 13px;
     color: var(--text-muted);
 }
@@ -76,7 +44,7 @@
     font-size: 13px;
 }
 .field-api-name {
-    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     color: var(--text-muted);
     overflow: hidden;
@@ -163,7 +131,7 @@
 
 /* Field Type */
 .field-type {
-    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text-muted);
 }
@@ -191,7 +159,7 @@
     background: var(--primary-color);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: background-color 0.2s;
 }
@@ -200,26 +168,14 @@
 }
 
 /* Rich Text Preview Modal */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--overlay-bg);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-}
-
+/* Uses global .modal-overlay from style.css, but JS uses .show class instead of .hidden */
 .modal-overlay.show {
     display: flex;
 }
 
 .modal {
     background: var(--bg-primary);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 4px 16px var(--shadow-lg);
     max-width: 90vw;
     max-height: 90vh;
@@ -255,7 +211,7 @@
     color: var(--text-muted);
     cursor: pointer;
     padding: 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -278,7 +234,7 @@
     padding: 15px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     color: var(--text-primary);
     line-height: 1.6;
 }

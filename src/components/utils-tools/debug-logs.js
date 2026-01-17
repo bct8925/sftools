@@ -190,9 +190,9 @@ class DebugLogs extends HTMLElement {
 
     setStatus(statusEl, type, message) {
         statusEl.classList.remove('hidden');
-        const indicator = statusEl.querySelector('.tool-status-indicator');
+        const indicator = statusEl.querySelector('.status-indicator');
         const text = statusEl.querySelector('.tool-status-text');
-        indicator.className = `tool-status-indicator status-${type}`;
+        indicator.className = `status-indicator status-${type}`;
         text.textContent = message;
     }
 

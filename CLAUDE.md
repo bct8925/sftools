@@ -690,7 +690,7 @@ src/components/
 **Shared Styles** (`utils-tools.css`):
 - `.tool-description` - Muted description text
 - `.tool-status` - Status row with indicator and text
-- `.tool-status-indicator.status-loading/success/error` - Status dot colors
+- `.status-indicator.status-loading/success/error` - Status dot colors (global class in style.css)
 - `.tool-results`, `.tool-result-item` - Search result list styling
 - `.tool-summary` - Info box with background
 - `.tool-divider` - Horizontal separator
@@ -712,6 +712,22 @@ src/components/
 - Card-based layouts with `.card`, `.card-header`, `.card-body`
 - Form elements use `.input`, `.select`, `.button-brand` classes
 - Monaco containers use `.monaco-container` and `.monaco-container-lg`
+
+### Shared Component Classes
+
+Global reusable component classes in `style.css` to avoid duplication:
+
+| Pattern | Classes | Usage |
+|---------|---------|-------|
+| Modal Overlay | `.modal-overlay`, `.modal-dialog`, `.modal-buttons` | Fixed overlay with centered dialog |
+| Dropdown Menu | `.dropdown-menu`, `.dropdown-item` | Absolute-positioned dropdown |
+| Script List | `.script-list`, `.script-item`, `.script-preview`, `.script-label`, `.script-meta`, `.script-actions`, `.script-action` | History/favorites list items |
+| Search Input | `.search-input` | Compact filter input |
+| Dropdown Tabs | `.dropdown-tabs`, `.dropdown-tab`, `.dropdown-content` | Tab switcher inside dropdowns |
+| Standalone Header | `.standalone-header`, `.tool-name` | Header for standalone pages |
+| Status Indicator | `.status-indicator.status-loading/success/error` | Animated status dots |
+
+When building new components, prefer these shared classes over component-specific duplicates.
 
 ## CSS Variables & Theming
 
@@ -772,6 +788,21 @@ All colors should use CSS variables defined in `src/style.css`:
 --shadow-sm              /* Subtle shadow */
 --shadow-md              /* Medium shadow */
 --shadow-lg              /* Large shadow (modals, dropdowns) */
+
+/* Z-index scale */
+--z-dropdown             /* 100 - Dropdowns */
+--z-sticky               /* 200 - Sticky elements */
+--z-modal-backdrop       /* 900 - Modal backdrop */
+--z-modal                /* 1000 - Modal content */
+--z-toast                /* 1100 - Toast notifications */
+
+/* Border radius */
+--radius-sm              /* 3px - Small elements */
+--radius-md              /* 4px - Default (inputs, buttons) */
+--radius-lg              /* 8px - Large elements (modals, cards) */
+
+/* Typography */
+--font-mono              /* Monospace font stack for code */
 ```
 
 ### Rules for Adding CSS
@@ -804,6 +835,37 @@ All colors should use CSS variables defined in `src/style.css`:
 
    /* Bad */
    background: rgba(0, 0, 0, 0.5);
+   ```
+
+5. **Use z-index scale variables** for layering:
+   ```css
+   /* Good */
+   z-index: var(--z-dropdown);
+   z-index: var(--z-modal);
+
+   /* Bad */
+   z-index: 100;
+   z-index: 1000;
+   ```
+
+6. **Use border-radius variables** for consistency:
+   ```css
+   /* Good */
+   border-radius: var(--radius-md);
+   border-radius: var(--radius-lg);
+
+   /* Bad */
+   border-radius: 4px;
+   border-radius: 8px;
+   ```
+
+7. **Use --font-mono for code/monospace text**:
+   ```css
+   /* Good */
+   font-family: var(--font-mono);
+
+   /* Bad */
+   font-family: 'SF Mono', Monaco, Consolas, monospace;
    ```
 
 ### Theme Initialization

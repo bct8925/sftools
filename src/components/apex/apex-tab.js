@@ -46,7 +46,7 @@ class ApexTab extends HTMLElement {
     initElements() {
         this.executeBtn = this.querySelector('.apex-execute-btn');
         this.statusSpan = this.querySelector('.apex-status');
-        this.searchInput = this.querySelector('.apex-search-input');
+        this.searchInput = this.querySelector('.search-input');
 
         // Button components
         this.historyBtn = this.querySelector('.apex-history-btn');
@@ -55,7 +55,7 @@ class ApexTab extends HTMLElement {
         // History dropdown elements
         this.historyList = this.querySelector('.apex-history-list');
         this.favoritesList = this.querySelector('.apex-favorites-list');
-        this.dropdownTabs = this.querySelectorAll('.apex-dropdown-tab');
+        this.dropdownTabs = this.querySelectorAll('.dropdown-tab');
     }
 
     initEditors() {
@@ -158,7 +158,7 @@ for (Account acc : accounts) {
 
         if (history.length === 0) {
             this.historyList.innerHTML = `
-                <div class="apex-script-empty">
+                <div class="script-empty">
                     No scripts yet.<br>Execute some Apex to see history here.
                 </div>
             `;
@@ -166,14 +166,14 @@ for (Account acc : accounts) {
         }
 
         this.historyList.innerHTML = history.map(item => `
-            <div class="apex-script-item" data-id="${item.id}">
-                <div class="apex-script-preview">${escapeHtml(this.getPreview(item.code))}</div>
-                <div class="apex-script-meta">
+            <div class="script-item" data-id="${item.id}">
+                <div class="script-preview">${escapeHtml(this.getPreview(item.code))}</div>
+                <div class="script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
-                    <div class="apex-script-actions">
-                        <button class="apex-script-action load" title="Load script">&#8629;</button>
-                        <button class="apex-script-action favorite" title="Add to favorites">&#9733;</button>
-                        <button class="apex-script-action delete" title="Delete">&times;</button>
+                    <div class="script-actions">
+                        <button class="script-action load" title="Load script">&#8629;</button>
+                        <button class="script-action favorite" title="Add to favorites">&#9733;</button>
+                        <button class="script-action delete" title="Delete">&times;</button>
                     </div>
                 </div>
             </div>
@@ -185,7 +185,7 @@ for (Account acc : accounts) {
 
         if (favorites.length === 0) {
             this.favoritesList.innerHTML = `
-                <div class="apex-script-empty">
+                <div class="script-empty">
                     No favorites yet.<br>Click &#9733; on a script to save it.
                 </div>
             `;
@@ -193,13 +193,13 @@ for (Account acc : accounts) {
         }
 
         this.favoritesList.innerHTML = favorites.map(item => `
-            <div class="apex-script-item" data-id="${item.id}">
-                <div class="apex-script-label">${escapeHtml(item.label)}</div>
-                <div class="apex-script-meta">
+            <div class="script-item" data-id="${item.id}">
+                <div class="script-label">${escapeHtml(item.label)}</div>
+                <div class="script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
-                    <div class="apex-script-actions">
-                        <button class="apex-script-action load" title="Load script">&#8629;</button>
-                        <button class="apex-script-action delete" title="Delete">&times;</button>
+                    <div class="script-actions">
+                        <button class="script-action load" title="Load script">&#8629;</button>
+                        <button class="script-action delete" title="Delete">&times;</button>
                     </div>
                 </div>
             </div>
@@ -207,7 +207,7 @@ for (Account acc : accounts) {
     }
 
     handleListClick(event, listType) {
-        const item = event.target.closest('.apex-script-item');
+        const item = event.target.closest('.script-item');
         if (!item) return;
 
         const id = item.dataset.id;
@@ -216,7 +216,7 @@ for (Account acc : accounts) {
         if (!scriptData) return;
 
         // Check which action button was clicked
-        const action = event.target.closest('.apex-script-action');
+        const action = event.target.closest('.script-action');
         if (action) {
             event.stopPropagation();
 
@@ -244,12 +244,12 @@ for (Account acc : accounts) {
         const defaultLabel = this.getPreview(code);
 
         const modal = document.createElement('div');
-        modal.className = 'apex-favorite-modal';
+        modal.className = 'modal-overlay show';
         modal.innerHTML = `
-            <div class="apex-favorite-dialog">
+            <div class="modal-dialog apex-favorite-dialog">
                 <h3>Add to Favorites</h3>
                 <input type="text" class="apex-favorite-input" placeholder="Enter a label for this script" value="${escapeHtml(defaultLabel)}">
-                <div class="apex-favorite-buttons">
+                <div class="modal-buttons">
                     <button class="button-neutral apex-favorite-cancel">Cancel</button>
                     <button class="button-brand apex-favorite-save">Save</button>
                 </div>

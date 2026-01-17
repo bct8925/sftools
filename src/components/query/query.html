@@ -4,13 +4,13 @@
         <h2>SOQL Query</h2>
         <button-icon class="query-history-btn" data-icon="clock" title="History & Favorites"></button-icon>
         <modal-popup class="query-history-modal">
-            <div class="query-dropdown-tabs">
-                <button class="query-dropdown-tab active" data-tab="history">History</button>
-                <button class="query-dropdown-tab" data-tab="favorites">Favorites</button>
+            <div class="dropdown-tabs">
+                <button class="dropdown-tab active" data-tab="history">History</button>
+                <button class="dropdown-tab" data-tab="favorites">Favorites</button>
             </div>
-            <div class="query-dropdown-content">
-                <div class="query-script-list query-history-list"></div>
-                <div class="query-script-list query-favorites-list" style="display: none;"></div>
+            <div class="dropdown-content">
+                <div class="script-list query-history-list"></div>
+                <div class="script-list query-favorites-list" style="display: none;"></div>
             </div>
         </modal-popup>
         <modal-popup class="query-favorite-modal">
@@ -45,7 +45,7 @@
         <div class="card-header-icon" style="background-color: #4bca81;">Q</div>
         <h2>Results</h2>
         <div class="query-results-search">
-            <input type="text" class="query-search-input" placeholder="Filter...">
+            <input type="text" class="search-input" placeholder="Filter...">
         </div>
         <button-icon class="query-results-btn" data-icon="verticalDots" title="Options">
             <button class="btn-icon-option query-export-btn" disabled>Export</button>

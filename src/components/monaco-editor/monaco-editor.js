@@ -2,8 +2,11 @@
 // Custom import with only the languages we need (sql, apex, json, xml, javascript)
 import { monaco } from '../../lib/monaco-custom.js';
 
+function getMonacoTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'vs-dark' : 'vs';
+}
+
 const defaultOptions = {
-    theme: 'vs-dark',
     minimap: { enabled: false },
     automaticLayout: true,
     scrollBeyondLastLine: false,
@@ -30,10 +33,12 @@ class MonacoEditor extends HTMLElement {
     connectedCallback() {
         this.initEditor();
         this.initResize();
+        this.initThemeListener();
     }
 
     disconnectedCallback() {
         this.cleanupResize();
+        this.cleanupThemeListener();
         if (this.editor) {
             this.editor.dispose();
             this.editor = null;
@@ -47,6 +52,7 @@ class MonacoEditor extends HTMLElement {
 
         this.editor = monaco.editor.create(this, {
             ...defaultOptions,
+            theme: getMonacoTheme(),
             language,
             readOnly: readonly,
             value
@@ -61,6 +67,31 @@ class MonacoEditor extends HTMLElement {
                 this.dispatchEvent(new CustomEvent('execute', { bubbles: true }));
             }
         });
+    }
+
+    initThemeListener() {
+        // Watch for data-theme attribute changes on documentElement
+        this.themeObserver = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (mutation.attributeName === 'data-theme') {
+                    this.updateEditorTheme();
+                }
+            }
+        });
+        this.themeObserver.observe(document.documentElement, { attributes: true });
+    }
+
+    cleanupThemeListener() {
+        if (this.themeObserver) {
+            this.themeObserver.disconnect();
+            this.themeObserver = null;
+        }
+    }
+
+    updateEditorTheme() {
+        if (this.editor) {
+            monaco.editor.setTheme(getMonacoTheme());
+        }
     }
 
     initResize() {

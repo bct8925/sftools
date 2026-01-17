@@ -26,7 +26,7 @@
     border-radius: 4px;
     font-size: 13px;
     color: var(--text-main);
-    background: white;
+    background: var(--input-bg);
 }
 
 .query-search-input:focus {
@@ -60,7 +60,7 @@
 .query-dropdown-tabs {
     display: flex;
     border-bottom: 1px solid var(--border-color);
-    background-color: #f8f9fa;
+    background-color: var(--card-header-bg);
     padding: 8px;
     gap: 4px;
 }
@@ -79,7 +79,7 @@
 }
 
 .query-dropdown-tab:hover {
-    background-color: rgba(0, 112, 210, 0.05);
+    background-color: var(--bg-hover);
     color: var(--primary-color);
 }
 
@@ -123,7 +123,7 @@
 
 .query-script-item:hover {
     border-color: var(--primary-color);
-    background-color: rgba(0, 112, 210, 0.02);
+    background-color: var(--bg-hover);
 }
 
 .query-script-preview {
@@ -181,17 +181,17 @@
 }
 
 .query-script-action:hover {
-    background-color: rgba(0, 112, 210, 0.1);
+    background-color: var(--bg-selected);
     color: var(--primary-color);
 }
 
 .query-script-action.delete:hover {
-    background-color: rgba(194, 57, 52, 0.1);
-    color: #c23934;
+    background-color: var(--status-error-bg);
+    color: var(--error-color);
 }
 
 .query-script-action.favorite {
-    color: #f5a623;
+    color: var(--indicator-loading);
 }
 
 /* ============================================================
@@ -204,7 +204,7 @@
     border-radius: 8px;
     padding: 20px;
     width: 320px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px var(--shadow-lg);
 }
 
 .query-favorite-dialog h3 {
@@ -248,7 +248,7 @@
     flex-wrap: wrap;
     gap: 2px;
     padding: 10px 15px;
-    background-color: #f8f9fa;
+    background-color: var(--card-header-bg);
     border-bottom: 1px solid var(--border-color);
     min-height: 40px;
     align-items: center;
@@ -263,7 +263,7 @@
 .query-tab {
     display: flex;
     align-items: center;
-    background: #fff;
+    background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     padding: 4px 8px;
@@ -347,8 +347,8 @@
 }
 
 .query-results-error {
-    color: #721c24;
-    background-color: #f8d7da;
+    color: var(--status-error-text);
+    background-color: var(--status-error-bg);
     border-radius: 4px;
     font-style: normal;
 }
@@ -378,7 +378,7 @@
 
 .query-results-table th {
     border-bottom: 0;
-    background-color: #f8f9fa;
+    background-color: var(--card-header-bg);
     font-weight: 600;
     color: var(--text-main);
     position: sticky;
@@ -393,7 +393,7 @@
 }
 
 .query-results-table tr:hover {
-    background-color: #f5f5f5;
+    background-color: var(--bg-hover);
 }
 
 .query-results-table tr.hidden {
@@ -437,7 +437,7 @@
 }
 
 .query-subquery-toggle:hover {
-    background: #005fb8;
+    background: var(--primary-hover);
 }
 
 .query-subquery-empty {
@@ -446,7 +446,7 @@
 }
 
 .query-subquery-detail {
-    background-color: #f8f9fa;
+    background-color: var(--card-header-bg);
 }
 
 .query-subquery-detail td {
@@ -458,7 +458,7 @@
     border-collapse: separate;
     border-spacing: 0;
     font-size: 12px;
-    background: white;
+    background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     overflow: hidden;
@@ -466,8 +466,8 @@
 
 .query-subquery-table th,
 .query-subquery-table td {
-    border-bottom: 1px solid #e9ecef;
-    border-right: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
     padding: 6px 10px;
     text-align: left;
     max-width: 250px;
@@ -481,7 +481,7 @@
 }
 
 .query-subquery-table th {
-    background-color: #e9ecef;
+    background-color: var(--bg-secondary);
     font-weight: 600;
     color: var(--text-main);
     font-size: 11px;
@@ -499,7 +499,7 @@
 }
 
 .query-subquery-table tr:hover {
-    background-color: #f5f5f5;
+    background-color: var(--bg-hover);
 }
 
 /* ============================================================
@@ -517,7 +517,7 @@
     border-radius: 3px;
     font-size: 13px;
     font-family: inherit;
-    background: white;
+    background: var(--input-bg);
     box-sizing: border-box;
 }
 

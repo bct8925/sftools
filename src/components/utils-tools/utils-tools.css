@@ -25,16 +25,16 @@
 }
 
 .tool-status-indicator.status-loading {
-    background-color: #f4b400;
+    background-color: var(--indicator-loading);
     animation: tool-pulse 1s infinite;
 }
 
 .tool-status-indicator.status-success {
-    background-color: #4bca81;
+    background-color: var(--indicator-success);
 }
 
 .tool-status-indicator.status-error {
-    background-color: #c23934;
+    background-color: var(--indicator-error);
 }
 
 @keyframes tool-pulse {
@@ -66,7 +66,7 @@
 
 .tool-result-item:hover {
     border-color: var(--primary-color);
-    background: rgba(0, 112, 210, 0.05);
+    background: var(--bg-selected);
 }
 
 .tool-result-item.no-hover {
@@ -174,7 +174,7 @@
     border: 1px solid var(--border-color);
     border-top: none;
     border-radius: 0 0 4px 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px var(--shadow-md);
     max-height: 250px;
     overflow-y: auto;
 }
@@ -189,7 +189,7 @@
 }
 
 .search-box-item:hover {
-    background: rgba(0, 112, 210, 0.05);
+    background: var(--bg-selected);
 }
 
 .search-box-item-name {

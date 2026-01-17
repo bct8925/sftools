@@ -9,7 +9,7 @@
     padding: 0 20px;
     height: 50px;
     flex-shrink: 0;
-    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 2px 0 var(--shadow-sm);
 }
 .standalone-header .nav-brand {
     display: flex;
@@ -39,7 +39,7 @@
     gap: 15px;
     margin-bottom: 15px;
     padding: 10px 15px;
-    background: #f8f9fa;
+    background: var(--card-header-bg);
     border-radius: 4px;
 }
 .record-info .object-name {
@@ -91,7 +91,7 @@
     font-size: 13px;
 }
 .field-value input:disabled {
-    background-color: #f3f4f6;
+    background-color: var(--bg-secondary);
     cursor: not-allowed;
     color: var(--text-muted);
 }
@@ -102,7 +102,7 @@
 }
 .field-row.modified .field-value input {
     border-color: var(--primary-color);
-    background-color: #f0f7ff;
+    background-color: var(--bg-selected);
 }
 
 /* Actions Bar */
@@ -131,7 +131,7 @@
     text-align: center;
 }
 .error-container .error-message {
-    color: #c23934;
+    color: var(--error-color);
     margin-bottom: 10px;
     font-weight: 500;
 }
@@ -196,7 +196,7 @@
     transition: background-color 0.2s;
 }
 .field-preview-btn:hover {
-    background: #005fb2;
+    background: var(--primary-hover);
 }
 
 /* Rich Text Preview Modal */
@@ -206,7 +206,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-bg);
     display: none;
     align-items: center;
     justify-content: center;
@@ -220,7 +220,7 @@
 .modal {
     background: var(--bg-primary);
     border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 16px var(--shadow-lg);
     max-width: 90vw;
     max-height: 90vh;
     width: 800px;

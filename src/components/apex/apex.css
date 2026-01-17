@@ -22,7 +22,7 @@
     border-radius: 4px;
     font-size: 13px;
     color: var(--text-main);
-    background: white;
+    background: var(--input-bg);
 }
 
 .apex-search-input:focus {
@@ -52,7 +52,7 @@
 .apex-dropdown-tabs {
     display: flex;
     border-bottom: 1px solid var(--border-color);
-    background-color: #f8f9fa;
+    background-color: var(--card-header-bg);
     padding: 8px;
     gap: 4px;
 }
@@ -71,7 +71,7 @@
 }
 
 .apex-dropdown-tab:hover {
-    background-color: rgba(0, 112, 210, 0.05);
+    background-color: var(--bg-hover);
     color: var(--primary-color);
 }
 
@@ -115,7 +115,7 @@
 
 .apex-script-item:hover {
     border-color: var(--primary-color);
-    background-color: rgba(0, 112, 210, 0.02);
+    background-color: var(--bg-hover);
 }
 
 .apex-script-preview {
@@ -173,17 +173,17 @@
 }
 
 .apex-script-action:hover {
-    background-color: rgba(0, 112, 210, 0.1);
+    background-color: var(--bg-selected);
     color: var(--primary-color);
 }
 
 .apex-script-action.delete:hover {
-    background-color: rgba(194, 57, 52, 0.1);
-    color: #c23934;
+    background-color: var(--status-error-bg);
+    color: var(--error-color);
 }
 
 .apex-script-action.favorite {
-    color: #f5a623;
+    color: var(--indicator-loading);
 }
 
 /* ============================================================
@@ -196,7 +196,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -208,7 +208,7 @@
     border-radius: 8px;
     padding: 20px;
     width: 320px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px var(--shadow-lg);
 }
 
 .apex-favorite-dialog h3 {

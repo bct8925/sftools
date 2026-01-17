@@ -85,6 +85,7 @@ src/
 ├── lib/                      # Shared utilities
 │   ├── auth.js               # Multi-connection storage, active connection context
 │   ├── salesforce.js         # Salesforce API helpers
+│   ├── theme.js              # Theme management (light/dark mode)
 │   └── utils.js              # Shared utilities, re-exports auth functions
 ├── public/                   # Static assets (copied to dist/)
 │   └── icon.png
@@ -706,11 +707,152 @@ src/components/
 ## Styling Conventions
 
 - Salesforce Lightning-inspired design
-- CSS variables defined in `:root` for theming
+- CSS variables defined in `:root` for theming (see CSS Variables & Theming below)
 - No external CSS frameworks
 - Card-based layouts with `.card`, `.card-header`, `.card-body`
 - Form elements use `.input`, `.select`, `.button-brand` classes
 - Monaco containers use `.monaco-container` and `.monaco-container-lg`
+
+## CSS Variables & Theming
+
+The app supports light and dark modes via CSS variables. Theme preference is stored in `chrome.storage.local` and syncs across all sftools windows/tabs.
+
+**Theme Options** (Settings → Appearance):
+- **System** - Follows OS preference via `prefers-color-scheme`
+- **Light** - Always light mode
+- **Dark** - Always dark mode
+
+### CSS Variable Categories
+
+All colors should use CSS variables defined in `src/style.css`:
+
+```css
+/* Primary colors */
+--primary-color          /* Brand blue, buttons, links */
+--primary-hover          /* Button hover state */
+--brand-color            /* Alias for primary */
+
+/* Backgrounds */
+--bg-color               /* Page background */
+--card-bg                /* Card/component backgrounds */
+--bg-primary             /* Alias for card-bg */
+--bg-secondary           /* Subtle background (headers, disabled inputs) */
+--bg-hover               /* Hover state background */
+--bg-selected            /* Selection highlight */
+--card-header-bg         /* Card header background */
+--input-bg               /* Form input backgrounds */
+--nav-bg                 /* Navigation background */
+
+/* Text */
+--text-main              /* Primary text */
+--text-primary           /* Alias for text-main */
+--text-muted             /* Secondary/muted text */
+--text-secondary         /* Alias for text-muted */
+
+/* Borders */
+--border-color           /* Standard borders */
+
+/* Status colors */
+--error-color            /* Error text/icons */
+--success-color          /* Success text/icons */
+--status-success-bg      /* Success badge background */
+--status-success-text    /* Success badge text */
+--status-error-bg        /* Error badge background */
+--status-error-text      /* Error badge text */
+--status-loading-bg      /* Loading badge background */
+--status-loading-text    /* Loading badge text */
+
+/* Status indicators (dots) */
+--indicator-success      /* Green dot */
+--indicator-error        /* Red dot */
+--indicator-loading      /* Yellow dot */
+
+/* Overlays & shadows */
+--overlay-bg             /* Modal backdrop */
+--shadow-sm              /* Subtle shadow */
+--shadow-md              /* Medium shadow */
+--shadow-lg              /* Large shadow (modals, dropdowns) */
+```
+
+### Rules for Adding CSS
+
+1. **Never hard-code colors** - Always use `var(--variable-name)`
+2. **Use semantic variables** - Choose variables by purpose, not color:
+   ```css
+   /* Good */
+   background: var(--card-header-bg);
+   color: var(--error-color);
+
+   /* Bad */
+   background: #f8f9fa;
+   color: #c23934;
+   ```
+
+3. **Shadows use variables too**:
+   ```css
+   /* Good */
+   box-shadow: 0 4px 12px var(--shadow-lg);
+
+   /* Bad */
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+   ```
+
+4. **Overlays use --overlay-bg**:
+   ```css
+   /* Good */
+   background: var(--overlay-bg);
+
+   /* Bad */
+   background: rgba(0, 0, 0, 0.5);
+   ```
+
+### Theme Initialization
+
+All page entry points must initialize the theme early to prevent flash of wrong theme:
+
+```javascript
+// src/pages/<name>/<name>.js
+import { initTheme } from '../../lib/theme.js';
+import '../../components/<name>/<name>-page.js';
+
+initTheme();
+```
+
+The `initTheme()` function:
+- Reads theme preference from storage
+- Applies `data-theme="dark"` attribute to `<html>` if dark mode
+- Sets up listeners for system preference changes
+- Syncs theme changes across tabs via storage listener
+
+### Dark Mode Implementation
+
+Dark mode works by setting `data-theme="dark"` on the document root:
+
+```css
+/* Light mode (default) */
+:root {
+    --bg-color: #f3f3f3;
+    --card-bg: #ffffff;
+    /* ... */
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+    --bg-color: #1a1a2e;
+    --card-bg: #16213e;
+    /* ... */
+}
+```
+
+Components automatically inherit the correct colors because they use CSS variables.
+
+### Adding New Variables
+
+When adding a new color variable:
+
+1. Add to both `:root` (light) and `[data-theme="dark"]` (dark) in `src/style.css`
+2. Choose a semantic name that describes purpose, not color
+3. Use existing variables as reference for the dark mode equivalent
 
 ## Responsive Nav Implementation
 

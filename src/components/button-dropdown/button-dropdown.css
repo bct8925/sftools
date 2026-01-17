@@ -27,9 +27,9 @@ button-dropdown .btn-dropdown-menu {
     margin-top: 4px;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 200;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 12px var(--shadow-lg);
+    z-index: var(--z-dropdown);
     overflow: hidden;
 }
 
@@ -50,7 +50,7 @@ button-dropdown .btn-dropdown-option {
 }
 
 button-dropdown .btn-dropdown-option:hover:not(:disabled) {
-    background-color: rgba(0, 112, 210, 0.05);
+    background-color: var(--bg-hover);
 }
 
 button-dropdown .btn-dropdown-option:disabled {

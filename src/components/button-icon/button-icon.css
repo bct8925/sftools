@@ -12,7 +12,7 @@ button-icon .btn-icon-trigger {
     width: 32px;
     height: 32px;
     border: 1px solid var(--border-color);
-    background: white;
+    background: var(--card-bg);
     border-radius: 4px;
     cursor: pointer;
     display: flex;
@@ -48,7 +48,7 @@ button-icon .btn-icon-menu {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px var(--shadow-lg);
     z-index: 200;
     overflow: hidden;
 }
@@ -71,7 +71,7 @@ button-icon .btn-icon-option {
 }
 
 button-icon .btn-icon-option:hover:not(:disabled) {
-    background-color: rgba(0, 112, 210, 0.05);
+    background-color: var(--bg-hover);
 }
 
 button-icon .btn-icon-option:disabled {
@@ -92,7 +92,7 @@ button-icon .btn-icon-checkbox {
 }
 
 button-icon .btn-icon-checkbox:hover {
-    background-color: rgba(0, 112, 210, 0.05);
+    background-color: var(--bg-hover);
 }
 
 button-icon .btn-icon-checkbox input {

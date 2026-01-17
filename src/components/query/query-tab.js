@@ -103,7 +103,7 @@ class QueryTab extends HTMLElement {
         // History dropdown elements
         this.historyList = this.querySelector('.query-history-list');
         this.favoritesList = this.querySelector('.query-favorites-list');
-        this.dropdownTabs = this.querySelectorAll('.query-dropdown-tab');
+        this.dropdownTabs = this.querySelectorAll('.dropdown-tab');
 
         // Favorite modal elements
         this.favoriteModal = this.querySelector('.query-favorite-modal');
@@ -112,7 +112,7 @@ class QueryTab extends HTMLElement {
         this.favoriteSaveBtn = this.querySelector('.query-favorite-save');
 
         // Search elements
-        this.searchInput = this.querySelector('.query-search-input');
+        this.searchInput = this.querySelector('.search-input');
 
         // Export, Save, and Clear buttons (inside results dropdown)
         this.exportBtn = this.querySelector('.query-export-btn');
@@ -256,7 +256,7 @@ LIMIT 10`);
 
         if (history.length === 0) {
             this.historyList.innerHTML = `
-                <div class="query-script-empty">
+                <div class="script-empty">
                     No queries yet.<br>Execute some SOQL to see history here.
                 </div>
             `;
@@ -264,14 +264,14 @@ LIMIT 10`);
         }
 
         this.historyList.innerHTML = history.map(item => `
-            <div class="query-script-item" data-id="${item.id}">
-                <div class="query-script-preview">${escapeHtml(this.historyManager.getPreview(item.query))}</div>
-                <div class="query-script-meta">
+            <div class="script-item" data-id="${item.id}">
+                <div class="script-preview">${escapeHtml(this.historyManager.getPreview(item.query))}</div>
+                <div class="script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
-                    <div class="query-script-actions">
-                        <button class="query-script-action load" title="Load query">&#8629;</button>
-                        <button class="query-script-action favorite" title="Add to favorites">&#9733;</button>
-                        <button class="query-script-action delete" title="Delete">&times;</button>
+                    <div class="script-actions">
+                        <button class="script-action load" title="Load query">&#8629;</button>
+                        <button class="script-action favorite" title="Add to favorites">&#9733;</button>
+                        <button class="script-action delete" title="Delete">&times;</button>
                     </div>
                 </div>
             </div>
@@ -283,7 +283,7 @@ LIMIT 10`);
 
         if (favorites.length === 0) {
             this.favoritesList.innerHTML = `
-                <div class="query-script-empty">
+                <div class="script-empty">
                     No favorites yet.<br>Click &#9733; on a query to save it.
                 </div>
             `;
@@ -291,13 +291,13 @@ LIMIT 10`);
         }
 
         this.favoritesList.innerHTML = favorites.map(item => `
-            <div class="query-script-item" data-id="${item.id}">
-                <div class="query-script-label">${escapeHtml(item.label)}</div>
-                <div class="query-script-meta">
+            <div class="script-item" data-id="${item.id}">
+                <div class="script-label">${escapeHtml(item.label)}</div>
+                <div class="script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
-                    <div class="query-script-actions">
-                        <button class="query-script-action load" title="Load query">&#8629;</button>
-                        <button class="query-script-action delete" title="Delete">&times;</button>
+                    <div class="script-actions">
+                        <button class="script-action load" title="Load query">&#8629;</button>
+                        <button class="script-action delete" title="Delete">&times;</button>
                     </div>
                 </div>
             </div>
@@ -305,7 +305,7 @@ LIMIT 10`);
     }
 
     handleListClick(event, listType) {
-        const item = event.target.closest('.query-script-item');
+        const item = event.target.closest('.script-item');
         if (!item) return;
 
         const id = item.dataset.id;
@@ -313,7 +313,7 @@ LIMIT 10`);
         const scriptData = list.find(s => s.id === id);
         if (!scriptData) return;
 
-        const action = event.target.closest('.query-script-action');
+        const action = event.target.closest('.script-action');
         if (action) {
             event.stopPropagation();
 

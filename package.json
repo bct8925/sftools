@@ -1,6 +1,9 @@
 {
   "devDependencies": {
-    "vite": "^7.2.7"
+    "vite": "^7.2.7",
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "jsdom": "^24.0.0"
   },
   "dependencies": {
     "@jetstreamapp/soql-parser-js": "^6.3.1",
@@ -10,6 +13,9 @@
   "scripts": {
     "build": "vite build",
     "watch": "vite build --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "package": "vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'"
   }
 }

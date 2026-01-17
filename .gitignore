@@ -1,5 +1,10 @@
-_metadata/
 node_modules/
-dist/
 **/.DS_Store
+dist/
+_metadata/
+
+// Tests
+coverage/
+
+// Instance files
 sftools-proxy/sftools-proxy.sh

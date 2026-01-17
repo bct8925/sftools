@@ -15,6 +15,10 @@ import { escapeHtml } from '../../lib/text-utils.js';
 import { icons } from '../../lib/icons.js';
 
 class SettingsTab extends HTMLElement {
+    // Theme DOM references
+    themeRadios = null;
+    systemThemeMediaQuery = null;
+
     // Proxy DOM references
     proxyToggle = null;
     proxyStatus = null;
@@ -50,6 +54,7 @@ class SettingsTab extends HTMLElement {
         this.innerHTML = template;
         this.initElements();
         this.attachEventListeners();
+        this.initThemeUI();
         this.initProxyUI();
         this.renderConnectionList();
 
@@ -69,9 +74,15 @@ class SettingsTab extends HTMLElement {
     disconnectedCallback() {
         document.removeEventListener('connection-changed', this.connectionChangeHandler);
         chrome.storage.onChanged.removeListener(this.storageChangeHandler);
+        if (this.systemThemeMediaQuery) {
+            this.systemThemeMediaQuery.removeEventListener('change', this.systemThemeChangeHandler);
+        }
     }
 
     initElements() {
+        // Theme elements
+        this.themeRadios = this.querySelectorAll('.settings-theme-radio');
+
         // Proxy elements
         this.proxyToggle = this.querySelector('.settings-proxy-toggle');
         this.proxyStatus = this.querySelector('.settings-proxy-status');
@@ -104,6 +115,11 @@ class SettingsTab extends HTMLElement {
     }
 
     attachEventListeners() {
+        // Theme listeners
+        this.themeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => this.handleThemeChange(e.target.value));
+        });
+
         // Proxy listeners
         this.proxyToggle.addEventListener('change', () => this.handleProxyToggle());
 
@@ -125,6 +141,58 @@ class SettingsTab extends HTMLElement {
 
         // Cache management listeners
         this.refreshCacheBtn.addEventListener('click', () => this.handleRefreshCache());
+    }
+
+    // ============================================================
+    // Theme Management
+    // ============================================================
+
+    async initThemeUI() {
+        const { theme } = await chrome.storage.local.get(['theme']);
+        const savedTheme = theme || 'system';
+
+        // Set the radio button
+        const radio = this.querySelector(`.settings-theme-radio[value="${savedTheme}"]`);
+        if (radio) radio.checked = true;
+
+        // Set up system theme change listener
+        this.systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this.systemThemeChangeHandler = () => {
+            if (this.getCurrentThemeSetting() === 'system') {
+                this.applyTheme('system');
+            }
+        };
+        this.systemThemeMediaQuery.addEventListener('change', this.systemThemeChangeHandler);
+
+        // Apply initial theme
+        this.applyTheme(savedTheme);
+    }
+
+    getCurrentThemeSetting() {
+        const checked = this.querySelector('.settings-theme-radio:checked');
+        return checked ? checked.value : 'system';
+    }
+
+    async handleThemeChange(theme) {
+        await chrome.storage.local.set({ theme });
+        this.applyTheme(theme);
+
+        // Notify other tabs/windows about the theme change
+        document.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme } }));
+    }
+
+    applyTheme(theme) {
+        let effectiveTheme = theme;
+
+        if (theme === 'system') {
+            effectiveTheme = this.systemThemeMediaQuery?.matches ? 'dark' : 'light';
+        }
+
+        if (effectiveTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
     }
 
     // ============================================================

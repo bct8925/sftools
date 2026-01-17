@@ -561,7 +561,7 @@ class SchemaPage extends HTMLElement {
                 <div class="field-item" data-field-name="${this.escapeAttr(field.name)}">
                     <div class="field-item-label" title="${this.escapeAttr(field.label)}">${escapeHtml(field.label)}</div>
                     <div class="field-item-name" title="${this.escapeAttr(field.name)}">${escapeHtml(field.name)}</div>
-                    <div class="field-item-type" title="${this.escapeAttr(typeDisplay)}">${typeDisplay}</div>
+                    <div class="field-item-type" title="${this.escapeAttr(typeDisplay.text)}">${typeHtml}</div>
                     <div class="field-item-actions">
                         ${isFormulaField ? `
                             <button class="field-menu-button" data-field-name="${this.escapeAttr(field.name)}" aria-label="More options">

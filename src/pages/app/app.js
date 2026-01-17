@@ -19,6 +19,7 @@ import {
     migrateCustomConnectedApp
 } from '../../lib/utils.js';
 import { replaceIcons } from '../../lib/icons.js';
+import { initTheme } from '../../lib/theme.js';
 // Self-registering custom element tabs
 import '../../components/query/query-tab.js';
 import '../../components/apex/apex-tab.js';
@@ -36,6 +37,9 @@ let detectedLoginDomain = 'https://login.salesforce.com';
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize theme first to prevent flash
+    await initTheme();
+
     // Replace icon placeholders with actual SVG icons
     document.body.innerHTML = replaceIcons(document.body.innerHTML);
 

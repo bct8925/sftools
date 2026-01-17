@@ -10,7 +10,7 @@ modal-popup {
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    z-index: 999;
+    z-index: var(--z-modal-backdrop);
 }
 
 modal-popup.open {
@@ -24,7 +24,7 @@ modal-popup .modal-backdrop {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--overlay-bg);
     z-index: -1;
 }
 
@@ -32,8 +32,8 @@ modal-popup .modal-content {
     position: relative;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 32px var(--shadow-lg);
     max-height: 90vh;
     max-width: 90vw;
     overflow: auto;

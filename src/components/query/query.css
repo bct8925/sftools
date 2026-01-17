@@ -518,6 +518,7 @@
     font-size: 13px;
     font-family: inherit;
     background: var(--input-bg);
+    color: var(--text-main);
     box-sizing: border-box;
 }
 
@@ -533,11 +534,11 @@
 }
 
 .query-results-table td.modified {
-    background-color: #fff4e5;
-    border-left: 3px solid #ff9500;
+    background-color: var(--bg-selected);
+    border-left: 3px solid var(--indicator-loading);
 }
 
 .query-results-table td.modified .query-field-input {
-    background-color: #fff4e5;
+    background-color: var(--bg-selected);
 }
 

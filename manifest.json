@@ -14,28 +14,13 @@
   "permissions": [
     "sidePanel",
     "activeTab",
-    "tabs",
     "storage",
-    "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess",
-    "nativeMessaging",
     "contextMenus",
-    "notifications"
+    "notifications",
+    "nativeMessaging"
   ],
   "side_panel": {
     "default_path": "dist/pages/app/app.html"
-  },
-  "host_permissions": [
-    "<all_urls>"
-  ],
-  "declarative_net_request": {
-    "rule_resources": [
-      {
-        "id": "ruleset_1",
-        "enabled": true,
-        "path": "rules.json"
-      }
-    ]
   },
   "background": {
     "service_worker": "dist/background.js",

@@ -24,10 +24,12 @@ class EventsTab extends HTMLElement {
     currentSubscriptionId = null;
     isSubscribed = false;
     eventCount = 0;
+    channelsLoaded = false;
 
     // Bound message handler for cleanup
     boundMessageHandler = null;
     boundConnectionHandler = null;
+    boundVisibilityHandler = null;
 
     connectedCallback() {
         this.innerHTML = template;
@@ -35,12 +37,11 @@ class EventsTab extends HTMLElement {
         this.initEditors();
         this.attachEventListeners();
 
-        // Load channels now if auth is ready, otherwise wait for event
-        if (isAuthenticated()) {
-            this.loadChannels();
-        } else {
-            document.addEventListener('auth-ready', () => this.loadChannels(), { once: true });
-        }
+        // Defer channel loading until tab is first visible (requires proxy anyway)
+        this.boundVisibilityHandler = () => this.checkVisibilityAndLoad();
+        document.addEventListener('tab-changed', this.boundVisibilityHandler);
+        // Also check on click in case tab-changed event isn't used
+        this.addEventListener('click', this.boundVisibilityHandler, { once: true });
 
         // Handle connection changes - reload channels for new org
         this.boundConnectionHandler = () => this.handleConnectionChange();
@@ -53,6 +54,20 @@ class EventsTab extends HTMLElement {
         }
         if (this.boundConnectionHandler) {
             document.removeEventListener('connection-changed', this.boundConnectionHandler);
+        }
+        if (this.boundVisibilityHandler) {
+            document.removeEventListener('tab-changed', this.boundVisibilityHandler);
+        }
+    }
+
+    checkVisibilityAndLoad() {
+        // Only load once, and only when tab is active and authenticated
+        if (this.channelsLoaded || !this.classList.contains('active')) {
+            return;
+        }
+        if (isAuthenticated()) {
+            this.channelsLoaded = true;
+            this.loadChannels();
         }
     }
 
@@ -70,9 +85,14 @@ class EventsTab extends HTMLElement {
             this.handleDisconnect();
         }
 
-        // Clear the stream and reload channels for new org
+        // Clear the stream and reset channel cache
         this.clearStream();
-        this.loadChannels();
+        this.channelsLoaded = false;
+        // Only reload if tab is currently visible
+        if (this.classList.contains('active')) {
+            this.loadChannels();
+            this.channelsLoaded = true;
+        }
     }
 
     initElements() {

@@ -424,7 +424,11 @@ function initMobileMenu() {
             // Switch content
             contents.forEach(c => c.classList.remove('active'));
             const targetContent = document.getElementById(targetId);
-            if (targetContent) targetContent.classList.add('active');
+            if (targetContent) {
+                targetContent.classList.add('active');
+                // Notify components that tab changed (for lazy loading)
+                document.dispatchEvent(new CustomEvent('tab-changed', { detail: { tabId: targetId } }));
+            }
 
             closeMenu();
         });

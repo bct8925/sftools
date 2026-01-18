@@ -10,7 +10,6 @@ import {
     registerSOQLCompletionProvider,
     activateSOQLAutocomplete,
     deactivateSOQLAutocomplete,
-    loadGlobalDescribe,
     clearState as clearAutocompleteState
 } from '../../lib/soql-autocomplete.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
@@ -67,15 +66,12 @@ class QueryTab extends HTMLElement {
         this.attachEventListeners();
         this.loadStoredData();
 
-        // Initialize SOQL autocomplete
+        // Initialize SOQL autocomplete (global describe loads lazily on first FROM clause)
         registerSOQLCompletionProvider();
         activateSOQLAutocomplete();
 
         // Listen for connection changes
         document.addEventListener('connection-changed', this.boundConnectionHandler);
-
-        // Load global describe after auth is ready (proxy status checked, connection set)
-        document.addEventListener('auth-ready', () => loadGlobalDescribe(), { once: true });
     }
 
     disconnectedCallback() {
@@ -85,7 +81,6 @@ class QueryTab extends HTMLElement {
 
     handleConnectionChange() {
         clearAutocompleteState();
-        loadGlobalDescribe();
     }
 
     initElements() {

@@ -7,6 +7,7 @@ import { getGlobalDescribe, getObjectDescribe } from './salesforce.js';
 const state = {
     active: false,
     globalDescribe: null,
+    globalDescribeLoading: false,
     fromObject: null,
     fields: [],
     relationships: new Map() // relationshipName -> { targetObject, fields }
@@ -274,8 +275,20 @@ function buildRelationshipSuggestions(range) {
     return suggestions;
 }
 
-// Build object name suggestions (for FROM clause)
-function buildObjectSuggestions(range) {
+// Build object name suggestions (for FROM clause) - lazy loads global describe
+async function buildObjectSuggestions(range) {
+    // Lazy load global describe on first need
+    if (!state.globalDescribe && !state.globalDescribeLoading) {
+        state.globalDescribeLoading = true;
+        try {
+            state.globalDescribe = await getGlobalDescribe();
+        } catch (error) {
+            console.error('Failed to load global describe:', error);
+        } finally {
+            state.globalDescribeLoading = false;
+        }
+    }
+
     if (!state.globalDescribe?.sobjects) return [];
 
     return state.globalDescribe.sobjects
@@ -415,7 +428,7 @@ export function registerSOQLCompletionProvider() {
             // Handle different clauses
             switch (clause) {
                 case 'FROM':
-                    suggestions = buildObjectSuggestions(range);
+                    suggestions = await buildObjectSuggestions(range);
                     break;
 
                 case 'SELECT':
@@ -474,15 +487,6 @@ export function activateSOQLAutocomplete() {
 // Deactivate autocomplete
 export function deactivateSOQLAutocomplete() {
     state.active = false;
-}
-
-// Load global describe for object suggestions
-export async function loadGlobalDescribe() {
-    try {
-        state.globalDescribe = await getGlobalDescribe();
-    } catch (error) {
-        console.error('Failed to load global describe:', error);
-    }
 }
 
 // Clear state (on connection change)

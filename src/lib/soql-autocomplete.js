@@ -6,6 +6,7 @@ import { getGlobalDescribe, getObjectDescribe } from './salesforce.js';
 // Module state
 const state = {
     active: false,
+    providerRegistered: false,
     globalDescribe: null,
     globalDescribeLoading: false,
     fromObject: null,
@@ -277,7 +278,7 @@ function buildRelationshipSuggestions(range) {
 
 // Build object name suggestions (for FROM clause) - lazy loads global describe
 async function buildObjectSuggestions(range) {
-    // Lazy load global describe on first need
+    // Lazy load global describe on first need (cached in storage per-connection)
     if (!state.globalDescribe && !state.globalDescribeLoading) {
         state.globalDescribeLoading = true;
         try {
@@ -357,8 +358,11 @@ function buildDateLiteralSuggestions(range) {
     }));
 }
 
-// Register the completion provider
+// Register the completion provider (only once)
 export function registerSOQLCompletionProvider() {
+    if (state.providerRegistered) return;
+    state.providerRegistered = true;
+
     monaco.languages.registerCompletionItemProvider('sql', {
         triggerCharacters: ['.', ' '],
         provideCompletionItems: async (model, position) => {
@@ -484,7 +488,7 @@ export function activateSOQLAutocomplete() {
     state.active = true;
 }
 
-// Deactivate autocomplete
+// Deactivate autocomplete (not currently used - query-tab is persistent)
 export function deactivateSOQLAutocomplete() {
     state.active = false;
 }

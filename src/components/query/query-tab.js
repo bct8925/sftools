@@ -9,7 +9,6 @@ import { executeQueryWithColumns, executeBulkQueryExport, getObjectDescribe, upd
 import {
     registerSOQLCompletionProvider,
     activateSOQLAutocomplete,
-    deactivateSOQLAutocomplete,
     clearState as clearAutocompleteState
 } from '../../lib/soql-autocomplete.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
@@ -75,7 +74,9 @@ class QueryTab extends HTMLElement {
     }
 
     disconnectedCallback() {
-        deactivateSOQLAutocomplete();
+        // Note: Don't deactivate autocomplete here - the innerHTML replacement in app.js
+        // causes disconnect to fire after a new instance connects, which would deactivate it.
+        // Since query-tab is always present (just hidden/shown), autocomplete stays active.
         document.removeEventListener('connection-changed', this.boundConnectionHandler);
     }
 

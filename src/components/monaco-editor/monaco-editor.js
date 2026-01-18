@@ -2,6 +2,13 @@
 // Custom import with only the languages we need (sql, apex, json, xml, javascript)
 import { monaco } from '../../lib/monaco-custom.js';
 
+// Suppress Monaco's internal "Canceled" promise rejections (benign cleanup noise)
+window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason?.name === 'Canceled') {
+        event.preventDefault();
+    }
+});
+
 function getMonacoTheme() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ? 'vs-dark' : 'vs';
 }

@@ -70,10 +70,12 @@ class QueryTab extends HTMLElement {
         // Initialize SOQL autocomplete
         registerSOQLCompletionProvider();
         activateSOQLAutocomplete();
-        loadGlobalDescribe();
 
         // Listen for connection changes
         document.addEventListener('connection-changed', this.boundConnectionHandler);
+
+        // Load global describe after auth is ready (proxy status checked, connection set)
+        document.addEventListener('auth-ready', () => loadGlobalDescribe(), { once: true });
     }
 
     disconnectedCallback() {

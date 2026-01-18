@@ -75,11 +75,11 @@ function getHostsDirectory() {
 /**
  * Create the native host manifest
  */
-function createManifest(extensionId) {
+function createManifest(extensionId, wrapperPath) {
     // Use shell wrapper on Unix, direct node script on Windows
     const scriptPath = os.platform() === 'win32'
         ? path.resolve(__dirname, 'src', 'index.js')
-        : path.resolve(__dirname, 'sftools-proxy.sh');
+        : wrapperPath;
 
     return {
         name: HOST_NAME,
@@ -170,13 +170,15 @@ function installManifest(extensionId) {
     const manifestPath = path.join(hostsDir, `${HOST_NAME}.json`);
 
     // On Unix, create wrapper script with detected node path
+    let wrapperPath;
     if (os.platform() !== 'win32') {
         const nodePath = findNodePath();
         console.log(`Detected Node.js: ${nodePath}`);
-        createWrapperScript(nodePath);
+        wrapperPath = createWrapperScript(nodePath);
+        console.log(`Wrapper script: ${wrapperPath}`);
     }
 
-    const manifest = createManifest(extensionId);
+    const manifest = createManifest(extensionId, wrapperPath);
 
     // Create hosts directory if it doesn't exist
     if (!fs.existsSync(hostsDir)) {

@@ -43,12 +43,13 @@ export class QueryTabPage {
     const isActive = await this.page.locator('query-tab.active').count() > 0;
     if (isActive) return;
 
-    // Open hamburger menu first
+    // Open hamburger menu and wait for nav item to be visible and stable
     await this.page.click('.hamburger-btn');
-    await this.page.waitForSelector('.mobile-menu', { state: 'visible', timeout: 5000 });
+    const navItem = this.page.locator('.mobile-nav-item[data-tab="query"]');
+    await navItem.waitFor({ state: 'visible', timeout: 5000 });
 
     // Click the nav item
-    await this.page.click('.mobile-nav-item[data-tab="query"]');
+    await navItem.click();
     await this.page.waitForSelector('query-tab.active', { timeout: 5000 });
   }
 

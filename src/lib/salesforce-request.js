@@ -40,7 +40,15 @@ export async function salesforceRequest(endpoint, options = {}) {
         if (response.error) {
             throw new Error(response.error);
         }
-        const error = response.data ? JSON.parse(response.data) : { message: response.statusText };
+        let error = { message: response.statusText };
+        if (response.data) {
+            try {
+                error = JSON.parse(response.data);
+            } catch {
+                // Response data isn't valid JSON (e.g., HTML maintenance page)
+                error = { message: response.data.substring(0, 200) };
+            }
+        }
         throw new Error(error[0]?.message || error.message || 'Request failed');
     }
 

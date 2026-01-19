@@ -43,12 +43,15 @@ async function bulkDeleteTooling(sobjectType, ids) {
 }
 
 /**
- * Escape single quotes for SOQL queries
+ * Escape special characters for SOQL queries
  * @param {string} str - String to escape
- * @returns {string} - Escaped string safe for SOQL
+ * @returns {string} - Escaped string safe for SOQL LIKE clauses
  */
 function escapeSoql(str) {
-    return str.replace(/'/g, "\\'");
+    return str
+        .replace(/'/g, "\\'")
+        .replace(/%/g, '\\%')
+        .replace(/_/g, '\\_');
 }
 
 // ============================================================

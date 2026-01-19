@@ -1,8 +1,7 @@
 import type { Page, Locator } from 'playwright';
+import { BasePage } from './base.page';
 
-export class RecordPage {
-  private page: Page;
-
+export class RecordPage extends BasePage {
   // Elements
   readonly objectName: Locator;
   readonly recordId: Locator;
@@ -14,7 +13,7 @@ export class RecordPage {
   readonly fieldsContainer: Locator;
 
   constructor(page: Page) {
-    this.page = page;
+    super(page);
 
     this.objectName = page.locator('#objectName');
     this.recordId = page.locator('#recordId');
@@ -83,7 +82,7 @@ export class RecordPage {
   async setFieldValue(fieldName: string, value: string): Promise<void> {
     const fieldRow = this.page.locator(`.field-row[data-field="${fieldName}"]`);
     const input = fieldRow.locator('.field-input');
-    await input.fill(value);
+    await this.slowFill(input, value);
   }
 
   /**
@@ -133,7 +132,7 @@ export class RecordPage {
    * Save changes
    */
   async save(): Promise<void> {
-    await this.saveBtn.click();
+    await this.slowClick(this.saveBtn);
 
     // Wait for save to complete
     await this.page.waitForFunction(
@@ -153,7 +152,7 @@ export class RecordPage {
    * Refresh the record data
    */
   async refresh(): Promise<void> {
-    await this.refreshBtn.click();
+    await this.slowClick(this.refreshBtn);
     await this.waitForLoad();
   }
 

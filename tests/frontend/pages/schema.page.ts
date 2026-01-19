@@ -1,9 +1,8 @@
 import type { Page, Locator } from 'playwright';
+import { BasePage } from './base.page';
 import { MonacoHelpers } from '../helpers/monaco-helpers';
 
-export class SchemaPage {
-  private page: Page;
-
+export class SchemaPage extends BasePage {
   // Elements
   readonly objectFilter: Locator;
   readonly objectsList: Locator;
@@ -24,7 +23,7 @@ export class SchemaPage {
   readonly modalStatus: Locator;
 
   constructor(page: Page) {
-    this.page = page;
+    super(page);
 
     this.objectFilter = page.locator('#objectFilter');
     this.objectsList = page.locator('#objectsList');
@@ -70,7 +69,7 @@ export class SchemaPage {
    * Filter objects by name
    */
   async filterObjects(searchTerm: string): Promise<void> {
-    await this.objectFilter.fill(searchTerm);
+    await this.slowFill(this.objectFilter, searchTerm);
     await this.page.waitForTimeout(300);
   }
 
@@ -92,7 +91,7 @@ export class SchemaPage {
     const objectItem = this.page.locator(
       `#objectsList .object-item[data-name="${apiName}"]`
     );
-    await objectItem.click();
+    await this.slowClick(objectItem);
 
     // Wait for fields panel to show
     await this.fieldsPanel.waitFor({ state: 'visible', timeout: 10000 });
@@ -105,6 +104,7 @@ export class SchemaPage {
       },
       { timeout: 30000 }
     );
+    await this.afterNavigation();
   }
 
   /**

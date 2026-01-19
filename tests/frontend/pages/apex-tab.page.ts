@@ -1,8 +1,8 @@
 import type { Page, Locator } from 'playwright';
+import { BasePage } from './base.page';
 import { MonacoHelpers } from '../helpers/monaco-helpers';
 
-export class ApexTabPage {
-  private page: Page;
+export class ApexTabPage extends BasePage {
   readonly codeEditor: MonacoHelpers;
   readonly outputEditor: MonacoHelpers;
 
@@ -13,7 +13,7 @@ export class ApexTabPage {
   readonly searchInput: Locator;
 
   constructor(page: Page) {
-    this.page = page;
+    super(page);
     this.codeEditor = new MonacoHelpers(page, 'apex-tab .apex-editor');
     this.outputEditor = new MonacoHelpers(page, 'apex-tab .apex-output-editor');
 
@@ -34,19 +34,21 @@ export class ApexTabPage {
     if (isActive) return;
 
     // Open hamburger menu and wait for nav item to be visible and stable
-    await this.page.click('.hamburger-btn');
+    await this.slowClick(this.page.locator('.hamburger-btn'));
     const navItem = this.page.locator('.mobile-nav-item[data-tab="apex"]');
     await navItem.waitFor({ state: 'visible', timeout: 5000 });
 
     // Click the nav item
-    await navItem.click();
+    await this.slowClick(navItem);
     await this.page.waitForSelector('apex-tab.active', { timeout: 5000 });
+    await this.afterNavigation();
   }
 
   /**
    * Set the Apex code
    */
   async setCode(code: string): Promise<void> {
+    await this.delay('beforeType');
     await this.codeEditor.setValue(code);
   }
 
@@ -61,7 +63,7 @@ export class ApexTabPage {
    * Execute the Apex code
    */
   async execute(): Promise<void> {
-    await this.executeBtn.click();
+    await this.slowClick(this.executeBtn);
 
     // Wait for execution to complete - status badge will have status-success or status-error class
     await this.page.waitForFunction(

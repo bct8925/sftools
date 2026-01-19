@@ -21,6 +21,8 @@
     "package": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'",
     "test": "tsx tests/frontend/run-tests.ts",
     "test:frontend": "tsx tests/frontend/run-tests.ts",
+    "test:slow": "tsx tests/frontend/run-tests.ts --slow",
+    "test:headed": "tsx tests/frontend/run-tests.ts",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage"

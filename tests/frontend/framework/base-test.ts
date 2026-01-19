@@ -1,5 +1,5 @@
 import type { Page, BrowserContext } from 'playwright';
-import type { TestContext } from './types';
+import type { TestContext, TestConfig } from './types';
 import type { SalesforceClient } from '../services/salesforce-client';
 import { Assertion } from './assertions';
 
@@ -14,6 +14,7 @@ export abstract class SftoolsTest {
   protected context: BrowserContext;
   protected extensionId: string;
   protected salesforce: SalesforceClient;
+  protected config: TestConfig;
 
   // Page objects (lazy-loaded)
   private _queryTab?: QueryTabPage;
@@ -26,6 +27,7 @@ export abstract class SftoolsTest {
     this.context = ctx.context;
     this.extensionId = ctx.extensionId;
     this.salesforce = ctx.salesforce;
+    this.config = ctx.config;
   }
 
   // Lifecycle methods - override in subclasses
@@ -38,6 +40,7 @@ export abstract class SftoolsTest {
     if (!this._queryTab) {
       const { QueryTabPage } = require('../pages/query-tab.page');
       this._queryTab = new QueryTabPage(this.page);
+      this._queryTab.setConfig(this.config);
     }
     return this._queryTab!;
   }
@@ -46,6 +49,7 @@ export abstract class SftoolsTest {
     if (!this._apexTab) {
       const { ApexTabPage } = require('../pages/apex-tab.page');
       this._apexTab = new ApexTabPage(this.page);
+      this._apexTab.setConfig(this.config);
     }
     return this._apexTab!;
   }
@@ -54,6 +58,7 @@ export abstract class SftoolsTest {
     if (!this._recordPage) {
       const { RecordPage } = require('../pages/record.page');
       this._recordPage = new RecordPage(this.page);
+      this._recordPage.setConfig(this.config);
     }
     return this._recordPage!;
   }
@@ -62,6 +67,7 @@ export abstract class SftoolsTest {
     if (!this._schemaPage) {
       const { SchemaPage } = require('../pages/schema.page');
       this._schemaPage = new SchemaPage(this.page);
+      this._schemaPage.setConfig(this.config);
     }
     return this._schemaPage!;
   }

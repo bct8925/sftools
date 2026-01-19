@@ -1,10 +1,16 @@
-import type { TestContext, TestResult, TestClass } from './types';
+import type { TestContext, TestResult, TestClass, TestConfig } from './types';
+import { DEFAULT_CONFIG, SLOW_MODE_CONFIG } from './types';
 import { loadExtension, injectConnection } from '../services/extension-loader';
 import { SalesforceClient } from '../services/salesforce-client';
 
 export class TestRunner {
   private context!: TestContext;
   private results: TestResult[] = [];
+  private config: TestConfig = DEFAULT_CONFIG;
+
+  setSlowMode(enabled: boolean): void {
+    this.config = enabled ? SLOW_MODE_CONFIG : DEFAULT_CONFIG;
+  }
 
   async runAll(testFiles: string[]): Promise<TestResult[]> {
     await this.initContext();
@@ -94,7 +100,7 @@ export class TestRunner {
 
     console.log('   Connection injected into extension storage');
 
-    this.context = { context, page, extensionId, salesforce };
+    this.context = { context, page, extensionId, salesforce, config: this.config };
   }
 
   private async cleanup(): Promise<void> {

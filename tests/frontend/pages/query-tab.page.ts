@@ -1,8 +1,8 @@
 import type { Page, Locator } from 'playwright';
+import { BasePage } from './base.page';
 import { MonacoHelpers } from '../helpers/monaco-helpers';
 
-export class QueryTabPage {
-  private page: Page;
+export class QueryTabPage extends BasePage {
   readonly monaco: MonacoHelpers;
 
   // Elements
@@ -18,7 +18,7 @@ export class QueryTabPage {
   readonly searchInput: Locator;
 
   constructor(page: Page) {
-    this.page = page;
+    super(page);
     this.monaco = new MonacoHelpers(page, 'query-tab monaco-editor');
 
     this.executeBtn = page.locator('query-tab .query-action-btn');
@@ -44,21 +44,23 @@ export class QueryTabPage {
     if (isActive) return;
 
     // Open hamburger menu and wait for nav item to be visible and stable
-    await this.page.click('.hamburger-btn');
+    await this.slowClick(this.page.locator('.hamburger-btn'));
     const navItem = this.page.locator('.mobile-nav-item[data-tab="query"]');
     await navItem.waitFor({ state: 'visible', timeout: 5000 });
 
     // Click the nav item
-    await navItem.click();
+    await this.slowClick(navItem);
     await this.page.waitForSelector('query-tab.active', { timeout: 5000 });
+    await this.afterNavigation();
   }
 
   /**
    * Execute a SOQL query
    */
   async executeQuery(query: string): Promise<void> {
+    await this.delay('beforeType');
     await this.monaco.setValue(query);
-    await this.executeBtn.click();
+    await this.slowClick(this.executeBtn);
 
     // Wait for query to complete - status badge will have status-success or status-error class
     // Note: The selector uses .status-badge because the original .query-status class gets removed

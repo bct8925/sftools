@@ -22,6 +22,9 @@ async function main(): Promise<void> {
     }
   }
 
+  // Parse --slow flag for human-like timing
+  const slowMode = args.includes('--slow');
+
   console.log('');
   console.log('╔════════════════════════════════════════════════════════════╗');
   console.log('║                   sftools Test Runner                      ║');
@@ -62,6 +65,13 @@ async function main(): Promise<void> {
 
   // Run tests
   const runner = new TestRunner();
+  runner.setSlowMode(slowMode);
+
+  if (slowMode) {
+    console.log('🐢 Slow mode enabled - using human-like timing');
+    console.log('');
+  }
+
   let results: TestResult[];
 
   try {

@@ -9,16 +9,17 @@ interface ExtensionLoadResult {
 
 /**
  * Load the Chrome extension in a Playwright browser context
+ * Note: Chrome extensions require headed mode (headless: false)
  */
 export async function loadExtension(): Promise<ExtensionLoadResult> {
   // Extension root is the project root (where manifest.json lives)
   // dist/ contains the built files but manifest.json is at root level
   const extensionPath = path.resolve(process.cwd());
-  const isHeaded = process.env.HEADED === 'true';
 
   // Launch Chrome with extension loaded
+  // Chrome extensions require headed mode - headless doesn't support extensions
   const context = await chromium.launchPersistentContext('', {
-    headless: !isHeaded,
+    headless: false,
     args: [
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`,

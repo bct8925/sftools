@@ -1,6 +1,28 @@
 # Testing Framework
 
-sftools uses a custom Playwright-based test framework that makes **real Salesforce API calls** against a test org. Tests run in an actual Chrome browser with the extension loaded.
+sftools uses two testing frameworks:
+
+- **Frontend Tests** (`tests/frontend/`) - Playwright-based integration tests with real Salesforce API calls
+- **Unit Tests** (`tests/unit/`) - Vitest-based unit tests with mocked dependencies
+
+## Quick Commands
+
+```bash
+# Frontend tests (Playwright - requires visible browser)
+npm test                       # Run all frontend tests
+npm test -- --filter=query     # Run tests matching "query"
+
+# Unit tests (Vitest)
+npm run test:unit              # Run all unit tests
+npm run test:unit:watch        # Run in watch mode
+npm run test:unit:coverage     # Run with coverage report
+```
+
+---
+
+# Frontend Tests (Playwright)
+
+The frontend test framework makes **real Salesforce API calls** against a test org. Tests run in an actual Chrome browser with the extension loaded.
 
 ## Design Principles
 
@@ -33,16 +55,16 @@ npm run build
 ### 3. Run Tests
 
 ```bash
-npm test                       # Run all tests (headless)
-npm run test:headed            # Run with visible browser
+npm test                       # Run all frontend tests
 npm test -- --filter=query     # Run tests matching "query"
-npm test -- --filter=apex      # Run tests matching "apex"
 ```
+
+> **Note:** Frontend tests always run with a visible browser window. Chrome extensions cannot run in headless mode.
 
 ## Directory Structure
 
 ```
-tests/
+tests/frontend/
 ├── framework/
 │   ├── types.ts              # TypeScript interfaces
 │   ├── assertions.ts         # Custom assertion helpers
@@ -427,14 +449,6 @@ A Developer Edition org or Scratch org works well. Avoid production orgs.
 
 ## Debugging Tests
 
-### Run in Headed Mode
-
-```bash
-npm run test:headed
-```
-
-This opens a visible browser so you can watch the test execute.
-
 ### Filter to Single Test
 
 ```bash
@@ -471,16 +485,16 @@ try {
 
 ## Adding New Tests
 
-1. Create a new file in the appropriate `tests/specs/` subdirectory
+1. Create a new file in the appropriate `tests/frontend/specs/` subdirectory
 2. Export a default class extending `SftoolsTest`
 3. Implement `setup()`, `teardown()`, and `test()` methods
 4. Run with `npm test -- --filter=your-test-name`
 
 ## Adding New Page Objects
 
-1. Create a new file in `tests/pages/`
+1. Create a new file in `tests/frontend/pages/`
 2. Export a class with the page's element locators and interaction methods
-3. Add a getter in `tests/framework/base-test.ts`:
+3. Add a getter in `tests/frontend/framework/base-test.ts`:
 
 ```typescript
 // In base-test.ts
@@ -493,3 +507,95 @@ get myPage(): MyPage {
   return this._myPage;
 }
 ```
+
+---
+
+# Unit Tests (Vitest)
+
+Unit tests use Vitest with jsdom to test `src/lib/` modules in isolation, with Chrome extension APIs and Salesforce responses mocked.
+
+## Directory Structure
+
+```
+tests/unit/
+├── mocks/
+│   ├── chrome.js             # Chrome extension API mock
+│   └── salesforce.js         # Salesforce API response factories
+├── setup.js                  # Global test setup
+└── lib/
+    ├── auth.test.js
+    ├── cors-detection.test.js
+    ├── fetch.test.js
+    ├── history-manager.test.js
+    ├── oauth-credentials.test.js
+    ├── salesforce-request.test.js
+    ├── salesforce.test.js
+    ├── soql-autocomplete.test.js
+    ├── text-utils.test.js
+    └── ui-helpers.test.js
+```
+
+## Running Unit Tests
+
+```bash
+npm run test:unit              # Run once
+npm run test:unit:watch        # Watch mode
+npm run test:unit:coverage     # With coverage report
+```
+
+## Writing Unit Tests
+
+Unit tests use standard Vitest patterns:
+
+```javascript
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createMockConnection } from '../../mocks/salesforce.js';
+import { getAccessToken, setActiveConnection } from '../../../src/lib/auth.js';
+
+describe('auth', () => {
+    beforeEach(() => {
+        setActiveConnection(null);
+    });
+
+    it('returns empty values when no connection is set', () => {
+        expect(getAccessToken()).toBe('');
+    });
+
+    it('returns connection values after setActiveConnection', () => {
+        const connection = createMockConnection({
+            accessToken: 'my-token',
+        });
+        setActiveConnection(connection);
+        expect(getAccessToken()).toBe('my-token');
+    });
+});
+```
+
+## Mocks
+
+### Chrome Mock (`tests/unit/mocks/chrome.js`)
+
+Simulates Chrome extension APIs:
+- `chrome.storage.local` - get, set, remove, clear
+- `chrome.storage.onChanged` - listeners
+- `chrome.runtime.sendMessage` - mocked with vi.fn()
+- `chrome.runtime.getManifest` - returns test manifest
+
+Test helpers:
+- `chromeMock._reset()` - Reset all state
+- `chromeMock._setStorageData(data)` - Pre-populate storage
+- `chromeMock._triggerStorageChange(changes)` - Simulate storage events
+
+### Salesforce Mock (`tests/unit/mocks/salesforce.js`)
+
+Factory functions for Salesforce API responses:
+- `createMockResponse(data, options)` - Generic response
+- `createErrorResponse(message, status)` - Error response
+- `createMockConnection(overrides)` - Connection object
+
+Salesforce-specific factories via `createSalesforceMocks()`:
+- `queryResponse(records)` - SOQL query result
+- `objectDescribe(name, fields)` - Object describe
+- `globalDescribe(sobjects)` - Global describe
+- `recordResponse(record)` - Single record
+- `apexExecutionResponse(compiled, success)` - Apex execution

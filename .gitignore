@@ -7,3 +7,4 @@ sftools-proxy/sftools-proxy.sh
 # Test files
 .env.test
 test-results/
+coverage/

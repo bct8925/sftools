@@ -29,7 +29,7 @@ async function main(): Promise<void> {
   console.log('');
 
   // Find all test files
-  const pattern = 'tests/specs/**/*.test.ts';
+  const pattern = 'tests/frontend/specs/**/*.test.ts';
   let testFiles = await glob(pattern);
 
   if (testFiles.length === 0) {

@@ -1,9 +1,16 @@
 /**
  * Integration tests for Record Viewer
  *
- * Test IDs: RV-I-003, RV-I-004
+ * Test IDs: RV-I-003 through RV-I-011
  * - RV-I-003: Record not found - Error message
  * - RV-I-004: Save failure - Error message displayed
+ * - RV-I-005: Fetch record with all fields - All field data returned
+ * - RV-I-006: Fetch record with specific fields - Only requested fields returned
+ * - RV-I-007: Fetch object describe - Field metadata returned
+ * - RV-I-008: Update single field - Field updated successfully
+ * - RV-I-009: Update multiple fields - All fields updated successfully
+ * - RV-I-010: Handle null field values - Null values cleared successfully
+ * - RV-I-011: Handle boolean field values - Boolean values updated correctly
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { salesforce, TestDataManager, uniqueName } from './setup.js';
@@ -134,7 +141,7 @@ describe('Record Viewer Integration', () => {
         });
     });
 
-    describe('Record Viewer API - Successful operations', () => {
+    describe('RV-I-005: Fetch record with all fields', () => {
         it('fetches record with all fields', async () => {
             const accountId = await testData.create('Account', {
                 Name: uniqueName('Complete Record'),
@@ -150,6 +157,9 @@ describe('Record Viewer Integration', () => {
             expect(record.AnnualRevenue).toBe(1000000);
         });
 
+    });
+
+    describe('RV-I-006: Fetch record with specific fields', () => {
         it('fetches record with specific fields', async () => {
             const accountId = await testData.create('Account', {
                 Name: uniqueName('Specific Fields'),
@@ -166,6 +176,9 @@ describe('Record Viewer Integration', () => {
             expect(record.Description).toBeUndefined();
         });
 
+    });
+
+    describe('RV-I-007: Fetch object describe', () => {
         it('fetches object describe with field metadata', async () => {
             const describe = await salesforce.describeObject('Account');
 
@@ -185,6 +198,9 @@ describe('Record Viewer Integration', () => {
             expect(idField.updateable).toBe(false);
         });
 
+    });
+
+    describe('RV-I-008: Update single field', () => {
         it('updates single field successfully', async () => {
             const accountId = await testData.create('Account', {
                 Name: uniqueName('Update Test')
@@ -198,6 +214,9 @@ describe('Record Viewer Integration', () => {
             expect(updated.Industry).toBe('Healthcare');
         });
 
+    });
+
+    describe('RV-I-009: Update multiple fields', () => {
         it('updates multiple fields successfully', async () => {
             const accountId = await testData.create('Account', {
                 Name: uniqueName('Multi Update')
@@ -215,6 +234,9 @@ describe('Record Viewer Integration', () => {
             expect(updated.Description).toBe('Updated description');
         });
 
+    });
+
+    describe('RV-I-010: Handle null field values', () => {
         it('handles null field values', async () => {
             const accountId = await testData.create('Account', {
                 Name: uniqueName('Null Test'),
@@ -230,6 +252,9 @@ describe('Record Viewer Integration', () => {
             expect(updated.Industry).toBeNull();
         });
 
+    });
+
+    describe('RV-I-011: Handle boolean field values', () => {
         it('handles boolean field values', async () => {
             // First get field describe to find an available boolean field
             const describe = await salesforce.describeObject('Account');

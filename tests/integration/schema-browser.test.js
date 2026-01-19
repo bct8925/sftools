@@ -1,10 +1,15 @@
 /**
  * Integration tests for Schema Browser
  *
- * Test IDs: SB-I-002 through SB-I-004
+ * Test IDs: SB-I-002 through SB-I-009
  * - SB-I-002: Object describe error - Error message
  * - SB-I-003: Formula field not found - Error message
  * - SB-I-004: Save formula error - Error displayed
+ * - SB-I-005: Describe standard object - Object and field metadata returned
+ * - SB-I-006: Query CustomField records - Returns custom field list
+ * - SB-I-007: Get field metadata from describe - Field label, type returned
+ * - SB-I-008: Identify formula fields - Formula fields marked as calculated
+ * - SB-I-009: Get global describe - All org objects returned
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { salesforce, TestDataManager, uniqueName } from './setup.js';
@@ -206,7 +211,7 @@ describe('Schema Browser Integration', () => {
         });
     });
 
-    describe('Schema Browser API - Success Cases', () => {
+    describe('SB-I-005: Describe standard object', () => {
         it('successfully describes standard object', async () => {
             const describe = await salesforce.describeObject('Account');
 
@@ -216,6 +221,9 @@ describe('Schema Browser Integration', () => {
             expect(describe.fields.length).toBeGreaterThan(0);
         });
 
+    });
+
+    describe('SB-I-006: Query CustomField records', () => {
         it('successfully queries CustomField records', async () => {
             const response = await salesforce.toolingQuery(
                 `SELECT Id, DeveloperName, TableEnumOrId FROM CustomField WHERE TableEnumOrId = 'Account' LIMIT 5`
@@ -225,6 +233,9 @@ describe('Schema Browser Integration', () => {
             expect(Array.isArray(response)).toBe(true);
         });
 
+    });
+
+    describe('SB-I-007: Get field metadata from describe', () => {
         it('returns field metadata from describe', async () => {
             const describe = await salesforce.describeObject('Account');
             const nameField = describe.fields.find(f => f.name === 'Name');
@@ -234,6 +245,9 @@ describe('Schema Browser Integration', () => {
             expect(nameField.type).toBeDefined();
         });
 
+    });
+
+    describe('SB-I-008: Identify formula fields', () => {
         it('identifies formula fields in describe', async () => {
             const describe = await salesforce.describeObject('Account');
             const formulaFields = describe.fields.filter(f => f.calculated === true);
@@ -245,6 +259,9 @@ describe('Schema Browser Integration', () => {
             });
         });
 
+    });
+
+    describe('SB-I-009: Get global describe', () => {
         it('returns global describe with all objects', async () => {
             const global = await salesforce.describeGlobal();
 

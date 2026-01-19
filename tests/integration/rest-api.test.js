@@ -1,7 +1,7 @@
 /**
  * Integration tests for REST API Tab
  *
- * Test IDs: R-I-001 through R-I-008
+ * Test IDs: R-I-001 through R-I-013
  *
  * These tests verify the Salesforce REST API behavior that the REST API tab relies on.
  * Tests make real API calls against a test org.
@@ -12,18 +12,16 @@
  * - R-I-003: Invalid JSON in body - API error response
  * - R-I-006: Non-JSON response - Raw text displayed for HTML endpoints
  * - R-I-007: HTTP 400 error - Error response with details (multiple scenarios)
+ * - R-I-009: PATCH updates record - Record updated successfully
+ * - R-I-010: GET retrieves record by ID - Record data returned
+ * - R-I-011: DELETE removes record - Record deleted, subsequent GET returns 404
+ * - R-I-012: Response headers verification - Content-type and request ID headers present
+ * - R-I-013: SOQL query via REST endpoint - Query results returned
  *
  * Skipped (cannot reliably test):
  * - R-I-004: Empty URL - Client-side validation (not API behavior)
  * - R-I-005: Not authenticated - Would require invalid token setup
  * - R-I-008: HTTP 500 error - Cannot reliably trigger server errors
- *
- * Additional coverage beyond TEST_SCENARIOS.md:
- * - PATCH updates existing record
- * - GET retrieves record by ID with all fields
- * - DELETE removes record
- * - Response headers verification (content-type, request-id)
- * - SOQL query via REST endpoint
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { salesforce, TestDataManager, uniqueName } from './setup.js';
@@ -173,7 +171,7 @@ describe('REST API Tab Integration', () => {
         });
     });
 
-    describe('Additional REST API operations', () => {
+    describe('R-I-009: PATCH updates record', () => {
         it('PATCH updates existing record', async () => {
             // Create a record first
             const accountName = uniqueName('RestApiTest');
@@ -201,6 +199,9 @@ describe('REST API Tab Integration', () => {
             expect(record.Name).toBe(updatedName);
         });
 
+    });
+
+    describe('R-I-010: GET retrieves record by ID', () => {
         it('GET retrieves record by ID', async () => {
             // Create a record
             const accountName = uniqueName('RestApiTest');
@@ -225,6 +226,9 @@ describe('REST API Tab Integration', () => {
             expect(getResult.body.Name).toBe(accountName);
         });
 
+    });
+
+    describe('R-I-011: DELETE removes record', () => {
         it('DELETE removes record', async () => {
             // Create a record
             const accountName = uniqueName('RestApiTest');
@@ -254,7 +258,7 @@ describe('REST API Tab Integration', () => {
         });
     });
 
-    describe('Response headers', () => {
+    describe('R-I-012: Response headers verification', () => {
         it('includes content-type header', async () => {
             const result = await salesforce.restRequest('/services/data', 'GET');
 
@@ -274,7 +278,7 @@ describe('REST API Tab Integration', () => {
         });
     });
 
-    describe('Query via REST', () => {
+    describe('R-I-013: SOQL query via REST endpoint', () => {
         it('executes SOQL query via REST endpoint', async () => {
             const result = await salesforce.restRequest(
                 `/services/data/v62.0/query?q=${encodeURIComponent('SELECT Id, Name FROM Account LIMIT 1')}`,

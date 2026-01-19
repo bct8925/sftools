@@ -198,6 +198,11 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | R-I-006 | Non-JSON response | Raw text displayed | `tests/integration/rest-api.test.js:95` |
 | R-I-007 | HTTP 400 error | Error response displayed | `tests/integration/rest-api.test.js:123` |
 | R-I-008 | HTTP 500 error | Error response displayed | - |
+| R-I-009 | PATCH updates record | Record updated successfully | `tests/integration/rest-api.test.js:177` |
+| R-I-010 | GET retrieves record by ID | Record data returned | `tests/integration/rest-api.test.js:204` |
+| R-I-011 | DELETE removes record | Record deleted, subsequent GET returns 404 | `tests/integration/rest-api.test.js:228` |
+| R-I-012 | Response headers verification | Content-type and request ID headers present | `tests/integration/rest-api.test.js:257` |
+| R-I-013 | SOQL query via REST endpoint | Query results returned | `tests/integration/rest-api.test.js:277` |
 
 ### Unit Tests
 
@@ -243,6 +248,12 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
 | E-I-006 | Invalid JSON in publish payload | Validation error | `tests/integration/events.test.js:59` |
+| E-I-007 | Query custom Platform Events | Returns event definitions via EntityDefinition | `tests/integration/events.test.js:24` |
+| E-I-008 | Query CustomNotificationType | Returns notification types | `tests/integration/events.test.js:33` |
+| E-I-009 | Query active PushTopics | Returns active PushTopic records | `tests/integration/events.test.js:42` |
+| E-I-010 | Query all PushTopics | Returns all PushTopic records | `tests/integration/events.test.js:50` |
+| E-I-011 | Get API versions | Returns API versions info | `tests/integration/events.test.js:133` |
+| E-I-012 | Verify streaming API support | Confirms PushTopic availability in org | `tests/integration/events.test.js:140` |
 
 ### Unit Tests
 
@@ -292,7 +303,14 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| S-I-001 | (None currently) | - | - |
+| S-I-001 | Validate credentials | Fetches user info successfully | `tests/integration/settings.test.js:54` |
+| S-I-002 | Retrieve org identity info | Returns Chatter user info | `tests/integration/settings.test.js:60` |
+| S-I-003 | Get API limits | Returns API usage information | `tests/integration/settings.test.js:69` |
+| S-I-004 | Fetch global describe | Returns all sObjects | `tests/integration/settings.test.js:80` |
+| S-I-005 | Describe specific object | Returns field metadata | `tests/integration/settings.test.js:90` |
+| S-I-006 | Describe multiple objects | Returns metadata for each object | `tests/integration/settings.test.js:97` |
+| S-I-007 | Query API versions | Returns available API versions | `tests/integration/settings.test.js:109` |
+| S-I-008 | Access REST resources | Returns REST API resources list | `tests/integration/settings.test.js:119` |
 
 ### Unit Tests
 
@@ -417,6 +435,13 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 |---------|----------|-------------------|-----------|
 | RV-I-003 | Record not found | Error message | `tests/integration/record-viewer.test.js:28` |
 | RV-I-004 | Save failure | Error message displayed | `tests/integration/record-viewer.test.js:65` |
+| RV-I-005 | Fetch record with all fields | All field data returned | `tests/integration/record-viewer.test.js:154` |
+| RV-I-006 | Fetch record with specific fields | Only requested fields returned | `tests/integration/record-viewer.test.js:169` |
+| RV-I-007 | Fetch object describe | Field metadata returned | `tests/integration/record-viewer.test.js:185` |
+| RV-I-008 | Update single field | Field updated successfully | `tests/integration/record-viewer.test.js:204` |
+| RV-I-009 | Update multiple fields | All fields updated successfully | `tests/integration/record-viewer.test.js:217` |
+| RV-I-010 | Handle null field values | Null values cleared successfully | `tests/integration/record-viewer.test.js:234` |
+| RV-I-011 | Handle boolean field values | Boolean values updated correctly | `tests/integration/record-viewer.test.js:249` |
 
 ### Unit Tests
 
@@ -474,6 +499,11 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | SB-I-002 | Object describe error | Error message | `tests/integration/schema-browser.test.js:21` |
 | SB-I-003 | Formula field not found | Error message | `tests/integration/schema-browser.test.js:57` |
 | SB-I-004 | Save formula error | Error displayed | `tests/integration/schema-browser.test.js:119` |
+| SB-I-005 | Describe standard object | Object and field metadata returned | `tests/integration/schema-browser.test.js:222` |
+| SB-I-006 | Query CustomField records | Returns custom field list | `tests/integration/schema-browser.test.js:231` |
+| SB-I-007 | Get field metadata from describe | Field label, type returned | `tests/integration/schema-browser.test.js:240` |
+| SB-I-008 | Identify formula fields | Formula fields marked as calculated | `tests/integration/schema-browser.test.js:249` |
+| SB-I-009 | Get global describe | All org objects returned | `tests/integration/schema-browser.test.js:260` |
 
 ### Unit Tests
 
@@ -965,23 +995,25 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 ## Test Coverage Summary
 
+Note: Integration test counts include documented scenarios that may not yet be implemented (marked with "-").
+
 | Area | Frontend | Integration | Unit | Total |
 |------|----------|-------------|------|-------|
-| Query Tab | 29 | 12 | 22 | 63 |
+| Query Tab | 29 | 11 | 22 | 62 |
 | Apex Tab | 17 | 9 | 10 | 36 |
-| REST API Tab | 9 | 8 | 3 | 20 |
-| Events Tab | 19 | 1 | 6 | 26 |
-| Settings Tab | 22 | 1 | 5 | 28 |
-| Utils Tab | 14 | 4 | 0 | 18 |
-| Record Viewer | 23 | 2 | 13 | 38 |
-| Schema Browser | 20 | 3 | 9 | 32 |
+| REST API Tab | 9 | 13 | 3 | 25 |
+| Events Tab | 19 | 7 | 6 | 32 |
+| Settings Tab | 22 | 8 | 5 | 35 |
+| Utils Tab | 14 | 7 | 0 | 21 |
+| Record Viewer | 23 | 9 | 13 | 45 |
+| Schema Browser | 20 | 8 | 9 | 37 |
 | Monaco Editor | 11 | 2 | 0 | 13 |
 | App Shell | 12 | 4 | 5 | 21 |
 | OAuth | 4 | 7 | 12 | 23 |
 | Background | 0 | 11 | 16 | 27 |
 | Library Utils | 0 | 0 | 47 | 47 |
-| Local Proxy | 0 | 16 | 53 | 69 |
-| **Total** | **180** | **80** | **201** | **461** |
+| Local Proxy | 0 | 20 | 53 | 73 |
+| **Total** | **180** | **116** | **201** | **497** |
 
 ---
 

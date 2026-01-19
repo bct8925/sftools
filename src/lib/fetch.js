@@ -1,6 +1,7 @@
 // Fetch routing and proxy connection utilities
 
 import { getActiveConnectionId, triggerAuthExpired } from './auth.js';
+import { debugInfo } from './debug.js';
 
 // --- Proxy Connection State ---
 let PROXY_CONNECTED = false;
@@ -68,7 +69,7 @@ export async function extensionFetch(url, options = {}, connectionId = null) {
 export async function proxyFetch(url, options = {}) {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
         const connId = getActiveConnectionId();
-        console.log('[proxyFetch]', options.method || 'GET', url);
+        debugInfo('[proxyFetch]', options.method || 'GET', url);
 
         const response = await chrome.runtime.sendMessage({
             type: 'proxyFetch',

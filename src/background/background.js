@@ -14,6 +14,8 @@ import {
     updateConnectionToken
 } from './auth.js';
 
+import { debugInfo } from './debug.js';
+
 // ============================================================================
 // Extension Action Handler
 // ============================================================================
@@ -230,15 +232,15 @@ async function handle401WithRefresh(response, connectionId, hasAuth, retryFn) {
     const connection = connections?.find(c => c.id === connectionId);
 
     if (connection?.refreshToken && isProxyConnected()) {
-        console.log('Got 401, attempting token refresh for connection:', connectionId);
+        debugInfo('Got 401, attempting token refresh for connection:', connectionId);
         const refreshResult = await refreshAccessToken(connection);
 
         if (refreshResult.success) {
-            console.log('Token refresh succeeded, retrying request');
+            debugInfo('Token refresh succeeded, retrying request');
             await updateConnectionToken(connectionId, refreshResult.accessToken);
             return await retryFn(refreshResult.accessToken);
         } else {
-            console.log('Token refresh failed:', refreshResult.error);
+            debugInfo('Token refresh failed:', refreshResult.error);
             return {
                 success: false,
                 status: 401,
@@ -249,7 +251,7 @@ async function handle401WithRefresh(response, connectionId, hasAuth, retryFn) {
             };
         }
     } else {
-        console.log('Cannot refresh - refreshToken:', !!connection?.refreshToken, 'proxy:', isProxyConnected());
+        debugInfo('Cannot refresh - refreshToken:', !!connection?.refreshToken, 'proxy:', isProxyConnected());
         return {
             success: false,
             status: 401,
@@ -369,7 +371,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.storage.local.get(['proxyEnabled']).then(({ proxyEnabled }) => {
     if (proxyEnabled) {
         connectNative()
-            .then(result => { if (result.success) console.log('Auto-connected to proxy'); })
+            .then(result => { if (result.success) debugInfo('Auto-connected to proxy'); })
             .catch(() => {});
     }
 });

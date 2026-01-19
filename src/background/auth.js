@@ -3,6 +3,7 @@
 
 import { isProxyConnected, sendProxyRequest } from './native-messaging.js';
 import { getOAuthCredentials } from '../lib/oauth-credentials.js';
+import { debugInfo } from './debug.js';
 
 /**
  * Exchange authorization code for tokens via proxy
@@ -53,7 +54,7 @@ export async function exchangeCodeForTokens(code, redirectUri, loginDomain, clie
         const tokenData = JSON.parse(response.data);
 
         if (tokenData.access_token) {
-            console.log('OAuth token exchange successful');
+            debugInfo('OAuth token exchange successful');
             return {
                 success: true,
                 accessToken: tokenData.access_token,
@@ -129,10 +130,9 @@ export async function refreshAccessToken(connection) {
             const tokenData = JSON.parse(response.data);
 
             if (tokenData.access_token) {
-                console.log('Token refreshed successfully for connection:', connection.id);
+                debugInfo('Token refreshed successfully for connection:', connection.id);
                 return { success: true, accessToken: tokenData.access_token };
             } else {
-                console.error('Token refresh failed:', tokenData.error_description);
                 return { success: false, error: tokenData.error_description || 'Refresh failed' };
             }
         } catch (error) {

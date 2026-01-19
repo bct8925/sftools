@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
+const isProduction = process.env.SFTOOLS_PRODUCTION === 'true';
+
 export default defineConfig({
   // Use src as root so output paths are cleaner
   root: 'src',
@@ -9,6 +11,10 @@ export default defineConfig({
   base: './',
 
   plugins: [],
+
+  define: {
+    __SFTOOLS_DEBUG__: !isProduction
+  },
 
   build: {
     // Output to dist at project root

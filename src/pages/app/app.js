@@ -1,4 +1,5 @@
 // sftools - Main Application Entry Point
+import { debugInfo } from '../../lib/debug.js';
 import {
     getAccessToken,
     getInstanceUrl,
@@ -218,7 +219,7 @@ async function startAuthorization(overrideLoginDomain = null, overrideClientId =
         const proxyStatus = await chrome.runtime.sendMessage({ type: 'checkProxyConnection' });
         useCodeFlow = proxyStatus.connected;
     } catch (e) {
-        console.log('Proxy not available, using implicit flow');
+        debugInfo('Proxy not available, using implicit flow');
     }
 
     // Get client ID - use override, or fall back to default

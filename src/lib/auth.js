@@ -1,6 +1,8 @@
 // Frontend Auth Module for sftools
 // Used by content scripts (app.js, etc.) - NOT the service worker
 
+import { debugInfo } from './debug.js';
+
 // --- Constants ---
 export const STORAGE_KEYS = {
     ACCESS_TOKEN: 'accessToken',
@@ -68,10 +70,10 @@ export function loadAuthTokens() {
                 if (data[STORAGE_KEYS.ACCESS_TOKEN] && data[STORAGE_KEYS.INSTANCE_URL]) {
                     ACCESS_TOKEN = data[STORAGE_KEYS.ACCESS_TOKEN];
                     INSTANCE_URL = data[STORAGE_KEYS.INSTANCE_URL];
-                    console.log('Loaded auth for instance:', INSTANCE_URL);
+                    debugInfo('Loaded auth for instance:', INSTANCE_URL);
                     resolve(true);
                 } else {
-                    console.log('No auth tokens found. Please authorize via connection selector.');
+                    debugInfo('No auth tokens found');
                     resolve(false);
                 }
             });
@@ -233,7 +235,7 @@ export async function migrateFromSingleConnection() {
                     STORAGE_KEYS.LOGIN_DOMAIN
                 ]);
 
-                console.log('Migrated single connection to multi-connection format');
+                debugInfo('Migrated single connection to multi-connection format');
                 resolve(true);
             });
         } else {
@@ -324,7 +326,7 @@ export async function migrateCustomConnectedApp() {
                             customAppMigrated: true
                         });
 
-                        console.log('Migrated global customConnectedApp to per-connection clientIds');
+                        debugInfo('Migrated global customConnectedApp to per-connection clientIds');
                     }
 
                     // Remove deprecated customConnectedApp
@@ -361,7 +363,7 @@ if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
                 // Update in-memory tokens if active connection was refreshed
                 ACCESS_TOKEN = activeConn.accessToken;
                 INSTANCE_URL = activeConn.instanceUrl;
-                console.log('Active connection tokens updated from storage');
+                debugInfo('Active connection tokens updated from storage');
             } else {
                 // Active connection was removed
                 triggerAuthExpired();
@@ -371,7 +373,7 @@ if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
         // Legacy single-connection format (for backward compatibility during migration)
         if (changes[STORAGE_KEYS.ACCESS_TOKEN]?.newValue) {
             ACCESS_TOKEN = changes[STORAGE_KEYS.ACCESS_TOKEN].newValue;
-            console.log('Access token updated from storage (legacy)');
+            debugInfo('Access token updated from storage (legacy)');
         }
 
         if (changes[STORAGE_KEYS.INSTANCE_URL]?.newValue) {

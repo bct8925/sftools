@@ -1,6 +1,8 @@
 // Native Messaging Module for sftools Chrome Extension
 // Handles communication with the local proxy via Chrome Native Messaging
 
+import { debugInfo } from './debug.js';
+
 const NATIVE_HOST_NAME = 'com.sftools.proxy';
 
 let nativePort = null;
@@ -41,7 +43,7 @@ export async function connectNative() {
 
             nativePort.onDisconnect.addListener(() => {
                 const error = chrome.runtime.lastError?.message || 'Disconnected';
-                console.log('Native host disconnected:', error);
+                debugInfo('Native host disconnected:', error);
 
                 nativePort = null;
                 proxyHttpPort = null;
@@ -59,7 +61,7 @@ export async function connectNative() {
                     if (initResponse.success) {
                         proxyHttpPort = initResponse.httpPort;
                         proxySecret = initResponse.secret;
-                        console.log(`Proxy connected: HTTP server on port ${proxyHttpPort}`);
+                        debugInfo(`Proxy connected: HTTP server on port ${proxyHttpPort}`);
 
                         chrome.storage.local.set({ proxyConnected: true });
                         resolve(initResponse);

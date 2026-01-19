@@ -8,8 +8,8 @@
     "monaco-editor": "^0.55.1"
   },
   "scripts": {
-    "build": "vite build",
-    "watch": "vite build --watch",
-    "package": "vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'"
+    "build": "SFTOOLS_PRODUCTION=fasle vite build",
+    "watch": "SFTOOLS_PRODUCTION=false vite build --watch",
+    "package": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'"
   }
 }

@@ -10,6 +10,7 @@ const state = {
     globalDescribe: null,
     globalDescribeLoading: false,
     fromObject: null,
+    fromObjectLoadId: 0,
     fields: [],
     relationships: new Map() // relationshipName -> { targetObject, fields }
 };
@@ -207,13 +208,20 @@ async function resolveRelationshipChain(baseObject, chain) {
 async function loadFromObject(objectName) {
     if (!objectName) return;
 
-    // Always update state immediately to prevent race conditions
+    // Increment load ID and capture for stale request detection
+    const thisLoadId = ++state.fromObjectLoadId;
+
+    // Update state immediately
     state.fromObject = objectName;
     state.fields = [];
     state.relationships.clear();
 
     try {
         const describe = await getObjectDescribe(objectName);
+
+        // Discard if a newer request started while we were loading
+        if (thisLoadId !== state.fromObjectLoadId) return;
+
         if (!describe?.fields) return;
 
         state.fields = describe.fields;
@@ -227,6 +235,9 @@ async function loadFromObject(objectName) {
         const describes = await Promise.all(
             targetObjects.map(obj => getObjectDescribe(obj).catch(() => null))
         );
+
+        // Discard if a newer request started while loading relationships
+        if (thisLoadId !== state.fromObjectLoadId) return;
 
         // Build relationship map
         for (const refField of referenceFields) {

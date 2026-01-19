@@ -1,0 +1,45 @@
+sftools provides Salesforce developer tools in a Chrome side panel or tab.
+
+FEATURES
+
+SOQL Query Editor
+- Execute SOQL queries with syntax highlighting
+- Results displayed in formatted tables with relationship field support
+- Subquery results expandable inline
+- Keyboard shortcut: Ctrl/Cmd+Enter
+
+Anonymous Apex Execution
+- Run anonymous Apex with Monaco editor
+- Automatic debug log retrieval
+- Compile errors shown with line/column markers
+
+REST API Explorer
+- GET, POST, PATCH, DELETE requests to Salesforce REST endpoints
+- JSON formatting in request/response editors
+
+Schema Browser
+- Browse objects and fields
+- View field metadata (label, API name, type)
+- Edit formula fields directly
+
+Record Viewer
+- View and edit record field values
+- Right-click extension icon on any Lightning record page to open
+
+Utility Tools
+- Enable trace flags for users
+- Bulk delete debug logs
+- Delete inactive flow versions
+
+Platform Events (requires local proxy)
+- Subscribe to Platform Events via gRPC
+- Monitor PushTopics and System Topics via CometD
+
+MULTI-ORG SUPPORT
+- Connect to multiple Salesforce orgs
+- Switch connections via dropdown
+- Each browser window can use a different connection
+
+INTERFACE
+- Opens in Chrome side panel or standalone tab
+- Light and dark mode

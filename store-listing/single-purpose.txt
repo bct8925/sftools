@@ -1,0 +1,12 @@
+sftools provides developer tools for Salesforce. Users can:
+
+1. Query data using SOQL
+2. Execute anonymous Apex code
+3. Make REST API requests
+4. Browse object schemas and field metadata
+5. View and edit record field values
+6. Manage debug logs and trace flags
+7. Delete inactive flow versions
+8. Subscribe to platform events (optional local proxy required)
+
+The extension authenticates via OAuth 2.0 and communicates directly with Salesforce APIs. No data is sent to third-party services.

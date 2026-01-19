@@ -22,6 +22,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.config.integration.js",
+    "test:integration:watch": "vitest --config vitest.config.integration.js",
     "test:frontend": "tsx tests/frontend/run-tests.ts",
     "test:frontend:slow": "tsx tests/frontend/run-tests.ts --slow"
   }

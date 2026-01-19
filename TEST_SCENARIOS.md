@@ -79,9 +79,8 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | Q-I-007 | Query with ORDER BY | Rows in correct order | - |
 | Q-I-008 | Query with WHERE clause | Only matching records | - |
 | Q-I-009 | Query Tooling API object | Results from Tooling API | - |
-| Q-I-010 | Bulk export with Tooling API | Error message (not supported) | - |
-| Q-I-011 | Large result set (10K+ rows) | Pagination or bulk export prompt | - |
-| Q-I-012 | Connection change | Autocomplete state cleared, cache reset | - |
+| Q-I-010 | Large result set (10K+ rows) | Pagination or bulk export prompt | - |
+| Q-I-011 | Connection change | Autocomplete state cleared, cache reset | - |
 
 ### Unit Tests
 

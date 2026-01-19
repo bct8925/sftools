@@ -5,6 +5,7 @@
   "dependencies": {
     "@jetstreamapp/soql-parser-js": "^6.3.1",
     "@salesforce-ux/icons": "^10.5.4",
+    "dompurify": "^3.3.1",
     "monaco-editor": "^0.55.1"
   },
   "scripts": {

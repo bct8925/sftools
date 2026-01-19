@@ -1,10 +1,11 @@
 // Record Viewer - Custom Element
 import template from './record.html?raw';
 import './record.css';
+import DOMPurify from 'dompurify';
 import { setActiveConnection } from '../../lib/utils.js';
 import { getObjectDescribe, getRecordWithRelationships, updateRecord } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
-import { escapeHtml } from '../../lib/text-utils.js';
+import { escapeHtml, escapeAttr } from '../../lib/text-utils.js';
 import { replaceIcons } from '../../lib/icons.js';
 import '../modal-popup/modal-popup.js';
 
@@ -480,10 +481,9 @@ class RecordPage extends HTMLElement {
         this.modalFieldInfoEl.textContent = `${fieldLabel} (${fieldName})`;
 
         // Set modal content
-        // For security, we'll display HTML content as-is since it comes from Salesforce
-        // If field type is 'html', render as HTML; otherwise show as plain text
+        // Sanitize HTML content to prevent XSS from stored malicious content
         if (field.type === 'html') {
-            this.modalContentEl.innerHTML = value;
+            this.modalContentEl.innerHTML = DOMPurify.sanitize(value);
         } else {
             // For textarea and encryptedstring, display as plain text with preserved formatting
             this.modalContentEl.textContent = value;

@@ -321,7 +321,7 @@ class RecordPage extends HTMLElement {
                     }
                 }
             default:
-                return value;
+                return escapeHtml(String(value ?? ''));
         }
     }
 

@@ -19,11 +19,10 @@
     "build": "SFTOOLS_PRODUCTION=false vite build",
     "watch": "SFTOOLS_PRODUCTION=false vite build --watch",
     "package": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'",
-    "test": "tsx tests/frontend/run-tests.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:frontend": "tsx tests/frontend/run-tests.ts",
-    "test:slow": "tsx tests/frontend/run-tests.ts --slow",
-    "test:unit": "vitest run",
-    "test:unit:watch": "vitest",
-    "test:unit:coverage": "vitest run --coverage"
+    "test:frontend:slow": "tsx tests/frontend/run-tests.ts --slow"
   }
 }

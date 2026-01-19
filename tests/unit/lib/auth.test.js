@@ -299,7 +299,12 @@ describe('auth', () => {
             await setPendingAuth(params);
             const result = await consumePendingAuth();
 
-            expect(result).toEqual(params);
+            // Result includes original params plus createdAt timestamp
+            expect(result.loginDomain).toBe(params.loginDomain);
+            expect(result.clientId).toBe(params.clientId);
+            expect(result.connectionId).toBe(params.connectionId);
+            expect(result.createdAt).toBeDefined();
+            expect(typeof result.createdAt).toBe('number');
         });
 
         it('clears pending auth after consume', async () => {

@@ -313,14 +313,15 @@ describe('salesforce', () => {
             expect(result[0].DeveloperName).toBe('My_Flow');
         });
 
-        it('escapes single quotes in search term', async () => {
+        it('escapes special SOQL characters in search term', async () => {
             salesforceRequest.mockResolvedValue({ json: { records: [] } });
 
             await searchFlows("Test's_Flow");
 
-            // The escaped quote is URL encoded: \' becomes %5C'
+            // escapeSoql escapes: ' -> \', _ -> \_, % -> \%
+            // URL encoded: \' becomes %5C' and \_ becomes %5C_
             expect(salesforceRequest).toHaveBeenCalledWith(
-                expect.stringContaining("Test%5C's_Flow")
+                expect.stringContaining("Test%5C's%5C_Flow")
             );
         });
     });

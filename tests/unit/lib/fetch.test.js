@@ -47,11 +47,14 @@ describe('fetch', () => {
         });
 
         it('returns false on error', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
             chrome.runtime.sendMessage.mockRejectedValueOnce(new Error('Connection failed'));
 
             const result = await fetchModule.checkProxyStatus();
 
             expect(result).toBe(false);
+            expect(consoleSpy).toHaveBeenCalledWith('Error checking proxy status:', expect.any(Error));
+            consoleSpy.mockRestore();
         });
 
         it('sends checkProxyConnection message', async () => {

@@ -1,7 +1,8 @@
 // OAuth Callback Handler
 // Supports both authorization code flow (with proxy) and implicit flow (without proxy)
 
-import { addConnection, findConnectionByInstance, updateConnection, getOAuthCredentials, consumePendingAuth } from '../../lib/auth.js';
+import { addConnection, findConnectionByInstance, updateConnection, getOAuthCredentials, consumePendingAuth, validateOAuthState } from '../../lib/auth.js';
+import { escapeHtml } from '../../lib/text-utils.js';
 
 const statusEl = document.getElementById('status');
 
@@ -17,8 +18,8 @@ const accessToken = hashParams.get('access_token');
 const instanceUrl = hashParams.get('instance_url');
 
 if (error) {
-    // OAuth error
-    statusEl.innerHTML = `<span class="error">Authorization denied: ${errorDescription || error}</span>`;
+    // OAuth error - escape to prevent XSS
+    statusEl.innerHTML = `<span class="error">Authorization denied: ${escapeHtml(errorDescription || error)}</span>`;
 } else if (code) {
     // Authorization code flow - exchange via proxy
     handleCodeFlow(code);
@@ -76,10 +77,10 @@ async function handleCodeFlow(code) {
             statusEl.innerText = 'Connection saved. You can close this tab.';
             setTimeout(() => window.close(), 1000);
         } else {
-            statusEl.innerHTML = `<span class="error">Token exchange failed: ${response.error}</span>`;
+            statusEl.innerHTML = `<span class="error">Token exchange failed: ${escapeHtml(response.error)}</span>`;
         }
     } catch (err) {
-        statusEl.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        statusEl.innerHTML = `<span class="error">Error: ${escapeHtml(err.message)}</span>`;
     }
 }
 
@@ -109,7 +110,7 @@ async function handleImplicitFlow(accessToken, instanceUrl) {
         statusEl.innerText = 'Connection saved. You can close this tab.';
         setTimeout(() => window.close(), 1000);
     } catch (err) {
-        statusEl.innerHTML = `<span class="error">Error storing tokens: ${err.message}</span>`;
+        statusEl.innerHTML = `<span class="error">Error storing tokens: ${escapeHtml(err.message)}</span>`;
     }
 }
 

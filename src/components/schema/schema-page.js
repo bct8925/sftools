@@ -5,7 +5,7 @@ import '../button-icon/button-icon.js';
 import { monaco } from '../monaco-editor/monaco-editor.js';
 import { setActiveConnection } from '../../lib/utils.js';
 import { getGlobalDescribe, getObjectDescribe, getFormulaFieldMetadata, updateFormulaField } from '../../lib/salesforce.js';
-import { escapeHtml } from '../../lib/text-utils.js';
+import { escapeHtml, escapeAttr } from '../../lib/text-utils.js';
 import { icons, replaceIcons } from '../../lib/icons.js';
 import '../modal-popup/modal-popup.js';
 
@@ -252,6 +252,10 @@ class SchemaPage extends HTMLElement {
     // Current formula field being edited
     currentFormulaField = null;
 
+    // Bound event handlers for cleanup
+    boundDocClickHandler = null;
+    boundCorsHandler = null;
+
     connectedCallback() {
         this.innerHTML = replaceIcons(template);
         this.initElements();
@@ -300,12 +304,23 @@ class SchemaPage extends HTMLElement {
             }
         });
 
-        // Close any open field menus when clicking outside
-        document.addEventListener('click', (e) => {
+        // Close any open field menus when clicking outside (store bound handler for cleanup)
+        this.boundDocClickHandler = (e) => {
             if (!e.target.closest('.field-menu-button') && !e.target.closest('.field-menu')) {
                 this.closeAllFieldMenus();
             }
-        });
+        };
+        document.addEventListener('click', this.boundDocClickHandler);
+    }
+
+    disconnectedCallback() {
+        // Clean up document-level event listeners to prevent memory leaks
+        if (this.boundDocClickHandler) {
+            document.removeEventListener('click', this.boundDocClickHandler);
+        }
+        if (this.boundCorsHandler) {
+            document.removeEventListener('show-cors-error', this.boundCorsHandler);
+        }
     }
 
     initCorsModal() {
@@ -313,9 +328,11 @@ class SchemaPage extends HTMLElement {
         const closeBtn = document.getElementById('cors-modal-close');
 
         if (modal && closeBtn) {
-            document.addEventListener('show-cors-error', () => {
+            // Store bound handler for cleanup
+            this.boundCorsHandler = () => {
                 modal.open();
-            });
+            };
+            document.addEventListener('show-cors-error', this.boundCorsHandler);
 
             closeBtn.addEventListener('click', () => {
                 modal.close();
@@ -388,7 +405,7 @@ class SchemaPage extends HTMLElement {
         }
 
         this.objectsListEl.innerHTML = this.filteredObjects.map(obj => `
-            <div class="object-item" data-name="${this.escapeAttr(obj.name)}">
+            <div class="object-item" data-name="${escapeAttr(obj.name)}">
                 <div class="object-item-label">${escapeHtml(obj.label)}</div>
                 <div class="object-item-name">${escapeHtml(obj.name)}</div>
             </div>
@@ -550,7 +567,7 @@ class SchemaPage extends HTMLElement {
             if (typeDisplay.isReference && typeDisplay.referenceTo) {
                 // Create clickable links for each referenced object
                 const links = typeDisplay.referenceTo.map(objName =>
-                    `<a href="#" class="reference-link" data-object="${this.escapeAttr(objName)}">${escapeHtml(objName)}</a>`
+                    `<a href="#" class="reference-link" data-object="${escapeAttr(objName)}">${escapeHtml(objName)}</a>`
                 ).join(', ');
                 typeHtml = `reference (${links})`;
             } else {
@@ -558,17 +575,17 @@ class SchemaPage extends HTMLElement {
             }
 
             return `
-                <div class="field-item" data-field-name="${this.escapeAttr(field.name)}">
-                    <div class="field-item-label" title="${this.escapeAttr(field.label)}">${escapeHtml(field.label)}</div>
-                    <div class="field-item-name" title="${this.escapeAttr(field.name)}">${escapeHtml(field.name)}</div>
-                    <div class="field-item-type" title="${this.escapeAttr(typeDisplay.text)}">${typeHtml}</div>
+                <div class="field-item" data-field-name="${escapeAttr(field.name)}">
+                    <div class="field-item-label" title="${escapeAttr(field.label)}">${escapeHtml(field.label)}</div>
+                    <div class="field-item-name" title="${escapeAttr(field.name)}">${escapeHtml(field.name)}</div>
+                    <div class="field-item-type" title="${escapeAttr(typeDisplay.text)}">${typeHtml}</div>
                     <div class="field-item-actions">
                         ${isFormulaField ? `
-                            <button class="field-menu-button" data-field-name="${this.escapeAttr(field.name)}" aria-label="More options">
+                            <button class="field-menu-button" data-field-name="${escapeAttr(field.name)}" aria-label="More options">
                                 ${icons.verticalDots}
                             </button>
-                            <div class="field-menu" data-field-name="${this.escapeAttr(field.name)}">
-                                <div class="field-menu-item" data-action="edit" data-field-name="${this.escapeAttr(field.name)}">Edit</div>
+                            <div class="field-menu" data-field-name="${escapeAttr(field.name)}">
+                                <div class="field-menu-item" data-action="edit" data-field-name="${escapeAttr(field.name)}">Edit</div>
                             </div>
                         ` : ''}
                     </div>
@@ -659,17 +676,6 @@ class SchemaPage extends HTMLElement {
                 <p class="error-hint">Please check the connection and try again.</p>
             </div>
         `;
-    }
-
-
-    escapeAttr(str) {
-        if (str === null || str === undefined) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
     }
 
     // Field menu methods

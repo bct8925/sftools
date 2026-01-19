@@ -70,15 +70,15 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| Q-I-001 | Query with no results | Empty table, "No records" message | - |
-| Q-I-002 | Query with invalid SOQL | Error message with details | - |
-| Q-I-003 | Query with aggregate functions | Results non-editable | - |
-| Q-I-004 | Query without Id field | Results non-editable | - |
-| Q-I-005 | Query COUNT() | Single row with count value | - |
-| Q-I-006 | Query with LIMIT | Correct number of rows | - |
-| Q-I-007 | Query with ORDER BY | Rows in correct order | - |
-| Q-I-008 | Query with WHERE clause | Only matching records | - |
-| Q-I-009 | Query Tooling API object | Results from Tooling API | - |
+| Q-I-001 | Query with no results | Empty table, "No records" message | `tests/integration/query.test.js:19` |
+| Q-I-002 | Query with invalid SOQL | Error message with details | `tests/integration/query.test.js:28` |
+| Q-I-003 | Query with aggregate functions | Results non-editable | `tests/integration/query.test.js:48` |
+| Q-I-004 | Query without Id field | Results non-editable | `tests/integration/query.test.js:80` |
+| Q-I-005 | Query COUNT() | Single row with count value | `tests/integration/query.test.js:95` |
+| Q-I-006 | Query with LIMIT | Correct number of rows | `tests/integration/query.test.js:109` |
+| Q-I-007 | Query with ORDER BY | Rows in correct order | `tests/integration/query.test.js:136` |
+| Q-I-008 | Query with WHERE clause | Only matching records | `tests/integration/query.test.js:171` |
+| Q-I-009 | Query Tooling API object | Results from Tooling API | `tests/integration/query.test.js:221` |
 | Q-I-010 | Large result set (10K+ rows) | Pagination or bulk export prompt | - |
 | Q-I-011 | Connection change | Autocomplete state cleared, cache reset | - |
 
@@ -141,13 +141,13 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| A-I-001 | Execute System.debug() | Debug statement in log | - |
-| A-I-002 | Execute DML operation | Record created/updated | - |
-| A-I-003 | Execute with governor limits | Logs show limits usage | - |
-| A-I-004 | Compilation error on line 5 | Marker on line 5 | - |
-| A-I-005 | Runtime NullPointerException | Exception details in output | - |
-| A-I-006 | No debug log available | Message indicating no log | - |
-| A-I-007 | Empty code submission | Error or no-op | - |
+| A-I-001 | Execute System.debug() | Debug statement in log | `tests/integration/apex.test.js:17` |
+| A-I-002 | Execute DML operation | Record created/updated | `tests/integration/apex.test.js:29` |
+| A-I-003 | Execute with governor limits | Logs show limits usage | `tests/integration/apex.test.js:79` |
+| A-I-004 | Compilation error on line 5 | Marker on line 5 | `tests/integration/apex.test.js:124` |
+| A-I-005 | Runtime NullPointerException | Exception details in output | `tests/integration/apex.test.js:164` |
+| A-I-006 | No debug log available | Message indicating no log | `tests/integration/apex.test.js:194` |
+| A-I-007 | Empty code submission | Error or no-op | `tests/integration/apex.test.js:210` |
 | A-I-008 | Not authenticated | Auth error message | - |
 | A-I-009 | Large debug log (>2MB) | Truncation or streaming | - |
 
@@ -190,13 +190,13 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| R-I-001 | GET /services/data | Returns API versions | - |
-| R-I-002 | POST to sobjects | Creates record | - |
-| R-I-003 | Invalid JSON in body | Error before sending | - |
+| R-I-001 | GET /services/data | Returns API versions | `tests/integration/rest-api.test.js:38` |
+| R-I-002 | POST to sobjects | Creates record | `tests/integration/rest-api.test.js:55` |
+| R-I-003 | Invalid JSON in body | Error before sending | `tests/integration/rest-api.test.js:80` |
 | R-I-004 | Empty URL | Error message | - |
 | R-I-005 | Not authenticated | Auth error | - |
-| R-I-006 | Non-JSON response | Raw text displayed | - |
-| R-I-007 | HTTP 400 error | Error response displayed | - |
+| R-I-006 | Non-JSON response | Raw text displayed | `tests/integration/rest-api.test.js:95` |
+| R-I-007 | HTTP 400 error | Error response displayed | `tests/integration/rest-api.test.js:123` |
 | R-I-008 | HTTP 500 error | Error response displayed | - |
 
 ### Unit Tests
@@ -232,16 +232,16 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| E-I-001 | Subscribe to Platform Event (gRPC) | Connection via proxy, events received | - |
-| E-I-002 | Subscribe to PushTopic (CometD) | Connection via proxy, events received | - |
-| E-I-003 | Subscribe to System Topic (CometD) | Connection via proxy, events received | - |
-| E-I-004 | Proxy not connected | Tab disabled with overlay | - |
-| E-I-005 | Not authenticated | Error message | - |
-| E-I-006 | Invalid JSON in publish payload | Validation error | - |
-| E-I-007 | Stream error from server | Error displayed | - |
-| E-I-008 | Stream end from server | End notification | - |
-| E-I-009 | Connection change | Unsubscribes, reloads channels | - |
-| E-I-010 | Tab visibility | Lazy loads on first view | - |
+| E-I-001 | Subscribe to Platform Event (gRPC) | Connection via proxy, events received | `tests/integration/events.test.js:82` (skipped) |
+| E-I-002 | Subscribe to PushTopic (CometD) | Connection via proxy, events received | `tests/integration/events.test.js:82` (skipped) |
+| E-I-003 | Subscribe to System Topic (CometD) | Connection via proxy, events received | `tests/integration/events.test.js:82` (skipped) |
+| E-I-004 | Proxy not connected | Tab disabled with overlay | `tests/integration/events.test.js:97` (skipped) |
+| E-I-005 | Not authenticated | Error message | `tests/integration/events.test.js:104` (skipped) |
+| E-I-006 | Invalid JSON in publish payload | Validation error | `tests/integration/events.test.js:59` |
+| E-I-007 | Stream error from server | Error displayed | `tests/integration/events.test.js:111` (skipped) |
+| E-I-008 | Stream end from server | End notification | `tests/integration/events.test.js:111` (skipped) |
+| E-I-009 | Connection change | Unsubscribes, reloads channels | `tests/integration/events.test.js:122` (skipped) |
+| E-I-010 | Tab visibility | Lazy loads on first view | `tests/integration/events.test.js:122` (skipped) |
 
 ### Unit Tests
 
@@ -286,11 +286,11 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| S-I-001 | Theme syncs across tabs | Change in one tab affects others | - |
-| S-I-002 | Proxy connection failure | Error message displayed | - |
-| S-I-003 | Delete active connection | Another connection selected | - |
-| S-I-004 | No connections state | "Authorize" prompt shown | - |
-| S-I-005 | Cache clear when not authenticated | Error or no-op | - |
+| S-I-001 | Theme syncs across tabs | Change in one tab affects others | `tests/integration/settings.test.js:19` (skipped) |
+| S-I-002 | Proxy connection failure | Error message displayed | `tests/integration/settings.test.js:26` (skipped) |
+| S-I-003 | Delete active connection | Another connection selected | `tests/integration/settings.test.js:33` (skipped) |
+| S-I-004 | No connections state | "Authorize" prompt shown | `tests/integration/settings.test.js:40` (skipped) |
+| S-I-005 | Cache clear when not authenticated | Error or no-op | `tests/integration/settings.test.js:47` (skipped) |
 
 ### Unit Tests
 
@@ -329,11 +329,11 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| U-DL-I-001 | Not authenticated | Error message | - |
-| U-DL-I-002 | User search with no results | Empty list | - |
-| U-DL-I-003 | Trace flag already exists | Updated (not duplicate) | - |
-| U-DL-I-004 | No trace flags to delete | Success (no-op) | - |
-| U-DL-I-005 | No logs to delete | Success (no-op) | - |
+| U-DL-I-001 | Not authenticated | Error message | `tests/integration/utils.test.js:30` (skipped) |
+| U-DL-I-002 | User search with no results | Empty list | `tests/integration/utils.test.js:37` |
+| U-DL-I-003 | Trace flag already exists | Updated (not duplicate) | `tests/integration/utils.test.js:64` |
+| U-DL-I-004 | No trace flags to delete | Success (no-op) | `tests/integration/utils.test.js:82` |
+| U-DL-I-005 | No logs to delete | Success (no-op) | `tests/integration/utils.test.js:99` |
 
 ### 6.2 Flow Cleanup Tool
 
@@ -354,9 +354,9 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| U-FC-I-001 | Flow search with no results | Empty list | - |
-| U-FC-I-002 | Flow with no inactive versions | Delete button disabled | - |
-| U-FC-I-003 | Flow with only active version | No deletable versions | - |
+| U-FC-I-001 | Flow search with no results | Empty list | `tests/integration/utils.test.js:117` |
+| U-FC-I-002 | Flow with no inactive versions | Delete button disabled | `tests/integration/utils.test.js:134` |
+| U-FC-I-003 | Flow with only active version | No deletable versions | `tests/integration/utils.test.js:165` |
 
 ### 6.3 Schema Browser Link
 
@@ -409,12 +409,12 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| RV-I-001 | Missing URL parameters | Error message | - |
-| RV-I-002 | Connection not found | Error message | - |
-| RV-I-003 | Record not found | Error message | - |
-| RV-I-004 | Save failure | Error message displayed | - |
-| RV-I-005 | CORS error | Modal with proxy prompt | - |
-| RV-I-006 | Rich text XSS attempt | Content sanitized (DOMPurify) | - |
+| RV-I-001 | Missing URL parameters | Error message | `tests/integration/record-viewer.test.js:22` (skipped) |
+| RV-I-002 | Connection not found | Error message | `tests/integration/record-viewer.test.js:25` (skipped) |
+| RV-I-003 | Record not found | Error message | `tests/integration/record-viewer.test.js:28` |
+| RV-I-004 | Save failure | Error message displayed | `tests/integration/record-viewer.test.js:65` |
+| RV-I-005 | CORS error | Modal with proxy prompt | `tests/integration/record-viewer.test.js:147` (skipped) |
+| RV-I-006 | Rich text XSS attempt | Content sanitized (DOMPurify) | `tests/integration/record-viewer.test.js:150` (skipped) |
 
 ### Unit Tests
 
@@ -467,11 +467,11 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| SB-I-001 | Connection not found | Error message | - |
-| SB-I-002 | Object describe error | Error message | - |
-| SB-I-003 | Formula field not found | Error message | - |
-| SB-I-004 | Save formula error | Error displayed | - |
-| SB-I-005 | CORS error | Modal with proxy prompt | - |
+| SB-I-001 | Connection not found | Error message | `tests/integration/schema-browser.test.js:5` (skipped) |
+| SB-I-002 | Object describe error | Error message | `tests/integration/schema-browser.test.js:21` |
+| SB-I-003 | Formula field not found | Error message | `tests/integration/schema-browser.test.js:57` |
+| SB-I-004 | Save formula error | Error displayed | `tests/integration/schema-browser.test.js:119` |
+| SB-I-005 | CORS error | Modal with proxy prompt | `tests/integration/schema-browser.test.js:9` (skipped) |
 
 ### Unit Tests
 

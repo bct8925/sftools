@@ -87,28 +87,28 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| Q-U-001 | `normalizeQuery()` | Removes extra whitespace | - |
-| Q-U-002 | `normalizeQuery()` | Converts to lowercase | - |
-| Q-U-003 | `flattenColumnMetadata()` | Flattens nested joinColumns | - |
-| Q-U-004 | `flattenColumnMetadata()` | Handles multiple nesting levels | - |
-| Q-U-005 | `extractColumnsFromRecord()` | Extracts keys from record | - |
-| Q-U-006 | `getValueByPath()` | Returns nested value by dot path | - |
-| Q-U-007 | `getValueByPath()` | Returns null for missing path | - |
-| Q-U-008 | `recordsToCsv()` | Generates valid CSV | - |
-| Q-U-009 | `recordsToCsv()` | Handles null values | - |
-| Q-U-010 | `escapeCsvField()` | Escapes quotes | - |
-| Q-U-011 | `escapeCsvField()` | Handles commas | - |
-| Q-U-012 | `escapeCsvField()` | Handles newlines | - |
-| Q-U-013 | `formatCellValue()` | Formats dates | - |
-| Q-U-014 | `formatCellValue()` | Formats booleans | - |
-| Q-U-015 | `formatCellValue()` | Handles null/undefined | - |
-| Q-U-016 | `parseValueFromInput()` | Parses numbers | - |
-| Q-U-017 | `parseValueFromInput()` | Parses booleans | - |
-| Q-U-018 | `parseValueFromInput()` | Returns null for empty string | - |
-| Q-U-019 | `isFieldEditable()` | Returns false for formula fields | - |
-| Q-U-020 | `isFieldEditable()` | Returns true for updateable fields | - |
-| Q-U-021 | `checkIfEditable()` | Returns false without Id | - |
-| Q-U-022 | `checkIfEditable()` | Returns false for aggregate | - |
+| Q-U-001 | `normalizeQuery()` | Removes extra whitespace | `lib/query-utils.test.js` |
+| Q-U-002 | `normalizeQuery()` | Converts to lowercase | `lib/query-utils.test.js` |
+| Q-U-003 | `flattenColumnMetadata()` | Flattens nested joinColumns | `lib/query-utils.test.js` |
+| Q-U-004 | `flattenColumnMetadata()` | Handles multiple nesting levels | `lib/query-utils.test.js` |
+| Q-U-005 | `extractColumnsFromRecord()` | Extracts keys from record | `lib/query-utils.test.js` |
+| Q-U-006 | `getValueByPath()` | Returns nested value by dot path | `lib/query-utils.test.js` |
+| Q-U-007 | `getValueByPath()` | Returns null for missing path | `lib/query-utils.test.js` |
+| Q-U-008 | `recordsToCsv()` | Generates valid CSV | `lib/query-utils.test.js` |
+| Q-U-009 | `recordsToCsv()` | Handles null values | `lib/query-utils.test.js` |
+| Q-U-010 | `escapeCsvField()` | Escapes quotes | `lib/query-utils.test.js` |
+| Q-U-011 | `escapeCsvField()` | Handles commas | `lib/query-utils.test.js` |
+| Q-U-012 | `escapeCsvField()` | Handles newlines | `lib/query-utils.test.js` |
+| Q-U-013 | `formatCellValue()` | Formats dates | `lib/query-utils.test.js` |
+| Q-U-014 | `formatCellValue()` | Formats booleans | `lib/query-utils.test.js` |
+| Q-U-015 | `formatCellValue()` | Handles null/undefined | `lib/query-utils.test.js` |
+| Q-U-016 | `parseValueFromInput()` | Parses numbers | `lib/query-utils.test.js` |
+| Q-U-017 | `parseValueFromInput()` | Parses booleans | `lib/query-utils.test.js` |
+| Q-U-018 | `parseValueFromInput()` | Returns null for empty string | `lib/query-utils.test.js` |
+| Q-U-019 | `isFieldEditable()` | Returns false for formula fields | `lib/query-utils.test.js` |
+| Q-U-020 | `isFieldEditable()` | Returns true for updateable fields | `lib/query-utils.test.js` |
+| Q-U-021 | `checkIfEditable()` | Returns false without Id | `lib/query-utils.test.js` |
+| Q-U-022 | `checkIfEditable()` | Returns false for aggregate | `lib/query-utils.test.js` |
 
 ---
 
@@ -156,16 +156,16 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| A-U-001 | `setOutput()` | Sets output text | - |
-| A-U-002 | `applyFilter()` | Filters to matching lines | - |
-| A-U-003 | `applyFilter()` | Case insensitive match | - |
-| A-U-004 | `clearFilter()` | Shows all output | - |
-| A-U-005 | `getPreview()` | Returns first non-comment line | - |
-| A-U-006 | `getPreview()` | Truncates long lines | - |
-| A-U-007 | `setEditorMarkers()` | Creates marker for compile error | - |
-| A-U-008 | `setEditorMarkers()` | Creates marker for runtime error | - |
-| A-U-009 | `formatOutput()` | Formats success result | - |
-| A-U-010 | `formatOutput()` | Formats error result | - |
+| A-U-001 | `setOutput()` | Sets output text | `lib/apex-utils.test.js` |
+| A-U-002 | `applyFilter()` | Filters to matching lines | `lib/apex-utils.test.js` |
+| A-U-003 | `applyFilter()` | Case insensitive match | `lib/apex-utils.test.js` |
+| A-U-004 | `clearFilter()` | Shows all output | `lib/apex-utils.test.js` |
+| A-U-005 | `getPreview()` | Returns first non-comment line | `lib/apex-utils.test.js` |
+| A-U-006 | `getPreview()` | Truncates long lines | `lib/apex-utils.test.js` |
+| A-U-007 | `setEditorMarkers()` | Creates marker for compile error | `lib/apex-utils.test.js` |
+| A-U-008 | `setEditorMarkers()` | Creates marker for runtime error | `lib/apex-utils.test.js` |
+| A-U-009 | `formatOutput()` | Formats success result | `lib/apex-utils.test.js` |
+| A-U-010 | `formatOutput()` | Formats error result | `lib/apex-utils.test.js` |
 
 ---
 
@@ -204,9 +204,9 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| R-U-001 | `toggleBodyInput()` | Shows body for POST | - |
-| R-U-002 | `toggleBodyInput()` | Hides body for GET | - |
-| R-U-003 | `toggleBodyInput()` | Shows body for PATCH | - |
+| R-U-001 | `toggleBodyInput()` | Shows body for POST | `lib/rest-api-utils.test.js` |
+| R-U-002 | `toggleBodyInput()` | Hides body for GET | `lib/rest-api-utils.test.js` |
+| R-U-003 | `toggleBodyInput()` | Shows body for PATCH | `lib/rest-api-utils.test.js` |
 
 ---
 
@@ -248,12 +248,12 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| E-U-001 | `buildChannelOptions()` | Creates grouped optgroups | - |
-| E-U-002 | `handleStreamMessage()` | Processes event messages | - |
-| E-U-003 | `handleStreamMessage()` | Handles error messages | - |
-| E-U-004 | `handleStreamMessage()` | Handles end messages | - |
-| E-U-005 | `appendEvent()` | Adds event to output | - |
-| E-U-006 | `appendSystemMessage()` | Adds system message | - |
+| E-U-001 | `buildChannelOptions()` | Creates grouped optgroups | `lib/events-utils.test.js` |
+| E-U-002 | `handleStreamMessage()` | Processes event messages | `lib/events-utils.test.js` |
+| E-U-003 | `handleStreamMessage()` | Handles error messages | `lib/events-utils.test.js` |
+| E-U-004 | `handleStreamMessage()` | Handles end messages | `lib/events-utils.test.js` |
+| E-U-005 | `appendEvent()` | Adds event to output | `lib/events-utils.test.js` |
+| E-U-006 | `appendSystemMessage()` | Adds system message | `lib/events-utils.test.js` |
 
 ---
 
@@ -297,11 +297,11 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| S-U-001 | `applyTheme()` | Applies light theme | - |
-| S-U-002 | `applyTheme()` | Applies dark theme | - |
-| S-U-003 | `createConnectionCardHtml()` | Renders connection details | - |
-| S-U-004 | `updateProxyUI()` | Shows connected status | - |
-| S-U-005 | `updateProxyUI()` | Shows disconnected status | - |
+| S-U-001 | `applyTheme()` | Applies light theme | `lib/theme.test.js` |
+| S-U-002 | `applyTheme()` | Applies dark theme | `lib/theme.test.js` |
+| S-U-003 | `createConnectionCardHtml()` | Renders connection details | `lib/settings-utils.test.js` |
+| S-U-004 | `updateProxyUI()` | Shows connected status | `lib/settings-utils.test.js` |
+| S-U-005 | `updateProxyUI()` | Shows disconnected status | `lib/settings-utils.test.js` |
 
 ---
 
@@ -421,19 +421,19 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| RV-U-001 | `sortFields()` | Id first | - |
-| RV-U-002 | `sortFields()` | Name second | - |
-| RV-U-003 | `sortFields()` | Alphabetical after | - |
-| RV-U-004 | `filterFields()` | Excludes address type | - |
-| RV-U-005 | `filterFields()` | Excludes location type | - |
-| RV-U-006 | `formatValue()` | Formats boolean | - |
-| RV-U-007 | `formatValue()` | Formats date | - |
-| RV-U-008 | `formatValue()` | Handles null | - |
-| RV-U-009 | `formatPreviewHtml()` | Creates reference link | - |
-| RV-U-010 | `formatPreviewHtml()` | Creates preview button for rich text | - |
-| RV-U-011 | `parseValue()` | Parses string to boolean | - |
-| RV-U-012 | `parseValue()` | Parses string to number | - |
-| RV-U-013 | `getChangedFields()` | Returns only modified | - |
+| RV-U-001 | `sortFields()` | Id first | `lib/record-utils.test.js` |
+| RV-U-002 | `sortFields()` | Name second | `lib/record-utils.test.js` |
+| RV-U-003 | `sortFields()` | Alphabetical after | `lib/record-utils.test.js` |
+| RV-U-004 | `filterFields()` | Excludes address type | `lib/record-utils.test.js` |
+| RV-U-005 | `filterFields()` | Excludes location type | `lib/record-utils.test.js` |
+| RV-U-006 | `formatValue()` | Formats boolean | `lib/record-utils.test.js` |
+| RV-U-007 | `formatValue()` | Formats date | `lib/record-utils.test.js` |
+| RV-U-008 | `formatValue()` | Handles null | `lib/record-utils.test.js` |
+| RV-U-009 | `formatPreviewHtml()` | Creates reference link | `lib/record-utils.test.js` |
+| RV-U-010 | `formatPreviewHtml()` | Creates preview button for rich text | `lib/record-utils.test.js` |
+| RV-U-011 | `parseValue()` | Parses string to boolean | `lib/record-utils.test.js` |
+| RV-U-012 | `parseValue()` | Parses string to number | `lib/record-utils.test.js` |
+| RV-U-013 | `getChangedFields()` | Returns only modified | `lib/record-utils.test.js` |
 
 ---
 
@@ -478,15 +478,15 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| SB-U-001 | `filterObjects()` | Filters by API name | - |
-| SB-U-002 | `filterObjects()` | Filters by label | - |
-| SB-U-003 | `filterObjects()` | Case insensitive | - |
-| SB-U-004 | `filterFields()` | Filters by API name | - |
-| SB-U-005 | `filterFields()` | Filters by label | - |
-| SB-U-006 | `getFieldTypeDisplay()` | Returns "Formula" for calculated | - |
-| SB-U-007 | `getFieldTypeDisplay()` | Returns type name | - |
-| SB-U-008 | `buildFieldSuggestions()` | Creates Monaco completions | - |
-| SB-U-009 | `loadRelationshipFields()` | Loads related object fields | - |
+| SB-U-001 | `filterObjects()` | Filters by API name | `lib/schema-utils.test.js` |
+| SB-U-002 | `filterObjects()` | Filters by label | `lib/schema-utils.test.js` |
+| SB-U-003 | `filterObjects()` | Case insensitive | `lib/schema-utils.test.js` |
+| SB-U-004 | `filterFields()` | Filters by API name | `lib/schema-utils.test.js` |
+| SB-U-005 | `filterFields()` | Filters by label | `lib/schema-utils.test.js` |
+| SB-U-006 | `getFieldTypeDisplay()` | Returns "Formula" for calculated | `lib/schema-utils.test.js` |
+| SB-U-007 | `getFieldTypeDisplay()` | Returns type name | `lib/schema-utils.test.js` |
+| SB-U-008 | `buildFieldSuggestions()` | Creates Monaco completions | `lib/schema-utils.test.js` |
+| SB-U-009 | `loadRelationshipFields()` | Loads related object fields | `lib/schema-utils.test.js` |
 
 ---
 
@@ -553,11 +553,11 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| AS-U-001 | `startAuthorization()` | Opens OAuth URL | - |
-| AS-U-002 | `detectLoginDomain()` | Extracts domain from tab | - |
-| AS-U-003 | `selectConnection()` | Updates active connection | - |
-| AS-U-004 | `updateFeatureGating()` | Disables Events without proxy | - |
-| AS-U-005 | `updateConnectionGating()` | Disables tabs without connection | - |
+| AS-U-001 | `startAuthorization()` | Opens OAuth URL | `lib/app-utils.test.js` |
+| AS-U-002 | `detectLoginDomain()` | Extracts domain from tab | `lib/app-utils.test.js` |
+| AS-U-003 | `selectConnection()` | Updates active connection | `lib/app-utils.test.js` |
+| AS-U-004 | `updateFeatureGating()` | Disables Events without proxy | `lib/app-utils.test.js` |
+| AS-U-005 | `updateConnectionGating()` | Disables tabs without connection | `lib/app-utils.test.js` |
 
 ---
 
@@ -639,13 +639,13 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| BG-U-001 | `parseLightningUrl()` | Extracts from /r/Account/001.../view | - |
-| BG-U-002 | `parseLightningUrl()` | Returns null for invalid | - |
-| BG-U-003 | `extractOrgIdentifier()` | Extracts sandbox identifier | - |
-| BG-U-004 | `extractOrgIdentifier()` | Extracts scratch org identifier | - |
-| BG-U-005 | `extractOrgIdentifier()` | Handles trailhead orgs | - |
-| BG-U-006 | `findConnectionByDomain()` | Matches by domain | - |
-| BG-U-007 | `findConnectionByDomain()` | Returns null if no match | - |
+| BG-U-001 | `parseLightningUrl()` | Extracts from /r/Account/001.../view | `lib/background-utils.test.js` |
+| BG-U-002 | `parseLightningUrl()` | Returns null for invalid | `lib/background-utils.test.js` |
+| BG-U-003 | `extractOrgIdentifier()` | Extracts sandbox identifier | `lib/background-utils.test.js` |
+| BG-U-004 | `extractOrgIdentifier()` | Extracts scratch org identifier | `lib/background-utils.test.js` |
+| BG-U-005 | `extractOrgIdentifier()` | Handles trailhead orgs | `lib/background-utils.test.js` |
+| BG-U-006 | `findConnectionByDomain()` | Matches by domain | `lib/background-utils.test.js` |
+| BG-U-007 | `findConnectionByDomain()` | Returns null if no match | `lib/background-utils.test.js` |
 | BG-U-008 | `proxyRequired()` | Rejects if not connected | - |
 | BG-U-009 | `fetchWithRetry()` | Retries on 401 | - |
 | BG-U-010 | `handle401WithRefresh()` | Refreshes and retries | - |
@@ -748,15 +748,15 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 |---------|----------|------|-----------|-----------|
 | UT-U-001 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes < > & | `lib/text-utils.test.js` |
 | UT-U-002 | `escapeAttr()` | `src/lib/text-utils.js` | Escapes quotes | `lib/text-utils.test.js` |
-| UT-U-003 | `initTheme()` | `src/lib/theme.js` | Applies stored theme | - |
-| UT-U-004 | `setTheme()` | `src/lib/theme.js` | Updates storage and DOM | - |
+| UT-U-003 | `initTheme()` | `src/lib/theme.js` | Applies stored theme | `lib/theme.test.js` |
+| UT-U-004 | `setTheme()` | `src/lib/theme.js` | Updates storage and DOM | `lib/theme.test.js` |
 | UT-U-005 | `isCorsError()` | `src/lib/cors-detection.js` | Detects status 0 | `lib/cors-detection.test.js` |
 | UT-U-006 | `showCorsErrorModal()` | `src/lib/cors-detection.js` | Dispatches event | `lib/cors-detection.test.js` |
 | UT-U-007 | `getOAuthCredentials()` | `src/lib/oauth-credentials.js` | Returns connection client ID | `lib/oauth-credentials.test.js` |
 | UT-U-008 | `getOAuthCredentials()` | `src/lib/oauth-credentials.js` | Returns manifest default | `lib/oauth-credentials.test.js` |
 | UT-U-009 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Makes authenticated request | `lib/salesforce-request.test.js` |
 | UT-U-010 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Updates badge element | `lib/ui-helpers.test.js` |
-| UT-U-011 | `replaceIcons()` | `src/lib/icons.js` | Replaces placeholders | - |
+| UT-U-011 | `replaceIcons()` | `src/lib/icons.js` | Replaces placeholders | `lib/icons.test.js` |
 
 ---
 
@@ -803,11 +803,11 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| PR-U-001 | `getProtocolForChannel()` | Returns grpc for /event/* | - |
-| PR-U-002 | `getProtocolForChannel()` | Returns cometd for /topic/* | - |
-| PR-U-003 | `getProtocolForChannel()` | Returns cometd for /data/* | - |
-| PR-U-004 | `isGrpcChannel()` | Returns true for /event/* | - |
-| PR-U-005 | `isCometdChannel()` | Returns true for /topic/* | - |
+| PR-U-001 | `getProtocolForChannel()` | Returns grpc for /event/* | `proxy/router.test.js` |
+| PR-U-002 | `getProtocolForChannel()` | Returns cometd for /topic/* | `proxy/router.test.js` |
+| PR-U-003 | `getProtocolForChannel()` | Returns cometd for /data/* | `proxy/router.test.js` |
+| PR-U-004 | `isGrpcChannel()` | Returns true for /event/* | `proxy/router.test.js` |
+| PR-U-005 | `isCometdChannel()` | Returns true for /topic/* | `proxy/router.test.js` |
 
 ### 14.4 Subscription Manager (`sftools-proxy/src/subscription-manager.js`)
 
@@ -815,12 +815,12 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| SM-U-001 | `add()` | Adds subscription | - |
-| SM-U-002 | `get()` | Returns subscription | - |
-| SM-U-003 | `remove()` | Removes subscription | - |
-| SM-U-004 | `getByChannel()` | Returns by channel | - |
-| SM-U-005 | `count()` | Returns correct count | - |
-| SM-U-006 | `clear()` | Removes all | - |
+| SM-U-001 | `add()` | Adds subscription | `proxy/subscription-manager.test.js` |
+| SM-U-002 | `get()` | Returns subscription | `proxy/subscription-manager.test.js` |
+| SM-U-003 | `remove()` | Removes subscription | `proxy/subscription-manager.test.js` |
+| SM-U-004 | `getByChannel()` | Returns by channel | `proxy/subscription-manager.test.js` |
+| SM-U-005 | `count()` | Returns correct count | `proxy/subscription-manager.test.js` |
+| SM-U-006 | `clear()` | Removes all | `proxy/subscription-manager.test.js` |
 
 ### 14.5 REST Handler (`sftools-proxy/src/handlers/rest.js`)
 
@@ -938,8 +938,8 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| HS-U-001 | `generateSecret()` | Returns 64-char hex | - |
-| HS-U-002 | `startServer()` | Reuses existing | - |
+| HS-U-001 | `generateSecret()` | Returns 64-char hex | `proxy/http-server.test.js` |
+| HS-U-002 | `startServer()` | Reuses existing | `proxy/http-server.test.js` |
 | HS-U-003 | OPTIONS request | Returns 204 | - |
 | HS-U-004 | Non-GET request | Returns 405 | - |
 | HS-U-005 | Missing secret | Returns 401 | - |
@@ -953,12 +953,12 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| PS-U-001 | `storePayload()` | Returns UUID | - |
-| PS-U-002 | `getPayload()` | Returns stored data | - |
-| PS-U-003 | `getPayload()` | Returns null for expired | - |
-| PS-U-004 | `deletePayload()` | Removes from store | - |
-| PS-U-005 | `shouldUseLargePayload()` | True for >= 800KB | - |
-| PS-U-006 | `shouldUseLargePayload()` | False for < 800KB | - |
+| PS-U-001 | `storePayload()` | Returns UUID | `proxy/payload-store.test.js` |
+| PS-U-002 | `getPayload()` | Returns stored data | `proxy/payload-store.test.js` |
+| PS-U-003 | `getPayload()` | Returns null for expired | `proxy/payload-store.test.js` |
+| PS-U-004 | `deletePayload()` | Removes from store | `proxy/payload-store.test.js` |
+| PS-U-005 | `shouldUseLargePayload()` | True for >= 800KB | `proxy/payload-store.test.js` |
+| PS-U-006 | `shouldUseLargePayload()` | False for < 800KB | `proxy/payload-store.test.js` |
 
 ---
 

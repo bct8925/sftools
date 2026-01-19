@@ -8,6 +8,7 @@ import { getGlobalDescribe, getObjectDescribe, getFormulaFieldMetadata, updateFo
 import { escapeHtml, escapeAttr } from '../../lib/text-utils.js';
 import { icons, replaceIcons } from '../../lib/icons.js';
 import '../modal-popup/modal-popup.js';
+import { filterObjects as filterObjectsUtil, filterFields as filterFieldsUtil, getFieldTypeDisplay as getFieldTypeDisplayUtil } from '../../lib/schema-utils.js';
 
 // Completion provider state - shared with Monaco
 let completionState = {
@@ -383,17 +384,7 @@ class SchemaPage extends HTMLElement {
     }
 
     filterObjects(searchTerm) {
-        const term = searchTerm.toLowerCase().trim();
-
-        if (!term) {
-            this.filteredObjects = [...this.allObjects];
-        } else {
-            this.filteredObjects = this.allObjects.filter(obj =>
-                obj.name.toLowerCase().includes(term) ||
-                obj.label.toLowerCase().includes(term)
-            );
-        }
-
+        this.filteredObjects = filterObjectsUtil(this.allObjects, searchTerm);
         this.renderObjects();
         this.updateObjectCount();
     }
@@ -536,17 +527,7 @@ class SchemaPage extends HTMLElement {
     }
 
     filterFields(searchTerm) {
-        const term = searchTerm.toLowerCase().trim();
-
-        if (!term) {
-            this.filteredFields = [...this.allFields];
-        } else {
-            this.filteredFields = this.allFields.filter(field =>
-                field.name.toLowerCase().includes(term) ||
-                field.label.toLowerCase().includes(term)
-            );
-        }
-
+        this.filteredFields = filterFieldsUtil(this.allFields, searchTerm);
         this.renderFields();
     }
 
@@ -630,34 +611,7 @@ class SchemaPage extends HTMLElement {
     }
 
     getFieldTypeDisplay(field) {
-        // Reuse type recognition logic from record viewer
-        if (field.calculated) {
-            if (field.calculatedFormula) {
-                return { text: `${field.type} (formula)`, isReference: false };
-            }
-            return { text: `${field.type} (rollup)`, isReference: false };
-        }
-
-        if (field.type === 'reference' && field.referenceTo?.length > 0) {
-            // Return structured data for reference fields (except OwnerId)
-            const isOwnerId = field.name === 'OwnerId';
-
-            if (field.referenceTo.length === 1) {
-                return {
-                    text: `reference (${field.referenceTo[0]})`,
-                    isReference: !isOwnerId,
-                    referenceTo: field.referenceTo
-                };
-            } else {
-                return {
-                    text: `reference (${field.referenceTo.join(', ')})`,
-                    isReference: !isOwnerId,
-                    referenceTo: field.referenceTo
-                };
-            }
-        }
-
-        return { text: field.type, isReference: false };
+        return getFieldTypeDisplayUtil(field);
     }
 
     closeFieldsPanel() {

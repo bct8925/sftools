@@ -1,10 +1,11 @@
-import { chromium, BrowserContext, Page } from 'playwright';
+import { chromium, BrowserContext, Page, Worker } from 'playwright';
 import path from 'path';
 import type { SalesforceClient } from './salesforce-client';
 
 interface ExtensionLoadResult {
   context: BrowserContext;
   extensionId: string;
+  serviceWorker: Worker;
 }
 
 /**
@@ -37,22 +38,17 @@ export async function loadExtension(): Promise<ExtensionLoadResult> {
   // Extension ID is in the service worker URL: chrome-extension://<id>/...
   const extensionId = background.url().split('/')[2];
 
-  return { context, extensionId };
+  return { context, extensionId, serviceWorker: background };
 }
 
 /**
- * Inject a connection into the extension's chrome.storage.local
- * This simulates having authenticated without going through OAuth
+ * Inject a connection into chrome.storage.local via the service worker
+ * This happens BEFORE any page loads, so no flashing
  */
-export async function injectConnection(
-  page: Page,
-  extensionId: string,
+export async function injectConnectionViaServiceWorker(
+  serviceWorker: Worker,
   salesforce: SalesforceClient
 ): Promise<void> {
-  // Navigate to the extension page first (needed to access chrome.storage)
-  await page.goto(`chrome-extension://${extensionId}/dist/pages/app/app.html`);
-
-  // Create a connection object matching the extension's format
   const connection = {
     id: salesforce.getConnectionId(),
     label: 'Test Connection',
@@ -65,21 +61,26 @@ export async function injectConnection(
     lastUsedAt: Date.now(),
   };
 
-  // Inject the connection into chrome.storage.local
-  await page.evaluate(async (conn) => {
+  // Inject the connection via service worker (no page needed)
+  await serviceWorker.evaluate(async (conn) => {
     await new Promise<void>((resolve) => {
       chrome.storage.local.set({ connections: [conn] }, () => resolve());
     });
   }, connection);
+}
 
-  // Reload the page to pick up the new connection
-  await page.reload();
+/**
+ * Navigate to extension app and wait for connection to be active
+ */
+export async function navigateToApp(
+  page: Page,
+  extensionId: string
+): Promise<void> {
+  await page.goto(`chrome-extension://${extensionId}/dist/pages/app/app.html`);
   await page.waitForLoadState('networkidle');
 
   // Wait for the connection to be active in the UI
-  // The app should auto-select the first connection
   await page.waitForFunction(() => {
-    // Check that connection display shows something (not empty)
     const display = document.querySelector('.current-connection-display');
     return display && display.textContent && display.textContent.trim().length > 0;
   }, { timeout: 10000 });

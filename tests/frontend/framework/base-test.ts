@@ -107,6 +107,11 @@ export abstract class SftoolsTest {
 
   // Navigation helpers
   async navigateToExtension(): Promise<void> {
+    // Skip if already on extension app page (runner pre-loads it)
+    const currentUrl = this.page.url();
+    if (currentUrl.includes(`chrome-extension://${this.extensionId}/dist/pages/app/`)) {
+      return;
+    }
     await this.page.goto(
       `chrome-extension://${this.extensionId}/dist/pages/app/app.html`
     );

@@ -1,12 +1,13 @@
-import type { BrowserContext } from 'playwright';
+import type { BrowserContext, Worker } from 'playwright';
 import type { TestContext, TestResult, TestClass, TestConfig } from './types';
 import { DEFAULT_CONFIG, SLOW_MODE_CONFIG } from './types';
-import { loadExtension, injectConnection } from '../services/extension-loader';
+import { loadExtension, injectConnectionViaServiceWorker, navigateToApp } from '../services/extension-loader';
 import { SalesforceClient } from '../services/salesforce-client';
 
 export class TestRunner {
   private browserContext!: BrowserContext;
   private extensionId!: string;
+  private serviceWorker!: Worker;
   private salesforce!: SalesforceClient;
   private results: TestResult[] = [];
   private config: TestConfig = DEFAULT_CONFIG;
@@ -39,11 +40,8 @@ export class TestRunner {
     let page = null;
 
     try {
-      // Create a fresh page for this test (isolated from other tests)
+      // Create a fresh page for this test (starts at about:blank)
       page = await this.browserContext.newPage();
-
-      // Inject connection into extension storage via this page
-      await injectConnection(page, this.extensionId, this.salesforce);
 
       // Create test context with fresh page
       const testContext: TestContext = {
@@ -56,9 +54,15 @@ export class TestRunner {
 
       const test = new TestClass(testContext);
 
-      // Setup phase
+      // Setup phase (runs on blank page - just API calls)
       console.log('  ⏳ Setup...');
       await test.setup();
+
+      // Inject connection via service worker (no page navigation needed)
+      await injectConnectionViaServiceWorker(this.serviceWorker, this.salesforce);
+
+      // Navigate to extension app (single load, no flash)
+      await navigateToApp(page, this.extensionId);
 
       // Test phase
       console.log('  ⏳ Running test...');
@@ -66,7 +70,15 @@ export class TestRunner {
 
       console.log('  ✅ Passed');
 
-      // Teardown phase
+      // In slow mode, pause before teardown so user can see final state
+      if (this.config.delays.beforeClose > 0) {
+        await page.waitForTimeout(this.config.delays.beforeClose);
+      }
+
+      // Navigate to blank before teardown to prevent any UI flashing
+      await page.goto('about:blank');
+
+      // Teardown phase (on blank page - just API calls)
       console.log('  ⏳ Teardown...');
       await test.teardown();
     } catch (e) {
@@ -112,10 +124,11 @@ export class TestRunner {
     console.log('🚀 Initializing test context...');
     console.log(`   Instance URL: ${instanceUrl}`);
 
-    // Load extension (browser context + extension ID)
-    const { context, extensionId } = await loadExtension();
+    // Load extension (browser context + extension ID + service worker)
+    const { context, extensionId, serviceWorker } = await loadExtension();
     this.browserContext = context;
     this.extensionId = extensionId;
+    this.serviceWorker = serviceWorker;
 
     console.log(`   Extension ID: ${extensionId}`);
 

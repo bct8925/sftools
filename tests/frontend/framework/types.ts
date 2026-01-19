@@ -10,17 +10,19 @@ export interface TestConfig {
     beforeType: number;
     afterNavigation: number;
     afterPageLoad: number;
+    beforeClose: number;
   };
 }
 
 export const DEFAULT_CONFIG: TestConfig = {
   slowMode: false,
   delays: {
-    beforeClick: 0,
-    afterClick: 0,
-    beforeType: 0,
-    afterNavigation: 0,
-    afterPageLoad: 0,
+    beforeClick: 100,
+    afterClick: 100,
+    beforeType: 100,
+    afterNavigation: 100,
+    afterPageLoad: 100,
+    beforeClose: 100,
   },
 };
 
@@ -32,6 +34,7 @@ export const SLOW_MODE_CONFIG: TestConfig = {
     beforeType: 500,
     afterNavigation: 1000,
     afterPageLoad: 1200,
+    beforeClose: 1000,
   },
 };
 

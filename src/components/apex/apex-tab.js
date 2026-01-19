@@ -30,6 +30,7 @@ class ApexTab extends HTMLElement {
     // History/Favorites manager
     historyManager = null;
     fullOutput = '';  // Store unfiltered output for search
+    filterDebounceTimeout = null;
 
     connectedCallback() {
         this.innerHTML = template;
@@ -41,6 +42,10 @@ class ApexTab extends HTMLElement {
         this.initEditors();
         this.attachEventListeners();
         this.loadStoredData();
+    }
+
+    disconnectedCallback() {
+        clearTimeout(this.filterDebounceTimeout);
     }
 
     initElements() {
@@ -90,8 +95,11 @@ for (Account acc : accounts) {
         this.historyList.addEventListener('click', (e) => this.handleListClick(e, 'history'));
         this.favoritesList.addEventListener('click', (e) => this.handleListClick(e, 'favorites'));
 
-        // Search filtering
-        this.searchInput.addEventListener('input', () => this.applyFilter());
+        // Search filtering with debounce for performance on large logs
+        this.searchInput.addEventListener('input', () => {
+            clearTimeout(this.filterDebounceTimeout);
+            this.filterDebounceTimeout = setTimeout(() => this.applyFilter(), 200);
+        });
     }
 
     // ============================================================

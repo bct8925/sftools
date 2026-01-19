@@ -22,6 +22,7 @@ class QueryTab extends HTMLElement {
     activeTabId = null;
     tabCounter = 0;
     bulkExportInProgress = false;
+    filterDebounceTimeout = null;
 
     // DOM references
     editor = null;
@@ -78,6 +79,7 @@ class QueryTab extends HTMLElement {
         // causes disconnect to fire after a new instance connects, which would deactivate it.
         // Since query-tab is always present (just hidden/shown), autocomplete stays active.
         document.removeEventListener('connection-changed', this.boundConnectionHandler);
+        clearTimeout(this.filterDebounceTimeout);
     }
 
     handleConnectionChange() {
@@ -156,8 +158,11 @@ LIMIT 10`);
             }
         });
 
-        // Search filtering
-        this.searchInput.addEventListener('input', () => this.applyRowFilter());
+        // Search filtering with debounce for performance on large result sets
+        this.searchInput.addEventListener('input', () => {
+            clearTimeout(this.filterDebounceTimeout);
+            this.filterDebounceTimeout = setTimeout(() => this.applyRowFilter(), 200);
+        });
 
         // Export CSV handler
         this.exportBtn.addEventListener('click', () => {

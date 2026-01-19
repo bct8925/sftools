@@ -1,7 +1,7 @@
 /**
  * Integration tests for Query Tab
  *
- * Test IDs: Q-I-001 through Q-I-010
+ * Test IDs: Q-I-001 through Q-I-009
  *
  * These tests verify Salesforce API behavior that the Query Tab relies on.
  * Tests use real API calls against a test org.

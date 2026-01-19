@@ -228,20 +228,21 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | E-F-009 | Enter custom replay ID | Replay from specific ID | - |
 | E-F-010 | Status badges update correctly | Loading, subscribed, error states | - |
 
+| E-F-011 | Subscribe to Platform Event (gRPC) | Connection via proxy, events received | - |
+| E-F-012 | Subscribe to PushTopic (CometD) | Connection via proxy, events received | - |
+| E-F-013 | Subscribe to System Topic (CometD) | Connection via proxy, events received | - |
+| E-F-014 | Proxy not connected | Tab disabled with overlay | - |
+| E-F-015 | Not authenticated | Error message | - |
+| E-F-016 | Stream error from server | Error displayed | - |
+| E-F-017 | Stream end from server | End notification | - |
+| E-F-018 | Connection change | Unsubscribes, reloads channels | - |
+| E-F-019 | Tab visibility | Lazy loads on first view | - |
+
 ### Integration Tests
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| E-I-001 | Subscribe to Platform Event (gRPC) | Connection via proxy, events received | `tests/integration/events.test.js:82` (skipped) |
-| E-I-002 | Subscribe to PushTopic (CometD) | Connection via proxy, events received | `tests/integration/events.test.js:82` (skipped) |
-| E-I-003 | Subscribe to System Topic (CometD) | Connection via proxy, events received | `tests/integration/events.test.js:82` (skipped) |
-| E-I-004 | Proxy not connected | Tab disabled with overlay | `tests/integration/events.test.js:97` (skipped) |
-| E-I-005 | Not authenticated | Error message | `tests/integration/events.test.js:104` (skipped) |
 | E-I-006 | Invalid JSON in publish payload | Validation error | `tests/integration/events.test.js:59` |
-| E-I-007 | Stream error from server | Error displayed | `tests/integration/events.test.js:111` (skipped) |
-| E-I-008 | Stream end from server | End notification | `tests/integration/events.test.js:111` (skipped) |
-| E-I-009 | Connection change | Unsubscribes, reloads channels | `tests/integration/events.test.js:122` (skipped) |
-| E-I-010 | Tab visibility | Lazy loads on first view | `tests/integration/events.test.js:122` (skipped) |
 
 ### Unit Tests
 
@@ -281,16 +282,17 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | S-F-015 | Add connection - custom domain | Custom domain input shown | - |
 | S-F-016 | Add connection - custom Client ID | Client ID input shown | - |
 | S-F-017 | Clear describe cache | Success message | - |
+| S-F-018 | Theme syncs across tabs | Change in one tab affects others | - |
+| S-F-019 | Proxy connection failure | Error message displayed | - |
+| S-F-020 | Delete active connection | Another connection selected | - |
+| S-F-021 | No connections state | "Authorize" prompt shown | - |
+| S-F-022 | Cache clear when not authenticated | Error or no-op | - |
 
 ### Integration Tests
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| S-I-001 | Theme syncs across tabs | Change in one tab affects others | `tests/integration/settings.test.js:19` (skipped) |
-| S-I-002 | Proxy connection failure | Error message displayed | `tests/integration/settings.test.js:26` (skipped) |
-| S-I-003 | Delete active connection | Another connection selected | `tests/integration/settings.test.js:33` (skipped) |
-| S-I-004 | No connections state | "Authorize" prompt shown | `tests/integration/settings.test.js:40` (skipped) |
-| S-I-005 | Cache clear when not authenticated | Error or no-op | `tests/integration/settings.test.js:47` (skipped) |
+| S-I-001 | (None currently) | - | - |
 
 ### Unit Tests
 
@@ -324,12 +326,12 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | U-DL-F-006 | Status indicator loading | Yellow spinner | - |
 | U-DL-F-007 | Status indicator success | Green check | `utils/utils-debug-logs-enable.test.ts` |
 | U-DL-F-008 | Status indicator error | Red X | - |
+| U-DL-F-009 | Not authenticated | Error message | - |
 
 #### Integration Tests
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| U-DL-I-001 | Not authenticated | Error message | `tests/integration/utils.test.js:30` (skipped) |
 | U-DL-I-002 | User search with no results | Empty list | `tests/integration/utils.test.js:37` |
 | U-DL-I-003 | Trace flag already exists | Updated (not duplicate) | `tests/integration/utils.test.js:64` |
 | U-DL-I-004 | No trace flags to delete | Success (no-op) | `tests/integration/utils.test.js:82` |
@@ -404,17 +406,17 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | RV-F-017 | Open in Salesforce | New tab with record | - |
 | RV-F-018 | Change counter updates | Shows modified count | - |
 | RV-F-019 | Modified fields highlighted | Visual distinction | `record/edit-record.test.ts` |
+| RV-F-020 | Missing URL parameters | Error message | - |
+| RV-F-021 | Connection not found | Error message | - |
+| RV-F-022 | CORS error | Modal with proxy prompt | - |
+| RV-F-023 | Rich text XSS attempt | Content sanitized (DOMPurify) | - |
 
 ### Integration Tests
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| RV-I-001 | Missing URL parameters | Error message | `tests/integration/record-viewer.test.js:22` (skipped) |
-| RV-I-002 | Connection not found | Error message | `tests/integration/record-viewer.test.js:25` (skipped) |
 | RV-I-003 | Record not found | Error message | `tests/integration/record-viewer.test.js:28` |
 | RV-I-004 | Save failure | Error message displayed | `tests/integration/record-viewer.test.js:65` |
-| RV-I-005 | CORS error | Modal with proxy prompt | `tests/integration/record-viewer.test.js:147` (skipped) |
-| RV-I-006 | Rich text XSS attempt | Content sanitized (DOMPurify) | `tests/integration/record-viewer.test.js:150` (skipped) |
 
 ### Unit Tests
 
@@ -462,16 +464,16 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | SB-F-016 | Refresh objects list | List reloaded | - |
 | SB-F-017 | Refresh fields list | Fields reloaded | - |
 | SB-F-018 | Close fields panel | Panel closes | - |
+| SB-F-019 | Connection not found | Error message | - |
+| SB-F-020 | CORS error | Modal with proxy prompt | - |
 
 ### Integration Tests
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| SB-I-001 | Connection not found | Error message | `tests/integration/schema-browser.test.js:5` (skipped) |
 | SB-I-002 | Object describe error | Error message | `tests/integration/schema-browser.test.js:21` |
 | SB-I-003 | Formula field not found | Error message | `tests/integration/schema-browser.test.js:57` |
 | SB-I-004 | Save formula error | Error displayed | `tests/integration/schema-browser.test.js:119` |
-| SB-I-005 | CORS error | Modal with proxy prompt | `tests/integration/schema-browser.test.js:9` (skipped) |
 
 ### Unit Tests
 
@@ -968,18 +970,18 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | Query Tab | 29 | 12 | 22 | 63 |
 | Apex Tab | 17 | 9 | 10 | 36 |
 | REST API Tab | 9 | 8 | 3 | 20 |
-| Events Tab | 10 | 10 | 6 | 26 |
-| Settings Tab | 17 | 5 | 5 | 27 |
-| Utils Tab | 13 | 5 | 0 | 18 |
-| Record Viewer | 19 | 6 | 13 | 38 |
-| Schema Browser | 18 | 5 | 9 | 32 |
+| Events Tab | 19 | 1 | 6 | 26 |
+| Settings Tab | 22 | 1 | 5 | 28 |
+| Utils Tab | 14 | 4 | 0 | 18 |
+| Record Viewer | 23 | 2 | 13 | 38 |
+| Schema Browser | 20 | 3 | 9 | 32 |
 | Monaco Editor | 11 | 2 | 0 | 13 |
 | App Shell | 12 | 4 | 5 | 21 |
 | OAuth | 4 | 7 | 12 | 23 |
 | Background | 0 | 11 | 16 | 27 |
 | Library Utils | 0 | 0 | 47 | 47 |
 | Local Proxy | 0 | 16 | 53 | 69 |
-| **Total** | **159** | **100** | **201** | **460** |
+| **Total** | **180** | **80** | **201** | **461** |
 
 ---
 

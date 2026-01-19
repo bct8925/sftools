@@ -1,19 +1,10 @@
 /**
  * Integration tests for Events Tab
  *
- * Test IDs: E-I-001 through E-I-010
- * - E-I-001: Subscribe to Platform Event (gRPC) - Connection via proxy, events received (skip - needs proxy)
- * - E-I-002: Subscribe to PushTopic (CometD) - Connection via proxy, events received (skip - needs proxy)
- * - E-I-003: Subscribe to System Topic (CometD) - Connection via proxy, events received (skip - needs proxy)
- * - E-I-004: Proxy not connected - Tab disabled with overlay (skip - needs browser)
- * - E-I-005: Not authenticated - Error message (skip - needs invalid token)
+ * Test IDs: E-I-006
  * - E-I-006: Invalid JSON in publish payload - Validation error
- * - E-I-007: Stream error from server - Error displayed (skip - needs proxy)
- * - E-I-008: Stream end from server - End notification (skip - needs proxy)
- * - E-I-009: Connection change - Unsubscribes, reloads channels (skip - needs browser)
- * - E-I-010: Tab visibility - Lazy loads on first view (skip - needs browser)
  *
- * Note: Most Events Tab tests require the local proxy for streaming.
+ * Note: Most Events Tab tests are frontend tests that require browser/proxy interaction.
  * These tests cover the API calls for loading channels and publishing events.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -75,57 +66,6 @@ describe('Events Tab Integration', () => {
             const describe = await salesforce.describeGlobal();
             expect(describe).toHaveProperty('sobjects');
             expect(Array.isArray(describe.sobjects)).toBe(true);
-        });
-    });
-
-    // E-I-001 to E-I-003: Streaming subscriptions (require proxy)
-    describe('E-I-001 to E-I-003: Streaming (skipped - requires proxy)', () => {
-        it.skip('subscribes to Platform Event via gRPC', async () => {
-            // Requires local proxy for gRPC connection to Salesforce Pub/Sub API
-        });
-
-        it.skip('subscribes to PushTopic via CometD', async () => {
-            // Requires local proxy for CometD connection
-        });
-
-        it.skip('subscribes to System Topic via CometD', async () => {
-            // Requires local proxy for CometD connection
-        });
-    });
-
-    // E-I-004: Proxy not connected (requires browser)
-    describe('E-I-004: Proxy not connected (skipped - requires browser)', () => {
-        it.skip('shows disabled overlay when proxy not connected', async () => {
-            // Browser-only test - UI state check
-        });
-    });
-
-    // E-I-005: Not authenticated
-    describe('E-I-005: Not authenticated (skipped)', () => {
-        it.skip('returns auth error with invalid token', async () => {
-            // Would require separate fetch with invalid credentials
-        });
-    });
-
-    // E-I-007 to E-I-008: Stream events (require proxy)
-    describe('E-I-007 to E-I-008: Stream events (skipped - requires proxy)', () => {
-        it.skip('handles stream error from server', async () => {
-            // Requires active streaming connection
-        });
-
-        it.skip('handles stream end from server', async () => {
-            // Requires active streaming connection
-        });
-    });
-
-    // E-I-009 to E-I-010: Browser behavior
-    describe('E-I-009 to E-I-010: Browser behavior (skipped)', () => {
-        it.skip('unsubscribes and reloads channels on connection change', async () => {
-            // Browser-only test
-        });
-
-        it.skip('lazy loads on first tab view', async () => {
-            // Browser-only test
         });
     });
 

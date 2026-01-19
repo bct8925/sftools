@@ -1,10 +1,9 @@
 /**
  * Integration tests for Utils Tab
  *
- * Test IDs: U-DL-I-001 through U-DL-I-005, U-FC-I-001 through U-FC-I-003
+ * Test IDs: U-DL-I-002 through U-DL-I-005, U-FC-I-001 through U-FC-I-003
  *
  * Debug Logs Tool:
- * - U-DL-I-001: Not authenticated - Error message (skip - needs invalid token)
  * - U-DL-I-002: User search with no results - Empty list
  * - U-DL-I-003: Trace flag already exists - Updated (not duplicate)
  * - U-DL-I-004: No trace flags to delete - Success (no-op)
@@ -15,7 +14,7 @@
  * - U-FC-I-002: Flow with no inactive versions - Delete button disabled
  * - U-FC-I-003: Flow with only active version - No deletable versions
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { salesforce, TestDataManager, uniqueName } from './setup.js';
 
 describe('Utils Tab Integration', () => {
@@ -26,14 +25,6 @@ describe('Utils Tab Integration', () => {
     });
 
     describe('Debug Logs Tool', () => {
-        // U-DL-I-001: Not authenticated - Error message
-        describe('U-DL-I-001: Not authenticated (skipped)', () => {
-            it.skip('returns 401 with invalid access token', async () => {
-                // Skipped: Would require creating a separate fetch with invalid token
-                // The setup always uses valid credentials
-            });
-        });
-
         describe('U-DL-I-002: User search with no results', () => {
             it('returns empty array for non-matching name search', async () => {
                 const nonExistentName = uniqueName('ZZZ_NonExistent');

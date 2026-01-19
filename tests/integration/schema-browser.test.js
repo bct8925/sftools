@@ -1,12 +1,10 @@
 /**
  * Integration tests for Schema Browser
  *
- * Test IDs: SB-I-001 through SB-I-005
- * - SB-I-001: Connection not found - Error message (skipped - client-side only)
+ * Test IDs: SB-I-002 through SB-I-004
  * - SB-I-002: Object describe error - Error message
  * - SB-I-003: Formula field not found - Error message
  * - SB-I-004: Save formula error - Error displayed
- * - SB-I-005: CORS error - Modal with proxy prompt (skipped - requires browser context)
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { salesforce, TestDataManager, uniqueName } from './setup.js';
@@ -57,7 +55,6 @@ describe('Schema Browser Integration', () => {
     describe('SB-I-003: Formula field not found', () => {
         it('returns error for non-existent field query', async () => {
             const objectType = 'Account';
-            const nonExistentField = 'NonExistentFormulaField__c';
 
             try {
                 await salesforce.toolingQuery(
@@ -117,15 +114,6 @@ describe('Schema Browser Integration', () => {
     });
 
     describe('SB-I-004: Save formula error', () => {
-        let testAccountId;
-
-        beforeAll(async () => {
-            // Create a test account for field updates
-            testAccountId = await testData.create('Account', {
-                Name: uniqueName('SchemaTest')
-            });
-        });
-
         it('returns error for invalid formula syntax', async () => {
             // We can't actually test formula updates without a real formula field
             // But we can test invalid field ID updates

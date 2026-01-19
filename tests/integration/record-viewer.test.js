@@ -1,13 +1,9 @@
 /**
  * Integration tests for Record Viewer
  *
- * Test IDs: RV-I-001 through RV-I-006
- * - RV-I-001: Missing URL parameters - Error message (skip - client-side)
- * - RV-I-002: Connection not found - Error message (skip - client-side)
+ * Test IDs: RV-I-003, RV-I-004
  * - RV-I-003: Record not found - Error message
  * - RV-I-004: Save failure - Error message displayed
- * - RV-I-005: CORS error - Modal with proxy prompt (skip - needs browser)
- * - RV-I-006: Rich text XSS attempt - Content sanitized (skip - client-side DOMPurify)
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { salesforce, TestDataManager, uniqueName } from './setup.js';
@@ -18,12 +14,6 @@ describe('Record Viewer Integration', () => {
     afterEach(async () => {
         await testData.cleanup();
     });
-
-    // RV-I-001: Missing URL parameters - Error message (skip - client-side)
-    // This is validated in the browser before any API calls
-
-    // RV-I-002: Connection not found - Error message (skip - client-side)
-    // This is validated in the browser before any API calls
 
     describe('RV-I-003: Record not found - Error message', () => {
         it('returns error for non-existent record ID', async () => {
@@ -143,12 +133,6 @@ describe('Record Viewer Integration', () => {
             }
         });
     });
-
-    // RV-I-005: CORS error - Modal with proxy prompt (skip - needs browser)
-    // CORS errors only occur in browser context, cannot be tested via Node.js
-
-    // RV-I-006: Rich text XSS attempt - Content sanitized (skip - client-side DOMPurify)
-    // XSS sanitization is handled client-side by DOMPurify
 
     describe('Record Viewer API - Successful operations', () => {
         it('fetches record with all fields', async () => {

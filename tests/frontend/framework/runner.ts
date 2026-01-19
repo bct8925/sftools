@@ -1,7 +1,7 @@
 import type { BrowserContext, Worker } from 'playwright';
 import type { TestContext, TestResult, TestClass, TestConfig } from './types';
 import { DEFAULT_CONFIG, SLOW_MODE_CONFIG } from './types';
-import { loadExtension, injectConnectionViaServiceWorker, navigateToApp } from '../services/extension-loader';
+import { loadExtension, injectConnectionViaServiceWorker } from '../services/extension-loader';
 import { SalesforceClient } from '../services/salesforce-client';
 
 export class TestRunner {
@@ -54,17 +54,14 @@ export class TestRunner {
 
       const test = new TestClass(testContext);
 
-      // Setup phase (runs on blank page - just API calls)
+      // Inject connection via service worker (before any navigation)
+      await injectConnectionViaServiceWorker(this.serviceWorker, this.salesforce);
+
+      // Setup phase (API calls to create test data)
       console.log('  ⏳ Setup...');
       await test.setup();
 
-      // Inject connection via service worker (no page navigation needed)
-      await injectConnectionViaServiceWorker(this.serviceWorker, this.salesforce);
-
-      // Navigate to extension app (single load, no flash)
-      await navigateToApp(page, this.extensionId);
-
-      // Test phase
+      // Test phase (test navigates to its own start page)
       console.log('  ⏳ Running test...');
       await test.test();
 

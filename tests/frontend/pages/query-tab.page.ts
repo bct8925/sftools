@@ -132,12 +132,15 @@ export class QueryTabPage extends BasePage {
   }
 
   /**
-   * Get the number of rows in the results table
+   * Get the number of visible rows in the results table
    */
   async getResultsRowCount(): Promise<number> {
     return this.page.$$eval(
       'query-tab .query-results table tbody tr',
-      (rows) => rows.length
+      (rows) => rows.filter((r) => {
+        const style = window.getComputedStyle(r);
+        return style.display !== 'none';
+      }).length
     );
   }
 
@@ -145,14 +148,14 @@ export class QueryTabPage extends BasePage {
    * Check if results contain a subquery toggle
    */
   async hasSubqueryResults(): Promise<boolean> {
-    return this.page.isVisible('query-tab .query-results .subquery-toggle');
+    return this.page.isVisible('query-tab .query-results .query-subquery-toggle');
   }
 
   /**
    * Expand a subquery result at the given index
    */
   async expandSubquery(index: number): Promise<void> {
-    const toggles = await this.page.$$('query-tab .query-results .subquery-toggle');
+    const toggles = await this.page.$$('query-tab .query-results .query-subquery-toggle');
     if (toggles[index]) {
       await toggles[index].click();
     }
@@ -162,9 +165,12 @@ export class QueryTabPage extends BasePage {
    * Get text content of expanded subquery at index
    */
   async getSubqueryText(index: number): Promise<string> {
-    const containers = await this.page.$$('query-tab .query-results .subquery-container');
-    if (containers[index]) {
-      return (await containers[index].textContent()) || '';
+    // Subquery rows appear immediately after the parent row with the toggle
+    const rows = await this.page.$$('query-tab .query-results tbody tr');
+    // The subquery content is in a nested table inside a colspan cell
+    const subqueryTables = await this.page.$$('query-tab .query-results .query-subquery-table');
+    if (subqueryTables[index]) {
+      return (await subqueryTables[index].textContent()) || '';
     }
     return '';
   }
@@ -179,11 +185,13 @@ export class QueryTabPage extends BasePage {
   }
 
   /**
-   * Close a query tab by its label
+   * Close a query tab by index (0-based)
    */
-  async closeTab(label: string): Promise<void> {
-    const tab = this.page.locator('.query-tab', { hasText: label });
-    await tab.locator('.query-tab-close').click();
+  async closeTab(index: number): Promise<void> {
+    const closeButtons = await this.page.$$('query-tab .query-tab-close');
+    if (closeButtons[index]) {
+      await closeButtons[index].click();
+    }
   }
 
   /**

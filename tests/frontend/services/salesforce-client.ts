@@ -95,6 +95,38 @@ export class SalesforceClient {
     await this.request('PATCH', `/sobjects/${objectType}/${id}`, fields);
   }
 
+  // Delete all trace flags (for test cleanup)
+  async deleteAllTraceFlags(): Promise<{ deletedCount: number }> {
+    const query = 'SELECT Id FROM TraceFlag';
+    const response = await this.toolingRequest('GET', `/query?q=${encodeURIComponent(query)}`);
+    const flagIds = (response.records || []).map((f: any) => f.Id);
+
+    if (flagIds.length === 0) {
+      return { deletedCount: 0 };
+    }
+
+    // Delete in batches of 25 (Tooling API composite limit)
+    let deletedCount = 0;
+    const batchSize = 25;
+
+    for (let i = 0; i < flagIds.length; i += batchSize) {
+      const batch = flagIds.slice(i, i + batchSize);
+      const compositeRequest = {
+        allOrNone: false,
+        compositeRequest: batch.map((id: string, idx: number) => ({
+          method: 'DELETE',
+          url: `/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${id}`,
+          referenceId: `delete_${idx}`
+        }))
+      };
+
+      await this.toolingRequest('POST', '/composite', compositeRequest);
+      deletedCount += batch.length;
+    }
+
+    return { deletedCount };
+  }
+
   // Raw API request
   private async request(method: string, path: string, body?: unknown): Promise<any> {
     const url = `${this.instanceUrl}/services/data/v${API_VERSION}${path}`;
@@ -127,6 +159,45 @@ export class SalesforceClient {
     }
 
     // 204 No Content (for DELETE, PATCH)
+    if (response.status === 204) {
+      return null;
+    }
+
+    return response.json();
+  }
+
+  // Tooling API request
+  private async toolingRequest(method: string, path: string, body?: unknown): Promise<any> {
+    const url = `${this.instanceUrl}/services/data/v${API_VERSION}/tooling${path}`;
+
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${this.accessToken}`,
+      'Content-Type': 'application/json',
+    };
+
+    const options: RequestInit = {
+      method,
+      headers,
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      let errorMessage: string;
+      try {
+        const errors: SalesforceError[] = await response.json();
+        errorMessage = errors.map(e => e.message).join(', ');
+      } catch {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(`Salesforce Tooling API error: ${errorMessage}`);
+    }
+
+    // 204 No Content
     if (response.status === 204) {
       return null;
     }

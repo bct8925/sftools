@@ -8,6 +8,9 @@ import type { QueryTabPage } from '../pages/query-tab.page';
 import type { ApexTabPage } from '../pages/apex-tab.page';
 import type { RecordPage } from '../pages/record.page';
 import type { SchemaPage } from '../pages/schema.page';
+import type { UtilsTabPage } from '../pages/utils-tab.page';
+import type { SettingsTabPage } from '../pages/settings-tab.page';
+import type { RestApiTabPage } from '../pages/rest-api-tab.page';
 
 export abstract class SftoolsTest {
   protected page: Page;
@@ -21,6 +24,9 @@ export abstract class SftoolsTest {
   private _apexTab?: ApexTabPage;
   private _recordPage?: RecordPage;
   private _schemaPage?: SchemaPage;
+  private _utilsTab?: UtilsTabPage;
+  private _settingsTab?: SettingsTabPage;
+  private _restApiTab?: RestApiTabPage;
 
   constructor(ctx: TestContext) {
     this.page = ctx.page;
@@ -70,6 +76,33 @@ export abstract class SftoolsTest {
       this._schemaPage.setConfig(this.config);
     }
     return this._schemaPage!;
+  }
+
+  get utilsTab(): UtilsTabPage {
+    if (!this._utilsTab) {
+      const { UtilsTabPage } = require('../pages/utils-tab.page');
+      this._utilsTab = new UtilsTabPage(this.page);
+      this._utilsTab.setConfig(this.config);
+    }
+    return this._utilsTab!;
+  }
+
+  get settingsTab(): SettingsTabPage {
+    if (!this._settingsTab) {
+      const { SettingsTabPage } = require('../pages/settings-tab.page');
+      this._settingsTab = new SettingsTabPage(this.page);
+      this._settingsTab.setConfig(this.config);
+    }
+    return this._settingsTab!;
+  }
+
+  get restApiTab(): RestApiTabPage {
+    if (!this._restApiTab) {
+      const { RestApiTabPage } = require('../pages/rest-api-tab.page');
+      this._restApiTab = new RestApiTabPage(this.page);
+      this._restApiTab.setConfig(this.config);
+    }
+    return this._restApiTab!;
   }
 
   // Navigation helpers

@@ -14,6 +14,35 @@ npm run build                  # Build for production (outputs to dist/)
 npm run watch                  # Build with watch mode for development
 ```
 
+## Testing
+
+Browser tests use Playwright with real Salesforce API calls against a test org. See `TESTING.md` for detailed framework documentation.
+
+**Setup:**
+1. Create `.env.test` with credentials:
+   ```
+   SF_ACCESS_TOKEN=your_access_token
+   SF_INSTANCE_URL=https://your-org.my.salesforce.com
+   ```
+2. Build the extension: `npm run build`
+
+**Commands:**
+```bash
+npm test                       # Run all tests
+npm run test:headed            # Run tests with visible browser
+npm test -- --filter=query     # Run tests matching "query"
+```
+
+**Test Structure:**
+```
+tests/
+├── framework/                 # Base test class, runner, assertions
+├── services/                  # Salesforce client, extension loader
+├── pages/                     # Page objects for each component
+├── helpers/                   # Monaco editor helpers
+└── specs/                     # Test files organized by feature
+```
+
 ## Loading the Extension
 
 1. Run `npm run build`

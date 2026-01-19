@@ -1,6 +1,10 @@
 {
   "devDependencies": {
-    "vite": "^7.2.7"
+    "vite": "^7.2.7",
+    "playwright": "^1.50.0",
+    "dotenv": "^16.4.7",
+    "glob": "^11.0.0",
+    "tsx": "^4.19.2"
   },
   "dependencies": {
     "@jetstreamapp/soql-parser-js": "^6.3.1",
@@ -9,8 +13,11 @@
     "monaco-editor": "^0.55.1"
   },
   "scripts": {
-    "build": "SFTOOLS_PRODUCTION=fasle vite build",
+    "build": "SFTOOLS_PRODUCTION=false vite build",
     "watch": "SFTOOLS_PRODUCTION=false vite build --watch",
-    "package": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'"
+    "package": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'",
+    "test": "tsx tests/run-tests.ts",
+    "test:headed": "HEADED=true tsx tests/run-tests.ts",
+    "test:filter": "tsx tests/run-tests.ts --filter"
   }
 }

@@ -3,3 +3,7 @@ node_modules/
 dist/
 **/.DS_Store
 sftools-proxy/sftools-proxy.sh
+
+# Test files
+.env.test
+test-results/

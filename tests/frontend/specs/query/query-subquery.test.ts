@@ -2,6 +2,10 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test subquery expansion
+ *
+ * Test IDs: Q-F-004, Q-F-005
+ * - Q-F-004: Execute query with subquery - Nested records show as expandable "▶ N records"
+ * - Q-F-005: Expand subquery results - Nested table displays inline
  */
 export default class QuerySubqueryTest extends SftoolsTest {
   private accountId: string = '';

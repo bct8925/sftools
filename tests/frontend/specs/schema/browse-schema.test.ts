@@ -2,6 +2,12 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test Schema Browser functionality
+ *
+ * Test IDs: SB-F-001, SB-F-002, SB-F-004, SB-F-005
+ * - SB-F-001: Load all objects - Object list populated
+ * - SB-F-002: Filter objects by name - Matching objects shown
+ * - SB-F-004: Select object - Field panel opens
+ * - SB-F-005: Filter fields - Matching fields shown
  */
 export default class BrowseSchemaTest extends SftoolsTest {
   // No setup/teardown needed - just browsing metadata

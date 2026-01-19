@@ -1,6 +1,22 @@
-// Tests for src/lib/soql-autocomplete.js
-// Tests the exported functions: registerSOQLCompletionProvider, activateSOQLAutocomplete,
-// deactivateSOQLAutocomplete, clearState
+/**
+ * Tests for src/lib/soql-autocomplete.js
+ *
+ * Test IDs: SA-U-001 through SA-U-012
+ * - SA-U-001: parseSOQL() - Parses valid query (internal function, tested via provideCompletionItems)
+ * - SA-U-002: parseSOQL() - Handles invalid query (internal function, tested via provideCompletionItems)
+ * - SA-U-003: extractFromObject() - Extracts FROM object (internal function, tested via suggestions)
+ * - SA-U-004: detectClause() - Detects SELECT clause (internal function, tested via suggestions)
+ * - SA-U-005: detectClause() - Detects WHERE clause (internal function, tested via suggestions)
+ * - SA-U-006: extractDotChain() - Extracts Account.Owner (internal function, tested via field suggestions)
+ * - SA-U-007: resolveRelationshipChain() - Resolves to User (internal function, tested via describe)
+ * - SA-U-008: buildFieldSuggestions() - Creates completions (tested via provideCompletionItems)
+ * - SA-U-009: buildObjectSuggestions() - Creates object list (internal function, tested via suggestions)
+ * - SA-U-010: buildKeywordSuggestions() - Returns clause keywords
+ * - SA-U-011: buildAggregateSuggestions() - Returns COUNT, SUM, etc.
+ * - SA-U-012: buildDateLiteralSuggestions() - Returns TODAY, LAST_WEEK, etc. (internal function)
+ *
+ * Note: Tests focus on exported functions and observable behavior since many functions are internal.
+ */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 

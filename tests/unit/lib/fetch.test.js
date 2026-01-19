@@ -1,4 +1,14 @@
-// Tests for src/lib/fetch.js
+/**
+ * Tests for src/lib/fetch.js
+ *
+ * Test IDs: FE-U-001 through FE-U-006
+ * - FE-U-001: isProxyConnected() - Returns cached status
+ * - FE-U-002: checkProxyStatus() - Queries background
+ * - FE-U-003: extensionFetch() - Routes via background
+ * - FE-U-004: proxyFetch() - Routes via proxy
+ * - FE-U-005: smartFetch() - Uses proxy if connected
+ * - FE-U-006: smartFetch() - Falls back to extension
+ */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockConnection } from '../mocks/salesforce.js';

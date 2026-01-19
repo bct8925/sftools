@@ -1,4 +1,9 @@
-// Tests for src/lib/salesforce-request.js
+/**
+ * Tests for src/lib/salesforce-request.js
+ *
+ * Test ID: UT-U-009
+ * - UT-U-009: salesforceRequest() - Makes authenticated request
+ */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 

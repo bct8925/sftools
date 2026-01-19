@@ -2,6 +2,11 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test tab management
+ *
+ * Test IDs: Q-F-022, Q-F-023, Q-F-026
+ * - Q-F-022: Create new result tab - Same query reuses existing tab
+ * - Q-F-023: Different query creates new tab - New tab appears
+ * - Q-F-026: Close tab - Tab removed from list
  */
 export default class QueryTabsTest extends SftoolsTest {
   private accountIds: string[] = [];

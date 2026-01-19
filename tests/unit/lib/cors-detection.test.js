@@ -1,4 +1,10 @@
-// Tests for src/lib/cors-detection.js
+/**
+ * Tests for src/lib/cors-detection.js
+ *
+ * Test IDs: UT-U-005, UT-U-006
+ * - UT-U-005: isCorsError() - Detects status 0
+ * - UT-U-006: showCorsErrorModal() - Dispatches event
+ */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isCorsError, showCorsErrorModal } from '../../../src/lib/cors-detection.js';

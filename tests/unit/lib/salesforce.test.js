@@ -1,6 +1,33 @@
-// Tests for src/lib/salesforce.js
-// Focuses on cache functions, simple API wrappers, and batch operations
-// Defers complex async flows (executeAnonymousApex, ensureTraceFlag, executeBulkQueryExport)
+/**
+ * Tests for src/lib/salesforce.js
+ *
+ * Test IDs: SF-U-001 through SF-U-025
+ * - SF-U-001: getCurrentUserId() - Returns user ID
+ * - SF-U-002: executeAnonymousApex() - Returns execution result (tested in integration tests)
+ * - SF-U-003: executeQueryWithColumns() - Returns columns and records
+ * - SF-U-004: getGlobalDescribe() - Returns cached on second call
+ * - SF-U-005: getObjectDescribe() - Returns cached on second call
+ * - SF-U-006: getRecord() - Returns record data
+ * - SF-U-007: updateRecord() - Sends PATCH request
+ * - SF-U-008: executeRestRequest() - Makes authenticated request
+ * - SF-U-009: getEventChannels() - Returns Platform Events
+ * - SF-U-010: getPushTopics() - Returns PushTopics
+ * - SF-U-011: publishPlatformEvent() - Publishes event
+ * - SF-U-012: deleteAllDebugLogs() - Deletes ApexLog records
+ * - SF-U-013: searchUsers() - Searches by name/username
+ * - SF-U-014: enableTraceFlagForUser() - Creates TraceFlag
+ * - SF-U-015: searchFlows() - Searches FlowDefinition
+ * - SF-U-016: getFlowVersions() - Returns Flow versions
+ * - SF-U-017: deleteInactiveFlowVersions() - Composite delete
+ * - SF-U-018: createBulkQueryJob() - Creates Bulk API job
+ * - SF-U-019: getBulkQueryJobStatus() - Returns job status
+ * - SF-U-020: executeBulkQueryExport() - Full export flow
+ * - SF-U-021: getFormulaFieldMetadata() - Returns formula metadata
+ * - SF-U-022: updateFormulaField() - Updates via Tooling API
+ * - SF-U-023: bulkDeleteTooling() - Batches in 25s
+ * - SF-U-024: escapeSoql() - Escapes special chars (tested via searchFlows, searchUsers)
+ * - SF-U-025: clearDescribeCache() - Clears cache
+ */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockConnection } from '../mocks/salesforce.js';

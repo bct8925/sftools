@@ -2,6 +2,10 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test Tooling API mode
+ *
+ * Test IDs: Q-F-007, Q-I-009
+ * - Q-F-007: Toggle Tooling API checkbox - Re-executes query against Tooling API
+ * - Q-I-009: Query Tooling API object - Results from Tooling API
  */
 export default class QueryToolingTest extends SftoolsTest {
   // No setup/teardown needed - querying system metadata

@@ -1,4 +1,17 @@
-// Tests for src/lib/history-manager.js
+/**
+ * Tests for src/lib/history-manager.js
+ *
+ * Test IDs: HM-U-001 through HM-U-009
+ * - HM-U-001: load() - Loads from storage
+ * - HM-U-002: saveToHistory() - Adds to history
+ * - HM-U-003: saveToHistory() - Deduplicates
+ * - HM-U-004: saveToHistory() - Trims to max size
+ * - HM-U-005: addToFavorites() - Adds with label
+ * - HM-U-006: removeFromHistory() - Removes by ID
+ * - HM-U-007: removeFromFavorites() - Removes by ID
+ * - HM-U-008: getPreview() - Truncates content
+ * - HM-U-009: formatRelativeTime() - Returns "2 hours ago"
+ */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { HistoryManager } from '../../../src/lib/history-manager.js';

@@ -1,4 +1,20 @@
-// Tests for src/lib/auth.js
+/**
+ * Tests for src/lib/auth.js
+ *
+ * Test IDs: OA-U-001 through OA-U-012
+ * - OA-U-001: deriveLoginDomain() - Extracts login.salesforce.com (tested in addConnection)
+ * - OA-U-002: deriveLoginDomain() - Extracts test.salesforce.com (tested in addConnection)
+ * - OA-U-003: deriveLoginDomain() - Handles custom domains (tested in addConnection)
+ * - OA-U-004: addOrUpdateConnection() - Creates new if not exists
+ * - OA-U-005: addOrUpdateConnection() - Updates if connectionId matches
+ * - OA-U-006: generateOAuthState() - Creates unique state (tested via setPendingAuth)
+ * - OA-U-007: validateOAuthState() - Returns true for valid (tested via consumePendingAuth)
+ * - OA-U-008: validateOAuthState() - Returns false for invalid (tested via consumePendingAuth)
+ * - OA-U-009: setPendingAuth() - Stores auth params
+ * - OA-U-010: consumePendingAuth() - Returns and clears params
+ * - OA-U-011: migrateFromSingleConnection() - Converts old format
+ * - OA-U-012: migrateCustomConnectedApp() - Migrates app config (covered by migration tests)
+ */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockConnection } from '../mocks/salesforce.js';

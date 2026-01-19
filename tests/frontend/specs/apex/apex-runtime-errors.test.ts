@@ -2,6 +2,10 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test Apex runtime exception handling
+ *
+ * Test IDs: A-F-005, A-I-005
+ * - A-F-005: View runtime exception - Error marker, stack trace
+ * - A-I-005: Runtime NullPointerException - Exception details in output
  */
 export default class ApexRuntimeErrorsTest extends SftoolsTest {
   // No setup/teardown needed

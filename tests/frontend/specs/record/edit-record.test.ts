@@ -2,6 +2,11 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test Record Viewer edit and save functionality
+ *
+ * Test IDs: RV-F-007, RV-F-015, RV-F-019
+ * - RV-F-007: Edit text field - Input accepts text
+ * - RV-F-015: Save modified fields - PATCH request, success
+ * - RV-F-019: Modified fields highlighted - Visual distinction
  */
 export default class EditRecordTest extends SftoolsTest {
   private testAccountId: string = '';

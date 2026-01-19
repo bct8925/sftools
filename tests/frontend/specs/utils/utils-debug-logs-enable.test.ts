@@ -2,6 +2,10 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test enabling trace flag for current user via Utils tab
+ *
+ * Test IDs: U-DL-F-001, U-DL-F-007
+ * - U-DL-F-001: Enable trace flag for current user - Success status
+ * - U-DL-F-007: Status indicator success - Green check
  */
 export default class UtilsDebugLogsEnableTest extends SftoolsTest {
   async setup(): Promise<void> {

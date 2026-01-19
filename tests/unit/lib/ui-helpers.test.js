@@ -1,4 +1,9 @@
-// Tests for src/lib/ui-helpers.js
+/**
+ * Tests for src/lib/ui-helpers.js
+ *
+ * Test ID: UT-U-010
+ * - UT-U-010: updateStatusBadge() - Updates badge element
+ */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { updateStatusBadge } from '../../../src/lib/ui-helpers.js';

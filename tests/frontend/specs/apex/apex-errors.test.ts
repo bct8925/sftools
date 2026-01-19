@@ -2,6 +2,11 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test Apex compilation error handling
+ *
+ * Test IDs: A-F-004, A-F-016, A-I-004
+ * - A-F-004: View compilation error - Error marker on line/column
+ * - A-F-016: Status badge compile error - Red X with "Compile Error"
+ * - A-I-004: Compilation error on specific line - Marker on line 5
  */
 export default class ApexErrorsTest extends SftoolsTest {
   // No setup/teardown needed

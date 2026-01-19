@@ -2,6 +2,9 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test relationship field queries
+ *
+ * Test IDs: Q-F-003
+ * - Q-F-003: Execute query with relationship fields - Columns show full path (e.g., Account.Owner.Name)
  */
 export default class QueryRelationshipsTest extends SftoolsTest {
   private accountId: string = '';

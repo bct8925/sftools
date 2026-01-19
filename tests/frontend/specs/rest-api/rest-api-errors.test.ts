@@ -2,6 +2,9 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test REST API error handling
+ *
+ * Test IDs: R-I-007
+ * - R-I-007: HTTP 400 error - Error response displayed
  */
 export default class RestApiErrorsTest extends SftoolsTest {
   async test(): Promise<void> {

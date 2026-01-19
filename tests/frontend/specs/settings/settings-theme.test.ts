@@ -2,6 +2,11 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test theme switching in Settings tab
+ *
+ * Test IDs: S-F-001, S-F-002, S-F-003
+ * - S-F-001: Select System theme - Theme follows OS
+ * - S-F-002: Select Light theme - Light mode applied
+ * - S-F-003: Select Dark theme - Dark mode applied
  */
 export default class SettingsThemeTest extends SftoolsTest {
   async test(): Promise<void> {

@@ -2,6 +2,11 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test Anonymous Apex execution
+ *
+ * Test IDs: A-F-001, A-F-003, A-I-001
+ * - A-F-001: Execute anonymous Apex - Output panel shows result
+ * - A-F-003: View successful execution - Success message, debug log
+ * - A-I-001: Execute System.debug() - Debug statement in log
  */
 export default class ExecuteApexTest extends SftoolsTest {
   // No setup/teardown needed - just executing Apex

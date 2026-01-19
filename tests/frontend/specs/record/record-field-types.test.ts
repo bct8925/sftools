@@ -2,6 +2,11 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test Record Viewer field type rendering and editability
+ *
+ * Test IDs: RV-F-004, RV-F-005, RV-F-006
+ * - RV-F-004: Display API name - Developer name shown
+ * - RV-F-005: Display field value - Current value displayed
+ * - RV-F-006: Display field type - Type indicator shown
  */
 export default class RecordFieldTypesTest extends SftoolsTest {
   private testAccountId: string = '';

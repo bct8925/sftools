@@ -2,6 +2,12 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test basic SOQL query execution
+ *
+ * Test IDs: Q-F-001, Q-F-033, Q-F-034, Q-F-035
+ * - Q-F-001: Execute simple SOQL query - Results display in table with correct columns
+ * - Q-F-033: Verify success status
+ * - Q-F-034: Verify record count
+ * - Q-F-035: Verify column headers
  */
 export default class BasicQueryTest extends SftoolsTest {
   private testAccountId: string = '';

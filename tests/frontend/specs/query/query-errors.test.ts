@@ -2,6 +2,10 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test SOQL query error handling
+ *
+ * Test IDs: Q-I-002, Q-F-029
+ * - Q-I-002: Query with invalid SOQL - Error message with details
+ * - Q-F-029: Status badge shows error - X icon with error message
  */
 export default class QueryErrorsTest extends SftoolsTest {
   // No setup/teardown needed - we're testing error cases

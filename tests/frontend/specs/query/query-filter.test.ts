@@ -2,6 +2,9 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test results filtering
+ *
+ * Test IDs: Q-F-014
+ * - Q-F-014: Search/filter results - Table filters to matching rows
  */
 export default class QueryFilterTest extends SftoolsTest {
   private accountIds: string[] = [];

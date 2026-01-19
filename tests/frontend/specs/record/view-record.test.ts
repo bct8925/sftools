@@ -2,6 +2,12 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test Record Viewer functionality
+ *
+ * Test IDs: RV-F-001, RV-F-002, RV-F-003, RV-F-005
+ * - RV-F-001: Load record data - All fields displayed
+ * - RV-F-002: Fields sorted correctly - Id first, Name second, alphabetical
+ * - RV-F-003: Display field label - Human-readable label shown
+ * - RV-F-005: Display field value - Current value displayed
  */
 export default class ViewRecordTest extends SftoolsTest {
   private testAccountId: string = '';

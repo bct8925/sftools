@@ -2,6 +2,9 @@ import { SftoolsTest } from '../../framework/base-test';
 
 /**
  * Test Record Viewer refresh functionality
+ *
+ * Test IDs: RV-F-016
+ * - RV-F-016: Refresh record - Data reloaded
  */
 export default class RecordRefreshTest extends SftoolsTest {
   private testAccountId: string = '';

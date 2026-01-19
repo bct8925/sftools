@@ -1,4 +1,10 @@
-// Tests for src/lib/oauth-credentials.js
+/**
+ * Tests for src/lib/oauth-credentials.js
+ *
+ * Test IDs: UT-U-007, UT-U-008
+ * - UT-U-007: getOAuthCredentials() - Returns connection client ID
+ * - UT-U-008: getOAuthCredentials() - Returns manifest default
+ */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMockConnection } from '../mocks/salesforce.js';

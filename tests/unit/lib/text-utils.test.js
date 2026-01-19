@@ -1,4 +1,10 @@
-// Tests for src/lib/text-utils.js
+/**
+ * Tests for src/lib/text-utils.js
+ *
+ * Test IDs: UT-U-001, UT-U-002
+ * - UT-U-001: escapeHtml() - Escapes < > &
+ * - UT-U-002: escapeAttr() - Escapes quotes
+ */
 
 import { describe, it, expect } from 'vitest';
 import { escapeHtml, escapeAttr, truncate } from '../../../src/lib/text-utils.js';

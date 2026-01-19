@@ -34,6 +34,10 @@ class RecordPage extends HTMLElement {
     modalContentEl = null;
     modalCloseBtnEl = null;
 
+    // Bound event handlers for cleanup
+    boundKeydownHandler = null;
+    boundCorsHandler = null;
+
     connectedCallback() {
         this.innerHTML = replaceIcons(template);
         this.initElements();
@@ -70,12 +74,23 @@ class RecordPage extends HTMLElement {
             }
         });
 
-        // Close modal on Escape key
-        document.addEventListener('keydown', (e) => {
+        // Close modal on Escape key (store bound handler for cleanup)
+        this.boundKeydownHandler = (e) => {
             if (e.key === 'Escape' && this.richTextModalEl.classList.contains('show')) {
                 this.closeRichTextModal();
             }
-        });
+        };
+        document.addEventListener('keydown', this.boundKeydownHandler);
+    }
+
+    disconnectedCallback() {
+        // Clean up document-level event listeners to prevent memory leaks
+        if (this.boundKeydownHandler) {
+            document.removeEventListener('keydown', this.boundKeydownHandler);
+        }
+        if (this.boundCorsHandler) {
+            document.removeEventListener('show-cors-error', this.boundCorsHandler);
+        }
     }
 
     initCorsModal() {
@@ -83,9 +98,11 @@ class RecordPage extends HTMLElement {
         const closeBtn = document.getElementById('cors-modal-close');
 
         if (modal && closeBtn) {
-            document.addEventListener('show-cors-error', () => {
+            // Store bound handler for cleanup
+            this.boundCorsHandler = () => {
                 modal.open();
-            });
+            };
+            document.addEventListener('show-cors-error', this.boundCorsHandler);
 
             closeBtn.addEventListener('click', () => {
                 modal.close();
@@ -201,11 +218,11 @@ class RecordPage extends HTMLElement {
 
         return `
             <div class="field-row" data-field="${field.name}">
-                <div class="field-label" title="${this.escapeAttr(field.label)}">${escapeHtml(field.label)}</div>
-                <div class="field-api-name" title="${this.escapeAttr(field.name)}">${field.name}</div>
+                <div class="field-label" title="${escapeAttr(field.label)}">${escapeHtml(field.label)}</div>
+                <div class="field-api-name" title="${escapeAttr(field.name)}">${field.name}</div>
                 <div class="field-type">${typeDisplay}</div>
                 <div class="field-value">${valueHtml}</div>
-                <div class="field-preview" title="${this.escapeAttr(previewText)}">${previewHtml}</div>
+                <div class="field-preview" title="${escapeAttr(previewText)}">${previewHtml}</div>
             </div>
         `;
     }
@@ -223,7 +240,7 @@ class RecordPage extends HTMLElement {
         if (field.type === 'picklist' && isEditable) {
             const options = (field.picklistValues || [])
                 .filter(pv => pv.active)
-                .map(pv => `<option value="${this.escapeAttr(pv.value)}" ${pv.value === value ? 'selected' : ''}>${escapeHtml(pv.label)}</option>`)
+                .map(pv => `<option value="${escapeAttr(pv.value)}" ${pv.value === value ? 'selected' : ''}>${escapeHtml(pv.label)}</option>`)
                 .join('');
 
             return `
@@ -236,7 +253,7 @@ class RecordPage extends HTMLElement {
         return `
             <input type="text"
                    class="input field-input"
-                   value="${this.escapeAttr(displayValue)}"
+                   value="${escapeAttr(displayValue)}"
                    ${isEditable ? '' : 'disabled'}
                    data-field="${field.name}"
                    data-type="${field.type}">`;
@@ -281,7 +298,7 @@ class RecordPage extends HTMLElement {
         // Check if this is a rich text/textarea field that should have a preview button
         const richTextTypes = ['textarea', 'html', 'encryptedstring'];
         if (richTextTypes.includes(field.type) && value && String(value).trim()) {
-            return `<button class="field-preview-btn" data-field="${field.name}" data-field-label="${this.escapeAttr(field.label)}">Preview</button>`;
+            return `<button class="field-preview-btn" data-field="${field.name}" data-field-label="${escapeAttr(field.label)}">Preview</button>`;
         }
 
         switch (field.type) {
@@ -456,17 +473,6 @@ class RecordPage extends HTMLElement {
 
     showSaveError(message) {
         alert(`Error saving record: ${message}`);
-    }
-
-
-    escapeAttr(str) {
-        if (str === null || str === undefined) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
     }
 
     handlePreviewClick(button) {

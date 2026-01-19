@@ -22,7 +22,6 @@
     "test": "tsx tests/frontend/run-tests.ts",
     "test:frontend": "tsx tests/frontend/run-tests.ts",
     "test:slow": "tsx tests/frontend/run-tests.ts --slow",
-    "test:headed": "tsx tests/frontend/run-tests.ts",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage"

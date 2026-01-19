@@ -11,6 +11,8 @@ sftools uses two testing frameworks:
 # Frontend tests (Playwright - requires visible browser)
 npm test                       # Run all frontend tests
 npm test -- --filter=query     # Run tests matching "query"
+npm run test:slow              # Run with human-like timing (for visual debugging)
+npm run test:slow -- --filter=query  # Combine slow mode with filter
 
 # Unit tests (Vitest)
 npm run test:unit              # Run all unit tests
@@ -60,6 +62,30 @@ npm test -- --filter=query     # Run tests matching "query"
 ```
 
 > **Note:** Frontend tests always run with a visible browser window. Chrome extensions cannot run in headless mode.
+
+### Test Modes
+
+The framework supports two speed modes:
+
+**Fast Mode (default)** - Tests run as fast as possible with no artificial delays. Best for CI and quick iteration.
+
+```bash
+npm test
+```
+
+**Slow Mode** - Adds human-like delays (~1 second) before clicks, typing, and navigation. Use this to visually verify that tests are clicking the correct elements and navigating properly.
+
+```bash
+npm run test:slow
+npm run test:slow -- --filter=query-errors
+```
+
+Slow mode timing:
+- 800ms before each click
+- 500ms after each click
+- 500ms before typing
+- 1000ms after navigation
+- 1200ms after page load
 
 ## Directory Structure
 

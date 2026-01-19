@@ -29,7 +29,7 @@ Browser tests use Playwright with real Salesforce API calls against a test org. 
 **Commands:**
 ```bash
 npm test                       # Run all tests
-npm run test:headed            # Run tests with visible browser
+npm run test:slow              # Run with human-like timing (for visual debugging)
 npm test -- --filter=query     # Run tests matching "query"
 ```
 

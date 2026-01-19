@@ -12,15 +12,15 @@ import { shouldShowBody } from '../../../src/lib/rest-api-utils.js';
 
 describe('rest-api-utils', () => {
     describe('shouldShowBody', () => {
-        it('returns true for POST method', () => {
+        it('R-U-001: returns true for POST method', () => {
             expect(shouldShowBody('POST')).toBe(true);
         });
 
-        it('returns false for GET method', () => {
+        it('R-U-002: returns false for GET method', () => {
             expect(shouldShowBody('GET')).toBe(false);
         });
 
-        it('returns true for PATCH method', () => {
+        it('R-U-003: returns true for PATCH method', () => {
             expect(shouldShowBody('PATCH')).toBe(true);
         });
 

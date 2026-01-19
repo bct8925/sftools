@@ -24,31 +24,31 @@ describe('filterObjects', () => {
         { name: 'Order', label: 'Order' },
     ];
 
-    it('filters by API name', () => {
+    it('SB-U-001: filters by API name', () => {
         const result = filterObjects(objects, 'Account');
         expect(result).toHaveLength(1);
         expect(result[0].name).toBe('Account');
     });
 
-    it('filters by API name (partial match)', () => {
+    it('SB-U-001: filters by API name (partial match)', () => {
         const result = filterObjects(objects, 'custom');
         expect(result).toHaveLength(1);
         expect(result[0].name).toBe('Custom_Object__c');
     });
 
-    it('filters by label', () => {
+    it('SB-U-002: filters by label', () => {
         const result = filterObjects(objects, 'Contact');
         expect(result).toHaveLength(1);
         expect(result[0].label).toBe('Contact');
     });
 
-    it('filters by label (partial match)', () => {
+    it('SB-U-002: filters by label (partial match)', () => {
         const result = filterObjects(objects, 'Custom');
         expect(result).toHaveLength(1);
         expect(result[0].label).toBe('Custom Object');
     });
 
-    it('is case insensitive', () => {
+    it('SB-U-003: is case insensitive', () => {
         const result = filterObjects(objects, 'ACCOUNT');
         expect(result).toHaveLength(1);
         expect(result[0].name).toBe('Account');
@@ -83,31 +83,31 @@ describe('filterFields', () => {
         { name: 'Custom_Field__c', label: 'Custom Field' },
     ];
 
-    it('filters by API name', () => {
+    it('SB-U-004: filters by API name', () => {
         const result = filterFields(fields, 'Name');
         expect(result).toHaveLength(1);
         expect(result[0].name).toBe('Name');
     });
 
-    it('filters by API name (partial match)', () => {
+    it('SB-U-004: filters by API name (partial match)', () => {
         const result = filterFields(fields, 'custom');
         expect(result).toHaveLength(1);
         expect(result[0].name).toBe('Custom_Field__c');
     });
 
-    it('filters by label', () => {
+    it('SB-U-005: filters by label', () => {
         const result = filterFields(fields, 'Email');
         expect(result).toHaveLength(1);
         expect(result[0].label).toBe('Email');
     });
 
-    it('filters by label (partial match)', () => {
+    it('SB-U-005: filters by label (partial match)', () => {
         const result = filterFields(fields, 'Account');
         expect(result).toHaveLength(1);
         expect(result[0].label).toBe('Account Name');
     });
 
-    it('is case insensitive', () => {
+    it('SB-U-005: is case insensitive', () => {
         const result = filterFields(fields, 'EMAIL');
         expect(result).toHaveLength(1);
         expect(result[0].name).toBe('Email');
@@ -135,7 +135,7 @@ describe('filterFields', () => {
 });
 
 describe('getFieldTypeDisplay', () => {
-    it('returns "formula" for calculated fields with formula', () => {
+    it('SB-U-006: returns "formula" for calculated fields with formula', () => {
         const field = {
             type: 'string',
             calculated: true,
@@ -146,7 +146,7 @@ describe('getFieldTypeDisplay', () => {
         expect(result.isReference).toBe(false);
     });
 
-    it('returns "rollup" for calculated fields without formula', () => {
+    it('SB-U-006: returns "rollup" for calculated fields without formula', () => {
         const field = {
             type: 'currency',
             calculated: true
@@ -156,7 +156,7 @@ describe('getFieldTypeDisplay', () => {
         expect(result.isReference).toBe(false);
     });
 
-    it('returns type name for regular fields', () => {
+    it('SB-U-007: returns type name for regular fields', () => {
         const field = {
             type: 'string',
             calculated: false

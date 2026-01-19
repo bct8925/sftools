@@ -11,11 +11,11 @@ import { escapeHtml, escapeAttr, truncate } from '../../../src/lib/text-utils.js
 
 describe('text-utils', () => {
     describe('escapeHtml', () => {
-        it('escapes < and > characters', () => {
+        it('UT-U-001: escapes < and > characters', () => {
             expect(escapeHtml('<script>')).toBe('&lt;script&gt;');
         });
 
-        it('escapes & character', () => {
+        it('UT-U-001: escapes & character', () => {
             expect(escapeHtml('foo & bar')).toBe('foo &amp; bar');
         });
 
@@ -49,11 +49,11 @@ describe('text-utils', () => {
     });
 
     describe('escapeAttr', () => {
-        it('escapes double quotes', () => {
+        it('UT-U-002: escapes double quotes', () => {
             expect(escapeAttr('say "hello"')).toBe('say &quot;hello&quot;');
         });
 
-        it('escapes single quotes', () => {
+        it('UT-U-002: escapes single quotes', () => {
             expect(escapeAttr("it's")).toBe('it&#39;s');
         });
 

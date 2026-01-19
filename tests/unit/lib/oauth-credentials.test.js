@@ -12,21 +12,21 @@ import { getOAuthCredentials } from '../../../src/lib/oauth-credentials.js';
 
 describe('oauth-credentials', () => {
     describe('getOAuthCredentials', () => {
-        it('returns manifest clientId when connectionId is null', async () => {
+        it('UT-U-008: returns manifest clientId when connectionId is null', async () => {
             const result = await getOAuthCredentials(null);
 
             expect(result.clientId).toBe('test-client-id');
             expect(result.isCustom).toBe(false);
         });
 
-        it('returns manifest clientId when connectionId is undefined', async () => {
+        it('UT-U-008: returns manifest clientId when connectionId is undefined', async () => {
             const result = await getOAuthCredentials();
 
             expect(result.clientId).toBe('test-client-id');
             expect(result.isCustom).toBe(false);
         });
 
-        it('returns manifest clientId when connection not found', async () => {
+        it('UT-U-008: returns manifest clientId when connection not found', async () => {
             chrome._setStorageData({
                 connections: [createMockConnection({ id: 'conn-1' })]
             });
@@ -37,7 +37,7 @@ describe('oauth-credentials', () => {
             expect(result.isCustom).toBe(false);
         });
 
-        it('returns manifest clientId when connection has no clientId', async () => {
+        it('UT-U-008: returns manifest clientId when connection has no clientId', async () => {
             chrome._setStorageData({
                 connections: [createMockConnection({ id: 'conn-1', clientId: null })]
             });
@@ -48,7 +48,7 @@ describe('oauth-credentials', () => {
             expect(result.isCustom).toBe(false);
         });
 
-        it('returns connection clientId when available', async () => {
+        it('UT-U-007: returns connection clientId when available', async () => {
             chrome._setStorageData({
                 connections: [createMockConnection({ id: 'conn-1', clientId: 'custom-client-id' })]
             });

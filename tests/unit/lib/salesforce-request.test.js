@@ -40,7 +40,7 @@ describe('salesforce-request', () => {
     });
 
     describe('successful requests', () => {
-        it('builds correct URL from instanceUrl and endpoint', async () => {
+        it('UT-U-009: builds correct URL from instanceUrl and endpoint', async () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,

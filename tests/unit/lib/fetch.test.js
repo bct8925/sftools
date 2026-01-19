@@ -32,13 +32,13 @@ describe('fetch', () => {
     });
 
     describe('isProxyConnected', () => {
-        it('returns false by default', () => {
+        it('FE-U-001: returns false by default', () => {
             expect(fetchModule.isProxyConnected()).toBe(false);
         });
     });
 
     describe('checkProxyStatus', () => {
-        it('returns true when proxy is connected', async () => {
+        it('FE-U-002: returns true when proxy is connected', async () => {
             chrome.runtime.sendMessage.mockResolvedValueOnce({ connected: true });
 
             const result = await fetchModule.checkProxyStatus();
@@ -81,7 +81,7 @@ describe('fetch', () => {
             authModule.setActiveConnection(createMockConnection({ id: 'active-conn' }));
         });
 
-        it('sends fetch message to background', async () => {
+        it('FE-U-003: sends fetch message to background', async () => {
             chrome.runtime.sendMessage.mockResolvedValueOnce({ ok: true, data: {} });
 
             await fetchModule.extensionFetch('https://api.salesforce.com/test', { method: 'GET' });
@@ -123,7 +123,7 @@ describe('fetch', () => {
             authModule.setActiveConnection(createMockConnection({ id: 'active-conn' }));
         });
 
-        it('sends proxyFetch message to background', async () => {
+        it('FE-U-004: sends proxyFetch message to background', async () => {
             chrome.runtime.sendMessage.mockResolvedValueOnce({ ok: true, data: {} });
 
             await fetchModule.proxyFetch('https://api.salesforce.com/test', {
@@ -157,7 +157,7 @@ describe('fetch', () => {
             authModule.setActiveConnection(createMockConnection({ id: 'active-conn' }));
         });
 
-        it('uses extensionFetch when proxy is not connected', async () => {
+        it('FE-U-006: uses extensionFetch when proxy is not connected', async () => {
             chrome.runtime.sendMessage.mockResolvedValue({ ok: true, data: {} });
 
             await fetchModule.smartFetch('https://api.salesforce.com/test');
@@ -167,7 +167,7 @@ describe('fetch', () => {
             );
         });
 
-        it('uses proxyFetch when proxy is connected', async () => {
+        it('FE-U-005: uses proxyFetch when proxy is connected', async () => {
             // First connect the proxy
             chrome.runtime.sendMessage.mockResolvedValueOnce({ connected: true });
             await fetchModule.checkProxyStatus();

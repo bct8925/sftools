@@ -51,7 +51,7 @@ describe('payload-store', () => {
     }
 
     describe('storePayload', () => {
-        it('returns a UUID string', () => {
+        it('PS-U-001: returns a UUID string', () => {
             const id = trackPayload(storePayload('test data'));
 
             // UUID format: 8-4-4-4-12 characters
@@ -87,7 +87,7 @@ describe('payload-store', () => {
     });
 
     describe('getPayload', () => {
-        it('returns stored data by ID', () => {
+        it('PS-U-002: returns stored data by ID', () => {
             const testData = 'my payload data';
             const id = trackPayload(storePayload(testData));
 
@@ -96,13 +96,13 @@ describe('payload-store', () => {
             expect(result).toBe(testData);
         });
 
-        it('returns null for non-existent ID', () => {
+        it('PS-U-002: returns null for non-existent ID', () => {
             const result = getPayload('non-existent-uuid');
 
             expect(result).toBeNull();
         });
 
-        it('returns null for expired payload', () => {
+        it('PS-U-003: returns null for expired payload', () => {
             const id = trackPayload(storePayload('test data'));
             expect(getPayload(id)).toBe('test data');
 
@@ -152,7 +152,7 @@ describe('payload-store', () => {
     });
 
     describe('deletePayload', () => {
-        it('removes payload from store', () => {
+        it('PS-U-004: removes payload from store', () => {
             const id = trackPayload(storePayload('test data'));
             expect(getPayloadCount()).toBe(1);
 
@@ -196,7 +196,7 @@ describe('payload-store', () => {
     });
 
     describe('shouldUseLargePayload', () => {
-        it('returns true for data >= 800KB', () => {
+        it('PS-U-005: returns true for data >= 800KB', () => {
             // Create string >= 800KB
             const largeData = 'x'.repeat(MAX_NATIVE_MESSAGE_SIZE);
 
@@ -205,7 +205,7 @@ describe('payload-store', () => {
             expect(result).toBe(true);
         });
 
-        it('returns true for data exceeding 800KB', () => {
+        it('PS-U-005: returns true for data exceeding 800KB', () => {
             // Create string > 800KB
             const largeData = 'x'.repeat(MAX_NATIVE_MESSAGE_SIZE + 1000);
 
@@ -214,7 +214,7 @@ describe('payload-store', () => {
             expect(result).toBe(true);
         });
 
-        it('returns false for data < 800KB', () => {
+        it('PS-U-006: returns false for data < 800KB', () => {
             // Create string < 800KB
             const smallData = 'x'.repeat(MAX_NATIVE_MESSAGE_SIZE - 1);
 

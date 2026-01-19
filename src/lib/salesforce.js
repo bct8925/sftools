@@ -307,13 +307,21 @@ export async function executeQueryWithColumns(soql, useToolingApi = false) {
     const apiPath = useToolingApi ? 'tooling/query' : 'query';
     const baseUrl = `/services/data/v${API_VERSION}/${apiPath}/?q=${encodedQuery}`;
 
-    const [columnsResponse, dataResponse] = await Promise.all([
+    // Use allSettled to capture errors from both requests
+    // The data query returns better error messages than the columns query
+    const [columnsResult, dataResult] = await Promise.allSettled([
         salesforceRequest(`${baseUrl}&columns=true`),
         salesforceRequest(baseUrl)
     ]);
 
-    const columnData = columnsResponse.json || {};
-    const queryData = dataResponse.json || {};
+    // If data query failed, throw its error (more detailed than columns error)
+    if (dataResult.status === 'rejected') {
+        throw dataResult.reason;
+    }
+
+    // If only columns query failed, we can still return data (just without column metadata)
+    const columnData = columnsResult.status === 'fulfilled' ? columnsResult.value.json || {} : {};
+    const queryData = dataResult.value.json || {};
 
     return {
         records: queryData.records || [],

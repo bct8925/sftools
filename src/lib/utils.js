@@ -28,6 +28,8 @@ export {
     setPendingAuth,
     consumePendingAuth,
     getOAuthCredentials,
+    generateOAuthState,
+    validateOAuthState,
     // Migration utilities
     migrateCustomConnectedApp,
     loadCustomConnectedApp,

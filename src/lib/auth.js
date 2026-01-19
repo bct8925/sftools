@@ -244,24 +244,74 @@ export async function migrateFromSingleConnection() {
     });
 }
 
-// --- Pending Auth State ---
+// --- Pending Auth State (with CSRF protection) ---
+
+/**
+ * Generate a cryptographically random state parameter for OAuth CSRF protection
+ * @returns {string} - Random UUID
+ */
+export function generateOAuthState() {
+    return crypto.randomUUID();
+}
 
 /**
  * Store pending authorization parameters before OAuth redirect
- * @param {{loginDomain: string, clientId: string|null, connectionId: string|null}} params
+ * @param {{loginDomain: string, clientId: string|null, connectionId: string|null, state: string}} params
  */
 export async function setPendingAuth(params) {
-    await chrome.storage.local.set({ pendingAuth: params });
+    // Add timestamp for expiration checking
+    await chrome.storage.local.set({
+        pendingAuth: { ...params, createdAt: Date.now() }
+    });
 }
 
 /**
  * Get and clear pending authorization parameters
- * @returns {Promise<{loginDomain: string, clientId: string|null, connectionId: string|null}|null>}
+ * Checks expiration (5 minute timeout) to prevent stale state attacks
+ * @returns {Promise<{loginDomain: string, clientId: string|null, connectionId: string|null, state: string}|null>}
  */
 export async function consumePendingAuth() {
     const { pendingAuth } = await chrome.storage.local.get(['pendingAuth']);
     await chrome.storage.local.remove(['pendingAuth']);
-    return pendingAuth || null;
+
+    if (!pendingAuth) return null;
+
+    // Expire after 5 minutes
+    const EXPIRATION_MS = 5 * 60 * 1000;
+    if (pendingAuth.createdAt && (Date.now() - pendingAuth.createdAt) > EXPIRATION_MS) {
+        debugInfo('OAuth pending auth expired');
+        return null;
+    }
+
+    return pendingAuth;
+}
+
+/**
+ * Validate OAuth state parameter matches the pending auth state
+ * @param {string} receivedState - State received from OAuth callback
+ * @returns {Promise<{valid: boolean, pendingAuth: object|null}>}
+ */
+export async function validateOAuthState(receivedState) {
+    const { pendingAuth } = await chrome.storage.local.get(['pendingAuth']);
+
+    if (!pendingAuth?.state) {
+        return { valid: false, pendingAuth: null };
+    }
+
+    // Check expiration
+    const EXPIRATION_MS = 5 * 60 * 1000;
+    if (pendingAuth.createdAt && (Date.now() - pendingAuth.createdAt) > EXPIRATION_MS) {
+        await chrome.storage.local.remove(['pendingAuth']);
+        return { valid: false, pendingAuth: null };
+    }
+
+    if (pendingAuth.state !== receivedState) {
+        return { valid: false, pendingAuth: null };
+    }
+
+    // State is valid - clear it and return pending auth
+    await chrome.storage.local.remove(['pendingAuth']);
+    return { valid: true, pendingAuth };
 }
 
 // --- OAuth Credentials ---

@@ -11,21 +11,26 @@ const queryParams = new URLSearchParams(window.location.search);
 const code = queryParams.get('code');
 const error = queryParams.get('error');
 const errorDescription = queryParams.get('error_description');
+const stateFromQuery = queryParams.get('state');
 
 // Check for access token (implicit flow) in hash
 const hashParams = new URLSearchParams(window.location.hash.substring(1));
 const accessToken = hashParams.get('access_token');
 const instanceUrl = hashParams.get('instance_url');
+const stateFromHash = hashParams.get('state');
+
+// Get state from whichever flow we're in
+const receivedState = stateFromQuery || stateFromHash;
 
 if (error) {
     // OAuth error - escape to prevent XSS
     statusEl.innerHTML = `<span class="error">Authorization denied: ${escapeHtml(errorDescription || error)}</span>`;
 } else if (code) {
     // Authorization code flow - exchange via proxy
-    handleCodeFlow(code);
+    handleCodeFlow(code, receivedState);
 } else if (accessToken && instanceUrl) {
     // Implicit flow - store tokens directly
-    handleImplicitFlow(accessToken, instanceUrl);
+    handleImplicitFlow(accessToken, instanceUrl, receivedState);
 } else {
     statusEl.innerHTML = '<span class="error">No authorization response received.</span><br>Please try authorizing again.';
 }
@@ -33,14 +38,19 @@ if (error) {
 /**
  * Handle authorization code flow - exchange code for tokens via proxy
  */
-async function handleCodeFlow(code) {
-    statusEl.innerText = 'Exchanging authorization code...';
+async function handleCodeFlow(code, receivedState) {
+    statusEl.innerText = 'Validating authorization...';
 
     try {
         const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
-        // Get pending auth parameters (includes loginDomain, clientId, connectionId)
-        const pendingAuth = await consumePendingAuth();
+        // Validate state parameter for CSRF protection
+        const { valid, pendingAuth } = await validateOAuthState(receivedState);
+        if (!valid) {
+            statusEl.innerHTML = '<span class="error">Invalid or expired authorization state.</span><br>Please try authorizing again.';
+            return;
+        }
+
         const loginDomain = pendingAuth?.loginDomain || 'https://login.salesforce.com';
 
         // Get clientId - use pending auth's custom clientId or fall back to default
@@ -87,12 +97,16 @@ async function handleCodeFlow(code) {
 /**
  * Handle implicit flow - store tokens directly
  */
-async function handleImplicitFlow(accessToken, instanceUrl) {
-    statusEl.innerText = 'Processing tokens...';
+async function handleImplicitFlow(accessToken, instanceUrl, receivedState) {
+    statusEl.innerText = 'Validating authorization...';
 
     try {
-        // Get pending auth parameters (includes loginDomain, clientId, connectionId)
-        const pendingAuth = await consumePendingAuth();
+        // Validate state parameter for CSRF protection
+        const { valid, pendingAuth } = await validateOAuthState(receivedState);
+        if (!valid) {
+            statusEl.innerHTML = '<span class="error">Invalid or expired authorization state.</span><br>Please try authorizing again.';
+            return;
+        }
 
         // Derive loginDomain from instanceUrl if auto-detect was used (null loginDomain)
         // The instanceUrl is the My Domain URL, which is what we want for future re-auths

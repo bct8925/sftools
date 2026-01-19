@@ -17,6 +17,7 @@ import {
     // OAuth
     getOAuthCredentials,
     setPendingAuth,
+    generateOAuthState,
     migrateCustomConnectedApp
 } from '../../lib/utils.js';
 import { replaceIcons } from '../../lib/icons.js';
@@ -231,18 +232,23 @@ async function startAuthorization(overrideLoginDomain = null, overrideClientId =
         clientId = credentials.clientId;
     }
 
+    // Generate state parameter for CSRF protection
+    const state = generateOAuthState();
+
     // Store pending auth state for callback to use
     await setPendingAuth({
         loginDomain,
         clientId: overrideClientId, // Store only if custom (null means use default)
-        connectionId // Set if re-authorizing existing connection
+        connectionId, // Set if re-authorizing existing connection
+        state // For CSRF validation
     });
 
     const responseType = useCodeFlow ? 'code' : 'token';
     const authUrl = `${loginDomain}/services/oauth2/authorize` +
         `?client_id=${clientId}` +
         `&response_type=${responseType}` +
-        `&redirect_uri=${encodeURIComponent(CALLBACK_URL)}`;
+        `&redirect_uri=${encodeURIComponent(CALLBACK_URL)}` +
+        `&state=${encodeURIComponent(state)}`;
 
     chrome.tabs.create({ url: authUrl });
 }

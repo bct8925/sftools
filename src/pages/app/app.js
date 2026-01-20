@@ -70,16 +70,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 chrome.storage.onChanged.addListener(async (changes, area) => {
     if (area !== 'local') return;
     if (changes.connections) {
-        await refreshConnectionList();
+        await refreshConnectionList(false);
 
-        // Close auth-expired modal if open and we have a valid connection
-        const overlays = document.querySelectorAll('.auth-expired-overlay');
-        if (overlays.length > 0) {
+        // Close auth-expired modal if present and a valid connection now exists
+        const overlay = document.querySelector('.auth-expired-overlay');
+        if (overlay) {
             const connections = changes.connections.newValue || [];
             const validConn = connections.find(c => c.accessToken);
             if (validConn) {
-                overlays.forEach(o => o.remove());
-                await selectConnection(validConn);
+                authExpiredModalOpen = false;
+                overlay.remove();
             }
         }
     }
@@ -92,40 +92,52 @@ async function initializeConnections() {
     // Migrate from global customConnectedApp to per-connection clientId
     await migrateCustomConnectedApp();
 
-    const connections = await loadConnections();
-
-    if (connections.length === 0) {
-        showNoConnectionsState();
-    } else {
-        showConnectionDropdown(connections);
-        // Auto-select most recently used
-        const mostRecent = connections.reduce((a, b) =>
-            a.lastUsedAt > b.lastUsedAt ? a : b
-        );
-        await selectConnection(mostRecent);
-    }
+    // Use refreshConnectionList with auto-select enabled
+    await refreshConnectionList(true);
 }
 
-async function refreshConnectionList() {
+/**
+ * Refresh the connection list and update all UI state.
+ * This is the single source of truth for connection list changes.
+ * @param {boolean} autoSelect - If true and no active connection exists, auto-select most recent
+ */
+async function refreshConnectionList(autoSelect = false) {
     const connections = await loadConnections();
 
     if (connections.length === 0) {
         showNoConnectionsState();
+        return;
+    }
+
+    // Check if active connection still exists
+    const activeId = getActiveConnectionId();
+    const activeConnection = connections.find(c => c.id === activeId);
+
+    if (!activeConnection) {
+        // Active connection was removed
         setActiveConnection(null);
-    } else {
-        // If active connection was removed, clear the selection
-        const activeId = getActiveConnectionId();
-        const activeConnection = connections.find(c => c.id === activeId);
-        if (!activeConnection) {
-            setActiveConnection(null);
-            updateHeaderConnectionDisplay(null);
+        updateHeaderConnectionDisplay(null);
+
+        if (autoSelect) {
+            // Auto-select most recently used connection
+            const mostRecent = connections.reduce((a, b) =>
+                a.lastUsedAt > b.lastUsedAt ? a : b
+            );
+            await selectConnection(mostRecent);
         }
-        updateMobileConnections(connections);
-        updateConnectionGating();
     }
+
+    updateMobileConnections(connections);
+    updateConnectionGating();
 }
 
+/**
+ * Update UI to reflect zero connections state.
+ * Clears all connection displays and switches to Settings tab.
+ * Called by refreshConnectionList() when connections.length === 0.
+ */
 function showNoConnectionsState() {
+    setActiveConnection(null); // Ensure active connection is cleared
     updateMobileConnections([]);
     updateHeaderConnectionDisplay(null);
     updateConnectionGating();
@@ -137,10 +149,6 @@ function switchToSettingsTab() {
     if (mobileNavItem) {
         mobileNavItem.click();
     }
-}
-
-function showConnectionDropdown(connections) {
-    updateMobileConnections(connections);
 }
 
 function escapeHtml(str) {
@@ -254,10 +262,13 @@ async function startAuthorization(overrideLoginDomain = null, overrideClientId =
 window.startAuthorization = startAuthorization;
 
 // --- Auth Expiration Handler ---
+let authExpiredModalOpen = false;
+
 function initAuthExpirationHandler() {
     onAuthExpired(async (expiredConnectionId) => {
-        // Prevent duplicate modals
-        if (document.querySelector('.auth-expired-overlay')) return;
+        // Prevent duplicate modals (synchronous check to avoid race condition)
+        if (authExpiredModalOpen) return;
+        authExpiredModalOpen = true;
 
         const connections = await loadConnections();
         const expiredConnection = connections.find(c => c.id === expiredConnectionId);
@@ -284,9 +295,9 @@ function initAuthExpirationHandler() {
                 console.error('Re-auth failed: expiredConnection is null');
                 return;
             }
-            // Use connection's loginDomain, clientId, and pass connectionId for re-auth
+            // Use connection's instanceUrl, clientId, and pass connectionId for re-auth
             await startAuthorization(
-                expiredConnection.loginDomain || expiredConnection.instanceUrl,
+                expiredConnection.instanceUrl,
                 expiredConnection.clientId,
                 expiredConnection.id
             );
@@ -297,11 +308,15 @@ function initAuthExpirationHandler() {
                 // Clear active connection first to prevent auth expiration trigger
                 setActiveConnection(null);
                 await removeConnection(expiredConnectionId);
+                await refreshConnectionList();
+                switchToSettingsTab();
             }
+            authExpiredModalOpen = false;
             overlay.remove();
         });
 
         overlay.querySelector('#dismiss-btn').addEventListener('click', () => {
+            authExpiredModalOpen = false;
             overlay.remove();
         });
     });
@@ -485,23 +500,11 @@ function initMobileMenu() {
             e.stopPropagation();
             if (!confirm('Remove this connection?')) return;
 
-            const wasActive = getActiveConnectionId() === connectionId;
-            if (wasActive) {
-                setActiveConnection(null);
-            }
-
             await removeConnection(connectionId);
-            const connections = await loadConnections();
+            await refreshConnectionList();
 
-            if (connections.length === 0) {
-                showNoConnectionsState();
-            } else {
-                updateMobileConnections(connections);
-                if (wasActive) {
-                    updateHeaderConnectionDisplay(null);
-                    updateConnectionGating();
-                }
-            }
+            // Always switch to Settings tab after removing a connection
+            switchToSettingsTab();
             return;
         }
 

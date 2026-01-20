@@ -4,6 +4,7 @@
 import { isProxyConnected, sendProxyRequest } from './native-messaging.js';
 import { getOAuthCredentials } from '../lib/oauth-credentials.js';
 import { debugInfo } from './debug.js';
+import { refreshViaContentScript } from './content-script-refresh.js';
 
 /**
  * Exchange authorization code for tokens via proxy
@@ -77,9 +78,46 @@ export async function exchangeCodeForTokens(code, redirectUri, loginDomain, clie
 const refreshPromises = new Map();
 
 /**
+ * Refresh access token via proxy (best option when available)
+ * @param {object} connection - Connection object with refreshToken and loginDomain
+ * @returns {Promise<{success: boolean, accessToken?: string, error?: string}>}
+ */
+async function refreshViaProxy(connection) {
+    const loginDomain = connection.instanceUrl;
+    const tokenUrl = `${loginDomain}/services/oauth2/token`;
+    const { clientId } = await getOAuthCredentials(connection.id);
+
+    const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: clientId,
+        refresh_token: connection.refreshToken
+    }).toString();
+
+    const response = await sendProxyRequest({
+        type: 'rest',
+        url: tokenUrl,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body
+    });
+
+    if (!response.success) {
+        return { success: false, error: response.error || 'Proxy refresh failed' };
+    }
+
+    const tokenData = JSON.parse(response.data);
+
+    if (tokenData.access_token) {
+        return { success: true, accessToken: tokenData.access_token };
+    } else {
+        return { success: false, error: tokenData.error_description || tokenData.error || 'Refresh failed' };
+    }
+}
+
+/**
  * Refresh the access token for a specific connection.
  * Uses mutex pattern per connection to prevent concurrent refreshes.
- * Routes through proxy to bypass CORS.
+ * Implements fallback cascade: proxy → content script → fail
  * @param {object} connection - Connection object with refreshToken and loginDomain
  * @returns {Promise<{success: boolean, accessToken?: string, error?: string}>}
  */
@@ -99,42 +137,31 @@ export async function refreshAccessToken(connection) {
                 return { success: false, error: 'No refresh token available' };
             }
 
-            if (!isProxyConnected()) {
-                return { success: false, error: 'Proxy not connected for token refresh' };
+            let result;
+
+            // 1. Try proxy (best) - No CORS, works for all scenarios
+            if (isProxyConnected()) {
+                debugInfo('[TokenRefresh] Attempting via proxy for connection:', connection.id);
+                result = await refreshViaProxy(connection);
+                if (result.success) {
+                    debugInfo('[TokenRefresh] Success via proxy');
+                    return result;
+                }
+                debugInfo('[TokenRefresh] Proxy failed, trying content script fallback');
             }
 
-            const loginDomain = connection.loginDomain || 'https://login.salesforce.com';
-            const tokenUrl = `${loginDomain}/services/oauth2/token`;
-            // Use connection's clientId if set, otherwise fall back to default
-            const { clientId } = await getOAuthCredentials(connection.id);
-
-            const body = new URLSearchParams({
-                grant_type: 'refresh_token',
-                client_id: clientId,
-                refresh_token: connection.refreshToken
-            }).toString();
-
-            const response = await sendProxyRequest({
-                type: 'rest',
-                url: tokenUrl,
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: body
-            });
-
-            if (!response.success) {
-                console.error('Token refresh request failed:', response.error);
-                return { success: false, error: response.error || 'Refresh failed' };
+            // 2. Try content script (good) - Requires active Salesforce tab, bypasses CORS
+            debugInfo('[TokenRefresh] Attempting via content script for connection:', connection.id);
+            result = await refreshViaContentScript(connection);
+            if (result.success) {
+                debugInfo('[TokenRefresh] Success via content script');
+                return result;
             }
 
-            const tokenData = JSON.parse(response.data);
+            // 3. No fallback available - Show re-authorize
+            debugInfo('[TokenRefresh] All methods failed for connection:', connection.id);
+            return { success: false, error: result.error || 'Token refresh failed' };
 
-            if (tokenData.access_token) {
-                debugInfo('Token refreshed successfully for connection:', connection.id);
-                return { success: true, accessToken: tokenData.access_token };
-            } else {
-                return { success: false, error: tokenData.error_description || 'Refresh failed' };
-            }
         } catch (error) {
             console.error('Token refresh error:', error);
             return { success: false, error: error.message };

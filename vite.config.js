@@ -29,13 +29,19 @@ export default defineConfig({
         record: resolve(__dirname, 'src/pages/record/record.html'),
         schema: resolve(__dirname, 'src/pages/schema/schema.html'),
         // Background service worker
-        background: resolve(__dirname, 'src/background/background.js')
+        background: resolve(__dirname, 'src/background/background.js'),
+        // Content scripts
+        'content/token-refresh': resolve(__dirname, 'src/content/token-refresh.js')
       },
       output: {
         entryFileNames: (chunkInfo) => {
           // Keep background.js at root level for service worker
           if (chunkInfo.name === 'background') {
             return 'background.js';
+          }
+          // Content scripts maintain their path structure
+          if (chunkInfo.name.startsWith('content/')) {
+            return '[name].js';
           }
           // Output JS files to pages/ to match HTML structure
           return 'pages/[name]/[name].js';

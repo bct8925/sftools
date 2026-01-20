@@ -22,7 +22,8 @@
     "storage",
     "contextMenus",
     "notifications",
-    "nativeMessaging"
+    "nativeMessaging",
+    "tabs"
   ],
   "side_panel": {
     "default_path": "dist/pages/app/app.html"
@@ -31,6 +32,22 @@
     "service_worker": "dist/background.js",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.salesforce.com/*",
+        "*://*.salesforce-setup.com/*",
+        "*://*.force.com/*",
+        "*://*.lightning.force.com/*",
+        "*://*.my.salesforce.com/*",
+        "*://*.visualforce.com/*",
+        "*://*.salesforce-sites.com/*"
+      ],
+      "js": ["dist/content/token-refresh.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
   "web_accessible_resources": [
     {
       "resources": ["dist/*"],

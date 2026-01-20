@@ -173,7 +173,7 @@ async function handle401WithRefresh(response, connectionId, hasAuth, retryFn) {
     const { connections } = await chrome.storage.local.get(['connections']);
     const connection = connections?.find(c => c.id === connectionId);
 
-    if (connection?.refreshToken && isProxyConnected()) {
+    if (connection?.refreshToken) {
         debugInfo('Got 401, attempting token refresh for connection:', connectionId);
         const refreshResult = await refreshAccessToken(connection);
 
@@ -193,7 +193,7 @@ async function handle401WithRefresh(response, connectionId, hasAuth, retryFn) {
             };
         }
     } else {
-        debugInfo('Cannot refresh - refreshToken:', !!connection?.refreshToken, 'proxy:', isProxyConnected());
+        debugInfo('Cannot refresh - no refresh token available');
         return {
             success: false,
             status: 401,

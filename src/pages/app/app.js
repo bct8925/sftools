@@ -113,18 +113,15 @@ async function refreshConnectionList() {
         showNoConnectionsState();
         setActiveConnection(null);
     } else {
-        // If active connection was removed, select the most recent
+        // If active connection was removed, clear the selection
         const activeId = getActiveConnectionId();
         const activeConnection = connections.find(c => c.id === activeId);
         if (!activeConnection) {
-            const mostRecent = connections.reduce((a, b) =>
-                a.lastUsedAt > b.lastUsedAt ? a : b
-            );
-            await selectConnection(mostRecent);
-        } else {
-            updateMobileConnections(connections);
-            updateConnectionGating();
+            setActiveConnection(null);
+            updateHeaderConnectionDisplay(null);
         }
+        updateMobileConnections(connections);
+        updateConnectionGating();
     }
 }
 
@@ -276,6 +273,7 @@ function initAuthExpirationHandler() {
                 <div class="auth-expired-buttons">
                     <button id="reauth-btn" class="button-brand">Re-authorize</button>
                     <button id="delete-conn-btn" class="button-neutral">Delete</button>
+                    <button id="dismiss-btn" class="button-neutral">Dismiss</button>
                 </div>
             </div>
         `;
@@ -300,6 +298,10 @@ function initAuthExpirationHandler() {
                 setActiveConnection(null);
                 await removeConnection(expiredConnectionId);
             }
+            overlay.remove();
+        });
+
+        overlay.querySelector('#dismiss-btn').addEventListener('click', () => {
             overlay.remove();
         });
     });
@@ -494,12 +496,10 @@ function initMobileMenu() {
             if (connections.length === 0) {
                 showNoConnectionsState();
             } else {
-                renderConnectionList(connections);
+                updateMobileConnections(connections);
                 if (wasActive) {
-                    const mostRecent = connections.reduce((a, b) =>
-                        a.lastUsedAt > b.lastUsedAt ? a : b
-                    );
-                    await selectConnection(mostRecent);
+                    updateHeaderConnectionDisplay(null);
+                    updateConnectionGating();
                 }
             }
             return;

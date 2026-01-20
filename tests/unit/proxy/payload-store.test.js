@@ -1,13 +1,35 @@
 /**
  * Tests for sftools-proxy/src/payload-store.js
  *
- * Test IDs: PS-U-001 through PS-U-006
+ * Test IDs: PS-U-001 through PS-U-028
  * - PS-U-001: storePayload() - Returns UUID
  * - PS-U-002: getPayload() - Returns stored data
  * - PS-U-003: getPayload() - Returns null for expired
  * - PS-U-004: deletePayload() - Removes from store
  * - PS-U-005: shouldUseLargePayload() - True for >= 800KB
  * - PS-U-006: shouldUseLargePayload() - False for < 800KB
+ * - PS-U-007: storePayload() - Increments payload count
+ * - PS-U-008: storePayload() - Stores multiple payloads with unique IDs
+ * - PS-U-009: storePayload() - Schedules automatic cleanup after TTL
+ * - PS-U-010: getPayload() - Removes expired payload from store
+ * - PS-U-011: getPayload() - Does not delete payload before expiration
+ * - PS-U-012: getPayload() - Returns correct data for multiple stored payloads
+ * - PS-U-013: deletePayload() - Clears the auto-delete timeout
+ * - PS-U-014: deletePayload() - Handles non-existent ID gracefully
+ * - PS-U-015: deletePayload() - Removes only the specified payload
+ * - PS-U-016: shouldUseLargePayload() - Returns false for small strings
+ * - PS-U-017: shouldUseLargePayload() - Calculates byte length correctly for UTF-8 characters
+ * - PS-U-018: shouldUseLargePayload() - Returns false for empty string
+ * - PS-U-019: getPayloadCount() - Returns 0 when no payloads stored
+ * - PS-U-020: getPayloadCount() - Returns correct count after storing payloads
+ * - PS-U-021: getPayloadCount() - Decreases count after deletePayload
+ * - PS-U-022: getPayloadCount() - Decreases count after automatic expiration
+ * - PS-U-023: TTL behavior - Keeps payload available just before TTL expires
+ * - PS-U-024: TTL behavior - Expires payload exactly at TTL
+ * - PS-U-025: TTL behavior - Handles multiple payloads with different expiration times
+ * - PS-U-026: Edge cases - Handles large number of stored payloads
+ * - PS-U-027: Edge cases - Handles storing exact 800KB threshold
+ * - PS-U-028: Edge cases - Handles binary-like data strings
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -58,7 +80,7 @@ describe('payload-store', () => {
             expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
         });
 
-        it('increments payload count', () => {
+        it('PS-U-007: increments payload count', () => {
             const initialCount = getPayloadCount();
 
             trackPayload(storePayload('test data'));
@@ -66,7 +88,7 @@ describe('payload-store', () => {
             expect(getPayloadCount()).toBe(initialCount + 1);
         });
 
-        it('stores multiple payloads with unique IDs', () => {
+        it('PS-U-008: stores multiple payloads with unique IDs', () => {
             const id1 = trackPayload(storePayload('data 1'));
             const id2 = trackPayload(storePayload('data 2'));
 
@@ -74,7 +96,7 @@ describe('payload-store', () => {
             expect(getPayloadCount()).toBe(2);
         });
 
-        it('schedules automatic cleanup after TTL', () => {
+        it('PS-U-009: schedules automatic cleanup after TTL', () => {
             const id = trackPayload(storePayload('test data'));
             expect(getPayload(id)).toBe('test data');
 
@@ -114,7 +136,7 @@ describe('payload-store', () => {
             expect(result).toBeNull();
         });
 
-        it('removes expired payload from store', () => {
+        it('PS-U-010: removes expired payload from store', () => {
             const id = trackPayload(storePayload('test data'));
             const initialCount = getPayloadCount();
 
@@ -128,7 +150,7 @@ describe('payload-store', () => {
             expect(getPayloadCount()).toBe(initialCount - 1);
         });
 
-        it('does not delete payload before expiration', () => {
+        it('PS-U-011: does not delete payload before expiration', () => {
             const id = trackPayload(storePayload('test data'));
 
             // Advance time, but not past TTL
@@ -140,7 +162,7 @@ describe('payload-store', () => {
             expect(getPayloadCount()).toBe(1);
         });
 
-        it('returns correct data for multiple stored payloads', () => {
+        it('PS-U-012: returns correct data for multiple stored payloads', () => {
             const id1 = trackPayload(storePayload('payload 1'));
             const id2 = trackPayload(storePayload('payload 2'));
             const id3 = trackPayload(storePayload('payload 3'));
@@ -162,7 +184,7 @@ describe('payload-store', () => {
             expect(getPayload(id)).toBeNull();
         });
 
-        it('clears the auto-delete timeout', () => {
+        it('PS-U-013: clears the auto-delete timeout', () => {
             const id = trackPayload(storePayload('test data'));
 
             deletePayload(id);
@@ -174,14 +196,14 @@ describe('payload-store', () => {
             expect(getPayloadCount()).toBe(0);
         });
 
-        it('handles non-existent ID gracefully', () => {
+        it('PS-U-014: handles non-existent ID gracefully', () => {
             deletePayload('non-existent-uuid');
 
             // Should not throw or cause errors
             expect(getPayloadCount()).toBe(0);
         });
 
-        it('removes only the specified payload', () => {
+        it('PS-U-015: removes only the specified payload', () => {
             const id1 = trackPayload(storePayload('payload 1'));
             const id2 = trackPayload(storePayload('payload 2'));
             const id3 = trackPayload(storePayload('payload 3'));
@@ -223,13 +245,13 @@ describe('payload-store', () => {
             expect(result).toBe(false);
         });
 
-        it('returns false for small strings', () => {
+        it('PS-U-016: returns false for small strings', () => {
             const result = shouldUseLargePayload('small payload');
 
             expect(result).toBe(false);
         });
 
-        it('calculates byte length correctly for UTF-8 characters', () => {
+        it('PS-U-017: calculates byte length correctly for UTF-8 characters', () => {
             // Multi-byte UTF-8 characters
             // Each emoji is typically 4 bytes
             const emoji = '🔥';
@@ -244,7 +266,7 @@ describe('payload-store', () => {
             expect(shouldUseLargePayload(justOver)).toBe(true);
         });
 
-        it('returns false for empty string', () => {
+        it('PS-U-018: returns false for empty string', () => {
             const result = shouldUseLargePayload('');
 
             expect(result).toBe(false);
@@ -252,11 +274,11 @@ describe('payload-store', () => {
     });
 
     describe('getPayloadCount', () => {
-        it('returns 0 when no payloads stored', () => {
+        it('PS-U-019: returns 0 when no payloads stored', () => {
             expect(getPayloadCount()).toBe(0);
         });
 
-        it('returns correct count after storing payloads', () => {
+        it('PS-U-020: returns correct count after storing payloads', () => {
             trackPayload(storePayload('data 1'));
             trackPayload(storePayload('data 2'));
             trackPayload(storePayload('data 3'));
@@ -264,7 +286,7 @@ describe('payload-store', () => {
             expect(getPayloadCount()).toBe(3);
         });
 
-        it('decreases count after deletePayload', () => {
+        it('PS-U-021: decreases count after deletePayload', () => {
             const id1 = trackPayload(storePayload('data 1'));
             const id2 = trackPayload(storePayload('data 2'));
             expect(getPayloadCount()).toBe(2);
@@ -278,7 +300,7 @@ describe('payload-store', () => {
             expect(getPayloadCount()).toBe(0);
         });
 
-        it('decreases count after automatic expiration', () => {
+        it('PS-U-022: decreases count after automatic expiration', () => {
             trackPayload(storePayload('data 1'));
             trackPayload(storePayload('data 2'));
             expect(getPayloadCount()).toBe(2);
@@ -291,7 +313,7 @@ describe('payload-store', () => {
     });
 
     describe('TTL behavior', () => {
-        it('keeps payload available just before TTL expires', () => {
+        it('PS-U-023: keeps payload available just before TTL expires', () => {
             const id = trackPayload(storePayload('test data'));
 
             // Advance to 1ms before expiration
@@ -301,7 +323,7 @@ describe('payload-store', () => {
             expect(getPayloadCount()).toBe(1);
         });
 
-        it('expires payload exactly at TTL', () => {
+        it('PS-U-024: expires payload exactly at TTL', () => {
             const id = trackPayload(storePayload('test data'));
 
             // Advance to exact TTL
@@ -312,7 +334,7 @@ describe('payload-store', () => {
             expect(getPayload(id)).toBeNull();
         });
 
-        it('handles multiple payloads with different expiration times', () => {
+        it('PS-U-025: handles multiple payloads with different expiration times', () => {
             const id1 = trackPayload(storePayload('payload 1'));
 
             vi.advanceTimersByTime(10000);
@@ -335,7 +357,7 @@ describe('payload-store', () => {
     });
 
     describe('edge cases', () => {
-        it('handles large number of stored payloads', () => {
+        it('PS-U-026: handles large number of stored payloads', () => {
             const ids = [];
             for (let i = 0; i < 100; i++) {
                 ids.push(trackPayload(storePayload(`payload ${i}`)));
@@ -349,7 +371,7 @@ describe('payload-store', () => {
             }
         });
 
-        it('handles storing exact 800KB threshold', () => {
+        it('PS-U-027: handles storing exact 800KB threshold', () => {
             const exactData = 'x'.repeat(MAX_NATIVE_MESSAGE_SIZE);
 
             expect(shouldUseLargePayload(exactData)).toBe(true);
@@ -360,7 +382,7 @@ describe('payload-store', () => {
             expect(retrieved).toBe(exactData);
         });
 
-        it('handles binary-like data strings', () => {
+        it('PS-U-028: handles binary-like data strings', () => {
             const binaryData = '\x00\x01\x02\xFF\xFE';
 
             const result = shouldUseLargePayload(binaryData);

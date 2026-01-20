@@ -1,9 +1,13 @@
 /**
  * Tests for src/lib/oauth-credentials.js
  *
- * Test IDs: UT-U-007, UT-U-008
+ * Test IDs: UT-U-007, UT-U-008, UT-U-012 through UT-U-015
  * - UT-U-007: getOAuthCredentials() - Returns connection client ID
  * - UT-U-008: getOAuthCredentials() - Returns manifest default
+ * - UT-U-012: getOAuthCredentials() - Handles empty connections array
+ * - UT-U-013: getOAuthCredentials() - Handles missing connections in storage
+ * - UT-U-014: getOAuthCredentials() - Finds correct connection among multiple connections
+ * - UT-U-015: getOAuthCredentials() - Returns isCustom false for manifest default, true for connection clientId
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -59,7 +63,7 @@ describe('oauth-credentials', () => {
             expect(result.isCustom).toBe(true);
         });
 
-        it('handles empty connections array', async () => {
+        it('UT-U-012: handles empty connections array', async () => {
             chrome._setStorageData({ connections: [] });
 
             const result = await getOAuthCredentials('conn-1');
@@ -68,7 +72,7 @@ describe('oauth-credentials', () => {
             expect(result.isCustom).toBe(false);
         });
 
-        it('handles missing connections in storage', async () => {
+        it('UT-U-013: handles missing connections in storage', async () => {
             chrome._setStorageData({});
 
             const result = await getOAuthCredentials('conn-1');
@@ -77,7 +81,7 @@ describe('oauth-credentials', () => {
             expect(result.isCustom).toBe(false);
         });
 
-        it('finds correct connection among multiple connections', async () => {
+        it('UT-U-014: finds correct connection among multiple connections', async () => {
             chrome._setStorageData({
                 connections: [
                     createMockConnection({ id: 'conn-1', clientId: 'client-1' }),
@@ -92,7 +96,7 @@ describe('oauth-credentials', () => {
             expect(result.isCustom).toBe(true);
         });
 
-        it('returns isCustom false for manifest default, true for connection clientId', async () => {
+        it('UT-U-015: returns isCustom false for manifest default, true for connection clientId', async () => {
             chrome._setStorageData({
                 connections: [createMockConnection({ id: 'custom-conn', clientId: 'custom-id' })]
             });

@@ -24,6 +24,38 @@
  * - Q-U-020: isFieldEditable() - Returns true for updateable fields
  * - Q-U-021: checkIfEditable() - Returns false without Id
  * - Q-U-022: checkIfEditable() - Returns false for aggregate queries
+ * - Q-U-023: normalizeQuery() - Trims whitespace
+ * - Q-U-024: normalizeQuery() - Handles newlines and tabs
+ * - Q-U-025: flattenColumnMetadata() - Handles subqueries with aggregate flag
+ * - Q-U-026: flattenColumnMetadata() - Empty metadata array
+ * - Q-U-027: extractColumnsFromRecord() - Excludes attributes key
+ * - Q-U-028: extractColumnsFromRecord() - Sets default column properties
+ * - Q-U-029: getValueByPath() - Returns direct value for non-nested path
+ * - Q-U-030: getValueByPath() - Returns undefined for null intermediate
+ * - Q-U-031: getValueByPath() - Returns undefined for empty path
+ * - Q-U-032: getValueByPath() - Returns undefined for null path
+ * - Q-U-033: recordsToCsv() - Handles nested paths
+ * - Q-U-034: escapeCsvField() - Returns empty string for null
+ * - Q-U-035: escapeCsvField() - Returns empty string for undefined
+ * - Q-U-036: escapeCsvField() - Returns simple strings unchanged
+ * - Q-U-037: escapeCsvField() - Converts numbers to strings
+ * - Q-U-038: formatCellValue() - Returns Name property from objects
+ * - Q-U-039: formatCellValue() - Returns Id property if no Name
+ * - Q-U-040: formatCellValue() - Returns JSON for other objects
+ * - Q-U-041: formatCellValue() - Formats subquery data with record count
+ * - Q-U-042: formatCellValue() - Formats subquery array with count
+ * - Q-U-043: parseValueFromInput() - Parses numbers (double)
+ * - Q-U-044: parseValueFromInput() - Parses currency
+ * - Q-U-045: parseValueFromInput() - Parses percent
+ * - Q-U-046: parseValueFromInput() - Returns string for text types
+ * - Q-U-047: parseValueFromInput() - Returns null for invalid int
+ * - Q-U-048: parseValueFromInput() - Returns null for invalid double
+ * - Q-U-049: isFieldEditable() - Returns false for relationship paths
+ * - Q-U-050: isFieldEditable() - Returns false for non-updateable fields
+ * - Q-U-051: isFieldEditable() - Returns false when field not in describe
+ * - Q-U-052: isFieldEditable() - Returns false when describe is null
+ * - Q-U-053: checkIfEditable() - Returns false without object name
+ * - Q-U-054: checkIfEditable() - Returns true for valid editable query
  */
 
 import { describe, it, expect } from 'vitest';
@@ -52,12 +84,12 @@ describe('query-utils', () => {
             expect(normalizeQuery(query)).toBe('select id from account');
         });
 
-        it('trims leading and trailing whitespace', () => {
+        it('Q-U-023: trims leading and trailing whitespace', () => {
             const query = '  SELECT Id FROM Account  ';
             expect(normalizeQuery(query)).toBe('select id from account');
         });
 
-        it('handles newlines and tabs', () => {
+        it('Q-U-024: handles newlines and tabs', () => {
             const query = 'SELECT\n\tId,\n\tName\nFROM Account';
             expect(normalizeQuery(query)).toBe('select id, name from account');
         });
@@ -110,7 +142,7 @@ describe('query-utils', () => {
             expect(result[0].path).toBe('Account.Owner.Name');
         });
 
-        it('handles subqueries with aggregate flag', () => {
+        it('Q-U-025: handles subqueries with aggregate flag', () => {
             const metadata = [
                 { columnName: 'Id', displayName: 'Id', aggregate: false },
                 {
@@ -131,7 +163,7 @@ describe('query-utils', () => {
             expect(result[1].subqueryColumns).toHaveLength(2);
         });
 
-        it('handles empty metadata array', () => {
+        it('Q-U-026: handles empty metadata array', () => {
             expect(flattenColumnMetadata([])).toEqual([]);
         });
     });
@@ -151,7 +183,7 @@ describe('query-utils', () => {
             expect(result.map(c => c.path)).toContain('Name');
         });
 
-        it('excludes attributes key', () => {
+        it('Q-U-027: excludes attributes key', () => {
             const record = {
                 Id: '001xxx',
                 attributes: { type: 'Account' }
@@ -162,7 +194,7 @@ describe('query-utils', () => {
             expect(result.map(c => c.path)).not.toContain('attributes');
         });
 
-        it('sets default column properties', () => {
+        it('Q-U-028: sets default column properties', () => {
             const record = { Id: '001xxx' };
             const result = extractColumnsFromRecord(record);
 
@@ -194,25 +226,25 @@ describe('query-utils', () => {
             expect(getValueByPath(record, 'Account.Owner.Name')).toBeUndefined();
         });
 
-        it('returns direct value for non-nested path', () => {
+        it('Q-U-029: returns direct value for non-nested path', () => {
             const record = { Name: 'Test Account' };
 
             expect(getValueByPath(record, 'Name')).toBe('Test Account');
         });
 
-        it('returns undefined for null intermediate', () => {
+        it('Q-U-030: returns undefined for null intermediate', () => {
             const record = { Account: null };
 
             expect(getValueByPath(record, 'Account.Name')).toBeUndefined();
         });
 
-        it('returns undefined for empty path', () => {
+        it('Q-U-031: returns undefined for empty path', () => {
             const record = { Name: 'Test' };
 
             expect(getValueByPath(record, '')).toBeUndefined();
         });
 
-        it('returns undefined for null path', () => {
+        it('Q-U-032: returns undefined for null path', () => {
             const record = { Name: 'Test' };
 
             expect(getValueByPath(record, null)).toBeUndefined();
@@ -251,7 +283,7 @@ describe('query-utils', () => {
             expect(csv).toContain('001xxx,');
         });
 
-        it('handles nested paths', () => {
+        it('Q-U-033: handles nested paths', () => {
             const records = [
                 { Id: '001xxx', Account: { Name: 'Parent Account' } }
             ];
@@ -279,19 +311,19 @@ describe('query-utils', () => {
             expect(escapeCsvField('Line1\nLine2')).toBe('"Line1\nLine2"');
         });
 
-        it('returns empty string for null', () => {
+        it('Q-U-034: returns empty string for null', () => {
             expect(escapeCsvField(null)).toBe('');
         });
 
-        it('returns empty string for undefined', () => {
+        it('Q-U-035: returns empty string for undefined', () => {
             expect(escapeCsvField(undefined)).toBe('');
         });
 
-        it('returns simple strings unchanged', () => {
+        it('Q-U-036: returns simple strings unchanged', () => {
             expect(escapeCsvField('Simple text')).toBe('Simple text');
         });
 
-        it('converts numbers to strings', () => {
+        it('Q-U-037: converts numbers to strings', () => {
             expect(escapeCsvField(123)).toBe('123');
         });
     });
@@ -311,27 +343,27 @@ describe('query-utils', () => {
             expect(formatCellValue(undefined, {})).toBe('');
         });
 
-        it('returns Name property from objects', () => {
+        it('Q-U-038: returns Name property from objects', () => {
             const obj = { Name: 'Test Name', Id: '001xxx' };
             expect(formatCellValue(obj, {})).toBe('Test Name');
         });
 
-        it('returns Id property if no Name', () => {
+        it('Q-U-039: returns Id property if no Name', () => {
             const obj = { Id: '001xxx' };
             expect(formatCellValue(obj, {})).toBe('001xxx');
         });
 
-        it('returns JSON for other objects', () => {
+        it('Q-U-040: returns JSON for other objects', () => {
             const obj = { foo: 'bar' };
             expect(formatCellValue(obj, {})).toBe('{"foo":"bar"}');
         });
 
-        it('formats subquery data with record count', () => {
+        it('Q-U-041: formats subquery data with record count', () => {
             const subqueryData = { records: [{}, {}], totalSize: 2 };
             expect(formatCellValue(subqueryData, { isSubquery: true })).toBe('[2 records]');
         });
 
-        it('formats subquery array with count', () => {
+        it('Q-U-042: formats subquery array with count', () => {
             const subqueryArray = [{}, {}, {}];
             expect(formatCellValue(subqueryArray, { isSubquery: true })).toBe('[3 records]');
         });
@@ -342,15 +374,15 @@ describe('query-utils', () => {
             expect(parseValueFromInput('42', { type: 'int' })).toBe(42);
         });
 
-        it('parses numbers (double)', () => {
+        it('Q-U-043: parses numbers (double)', () => {
             expect(parseValueFromInput('3.14', { type: 'double' })).toBe(3.14);
         });
 
-        it('parses currency', () => {
+        it('Q-U-044: parses currency', () => {
             expect(parseValueFromInput('99.99', { type: 'currency' })).toBe(99.99);
         });
 
-        it('parses percent', () => {
+        it('Q-U-045: parses percent', () => {
             expect(parseValueFromInput('0.25', { type: 'percent' })).toBe(0.25);
         });
 
@@ -365,16 +397,16 @@ describe('query-utils', () => {
             expect(parseValueFromInput(null, { type: 'string' })).toBeNull();
         });
 
-        it('returns string for text types', () => {
+        it('Q-U-046: returns string for text types', () => {
             expect(parseValueFromInput('hello', { type: 'string' })).toBe('hello');
             expect(parseValueFromInput('hello', { type: 'textarea' })).toBe('hello');
         });
 
-        it('returns null for invalid int', () => {
+        it('Q-U-047: returns null for invalid int', () => {
             expect(parseValueFromInput('not a number', { type: 'int' })).toBeNull();
         });
 
-        it('returns null for invalid double', () => {
+        it('Q-U-048: returns null for invalid double', () => {
             expect(parseValueFromInput('not a number', { type: 'double' })).toBeNull();
         });
     });
@@ -396,7 +428,7 @@ describe('query-utils', () => {
             expect(isFieldEditable('Name', fieldDescribe)).toBe(true);
         });
 
-        it('returns false for relationship paths', () => {
+        it('Q-U-049: returns false for relationship paths', () => {
             const fieldDescribe = {
                 'Account.Name': { updateable: true, calculated: false }
             };
@@ -404,7 +436,7 @@ describe('query-utils', () => {
             expect(isFieldEditable('Account.Name', fieldDescribe)).toBe(false);
         });
 
-        it('returns false for non-updateable fields', () => {
+        it('Q-U-050: returns false for non-updateable fields', () => {
             const fieldDescribe = {
                 CreatedDate: { updateable: false, calculated: false }
             };
@@ -412,11 +444,11 @@ describe('query-utils', () => {
             expect(isFieldEditable('CreatedDate', fieldDescribe)).toBe(false);
         });
 
-        it('returns false when field not in describe', () => {
+        it('Q-U-051: returns false when field not in describe', () => {
             expect(isFieldEditable('Unknown', {})).toBe(false);
         });
 
-        it('returns false when describe is null', () => {
+        it('Q-U-052: returns false when describe is null', () => {
             expect(isFieldEditable('Name', null)).toBe(false);
         });
     });
@@ -439,7 +471,7 @@ describe('query-utils', () => {
             expect(checkIfEditable(columns, 'Account')).toBe(false);
         });
 
-        it('returns false without object name', () => {
+        it('Q-U-053: returns false without object name', () => {
             const columns = [
                 { path: 'Id', aggregate: false }
             ];
@@ -448,7 +480,7 @@ describe('query-utils', () => {
             expect(checkIfEditable(columns, '')).toBe(false);
         });
 
-        it('returns true for valid editable query', () => {
+        it('Q-U-054: returns true for valid editable query', () => {
             const columns = [
                 { path: 'Id', aggregate: false },
                 { path: 'Name', aggregate: false }

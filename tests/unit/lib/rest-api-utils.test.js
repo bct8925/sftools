@@ -1,10 +1,12 @@
 /**
  * Tests for src/lib/rest-api-utils.js
  *
- * Test IDs:
+ * Test IDs: R-U-001 through R-U-005
  * - R-U-001: shouldShowBody() - Shows body for POST
  * - R-U-002: shouldShowBody() - Hides body for GET
  * - R-U-003: shouldShowBody() - Shows body for PATCH
+ * - R-U-004: shouldShowBody() - Shows body for PUT
+ * - R-U-005: shouldShowBody() - Hides body for DELETE
  */
 
 import { describe, it, expect } from 'vitest';
@@ -24,11 +26,11 @@ describe('rest-api-utils', () => {
             expect(shouldShowBody('PATCH')).toBe(true);
         });
 
-        it('returns true for PUT method', () => {
+        it('R-U-004: returns true for PUT method', () => {
             expect(shouldShowBody('PUT')).toBe(true);
         });
 
-        it('returns false for DELETE method', () => {
+        it('R-U-005: returns false for DELETE method', () => {
             expect(shouldShowBody('DELETE')).toBe(false);
         });
     });

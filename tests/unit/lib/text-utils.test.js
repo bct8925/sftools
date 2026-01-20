@@ -1,9 +1,25 @@
 /**
  * Tests for src/lib/text-utils.js
  *
- * Test IDs: UT-U-001, UT-U-002
- * - UT-U-001: escapeHtml() - Escapes < > &
- * - UT-U-002: escapeAttr() - Escapes quotes
+ * Test IDs: UT-U-016 through UT-U-035
+ * - UT-U-016: escapeHtml() - Does not escape quotes (use escapeAttr for attributes)
+ * - UT-U-017: escapeHtml() - Handles combined special characters
+ * - UT-U-018: escapeHtml() - Returns empty string for null
+ * - UT-U-019: escapeHtml() - Returns empty string for undefined
+ * - UT-U-020: escapeHtml() - Returns empty string for empty string
+ * - UT-U-021: escapeHtml() - Preserves safe strings unchanged
+ * - UT-U-022: escapeAttr() - Escapes ampersand
+ * - UT-U-023: escapeAttr() - Escapes angle brackets
+ * - UT-U-024: escapeAttr() - Returns empty string for null
+ * - UT-U-025: escapeAttr() - Returns empty string for undefined
+ * - UT-U-026: escapeAttr() - Preserves safe strings unchanged
+ * - UT-U-027: truncate() - Returns original string when shorter than limit
+ * - UT-U-028: truncate() - Returns original string when equal to limit
+ * - UT-U-029: truncate() - Truncates and adds ellipsis when longer than limit
+ * - UT-U-030: truncate() - Returns empty string for null
+ * - UT-U-031: truncate() - Returns empty string for undefined
+ * - UT-U-032: truncate() - Returns empty string for empty string
+ * - UT-U-033: truncate() - Truncates at exact position
  */
 
 import { describe, it, expect } from 'vitest';
@@ -11,99 +27,99 @@ import { escapeHtml, escapeAttr, truncate } from '../../../src/lib/text-utils.js
 
 describe('text-utils', () => {
     describe('escapeHtml', () => {
-        it('UT-U-001: escapes < and > characters', () => {
+        it('escapes < and > characters', () => {
             expect(escapeHtml('<script>')).toBe('&lt;script&gt;');
         });
 
-        it('UT-U-001: escapes & character', () => {
+        it('escapes & character', () => {
             expect(escapeHtml('foo & bar')).toBe('foo &amp; bar');
         });
 
-        it('does not escape quotes (use escapeAttr for attributes)', () => {
+        it('UT-U-016: does not escape quotes (use escapeAttr for attributes)', () => {
             // escapeHtml uses textContent/innerHTML which doesn't escape quotes
             // This is fine for HTML content, use escapeAttr for attribute values
             expect(escapeHtml('"hello"')).toBe('"hello"');
         });
 
-        it('handles combined special characters', () => {
+        it('UT-U-017: handles combined special characters', () => {
             // Note: quotes are not escaped by this method
             expect(escapeHtml('<div class="test">a & b</div>'))
                 .toBe('&lt;div class="test"&gt;a &amp; b&lt;/div&gt;');
         });
 
-        it('returns empty string for null', () => {
+        it('UT-U-018: returns empty string for null', () => {
             expect(escapeHtml(null)).toBe('');
         });
 
-        it('returns empty string for undefined', () => {
+        it('UT-U-019: returns empty string for undefined', () => {
             expect(escapeHtml(undefined)).toBe('');
         });
 
-        it('returns empty string for empty string', () => {
+        it('UT-U-020: returns empty string for empty string', () => {
             expect(escapeHtml('')).toBe('');
         });
 
-        it('preserves safe strings unchanged', () => {
+        it('UT-U-021: preserves safe strings unchanged', () => {
             expect(escapeHtml('Hello World')).toBe('Hello World');
         });
     });
 
     describe('escapeAttr', () => {
-        it('UT-U-002: escapes double quotes', () => {
+        it('escapes double quotes', () => {
             expect(escapeAttr('say "hello"')).toBe('say &quot;hello&quot;');
         });
 
-        it('UT-U-002: escapes single quotes', () => {
+        it('escapes single quotes', () => {
             expect(escapeAttr("it's")).toBe('it&#39;s');
         });
 
-        it('escapes ampersand', () => {
+        it('UT-U-022: escapes ampersand', () => {
             expect(escapeAttr('a & b')).toBe('a &amp; b');
         });
 
-        it('escapes angle brackets', () => {
+        it('UT-U-023: escapes angle brackets', () => {
             expect(escapeAttr('<tag>')).toBe('&lt;tag&gt;');
         });
 
-        it('returns empty string for null', () => {
+        it('UT-U-024: returns empty string for null', () => {
             expect(escapeAttr(null)).toBe('');
         });
 
-        it('returns empty string for undefined', () => {
+        it('UT-U-025: returns empty string for undefined', () => {
             expect(escapeAttr(undefined)).toBe('');
         });
 
-        it('preserves safe strings unchanged', () => {
+        it('UT-U-026: preserves safe strings unchanged', () => {
             expect(escapeAttr('simple text')).toBe('simple text');
         });
     });
 
     describe('truncate', () => {
-        it('returns original string when shorter than limit', () => {
+        it('UT-U-027: returns original string when shorter than limit', () => {
             expect(truncate('hello', 10)).toBe('hello');
         });
 
-        it('returns original string when equal to limit', () => {
+        it('UT-U-028: returns original string when equal to limit', () => {
             expect(truncate('hello', 5)).toBe('hello');
         });
 
-        it('truncates and adds ellipsis when longer than limit', () => {
+        it('UT-U-029: truncates and adds ellipsis when longer than limit', () => {
             expect(truncate('hello world', 5)).toBe('hello...');
         });
 
-        it('returns empty string for null', () => {
+        it('UT-U-030: returns empty string for null', () => {
             expect(truncate(null, 10)).toBe('');
         });
 
-        it('returns empty string for undefined', () => {
+        it('UT-U-031: returns empty string for undefined', () => {
             expect(truncate(undefined, 10)).toBe('');
         });
 
-        it('returns empty string for empty string', () => {
+        it('UT-U-032: returns empty string for empty string', () => {
             expect(truncate('', 10)).toBe('');
         });
 
-        it('truncates at exact position', () => {
+        it('UT-U-033: truncates at exact position', () => {
             expect(truncate('abcdefghij', 3)).toBe('abc...');
         });
     });

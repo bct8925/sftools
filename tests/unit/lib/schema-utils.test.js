@@ -9,8 +9,19 @@
  * - SB-U-005: filterFields() - Filters by label
  * - SB-U-006: getFieldTypeDisplay() - Returns "Formula" for calculated
  * - SB-U-007: getFieldTypeDisplay() - Returns type name
- * - SB-U-008: buildFieldSuggestions() - Creates Monaco completions
- * - SB-U-009: loadRelationshipFields() - Loads related object fields
+ * - SB-U-008: filterObjects() - Returns all objects when search term is empty
+ * - SB-U-009: filterObjects() - Returns all objects when search term is whitespace
+ * - SB-U-010: filterObjects() - Returns empty array when no matches
+ * - SB-U-011: filterObjects() - Returns multiple matches
+ * - SB-U-012: filterFields() - Returns all fields when search term is empty
+ * - SB-U-013: filterFields() - Returns all fields when search term is whitespace
+ * - SB-U-014: filterFields() - Returns empty array when no matches
+ * - SB-U-015: filterFields() - Returns multiple matches
+ * - SB-U-016: getFieldTypeDisplay() - Returns reference info for reference fields (single)
+ * - SB-U-017: getFieldTypeDisplay() - Returns reference info for reference fields (multiple)
+ * - SB-U-018: getFieldTypeDisplay() - Marks OwnerId as not clickable reference
+ * - SB-U-019: getFieldTypeDisplay() - Handles reference fields without referenceTo
+ * - SB-U-020: getFieldTypeDisplay() - Handles reference fields with empty referenceTo
  */
 
 import { describe, it, expect } from 'vitest';
@@ -54,22 +65,22 @@ describe('filterObjects', () => {
         expect(result[0].name).toBe('Account');
     });
 
-    it('returns all objects when search term is empty', () => {
+    it('SB-U-008: returns all objects when search term is empty', () => {
         const result = filterObjects(objects, '');
         expect(result).toHaveLength(4);
     });
 
-    it('returns all objects when search term is whitespace', () => {
+    it('SB-U-009: returns all objects when search term is whitespace', () => {
         const result = filterObjects(objects, '   ');
         expect(result).toHaveLength(4);
     });
 
-    it('returns empty array when no matches', () => {
+    it('SB-U-010: returns empty array when no matches', () => {
         const result = filterObjects(objects, 'NonExistent');
         expect(result).toHaveLength(0);
     });
 
-    it('returns multiple matches', () => {
+    it('SB-U-011: returns multiple matches', () => {
         const result = filterObjects(objects, 'o');
         expect(result.length).toBeGreaterThan(1);
     });
@@ -113,22 +124,22 @@ describe('filterFields', () => {
         expect(result[0].name).toBe('Email');
     });
 
-    it('returns all fields when search term is empty', () => {
+    it('SB-U-012: returns all fields when search term is empty', () => {
         const result = filterFields(fields, '');
         expect(result).toHaveLength(4);
     });
 
-    it('returns all fields when search term is whitespace', () => {
+    it('SB-U-013: returns all fields when search term is whitespace', () => {
         const result = filterFields(fields, '   ');
         expect(result).toHaveLength(4);
     });
 
-    it('returns empty array when no matches', () => {
+    it('SB-U-014: returns empty array when no matches', () => {
         const result = filterFields(fields, 'NonExistent');
         expect(result).toHaveLength(0);
     });
 
-    it('returns multiple matches', () => {
+    it('SB-U-015: returns multiple matches', () => {
         const result = filterFields(fields, 'e');
         expect(result.length).toBeGreaterThan(1);
     });
@@ -166,7 +177,7 @@ describe('getFieldTypeDisplay', () => {
         expect(result.isReference).toBe(false);
     });
 
-    it('returns reference info for reference fields (single)', () => {
+    it('SB-U-016: returns reference info for reference fields (single)', () => {
         const field = {
             name: 'AccountId',
             type: 'reference',
@@ -178,7 +189,7 @@ describe('getFieldTypeDisplay', () => {
         expect(result.referenceTo).toEqual(['Account']);
     });
 
-    it('returns reference info for reference fields (multiple)', () => {
+    it('SB-U-017: returns reference info for reference fields (multiple)', () => {
         const field = {
             name: 'WhoId',
             type: 'reference',
@@ -190,7 +201,7 @@ describe('getFieldTypeDisplay', () => {
         expect(result.referenceTo).toEqual(['Lead', 'Contact']);
     });
 
-    it('marks OwnerId as not clickable reference', () => {
+    it('SB-U-018: marks OwnerId as not clickable reference', () => {
         const field = {
             name: 'OwnerId',
             type: 'reference',
@@ -202,7 +213,7 @@ describe('getFieldTypeDisplay', () => {
         expect(result.referenceTo).toEqual(['User']);
     });
 
-    it('handles reference fields without referenceTo', () => {
+    it('SB-U-019: handles reference fields without referenceTo', () => {
         const field = {
             name: 'SomeId',
             type: 'reference'
@@ -212,7 +223,7 @@ describe('getFieldTypeDisplay', () => {
         expect(result.isReference).toBe(false);
     });
 
-    it('handles reference fields with empty referenceTo', () => {
+    it('SB-U-020: handles reference fields with empty referenceTo', () => {
         const field = {
             name: 'SomeId',
             type: 'reference',

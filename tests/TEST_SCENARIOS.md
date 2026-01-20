@@ -108,6 +108,41 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | Q-U-020 | `isFieldEditable()` | Returns true for updateable fields | `lib/query-utils.test.js` |
 | Q-U-021 | `checkIfEditable()` | Returns false without Id | `lib/query-utils.test.js` |
 | Q-U-022 | `checkIfEditable()` | Returns false for aggregate | `lib/query-utils.test.js` |
+| Q-U-023 | `normalizeQuery()` | Trims leading/trailing whitespace | `lib/query-utils.test.js` |
+| Q-U-024 | `normalizeQuery()` | Collapses multiple spaces to single | `lib/query-utils.test.js` |
+| Q-U-025 | `normalizeQuery()` | Preserves quoted strings | `lib/query-utils.test.js` |
+| Q-U-026 | `normalizeQuery()` | Converts to lowercase except quotes | `lib/query-utils.test.js` |
+| Q-U-027 | `normalizeQuery()` | Handles empty/whitespace-only input | `lib/query-utils.test.js` |
+| Q-U-028 | `flattenColumnMetadata()` | Handles empty metadata array | `lib/query-utils.test.js` |
+| Q-U-029 | `flattenColumnMetadata()` | Flattens single-level columns | `lib/query-utils.test.js` |
+| Q-U-030 | `flattenColumnMetadata()` | Flattens nested relationship columns | `lib/query-utils.test.js` |
+| Q-U-031 | `flattenColumnMetadata()` | Handles multiple nesting levels | `lib/query-utils.test.js` |
+| Q-U-032 | `flattenColumnMetadata()` | Builds proper dot-notation paths | `lib/query-utils.test.js` |
+| Q-U-033 | `extractColumnsFromRecord()` | Extracts top-level keys | `lib/query-utils.test.js` |
+| Q-U-034 | `extractColumnsFromRecord()` | Excludes attributes key | `lib/query-utils.test.js` |
+| Q-U-035 | `extractColumnsFromRecord()` | Handles empty record | `lib/query-utils.test.js` |
+| Q-U-036 | `getValueByPath()` | Returns direct property value | `lib/query-utils.test.js` |
+| Q-U-037 | `getValueByPath()` | Returns nested property via dot path | `lib/query-utils.test.js` |
+| Q-U-038 | `getValueByPath()` | Returns null for undefined path | `lib/query-utils.test.js` |
+| Q-U-039 | `getValueByPath()` | Handles null intermediate values | `lib/query-utils.test.js` |
+| Q-U-040 | `recordsToCsv()` | Generates valid CSV with headers | `lib/query-utils.test.js` |
+| Q-U-041 | `recordsToCsv()` | Quotes fields with commas | `lib/query-utils.test.js` |
+| Q-U-042 | `recordsToCsv()` | Escapes quotes in values | `lib/query-utils.test.js` |
+| Q-U-043 | `recordsToCsv()` | Handles newlines in values | `lib/query-utils.test.js` |
+| Q-U-044 | `recordsToCsv()` | Handles null/undefined values | `lib/query-utils.test.js` |
+| Q-U-045 | `escapeCsvField()` | Escapes double quotes | `lib/query-utils.test.js` |
+| Q-U-046 | `escapeCsvField()` | Quotes fields with commas | `lib/query-utils.test.js` |
+| Q-U-047 | `escapeCsvField()` | Quotes fields with newlines | `lib/query-utils.test.js` |
+| Q-U-048 | `escapeCsvField()` | Handles null/undefined | `lib/query-utils.test.js` |
+| Q-U-049 | `formatCellValue()` | Formats datetime values | `lib/query-utils.test.js` |
+| Q-U-050 | `formatCellValue()` | Formats boolean values | `lib/query-utils.test.js` |
+| Q-U-051 | `formatCellValue()` | Handles null values | `lib/query-utils.test.js` |
+| Q-U-052 | `formatCellValue()` | Preserves string values | `lib/query-utils.test.js` |
+| Q-U-053 | `parseValueFromInput()` | Parses string to number | `lib/query-utils.test.js` |
+| Q-U-054 | `parseValueFromInput()` | Parses "true"/"false" to boolean | `lib/query-utils.test.js` |
+| Q-U-055 | `parseValueFromInput()` | Returns null for empty string | `lib/query-utils.test.js` |
+| Q-U-056 | `parseValueFromInput()` | Preserves regular strings | `lib/query-utils.test.js` |
+| Q-U-057 | `isFieldEditable()` | Returns false for formula/calculated fields | `lib/query-utils.test.js` |
 
 ---
 
@@ -155,16 +190,24 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| A-U-001 | `setOutput()` | Sets output text | `lib/apex-utils.test.js` |
-| A-U-002 | `applyFilter()` | Filters to matching lines | `lib/apex-utils.test.js` |
-| A-U-003 | `applyFilter()` | Case insensitive match | `lib/apex-utils.test.js` |
-| A-U-004 | `clearFilter()` | Shows all output | `lib/apex-utils.test.js` |
-| A-U-005 | `getPreview()` | Returns first non-comment line | `lib/apex-utils.test.js` |
-| A-U-006 | `getPreview()` | Truncates long lines | `lib/apex-utils.test.js` |
-| A-U-007 | `setEditorMarkers()` | Creates marker for compile error | `lib/apex-utils.test.js` |
-| A-U-008 | `setEditorMarkers()` | Creates marker for runtime error | `lib/apex-utils.test.js` |
-| A-U-009 | `formatOutput()` | Formats success result | `lib/apex-utils.test.js` |
-| A-U-010 | `formatOutput()` | Formats error result | `lib/apex-utils.test.js` |
+| A-U-001 | `getPreview()` | Returns first non-comment line | `lib/apex-utils.test.js` |
+| A-U-007 | `getPreview()` | Truncates long lines | `lib/apex-utils.test.js` |
+| A-U-008 | `getPreview()` | Handles empty code | `lib/apex-utils.test.js` |
+| A-U-011 | `setEditorMarkers()` | Creates marker for compile error with line/column | `lib/apex-utils.test.js` |
+| A-U-012 | `setEditorMarkers()` | Creates marker for runtime error | `lib/apex-utils.test.js` |
+| A-U-013 | `setEditorMarkers()` | Handles missing line/column info | `lib/apex-utils.test.js` |
+| A-U-014 | `setEditorMarkers()` | Clears markers when no error | `lib/apex-utils.test.js` |
+| A-U-015 | `formatOutput()` | Formats successful execution | `lib/apex-utils.test.js` |
+| A-U-016 | `formatOutput()` | Formats compilation error | `lib/apex-utils.test.js` |
+| A-U-017 | `formatOutput()` | Formats runtime error | `lib/apex-utils.test.js` |
+| A-U-018 | `formatOutput()` | Shows exceptionMessage when present | `lib/apex-utils.test.js` |
+| A-U-019 | `formatOutput()` | Shows exceptionStackTrace when present | `lib/apex-utils.test.js` |
+| A-U-020 | `formatOutput()` | Shows compileProblem when present | `lib/apex-utils.test.js` |
+| A-U-021 | `getStatusText()` | Returns "Success" for successful execution | `lib/apex-utils.test.js` |
+| A-U-022 | `getStatusText()` | Returns "Compile Error" for compilation failure | `lib/apex-utils.test.js` |
+| A-U-023 | `getStatusText()` | Returns "Runtime Error" for exception | `lib/apex-utils.test.js` |
+| A-U-024 | `getStatusText()` | Returns "Unknown" for unexpected state | `lib/apex-utils.test.js` |
+| A-U-025 | `filterLogLines()` | Filters debug log by search term | `lib/apex-utils.test.js` |
 
 ---
 
@@ -208,9 +251,13 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| R-U-001 | `toggleBodyInput()` | Shows body for POST | `lib/rest-api-utils.test.js` |
-| R-U-002 | `toggleBodyInput()` | Hides body for GET | `lib/rest-api-utils.test.js` |
-| R-U-003 | `toggleBodyInput()` | Shows body for PATCH | `lib/rest-api-utils.test.js` |
+| R-U-001 | `shouldShowBody()` | Shows body for POST | `lib/rest-api-utils.test.js` |
+| R-U-002 | `shouldShowBody()` | Hides body for GET | `lib/rest-api-utils.test.js` |
+| R-U-003 | `shouldShowBody()` | Shows body for PATCH | `lib/rest-api-utils.test.js` |
+| R-U-004 | `shouldShowBody()` | Shows body for PUT | `lib/rest-api-utils.test.js` |
+| R-U-005 | `shouldShowBody()` | Hides body for DELETE | `lib/rest-api-utils.test.js` |
+| R-U-004 | `shouldShowBody()` | Shows body for PUT | `lib/rest-api-utils.test.js` |
+| R-U-005 | `shouldShowBody()` | Hides body for DELETE | `lib/rest-api-utils.test.js` |
 
 ---
 
@@ -260,11 +307,11 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
 | E-U-001 | `buildChannelOptions()` | Creates grouped optgroups | `lib/events-utils.test.js` |
-| E-U-002 | `handleStreamMessage()` | Processes event messages | `lib/events-utils.test.js` |
-| E-U-003 | `handleStreamMessage()` | Handles error messages | `lib/events-utils.test.js` |
-| E-U-004 | `handleStreamMessage()` | Handles end messages | `lib/events-utils.test.js` |
-| E-U-005 | `appendEvent()` | Adds event to output | `lib/events-utils.test.js` |
-| E-U-006 | `appendSystemMessage()` | Adds system message | `lib/events-utils.test.js` |
+| E-U-002 | `parseStreamMessage()` | Processes event messages | `lib/events-utils.test.js` |
+| E-U-003 | `parseStreamMessage()` | Handles error messages | `lib/events-utils.test.js` |
+| E-U-004 | `parseStreamMessage()` | Handles end messages | `lib/events-utils.test.js` |
+| E-U-005 | `formatEventEntry()` | Adds event to output | `lib/events-utils.test.js` |
+| E-U-006 | `formatSystemMessage()` | Adds system message | `lib/events-utils.test.js` |
 
 ---
 
@@ -318,9 +365,14 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 |---------|----------|-----------|-----------|
 | S-U-001 | `applyTheme()` | Applies light theme | `lib/theme.test.js` |
 | S-U-002 | `applyTheme()` | Applies dark theme | `lib/theme.test.js` |
-| S-U-003 | `createConnectionCardHtml()` | Renders connection details | `lib/settings-utils.test.js` |
-| S-U-004 | `updateProxyUI()` | Shows connected status | `lib/settings-utils.test.js` |
-| S-U-005 | `updateProxyUI()` | Shows disconnected status | `lib/settings-utils.test.js` |
+| S-U-003 | `createConnectionCardData()` | Renders connection details | `lib/settings-utils.test.js` |
+| S-U-004 | `getProxyStatusText()` | Shows connected status | `lib/settings-utils.test.js` |
+| S-U-005 | `getProxyStatusText()` | Shows disconnected status | `lib/settings-utils.test.js` |
+| S-U-006 | `createConnectionCardData()` | Renders inactive connection | `lib/settings-utils.test.js` |
+| S-U-007 | `createConnectionCardData()` | Escapes HTML in connection label | `lib/settings-utils.test.js` |
+| S-U-008 | `createConnectionCardData()` | Handles refresh token without custom client ID | `lib/settings-utils.test.js` |
+| S-U-009 | `createConnectionCardData()` | Handles custom client ID without refresh token | `lib/settings-utils.test.js` |
+| S-U-010 | `createConnectionCardData()` | Defaults activeId to null | `lib/settings-utils.test.js` |
 
 ---
 
@@ -460,6 +512,32 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | RV-U-011 | `parseValue()` | Parses string to boolean | `lib/record-utils.test.js` |
 | RV-U-012 | `parseValue()` | Parses string to number | `lib/record-utils.test.js` |
 | RV-U-013 | `getChangedFields()` | Returns only modified | `lib/record-utils.test.js` |
+| RV-U-014 | `sortFields()` | Sorts Id field first | `lib/record-utils.test.js` |
+| RV-U-015 | `sortFields()` | Sorts Name field second | `lib/record-utils.test.js` |
+| RV-U-016 | `sortFields()` | Sorts remaining fields alphabetically | `lib/record-utils.test.js` |
+| RV-U-017 | `sortFields()` | Handles missing Id field | `lib/record-utils.test.js` |
+| RV-U-018 | `sortFields()` | Handles missing Name field | `lib/record-utils.test.js` |
+| RV-U-019 | `filterFields()` | Excludes address type fields | `lib/record-utils.test.js` |
+| RV-U-020 | `filterFields()` | Excludes location type fields | `lib/record-utils.test.js` |
+| RV-U-021 | `filterFields()` | Includes standard field types | `lib/record-utils.test.js` |
+| RV-U-022 | `formatValue()` | Formats boolean true as "true" | `lib/record-utils.test.js` |
+| RV-U-023 | `formatValue()` | Formats boolean false as "false" | `lib/record-utils.test.js` |
+| RV-U-024 | `formatValue()` | Formats datetime with timezone | `lib/record-utils.test.js` |
+| RV-U-025 | `formatValue()` | Formats date YYYY-MM-DD | `lib/record-utils.test.js` |
+| RV-U-026 | `formatValue()` | Formats null as empty string | `lib/record-utils.test.js` |
+| RV-U-027 | `formatValue()` | Preserves string values | `lib/record-utils.test.js` |
+| RV-U-028 | `formatPreviewHtml()` | Creates reference link for lookup fields | `lib/record-utils.test.js` |
+| RV-U-029 | `formatPreviewHtml()` | Creates preview button for rich text | `lib/record-utils.test.js` |
+| RV-U-030 | `formatPreviewHtml()` | Returns plain value for other types | `lib/record-utils.test.js` |
+| RV-U-031 | `parseValue()` | Parses "true" to boolean true | `lib/record-utils.test.js` |
+| RV-U-032 | `parseValue()` | Parses "false" to boolean false | `lib/record-utils.test.js` |
+| RV-U-033 | `parseValue()` | Parses numeric strings to numbers | `lib/record-utils.test.js` |
+| RV-U-034 | `parseValue()` | Preserves regular strings | `lib/record-utils.test.js` |
+| RV-U-035 | `getChangedFields()` | Returns fields with modified values | `lib/record-utils.test.js` |
+| RV-U-036 | `getChangedFields()` | Excludes unchanged fields | `lib/record-utils.test.js` |
+| RV-U-037 | `getChangedFields()` | Handles boolean changes | `lib/record-utils.test.js` |
+| RV-U-038 | `getChangedFields()` | Handles null values | `lib/record-utils.test.js` |
+| RV-U-039 | `getChangedFields()` | Returns empty object when no changes | `lib/record-utils.test.js` |
 
 ---
 
@@ -516,8 +594,19 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | SB-U-005 | `filterFields()` | Filters by label | `lib/schema-utils.test.js` |
 | SB-U-006 | `getFieldTypeDisplay()` | Returns "Formula" for calculated | `lib/schema-utils.test.js` |
 | SB-U-007 | `getFieldTypeDisplay()` | Returns type name | `lib/schema-utils.test.js` |
-| SB-U-008 | `buildFieldSuggestions()` | Creates Monaco completions | `lib/schema-utils.test.js` |
-| SB-U-009 | `loadRelationshipFields()` | Loads related object fields | `lib/schema-utils.test.js` |
+| SB-U-008 | `buildFieldSuggestions()` | Creates Monaco completions for object fields | `lib/schema-utils.test.js` |
+| SB-U-009 | `buildFieldSuggestions()` | Filters fields by prefix | `lib/schema-utils.test.js` |
+| SB-U-010 | `buildFieldSuggestions()` | Includes field labels in details | `lib/schema-utils.test.js` |
+| SB-U-011 | `buildFieldSuggestions()` | Handles empty field list | `lib/schema-utils.test.js` |
+| SB-U-012 | `filterObjects()` | Filters by object API name | `lib/schema-utils.test.js` |
+| SB-U-013 | `filterObjects()` | Filters by object label | `lib/schema-utils.test.js` |
+| SB-U-014 | `filterObjects()` | Case-insensitive search | `lib/schema-utils.test.js` |
+| SB-U-015 | `filterFields()` | Filters by field API name | `lib/schema-utils.test.js` |
+| SB-U-016 | `filterFields()` | Filters by field label | `lib/schema-utils.test.js` |
+| SB-U-017 | `filterFields()` | Case-insensitive search | `lib/schema-utils.test.js` |
+| SB-U-018 | `getFieldTypeDisplay()` | Returns "Formula" for calculated fields | `lib/schema-utils.test.js` |
+| SB-U-019 | `getFieldTypeDisplay()` | Returns actual type name for non-calculated | `lib/schema-utils.test.js` |
+| SB-U-020 | `loadRelationshipFields()` | Loads related object fields for autocomplete | `lib/schema-utils.test.js` |
 
 ---
 
@@ -584,11 +673,21 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| AS-U-001 | `startAuthorization()` | Opens OAuth URL | `lib/app-utils.test.js` |
-| AS-U-002 | `detectLoginDomain()` | Extracts domain from tab | `lib/app-utils.test.js` |
-| AS-U-003 | `selectConnection()` | Updates active connection | `lib/app-utils.test.js` |
-| AS-U-004 | `updateFeatureGating()` | Disables Events without proxy | `lib/app-utils.test.js` |
-| AS-U-005 | `updateConnectionGating()` | Disables tabs without connection | `lib/app-utils.test.js` |
+| AS-U-001.1 | `startAuthorization()` | Opens OAuth URL in new tab | `lib/app-utils.test.js` |
+| AS-U-001.2 | `startAuthorization()` | Uses pending auth params if available | `lib/app-utils.test.js` |
+| AS-U-001.3 | `startAuthorization()` | Falls back to detecting login domain | `lib/app-utils.test.js` |
+| AS-U-001.4 | `startAuthorization()` | Uses manifest default client ID | `lib/app-utils.test.js` |
+| AS-U-001.5 | `startAuthorization()` | Includes state parameter | `lib/app-utils.test.js` |
+| AS-U-002.1 | `detectLoginDomain()` | Returns login.salesforce.com for prod | `lib/app-utils.test.js` |
+| AS-U-002.2 | `detectLoginDomain()` | Returns test.salesforce.com for sandbox | `lib/app-utils.test.js` |
+| AS-U-002.3 | `detectLoginDomain()` | Handles custom domains | `lib/app-utils.test.js` |
+| AS-U-003.1 | `selectConnection()` | Sets active connection ID | `lib/app-utils.test.js` |
+| AS-U-003.2 | `selectConnection()` | Updates lastUsedAt timestamp | `lib/app-utils.test.js` |
+| AS-U-003.3 | `selectConnection()` | Dispatches connection-changed event | `lib/app-utils.test.js` |
+| AS-U-004.1 | `updateFeatureGating()` | Disables Events tab without proxy | `lib/app-utils.test.js` |
+| AS-U-004.2 | `updateFeatureGating()` | Enables Events tab with proxy | `lib/app-utils.test.js` |
+| AS-U-005.1 | `updateConnectionGating()` | Disables tabs without connection | `lib/app-utils.test.js` |
+| AS-U-005.2 | `updateConnectionGating()` | Enables tabs with connection | `lib/app-utils.test.js` |
 
 ---
 
@@ -633,6 +732,9 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | OA-U-010 | `consumePendingAuth()` | Returns and clears params | `lib/auth.test.js` |
 | OA-U-011 | `migrateFromSingleConnection()` | Converts old format | `lib/auth.test.js` |
 | OA-U-012 | `migrateCustomConnectedApp()` | Migrates app config | `lib/auth.test.js` |
+| OA-U-013 | `addOrUpdateConnection()` | Creates new connection when connectionId is null | `lib/auth.test.js` |
+| OA-U-014 | `addOrUpdateConnection()` | Updates existing connection by connectionId | `lib/auth.test.js` |
+| OA-U-015 | `deriveLoginDomain()` | Derives login domain from instance URL | `lib/auth.test.js` |
 
 ---
 
@@ -677,6 +779,16 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | BG-U-005 | `extractOrgIdentifier()` | Handles trailhead orgs | `lib/background-utils.test.js` |
 | BG-U-006 | `findConnectionByDomain()` | Matches by domain | `lib/background-utils.test.js` |
 | BG-U-007 | `findConnectionByDomain()` | Returns null if no match | `lib/background-utils.test.js` |
+| BG-U-008 | `extractOrgIdentifier()` | Extracts sandbox identifier | `lib/background-utils.test.js` |
+| BG-U-009 | `extractOrgIdentifier()` | Extracts scratch org identifier | `lib/background-utils.test.js` |
+| BG-U-010 | `extractOrgIdentifier()` | Handles trailhead orgs | `lib/background-utils.test.js` |
+| BG-U-011 | `extractOrgIdentifier()` | Returns domain for production orgs | `lib/background-utils.test.js` |
+| BG-U-012 | `findConnectionByDomain()` | Matches by org identifier | `lib/background-utils.test.js` |
+| BG-U-013 | `findConnectionByDomain()` | Matches by full domain | `lib/background-utils.test.js` |
+| BG-U-014 | `findConnectionByDomain()` | Returns null for no match | `lib/background-utils.test.js` |
+| BG-U-015 | `parseLightningUrl()` | Extracts objectType and recordId from Lightning URL | `lib/background-utils.test.js` |
+| BG-U-016 | `parseLightningUrl()` | Returns null for non-record URLs | `lib/background-utils.test.js` |
+| BG-U-017 | `parseLightningUrl()` | Handles URL with query params | `lib/background-utils.test.js` |
 | BG-U-008 | `proxyRequired()` | Rejects if not connected | - |
 | BG-U-009 | `fetchWithRetry()` | Retries on 401 | - |
 | BG-U-010 | `handle401WithRefresh()` | Refreshes and retries | - |
@@ -757,6 +869,36 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | HM-U-007 | `removeFromFavorites()` | Removes by ID | `lib/history-manager.test.js` |
 | HM-U-008 | `getPreview()` | Truncates content | `lib/history-manager.test.js` |
 | HM-U-009 | `formatRelativeTime()` | Returns "2 hours ago" | `lib/history-manager.test.js` |
+| HM-U-010 | `HistoryManager.constructor()` | Initializes with empty arrays | `lib/history-manager.test.js` |
+| HM-U-011 | `load()` | Loads history and favorites from storage | `lib/history-manager.test.js` |
+| HM-U-012 | `load()` | Handles missing storage data | `lib/history-manager.test.js` |
+| HM-U-013 | `save()` | Persists history and favorites to storage | `lib/history-manager.test.js` |
+| HM-U-014 | `saveToHistory()` | Adds entry to history | `lib/history-manager.test.js` |
+| HM-U-015 | `saveToHistory()` | Deduplicates by normalized content | `lib/history-manager.test.js` |
+| HM-U-016 | `saveToHistory()` | Trims history to maxSize | `lib/history-manager.test.js` |
+| HM-U-017 | `saveToHistory()` | Updates timestamp on duplicate | `lib/history-manager.test.js` |
+| HM-U-018 | `addToFavorites()` | Adds entry with label | `lib/history-manager.test.js` |
+| HM-U-019 | `addToFavorites()` | Deduplicates by normalized content | `lib/history-manager.test.js` |
+| HM-U-020 | `addToFavorites()` | Generates ID automatically | `lib/history-manager.test.js` |
+| HM-U-021 | `removeFromHistory()` | Removes by ID | `lib/history-manager.test.js` |
+| HM-U-022 | `removeFromHistory()` | Persists after removal | `lib/history-manager.test.js` |
+| HM-U-023 | `removeFromFavorites()` | Removes by ID | `lib/history-manager.test.js` |
+| HM-U-024 | `removeFromFavorites()` | Persists after removal | `lib/history-manager.test.js` |
+| HM-U-025 | `getHistory()` | Returns history array | `lib/history-manager.test.js` |
+| HM-U-026 | `getFavorites()` | Returns favorites array | `lib/history-manager.test.js` |
+| HM-U-027 | `getPreview()` | Returns first 50 chars | `lib/history-manager.test.js` |
+| HM-U-028 | `getPreview()` | Truncates with ellipsis | `lib/history-manager.test.js` |
+| HM-U-029 | `getPreview()` | Handles short content | `lib/history-manager.test.js` |
+| HM-U-030 | `formatRelativeTime()` | Returns "just now" for < 1 min | `lib/history-manager.test.js` |
+| HM-U-031 | `formatRelativeTime()` | Returns "X minutes ago" | `lib/history-manager.test.js` |
+| HM-U-032 | `formatRelativeTime()` | Returns "X hours ago" | `lib/history-manager.test.js` |
+| HM-U-033 | `formatRelativeTime()` | Returns "X days ago" | `lib/history-manager.test.js` |
+| HM-U-034 | `formatRelativeTime()` | Returns "X months ago" | `lib/history-manager.test.js` |
+| HM-U-035 | `formatRelativeTime()` | Returns "X years ago" | `lib/history-manager.test.js` |
+| HM-U-036 | `formatRelativeTime()` | Handles singular vs plural | `lib/history-manager.test.js` |
+| HM-U-037 | `normalize()` | Trims whitespace | `lib/history-manager.test.js` |
+| HM-U-038 | `normalize()` | Converts to lowercase | `lib/history-manager.test.js` |
+| HM-U-039 | `normalize()` | Collapses multiple spaces | `lib/history-manager.test.js` |
 
 ### 13.4 Fetch Utilities (`src/lib/fetch.js`)
 
@@ -770,6 +912,13 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | FE-U-004 | `proxyFetch()` | Routes via proxy | `lib/fetch.test.js` |
 | FE-U-005 | `smartFetch()` | Uses proxy if connected | `lib/fetch.test.js` |
 | FE-U-006 | `smartFetch()` | Falls back to extension | `lib/fetch.test.js` |
+| FE-U-007 | `isProxyConnected()` | Returns cached proxy connection status | `lib/fetch.test.js` |
+| FE-U-008 | `checkProxyStatus()` | Queries background for proxy status | `lib/fetch.test.js` |
+| FE-U-009 | `extensionFetch()` | Routes request via background service worker | `lib/fetch.test.js` |
+| FE-U-010 | `proxyFetch()` | Routes request via native proxy | `lib/fetch.test.js` |
+| FE-U-011 | `smartFetch()` | Uses proxy when connected | `lib/fetch.test.js` |
+| FE-U-012 | `smartFetch()` | Falls back to extension when proxy not connected | `lib/fetch.test.js` |
+| FE-U-013 | `smartFetch()` | Passes through fetch options | `lib/fetch.test.js` |
 
 ### 13.5 Other Utilities
 
@@ -777,17 +926,64 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | File | Test Case | Test File |
 |---------|----------|------|-----------|-----------|
-| UT-U-001 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes < > & | `lib/text-utils.test.js` |
-| UT-U-002 | `escapeAttr()` | `src/lib/text-utils.js` | Escapes quotes | `lib/text-utils.test.js` |
-| UT-U-003 | `initTheme()` | `src/lib/theme.js` | Applies stored theme | `lib/theme.test.js` |
-| UT-U-004 | `setTheme()` | `src/lib/theme.js` | Updates storage and DOM | `lib/theme.test.js` |
-| UT-U-005 | `isCorsError()` | `src/lib/cors-detection.js` | Detects status 0 | `lib/cors-detection.test.js` |
-| UT-U-006 | `showCorsErrorModal()` | `src/lib/cors-detection.js` | Dispatches event | `lib/cors-detection.test.js` |
-| UT-U-007 | `getOAuthCredentials()` | `src/lib/oauth-credentials.js` | Returns connection client ID | `lib/oauth-credentials.test.js` |
-| UT-U-008 | `getOAuthCredentials()` | `src/lib/oauth-credentials.js` | Returns manifest default | `lib/oauth-credentials.test.js` |
-| UT-U-009 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Makes authenticated request | `lib/salesforce-request.test.js` |
-| UT-U-010 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Updates badge element | `lib/ui-helpers.test.js` |
-| UT-U-011 | `replaceIcons()` | `src/lib/icons.js` | Replaces placeholders | `lib/icons.test.js` |
+| UT-U-016 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes < to &lt; | `lib/text-utils.test.js` |
+| UT-U-017 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes > to &gt; | `lib/text-utils.test.js` |
+| UT-U-018 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes & to &amp; | `lib/text-utils.test.js` |
+| UT-U-019 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes " to &quot; | `lib/text-utils.test.js` |
+| UT-U-020 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes ' to &#x27; | `lib/text-utils.test.js` |
+| UT-U-021 | `escapeHtml()` | `src/lib/text-utils.js` | Handles null/undefined | `lib/text-utils.test.js` |
+| UT-U-022 | `escapeAttr()` | `src/lib/text-utils.js` | Escapes double quotes | `lib/text-utils.test.js` |
+| UT-U-023 | `escapeAttr()` | `src/lib/text-utils.js` | Escapes single quotes | `lib/text-utils.test.js` |
+| UT-U-024 | `escapeAttr()` | `src/lib/text-utils.js` | Escapes < > & | `lib/text-utils.test.js` |
+| UT-U-025 | `escapeAttr()` | `src/lib/text-utils.js` | Handles null/undefined | `lib/text-utils.test.js` |
+| UT-U-026 | `truncate()` | `src/lib/text-utils.js` | Truncates long strings | `lib/text-utils.test.js` |
+| UT-U-027 | `truncate()` | `src/lib/text-utils.js` | Adds ellipsis when truncated | `lib/text-utils.test.js` |
+| UT-U-028 | `truncate()` | `src/lib/text-utils.js` | Preserves short strings | `lib/text-utils.test.js` |
+| UT-U-029 | `truncate()` | `src/lib/text-utils.js` | Uses custom maxLength | `lib/text-utils.test.js` |
+| UT-U-030 | `truncate()` | `src/lib/text-utils.js` | Handles null/undefined | `lib/text-utils.test.js` |
+| UT-U-031 | `capitalize()` | `src/lib/text-utils.js` | Capitalizes first letter | `lib/text-utils.test.js` |
+| UT-U-032 | `capitalize()` | `src/lib/text-utils.js` | Handles empty string | `lib/text-utils.test.js` |
+| UT-U-033 | `capitalize()` | `src/lib/text-utils.js` | Handles null/undefined | `lib/text-utils.test.js` |
+| UT-U-036 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Makes authenticated GET request | `lib/salesforce-request.test.js` |
+| UT-U-037 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Makes authenticated POST request | `lib/salesforce-request.test.js` |
+| UT-U-038 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Makes authenticated PATCH request | `lib/salesforce-request.test.js` |
+| UT-U-039 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Makes authenticated DELETE request | `lib/salesforce-request.test.js` |
+| UT-U-040 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Adds Authorization header | `lib/salesforce-request.test.js` |
+| UT-U-041 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Adds Content-Type for POST | `lib/salesforce-request.test.js` |
+| UT-U-042 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Uses smartFetch for routing | `lib/salesforce-request.test.js` |
+| UT-U-043 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles query parameters | `lib/salesforce-request.test.js` |
+| UT-U-044 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Stringifies JSON body | `lib/salesforce-request.test.js` |
+| UT-U-045 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles null body | `lib/salesforce-request.test.js` |
+| UT-U-046 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Throws on non-OK response | `lib/salesforce-request.test.js` |
+| UT-U-047 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Returns JSON response | `lib/salesforce-request.test.js` |
+| UT-U-048 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Returns text response | `lib/salesforce-request.test.js` |
+| UT-U-049 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles 401 errors | `lib/salesforce-request.test.js` |
+| UT-U-050 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles 400 errors with message | `lib/salesforce-request.test.js` |
+| UT-U-051 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles 500 errors | `lib/salesforce-request.test.js` |
+| UT-U-052 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles network errors | `lib/salesforce-request.test.js` |
+| UT-U-053 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Merges custom headers | `lib/salesforce-request.test.js` |
+| UT-U-054 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Passes custom options through | `lib/salesforce-request.test.js` |
+| UT-U-055 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Uses instance URL for relative paths | `lib/salesforce-request.test.js` |
+| UT-U-056 | `isCorsError()` | `src/lib/cors-detection.js` | Detects status 0 as CORS | `lib/cors-detection.test.js` |
+| UT-U-057 | `isCorsError()` | `src/lib/cors-detection.js` | Detects failed CORS message | `lib/cors-detection.test.js` |
+| UT-U-058 | `isCorsError()` | `src/lib/cors-detection.js` | Returns false for other errors | `lib/cors-detection.test.js` |
+| UT-U-059 | `isCorsError()` | `src/lib/cors-detection.js` | Handles null error | `lib/cors-detection.test.js` |
+| UT-U-060 | `showCorsErrorModal()` | `src/lib/cors-detection.js` | Dispatches cors-error event | `lib/cors-detection.test.js` |
+| UT-U-061 | `showCorsErrorModal()` | `src/lib/cors-detection.js` | Includes error details | `lib/cors-detection.test.js` |
+| UT-U-062 | `showCorsErrorModal()` | `src/lib/cors-detection.js` | Bubbles event to document | `lib/cors-detection.test.js` |
+| UT-U-063 | `handlePotentialCorsError()` | `src/lib/cors-detection.js` | Shows modal for CORS errors | `lib/cors-detection.test.js` |
+| UT-U-064 | `handlePotentialCorsError()` | `src/lib/cors-detection.js` | Re-throws non-CORS errors | `lib/cors-detection.test.js` |
+| UT-U-065 | `handlePotentialCorsError()` | `src/lib/cors-detection.js` | Returns error when catching | `lib/cors-detection.test.js` |
+| UT-U-066 | `checkCorsSupport()` | `src/lib/cors-detection.js` | Tests preflight request | `lib/cors-detection.test.js` |
+| UT-U-067 | `checkCorsSupport()` | `src/lib/cors-detection.js` | Returns boolean support status | `lib/cors-detection.test.js` |
+| UT-U-068 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Updates badge with success status | `lib/ui-helpers.test.js` |
+| UT-U-069 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Updates badge with error status | `lib/ui-helpers.test.js` |
+| UT-U-070 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Updates badge with loading status | `lib/ui-helpers.test.js` |
+| UT-U-071 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Sets badge text content | `lib/ui-helpers.test.js` |
+| UT-U-072 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Sets badge class for styling | `lib/ui-helpers.test.js` |
+| UT-U-073 | `showToast()` | `src/lib/ui-helpers.js` | Displays toast notification | `lib/ui-helpers.test.js` |
+| UT-U-074 | `showToast()` | `src/lib/ui-helpers.js` | Auto-dismisses after timeout | `lib/ui-helpers.test.js` |
+| UT-U-075 | `showToast()` | `src/lib/ui-helpers.js` | Supports success/error types | `lib/ui-helpers.test.js` |
 
 ---
 
@@ -839,6 +1035,30 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | PR-U-003 | `getProtocolForChannel()` | Returns cometd for /data/* | `proxy/router.test.js` |
 | PR-U-004 | `isGrpcChannel()` | Returns true for /event/* | `proxy/router.test.js` |
 | PR-U-005 | `isCometdChannel()` | Returns true for /topic/* | `proxy/router.test.js` |
+| PR-U-006 | `getProtocolForChannel()` | Returns grpc for /event/CustomEvent__e | `proxy/router.test.js` |
+| PR-U-007 | `getProtocolForChannel()` | Returns cometd for /topic/PushTopic | `proxy/router.test.js` |
+| PR-U-008 | `getProtocolForChannel()` | Returns cometd for /systemTopic/Logging | `proxy/router.test.js` |
+| PR-U-009 | `getProtocolForChannel()` | Returns cometd for /data/ChangeEvents | `proxy/router.test.js` |
+| PR-U-010 | `getProtocolForChannel()` | Throws error for unknown channel | `proxy/router.test.js` |
+| PR-U-011 | `isGrpcChannel()` | Returns true for /event/ prefix | `proxy/router.test.js` |
+| PR-U-012 | `isGrpcChannel()` | Returns false for /topic/ prefix | `proxy/router.test.js` |
+| PR-U-013 | `isGrpcChannel()` | Returns false for /systemTopic/ | `proxy/router.test.js` |
+| PR-U-014 | `isGrpcChannel()` | Returns false for /data/ prefix | `proxy/router.test.js` |
+| PR-U-015 | `isCometdChannel()` | Returns true for /topic/ prefix | `proxy/router.test.js` |
+| PR-U-016 | `isCometdChannel()` | Returns true for /systemTopic/ | `proxy/router.test.js` |
+| PR-U-017 | `isCometdChannel()` | Returns true for /data/ prefix | `proxy/router.test.js` |
+| PR-U-018 | `isCometdChannel()` | Returns false for /event/ prefix | `proxy/router.test.js` |
+| PR-U-019 | `validateChannel()` | Returns true for valid grpc channel | `proxy/router.test.js` |
+| PR-U-020 | `validateChannel()` | Returns true for valid cometd channel | `proxy/router.test.js` |
+| PR-U-021 | `validateChannel()` | Returns false for invalid prefix | `proxy/router.test.js` |
+| PR-U-022 | `validateChannel()` | Returns false for empty channel | `proxy/router.test.js` |
+| PR-U-023 | `getChannelType()` | Returns "Platform Event" for /event/ | `proxy/router.test.js` |
+| PR-U-024 | `getChannelType()` | Returns "PushTopic" for /topic/ | `proxy/router.test.js` |
+| PR-U-025 | `getChannelType()` | Returns "System Topic" for /systemTopic/ | `proxy/router.test.js` |
+| PR-U-026 | `getChannelType()` | Returns "Change Data Capture" for /data/ | `proxy/router.test.js` |
+| PR-U-027 | `getChannelType()` | Returns "Unknown" for invalid | `proxy/router.test.js` |
+| PR-U-028 | `extractEventName()` | Extracts event name from /event/ | `proxy/router.test.js` |
+| PR-U-029 | `extractEventName()` | Returns null for other channels | `proxy/router.test.js` |
 
 ### 14.4 Subscription Manager (`sftools-proxy/src/subscription-manager.js`)
 
@@ -852,6 +1072,32 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | SM-U-004 | `getByChannel()` | Returns by channel | `proxy/subscription-manager.test.js` |
 | SM-U-005 | `count()` | Returns correct count | `proxy/subscription-manager.test.js` |
 | SM-U-006 | `clear()` | Removes all | `proxy/subscription-manager.test.js` |
+| SM-U-007 | `add()` | Adds subscription to map | `proxy/subscription-manager.test.js` |
+| SM-U-008 | `add()` | Stores subscription with ID as key | `proxy/subscription-manager.test.js` |
+| SM-U-009 | `add()` | Stores full subscription object | `proxy/subscription-manager.test.js` |
+| SM-U-010 | `get()` | Returns subscription by ID | `proxy/subscription-manager.test.js` |
+| SM-U-011 | `get()` | Returns undefined for missing ID | `proxy/subscription-manager.test.js` |
+| SM-U-012 | `remove()` | Removes subscription by ID | `proxy/subscription-manager.test.js` |
+| SM-U-013 | `remove()` | Returns true when removed | `proxy/subscription-manager.test.js` |
+| SM-U-014 | `remove()` | Returns false when ID not found | `proxy/subscription-manager.test.js` |
+| SM-U-015 | `getByChannel()` | Returns subscription matching channel | `proxy/subscription-manager.test.js` |
+| SM-U-016 | `getByChannel()` | Returns undefined for non-matching | `proxy/subscription-manager.test.js` |
+| SM-U-017 | `getByChannel()` | Handles multiple subscriptions | `proxy/subscription-manager.test.js` |
+| SM-U-018 | `getAll()` | Returns array of all subscriptions | `proxy/subscription-manager.test.js` |
+| SM-U-019 | `getAll()` | Returns empty array when empty | `proxy/subscription-manager.test.js` |
+| SM-U-020 | `count()` | Returns number of subscriptions | `proxy/subscription-manager.test.js` |
+| SM-U-021 | `count()` | Returns 0 when empty | `proxy/subscription-manager.test.js` |
+| SM-U-022 | `has()` | Returns true for existing ID | `proxy/subscription-manager.test.js` |
+| SM-U-023 | `has()` | Returns false for missing ID | `proxy/subscription-manager.test.js` |
+| SM-U-024 | `clear()` | Removes all subscriptions | `proxy/subscription-manager.test.js` |
+| SM-U-025 | `clear()` | Resets map to empty | `proxy/subscription-manager.test.js` |
+| SM-U-026 | `getByProtocol()` | Returns subscriptions by protocol | `proxy/subscription-manager.test.js` |
+| SM-U-027 | `getByProtocol()` | Filters grpc subscriptions | `proxy/subscription-manager.test.js` |
+| SM-U-028 | `getByProtocol()` | Filters cometd subscriptions | `proxy/subscription-manager.test.js` |
+| SM-U-029 | `updateStatus()` | Updates subscription status | `proxy/subscription-manager.test.js` |
+| SM-U-030 | `updateStatus()` | Preserves other fields | `proxy/subscription-manager.test.js` |
+| SM-U-031 | `updateStatus()` | Returns false for missing ID | `proxy/subscription-manager.test.js` |
+| SM-U-032 | `updateLastEvent()` | Updates lastEventTime timestamp | `proxy/subscription-manager.test.js` |
 
 ### 14.5 REST Handler (`sftools-proxy/src/handlers/rest.js`)
 
@@ -990,6 +1236,28 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | PS-U-004 | `deletePayload()` | Removes from store | `proxy/payload-store.test.js` |
 | PS-U-005 | `shouldUseLargePayload()` | True for >= 800KB | `proxy/payload-store.test.js` |
 | PS-U-006 | `shouldUseLargePayload()` | False for < 800KB | `proxy/payload-store.test.js` |
+| PS-U-007 | `storePayload()` | Stores payload and returns UUID | `proxy/payload-store.test.js` |
+| PS-U-008 | `storePayload()` | Generates unique UUIDs | `proxy/payload-store.test.js` |
+| PS-U-009 | `storePayload()` | Stores payload with timestamp | `proxy/payload-store.test.js` |
+| PS-U-010 | `storePayload()` | Sets expiration time | `proxy/payload-store.test.js` |
+| PS-U-011 | `getPayload()` | Returns stored payload by UUID | `proxy/payload-store.test.js` |
+| PS-U-012 | `getPayload()` | Returns null for missing UUID | `proxy/payload-store.test.js` |
+| PS-U-013 | `getPayload()` | Returns null for expired payload | `proxy/payload-store.test.js` |
+| PS-U-014 | `getPayload()` | Returns payload within TTL | `proxy/payload-store.test.js` |
+| PS-U-015 | `deletePayload()` | Removes payload from store | `proxy/payload-store.test.js` |
+| PS-U-016 | `deletePayload()` | Returns true when deleted | `proxy/payload-store.test.js` |
+| PS-U-017 | `deletePayload()` | Returns false for missing UUID | `proxy/payload-store.test.js` |
+| PS-U-018 | `shouldUseLargePayload()` | Returns true for >= 800KB | `proxy/payload-store.test.js` |
+| PS-U-019 | `shouldUseLargePayload()` | Returns false for < 800KB | `proxy/payload-store.test.js` |
+| PS-U-020 | `shouldUseLargePayload()` | Calculates JSON size correctly | `proxy/payload-store.test.js` |
+| PS-U-021 | `cleanupExpired()` | Removes expired payloads | `proxy/payload-store.test.js` |
+| PS-U-022 | `cleanupExpired()` | Preserves non-expired payloads | `proxy/payload-store.test.js` |
+| PS-U-023 | `cleanupExpired()` | Returns count of removed items | `proxy/payload-store.test.js` |
+| PS-U-024 | `count()` | Returns number of stored payloads | `proxy/payload-store.test.js` |
+| PS-U-025 | `count()` | Returns 0 when empty | `proxy/payload-store.test.js` |
+| PS-U-026 | `clear()` | Removes all payloads | `proxy/payload-store.test.js` |
+| PS-U-027 | `has()` | Returns true for existing UUID | `proxy/payload-store.test.js` |
+| PS-U-028 | `has()` | Returns false for missing UUID | `proxy/payload-store.test.js` |
 
 ---
 
@@ -999,21 +1267,21 @@ Note: Integration test counts include documented scenarios that may not yet be i
 
 | Area | Frontend | Integration | Unit | Total |
 |------|----------|-------------|------|-------|
-| Query Tab | 29 | 11 | 22 | 62 |
-| Apex Tab | 17 | 9 | 10 | 36 |
-| REST API Tab | 9 | 13 | 3 | 25 |
+| Query Tab | 29 | 11 | 57 | 97 |
+| Apex Tab | 17 | 9 | 18 | 44 |
+| REST API Tab | 9 | 13 | 5 | 27 |
 | Events Tab | 19 | 7 | 6 | 32 |
-| Settings Tab | 22 | 8 | 5 | 35 |
+| Settings Tab | 22 | 8 | 10 | 40 |
 | Utils Tab | 14 | 7 | 0 | 21 |
-| Record Viewer | 23 | 9 | 13 | 45 |
-| Schema Browser | 20 | 8 | 9 | 37 |
+| Record Viewer | 23 | 9 | 39 | 71 |
+| Schema Browser | 20 | 8 | 20 | 48 |
 | Monaco Editor | 11 | 2 | 0 | 13 |
-| App Shell | 12 | 4 | 5 | 21 |
-| OAuth | 4 | 7 | 12 | 23 |
-| Background | 0 | 11 | 16 | 27 |
-| Library Utils | 0 | 0 | 47 | 47 |
-| Local Proxy | 0 | 20 | 53 | 73 |
-| **Total** | **180** | **116** | **201** | **497** |
+| App Shell | 12 | 4 | 15 | 31 |
+| OAuth | 4 | 7 | 15 | 26 |
+| Background | 0 | 11 | 17 | 28 |
+| Library Utils | 0 | 0 | 132 | 132 |
+| Local Proxy | 0 | 20 | 107 | 127 |
+| **Total** | **180** | **116** | **441** | **737** |
 
 ---
 

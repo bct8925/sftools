@@ -1,9 +1,21 @@
 /**
  * Tests for src/lib/cors-detection.js
  *
- * Test IDs: UT-U-005, UT-U-006
+ * Test IDs: UT-U-005, UT-U-006, UT-U-056 through UT-U-067
  * - UT-U-005: isCorsError() - Detects status 0
  * - UT-U-006: showCorsErrorModal() - Dispatches event
+ * - UT-U-056: isCorsError() - Returns true for status 0 with "failed to fetch" error
+ * - UT-U-057: isCorsError() - Returns true for error containing "cors" keyword
+ * - UT-U-058: isCorsError() - Returns true for error containing "cross-origin" keyword
+ * - UT-U-059: isCorsError() - Returns true for error containing "access-control" keyword
+ * - UT-U-060: isCorsError() - Is case-insensitive for keyword detection
+ * - UT-U-061: isCorsError() - Returns false for successful responses
+ * - UT-U-062: isCorsError() - Returns false for 401 Unauthorized errors
+ * - UT-U-063: isCorsError() - Returns false for 500 server errors without CORS keywords
+ * - UT-U-064: isCorsError() - Returns false for 404 not found errors
+ * - UT-U-065: isCorsError() - Handles missing error property gracefully
+ * - UT-U-066: isCorsError() - Handles null error property gracefully
+ * - UT-U-067: isCorsError() - Requires both status 0 and "failed to fetch" for network error detection
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -11,7 +23,7 @@ import { isCorsError, showCorsErrorModal } from '../../../src/lib/cors-detection
 
 describe('cors-detection', () => {
     describe('isCorsError', () => {
-        it('returns true for status 0 with "failed to fetch" error', () => {
+        it('UT-U-056: returns true for status 0 with "failed to fetch" error', () => {
             const response = {
                 success: false,
                 status: 0,
@@ -21,7 +33,7 @@ describe('cors-detection', () => {
             expect(isCorsError(response)).toBe(true);
         });
 
-        it('returns true for error containing "cors" keyword', () => {
+        it('UT-U-057: returns true for error containing "cors" keyword', () => {
             const response = {
                 success: false,
                 status: 500,
@@ -31,7 +43,7 @@ describe('cors-detection', () => {
             expect(isCorsError(response)).toBe(true);
         });
 
-        it('returns true for error containing "cross-origin" keyword', () => {
+        it('UT-U-058: returns true for error containing "cross-origin" keyword', () => {
             const response = {
                 success: false,
                 status: 403,
@@ -41,7 +53,7 @@ describe('cors-detection', () => {
             expect(isCorsError(response)).toBe(true);
         });
 
-        it('returns true for error containing "access-control" keyword', () => {
+        it('UT-U-059: returns true for error containing "access-control" keyword', () => {
             const response = {
                 success: false,
                 status: 0,
@@ -51,7 +63,7 @@ describe('cors-detection', () => {
             expect(isCorsError(response)).toBe(true);
         });
 
-        it('is case-insensitive for keyword detection', () => {
+        it('UT-U-060: is case-insensitive for keyword detection', () => {
             const responses = [
                 { success: false, status: 500, error: 'CORS error' },
                 { success: false, status: 500, error: 'cors error' },
@@ -63,7 +75,7 @@ describe('cors-detection', () => {
             }
         });
 
-        it('returns false for successful responses', () => {
+        it('UT-U-061: returns false for successful responses', () => {
             const response = {
                 success: true,
                 status: 200,
@@ -73,7 +85,7 @@ describe('cors-detection', () => {
             expect(isCorsError(response)).toBe(false);
         });
 
-        it('returns false for 401 Unauthorized errors', () => {
+        it('UT-U-062: returns false for 401 Unauthorized errors', () => {
             const response = {
                 success: false,
                 status: 401,
@@ -83,7 +95,7 @@ describe('cors-detection', () => {
             expect(isCorsError(response)).toBe(false);
         });
 
-        it('returns false for 500 server errors without CORS keywords', () => {
+        it('UT-U-063: returns false for 500 server errors without CORS keywords', () => {
             const response = {
                 success: false,
                 status: 500,
@@ -93,7 +105,7 @@ describe('cors-detection', () => {
             expect(isCorsError(response)).toBe(false);
         });
 
-        it('returns false for 404 not found errors', () => {
+        it('UT-U-064: returns false for 404 not found errors', () => {
             const response = {
                 success: false,
                 status: 404,
@@ -103,7 +115,7 @@ describe('cors-detection', () => {
             expect(isCorsError(response)).toBe(false);
         });
 
-        it('handles missing error property gracefully', () => {
+        it('UT-U-065: handles missing error property gracefully', () => {
             const response = {
                 success: false,
                 status: 500
@@ -112,7 +124,7 @@ describe('cors-detection', () => {
             expect(isCorsError(response)).toBe(false);
         });
 
-        it('handles null error property gracefully', () => {
+        it('UT-U-066: handles null error property gracefully', () => {
             const response = {
                 success: false,
                 status: 0,
@@ -122,7 +134,7 @@ describe('cors-detection', () => {
             expect(isCorsError(response)).toBe(false);
         });
 
-        it('requires both status 0 and "failed to fetch" for network error detection', () => {
+        it('UT-U-067: requires both status 0 and "failed to fetch" for network error detection', () => {
             // Status 0 but different error message
             const response1 = {
                 success: false,
@@ -147,7 +159,7 @@ describe('cors-detection', () => {
             vi.restoreAllMocks();
         });
 
-        it('dispatches show-cors-error CustomEvent on document', () => {
+        it('UT-U-006: dispatches show-cors-error CustomEvent on document', () => {
             const eventHandler = vi.fn();
             document.addEventListener('show-cors-error', eventHandler);
 

@@ -1,7 +1,7 @@
 /**
  * Tests for src/lib/background-utils.js
  *
- * Test IDs:
+ * Test IDs: BG-U-001 through BG-U-037
  * - BG-U-001: parseLightningUrl() - Extracts objectType and recordId from valid Lightning record URLs
  * - BG-U-002: parseLightningUrl() - Returns null for invalid URLs
  * - BG-U-003: extractOrgIdentifier() - Extracts sandbox identifier
@@ -9,6 +9,16 @@
  * - BG-U-005: extractOrgIdentifier() - Extracts trailhead org identifier
  * - BG-U-006: findConnectionByDomain() - Matches connection by hostname or org identifier
  * - BG-U-007: findConnectionByDomain() - Returns null when no match found
+ * - BG-U-008: extractOrgIdentifier() - Extracts production org identifier from lightning.force.com
+ * - BG-U-009: extractOrgIdentifier() - Extracts production org identifier from my.salesforce.com
+ * - BG-U-010: extractOrgIdentifier() - Extracts developer edition org identifier
+ * - BG-U-011: extractOrgIdentifier() - Extracts demo org identifier
+ * - BG-U-012: extractOrgIdentifier() - Returns lowercase identifier
+ * - BG-U-013: extractOrgIdentifier() - Returns null for non-Salesforce domain
+ * - BG-U-014: extractOrgIdentifier() - Returns null for partial Salesforce domain
+ * - BG-U-015: extractOrgIdentifier() - Returns null for empty string
+ * - BG-U-016: findConnectionByDomain() - Handles connections with malformed instanceUrl gracefully
+ * - BG-U-017: findConnectionByDomain() - Matches first connection when multiple match
  */
 
 import { describe, it, expect } from 'vitest';
@@ -145,56 +155,56 @@ describe('extractOrgIdentifier', () => {
         expect(result).toBe('trailhead456');
     });
 
-    it('extracts production org identifier from lightning.force.com', () => {
+    it('BG-U-008: extracts production org identifier from lightning.force.com', () => {
         const hostname = 'myorg.lightning.force.com';
         const result = extractOrgIdentifier(hostname);
 
         expect(result).toBe('myorg');
     });
 
-    it('extracts production org identifier from my.salesforce.com', () => {
+    it('BG-U-009: extracts production org identifier from my.salesforce.com', () => {
         const hostname = 'myorg.my.salesforce.com';
         const result = extractOrgIdentifier(hostname);
 
         expect(result).toBe('myorg');
     });
 
-    it('extracts developer edition org identifier', () => {
+    it('BG-U-010: extracts developer edition org identifier', () => {
         const hostname = 'devorg.develop.lightning.force.com';
         const result = extractOrgIdentifier(hostname);
 
         expect(result).toBe('devorg');
     });
 
-    it('extracts demo org identifier', () => {
+    it('BG-U-011: extracts demo org identifier', () => {
         const hostname = 'demoorg.demo.my.salesforce.com';
         const result = extractOrgIdentifier(hostname);
 
         expect(result).toBe('demoorg');
     });
 
-    it('returns lowercase identifier', () => {
+    it('BG-U-012: returns lowercase identifier', () => {
         const hostname = 'MyOrg.my.salesforce.com';
         const result = extractOrgIdentifier(hostname);
 
         expect(result).toBe('myorg');
     });
 
-    it('returns null for non-Salesforce domain', () => {
+    it('BG-U-013: returns null for non-Salesforce domain', () => {
         const hostname = 'example.com';
         const result = extractOrgIdentifier(hostname);
 
         expect(result).toBeNull();
     });
 
-    it('returns null for partial Salesforce domain', () => {
+    it('BG-U-014: returns null for partial Salesforce domain', () => {
         const hostname = 'salesforce.com';
         const result = extractOrgIdentifier(hostname);
 
         expect(result).toBeNull();
     });
 
-    it('returns null for empty string', () => {
+    it('BG-U-015: returns null for empty string', () => {
         const hostname = '';
         const result = extractOrgIdentifier(hostname);
 
@@ -299,7 +309,7 @@ describe('findConnectionByDomain', () => {
         expect(result).toBeNull();
     });
 
-    it('handles connections with malformed instanceUrl gracefully', () => {
+    it('BG-U-016: handles connections with malformed instanceUrl gracefully', () => {
         const connectionsWithBadUrl = [
             {
                 id: 'conn-bad',
@@ -315,7 +325,7 @@ describe('findConnectionByDomain', () => {
         expect(result).toEqual(mockConnections[0]);
     });
 
-    it('matches first connection when multiple match', () => {
+    it('BG-U-017: matches first connection when multiple match', () => {
         const duplicateConnections = [
             {
                 id: 'conn-first',

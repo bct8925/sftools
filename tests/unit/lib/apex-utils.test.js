@@ -2,16 +2,31 @@
  * Tests for src/lib/apex-utils.js
  *
  * Test IDs:
- * - A-U-001: setOutput() - Sets output text
+ * - A-U-001: getPreview() - Returns short lines unchanged
  * - A-U-002: applyFilter() - Filters to matching lines
  * - A-U-003: applyFilter() - Case insensitive match
  * - A-U-004: clearFilter() - Shows all output
  * - A-U-005: getPreview() - Returns first non-comment line
  * - A-U-006: getPreview() - Truncates long lines
- * - A-U-007: setEditorMarkers() - Creates marker for compile error
- * - A-U-008: setEditorMarkers() - Creates marker for runtime error
+ * - A-U-007: getPreview() - Skips empty lines
+ * - A-U-008: getPreview() - Skips multiple comment lines
  * - A-U-009: formatOutput() - Formats success result
  * - A-U-010: formatOutput() - Formats error result
+ * - A-U-011: getPreview() - Returns first line as fallback if all comments
+ * - A-U-012: getPreview() - Returns "Empty script" for empty string
+ * - A-U-013: getPreview() - Truncates first line fallback if over 50 chars
+ * - A-U-014: getPreview() - Handles code with only whitespace
+ * - A-U-015: formatOutput() - Formats runtime error without line number
+ * - A-U-016: formatOutput() - Formats runtime error without stack trace
+ * - A-U-017: formatOutput() - Uses default message for runtime error without exception message
+ * - A-U-018: formatOutput() - Defaults column to 1 if missing in compile error
+ * - A-U-019: formatOutput() - Includes debug log with successful execution
+ * - A-U-020: filterLines() - Returns all lines when filter is null
+ * - A-U-021: filterLines() - Returns all lines when filter is undefined
+ * - A-U-022: filterLines() - Returns empty array when no matches
+ * - A-U-023: filterLines() - Handles empty lines array
+ * - A-U-024: filterLines() - Matches partial strings
+ * - A-U-025: filterLines() - Matches multiple criteria across different lines
  */
 
 import { describe, it, expect } from 'vitest';
@@ -35,13 +50,13 @@ System.debug('Hello World');`;
             expect(result.length).toBe(53); // 50 + '...'
         });
 
-        it('returns short lines unchanged', () => {
+        it('A-U-001: returns short lines unchanged', () => {
             const code = 'System.debug("Short");';
 
             expect(getPreview(code)).toBe('System.debug("Short");');
         });
 
-        it('skips empty lines', () => {
+        it('A-U-007: skips empty lines', () => {
             const code = `
 
 System.debug('Test');`;
@@ -49,7 +64,7 @@ System.debug('Test');`;
             expect(getPreview(code)).toBe("System.debug('Test');");
         });
 
-        it('skips multiple comment lines', () => {
+        it('A-U-008: skips multiple comment lines', () => {
             const code = `// Comment 1
 // Comment 2
 // Comment 3
@@ -58,18 +73,18 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             expect(getPreview(code)).toBe('List<Account> accounts = [SELECT Id FROM Account];');
         });
 
-        it('returns first line as fallback if all comments', () => {
+        it('A-U-011: returns first line as fallback if all comments', () => {
             const code = `// Only a comment
 // Another comment`;
 
             expect(getPreview(code)).toBe('// Only a comment');
         });
 
-        it('returns "Empty script" for empty string', () => {
+        it('A-U-012: returns "Empty script" for empty string', () => {
             expect(getPreview('')).toBe('Empty script');
         });
 
-        it('truncates first line fallback if over 50 chars', () => {
+        it('A-U-013: truncates first line fallback if over 50 chars', () => {
             const code = '// This is a very long comment that should be truncated when used as fallback';
 
             const result = getPreview(code);
@@ -79,7 +94,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             expect(result.length).toBe(53);
         });
 
-        it('handles code with only whitespace', () => {
+        it('A-U-014: handles code with only whitespace', () => {
             const code = '   \n\t\n   ';
 
             expect(getPreview(code)).toBe('Empty script');
@@ -140,7 +155,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             expect(output).toContain('DEBUG|Before error');
         });
 
-        it('formats runtime error without line number', () => {
+        it('A-U-015: formats runtime error without line number', () => {
             const result = {
                 compiled: true,
                 success: false,
@@ -154,7 +169,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             expect(output).not.toContain('Line');
         });
 
-        it('formats runtime error without stack trace', () => {
+        it('A-U-016: formats runtime error without stack trace', () => {
             const result = {
                 compiled: true,
                 success: false,
@@ -168,7 +183,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             expect(output).toContain('Error message only');
         });
 
-        it('uses default message for runtime error without exception message', () => {
+        it('A-U-017: uses default message for runtime error without exception message', () => {
             const result = {
                 compiled: true,
                 success: false
@@ -179,7 +194,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             expect(output).toContain('Unknown exception');
         });
 
-        it('defaults column to 1 if missing in compile error', () => {
+        it('A-U-018: defaults column to 1 if missing in compile error', () => {
             const result = {
                 compiled: false,
                 line: 10,
@@ -191,7 +206,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             expect(output).toContain('Line 10, Column 1');
         });
 
-        it('includes debug log with successful execution', () => {
+        it('A-U-019: includes debug log with successful execution', () => {
             const result = {
                 compiled: true,
                 success: true
@@ -237,40 +252,40 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             expect(result).toEqual(sampleLines);
         });
 
-        it('returns all lines when filter is null', () => {
+        it('A-U-020: returns all lines when filter is null', () => {
             const result = filterLines(sampleLines, null);
 
             expect(result).toHaveLength(4);
             expect(result).toEqual(sampleLines);
         });
 
-        it('returns all lines when filter is undefined', () => {
+        it('A-U-021: returns all lines when filter is undefined', () => {
             const result = filterLines(sampleLines, undefined);
 
             expect(result).toHaveLength(4);
             expect(result).toEqual(sampleLines);
         });
 
-        it('returns empty array when no matches', () => {
+        it('A-U-022: returns empty array when no matches', () => {
             const result = filterLines(sampleLines, 'NOTFOUND');
 
             expect(result).toHaveLength(0);
         });
 
-        it('handles empty lines array', () => {
+        it('A-U-023: handles empty lines array', () => {
             const result = filterLines([], 'test');
 
             expect(result).toHaveLength(0);
         });
 
-        it('matches partial strings', () => {
+        it('A-U-024: matches partial strings', () => {
             const result = filterLines(sampleLines, 'mess');
 
             expect(result).toHaveLength(1);
             expect(result[0]).toBe('USER_DEBUG|Test message');
         });
 
-        it('matches multiple criteria across different lines', () => {
+        it('A-U-025: matches multiple criteria across different lines', () => {
             const result = filterLines(sampleLines, 'DEBUG');
 
             expect(result).toHaveLength(2);

@@ -1,8 +1,9 @@
 # Testing Framework
 
-sftools uses two testing frameworks:
+sftools uses three testing frameworks:
 
-- **Frontend Tests** (`tests/frontend/`) - Playwright-based integration tests with real Salesforce API calls
+- **Frontend Tests** (`tests/frontend/`) - Playwright-based browser tests with real Salesforce API calls
+- **Integration Tests** (`tests/integration/`) - Vitest-based tests with real Salesforce API calls (no browser)
 - **Unit Tests** (`tests/unit/`) - Vitest-based unit tests with mocked dependencies
 
 ## Quick Commands
@@ -14,7 +15,11 @@ npm test -- --filter=query     # Run tests matching "query"
 npm run test:slow              # Run with human-like timing (for visual debugging)
 npm run test:slow -- --filter=query  # Combine slow mode with filter
 
-# Unit tests (Vitest)
+# Integration tests (Vitest - real Salesforce API calls)
+npm run test:integration       # Run all integration tests
+npm run test:integration:watch # Run in watch mode
+
+# Unit tests (Vitest - mocked dependencies)
 npm run test:unit              # Run all unit tests
 npm run test:unit:watch        # Run in watch mode
 npm run test:unit:coverage     # Run with coverage report
@@ -532,6 +537,218 @@ get myPage(): MyPage {
   }
   return this._myPage;
 }
+```
+
+---
+
+# Integration Tests (Vitest)
+
+Integration tests use Vitest with real Salesforce API calls to verify API behavior that the UI components rely on. Unlike frontend tests, these run in Node.js without browser automation, making them faster and more focused on API contracts.
+
+## Design Principles
+
+1. **Real Salesforce API Calls** - Tests hit actual Salesforce endpoints (REST and Tooling API)
+2. **No Browser** - Pure API testing without Playwright overhead
+3. **Automatic Cleanup** - Test data is tracked and cleaned up via `TestDataManager`
+4. **Sequential Execution** - Single-threaded to avoid Salesforce API rate limits
+5. **Test IDs** - Each test has an ID (e.g., Q-I-001, A-I-007) for traceability
+
+## Quick Start
+
+### 1. Create Environment File
+
+Use the same `.env.test` file as frontend tests:
+
+```
+SF_ACCESS_TOKEN=00D...!...
+SF_INSTANCE_URL=https://your-org.my.salesforce.com
+```
+
+### 2. Run Tests
+
+```bash
+npm run test:integration          # Run all integration tests
+npm run test:integration:watch    # Watch mode
+```
+
+## Directory Structure
+
+```
+tests/integration/
+├── setup.js              # Salesforce client, TestDataManager, helpers
+├── apex.test.js          # Apex Tab tests (A-I-001 through A-I-007)
+├── query.test.js         # Query Tab tests (Q-I-001 through Q-I-009)
+├── utils.test.js         # Utils Tab tests
+├── rest-api.test.js      # REST API Tab tests
+├── events.test.js        # Events Tab tests
+├── settings.test.js      # Settings Tab tests
+├── record-viewer.test.js # Record Viewer tests
+└── schema-browser.test.js # Schema Browser tests
+```
+
+## Writing Tests
+
+### Basic Test Structure
+
+Tests use standard Vitest patterns with the shared `salesforce` client:
+
+```javascript
+import { describe, it, expect, afterEach } from 'vitest';
+import { salesforce, TestDataManager, uniqueName } from './setup.js';
+
+describe('My Feature Integration', () => {
+    const testData = new TestDataManager();
+
+    afterEach(async () => {
+        await testData.cleanup();
+    });
+
+    it('creates and queries a record', async () => {
+        // Create test data (tracked for cleanup)
+        const accountId = await testData.create('Account', {
+            Name: uniqueName('TestAccount')
+        });
+
+        // Query it back
+        const result = await salesforce.query(
+            `SELECT Id, Name FROM Account WHERE Id = '${accountId}'`
+        );
+
+        expect(result).toHaveLength(1);
+        expect(result[0].Id).toBe(accountId);
+    });
+});
+```
+
+### Salesforce Client
+
+The `salesforce` client provides methods for API operations:
+
+```javascript
+// REST API
+await salesforce.query('SELECT Id FROM Account');
+await salesforce.createRecord('Account', { Name: 'Test' });
+await salesforce.getRecord('Account', accountId);
+await salesforce.updateRecord('Account', accountId, { Name: 'Updated' });
+await salesforce.deleteRecord('Account', accountId);
+await salesforce.describeObject('Account');
+await salesforce.describeGlobal();
+await salesforce.getCurrentUser();
+
+// Tooling API
+await salesforce.toolingQuery('SELECT Id FROM ApexClass');
+await salesforce.executeAnonymousApex('System.debug("Hello");');
+
+// Generic REST request
+await salesforce.request('GET', '/services/data/v62.0/limits');
+
+// Generic Tooling request
+await salesforce.toolingRequest('GET', '/sobjects');
+
+// REST API Tab-style request (returns full response object)
+const response = await salesforce.restRequest('/services/data/v62.0/sobjects');
+// response: { status, statusText, ok, headers, body }
+```
+
+### Test Data Management
+
+Use `TestDataManager` to track records for automatic cleanup:
+
+```javascript
+const testData = new TestDataManager();
+
+// Create and track
+const accountId = await testData.create('Account', { Name: 'Test' });
+
+// Manual tracking
+const contactId = await salesforce.createRecord('Contact', { LastName: 'Smith' });
+testData.track('Contact', contactId);
+
+// Cleanup (in afterEach)
+await testData.cleanup();
+```
+
+### Helper Utilities
+
+```javascript
+// Generate unique test names
+const name = uniqueName('TestAccount');
+// Returns: "TestAccount_1234567890_abc123"
+
+// Wait for a condition
+await waitFor(
+    async () => {
+        const logs = await salesforce.toolingQuery('SELECT Id FROM ApexLog');
+        return logs.length > 0;
+    },
+    { timeout: 10000, interval: 1000, message: 'Log not created' }
+);
+```
+
+## Test ID Conventions
+
+Each test has an ID for traceability:
+
+| Prefix | Feature | Example |
+|--------|---------|---------|
+| Q-I-xxx | Query Tab | Q-I-001: Query with no results |
+| A-I-xxx | Apex Tab | A-I-001: Execute valid Apex |
+| R-I-xxx | REST API Tab | R-I-001: GET request |
+| E-I-xxx | Events Tab | E-I-001: Subscribe to event |
+| S-I-xxx | Settings Tab | S-I-001: Save connection |
+| RV-I-xxx | Record Viewer | RV-I-001: Load record |
+| SB-I-xxx | Schema Browser | SB-I-001: Load objects |
+| U-I-xxx | Utils Tab | U-I-001: Enable trace flag |
+
+Test IDs are included in `describe()` blocks for easy filtering and reference.
+
+## Configuration
+
+**Config file:** `vitest.config.integration.js`
+
+Key settings:
+- **Environment:** Node.js
+- **Setup:** `tests/integration/setup.js`
+- **Timeout:** 30s for tests, 10s for hooks
+- **Execution:** Single-threaded sequential (avoid rate limits)
+
+## Test Org Requirements
+
+The test org should have:
+
+1. **API Access** - API enabled for the user
+2. **Standard Objects** - Account, Contact available
+3. **Permissions** - User can create/delete records
+4. **Apex Execution** - User can execute anonymous Apex
+5. **Tooling API** - Access to Tooling API objects
+
+A Developer Edition org or Scratch org works well. Avoid production orgs.
+
+## Debugging Tests
+
+### Filter to Specific Test
+
+```bash
+npm run test:integration -- query.test.js
+npm run test:integration -- -t "Q-I-001"
+```
+
+### Add Console Logging
+
+```javascript
+it('creates a record', async () => {
+    console.log('Creating test account...');
+    const id = await testData.create('Account', { Name: 'Test' });
+    console.log('Created:', id);
+    // ...
+});
+```
+
+### Check API Responses
+
+```javascript
+const response = await salesforce.request('GET', '/sobjects/Account/describe');
+console.log(JSON.stringify(response, null, 2));
 ```
 
 ---

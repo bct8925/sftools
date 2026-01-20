@@ -9,6 +9,7 @@ import { executeAnonymousApex } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { HistoryManager } from '../../lib/history-manager.js';
 import { escapeHtml } from '../../lib/text-utils.js';
+import { getPreview, formatOutput, filterLines } from '../../lib/apex-utils.js';
 
 class ApexTab extends HTMLElement {
     // DOM references
@@ -175,7 +176,7 @@ for (Account acc : accounts) {
 
         this.historyList.innerHTML = history.map(item => `
             <div class="script-item" data-id="${item.id}">
-                <div class="script-preview">${escapeHtml(this.getPreview(item.code))}</div>
+                <div class="script-preview">${escapeHtml(getPreview(item.code))}</div>
                 <div class="script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="script-actions">
@@ -249,7 +250,7 @@ for (Account acc : accounts) {
     }
 
     showFavoriteModal(code) {
-        const defaultLabel = this.getPreview(code);
+        const defaultLabel = getPreview(code);
 
         const modal = document.createElement('div');
         modal.className = 'modal-overlay show';
@@ -306,14 +307,9 @@ for (Account acc : accounts) {
     }
 
     applyFilter() {
-        const filter = this.searchInput.value.trim().toLowerCase();
-        if (!filter) {
-            this.outputEditor.setValue(this.fullOutput);
-            return;
-        }
-
+        const filter = this.searchInput.value.trim();
         const lines = this.fullOutput.split('\n');
-        const filtered = lines.filter(line => line.toLowerCase().includes(filter));
+        const filtered = filterLines(lines, filter);
         const result = filtered.length > 0
             ? filtered.join('\n')
             : `// No lines match "${this.searchInput.value}"`;
@@ -325,23 +321,6 @@ for (Account acc : accounts) {
         this.outputEditor.setValue(this.fullOutput);
     }
 
-    // ============================================================
-    // Utility Methods
-    // ============================================================
-
-    getPreview(code) {
-        // Get first non-empty, non-comment line
-        const lines = code.split('\n');
-        for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed && !trimmed.startsWith('//')) {
-                return trimmed.length > 50 ? trimmed.substring(0, 50) + '...' : trimmed;
-            }
-        }
-        // Fallback to first line
-        const firstLine = lines[0]?.trim() || 'Empty script';
-        return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
-    }
 
 
     // ============================================================
@@ -381,40 +360,6 @@ for (Account acc : accounts) {
         }
     }
 
-    formatOutput(result, debugLog) {
-        const lines = [];
-
-        if (!result.compiled) {
-            lines.push('=== COMPILATION ERROR ===');
-            lines.push(`Line ${result.line}, Column ${result.column || 1}`);
-            lines.push(result.compileProblem);
-            lines.push('');
-        } else if (!result.success) {
-            lines.push('=== RUNTIME EXCEPTION ===');
-            if (result.line) {
-                lines.push(`Line ${result.line}`);
-            }
-            lines.push(result.exceptionMessage || 'Unknown exception');
-            if (result.exceptionStackTrace) {
-                lines.push('');
-                lines.push('Stack Trace:');
-                lines.push(result.exceptionStackTrace);
-            }
-            lines.push('');
-        } else {
-            lines.push('=== EXECUTION SUCCESSFUL ===');
-            lines.push('');
-        }
-
-        if (debugLog) {
-            lines.push('=== DEBUG LOG ===');
-            lines.push(debugLog);
-        } else {
-            lines.push('(No debug log available)');
-        }
-
-        return lines.join('\n');
-    }
 
     updateStatus(text, type = '') {
         updateStatusBadge(this.statusSpan, text, type);
@@ -461,7 +406,7 @@ for (Account acc : accounts) {
                 this.updateStatus('Success', 'success');
             }
 
-            this.setOutput(this.formatOutput(result.execution, result.debugLog));
+            this.setOutput(formatOutput(result.execution, result.debugLog));
 
             // Save to history after execution
             await this.saveToHistory(apexCode);

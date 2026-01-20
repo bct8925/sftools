@@ -4,6 +4,7 @@ import '../monaco-editor/monaco-editor.js';
 import { isAuthenticated } from '../../lib/utils.js';
 import { executeRestRequest } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
+import { shouldShowBody } from '../../lib/rest-api-utils.js';
 
 class RestApiTab extends HTMLElement {
     // DOM references
@@ -47,7 +48,7 @@ class RestApiTab extends HTMLElement {
 
     toggleBodyInput() {
         const method = this.methodSelect.value;
-        if (method === 'POST' || method === 'PATCH') {
+        if (shouldShowBody(method)) {
             this.bodyContainer.style.display = 'block';
         } else {
             this.bodyContainer.style.display = 'none';
@@ -72,9 +73,9 @@ class RestApiTab extends HTMLElement {
             return;
         }
 
-        // Validate JSON for POST/PATCH
+        // Validate JSON for POST/PATCH/PUT
         let body = null;
-        if (method === 'POST' || method === 'PATCH') {
+        if (shouldShowBody(method)) {
             const bodyValue = this.requestEditor.getValue();
             try {
                 JSON.parse(bodyValue);

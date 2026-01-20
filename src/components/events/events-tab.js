@@ -4,6 +4,7 @@ import '../monaco-editor/monaco-editor.js';
 import { isAuthenticated, isProxyConnected, getInstanceUrl, getAccessToken } from '../../lib/utils.js';
 import { getAllStreamingChannels, publishPlatformEvent } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
+import { buildChannelOptions, formatEventEntry, formatSystemMessage } from '../../lib/events-utils.js';
 
 class EventsTab extends HTMLElement {
     // DOM references
@@ -165,57 +166,18 @@ class EventsTab extends HTMLElement {
         defaultOpt.textContent = 'Select a channel...';
         this.channelSelect.appendChild(defaultOpt);
 
-        // Platform Events (gRPC) - Custom
-        if (platformEvents.length > 0) {
-            const customGroup = document.createElement('optgroup');
-            customGroup.label = 'Platform Events - Custom';
-            platformEvents.forEach(evt => {
-                const opt = document.createElement('option');
-                opt.value = `/event/${evt.QualifiedApiName}`;
-                opt.textContent = evt.Label || evt.DeveloperName;
-                customGroup.appendChild(opt);
+        const groups = buildChannelOptions(platformEvents, standardEvents, pushTopics, systemTopics);
+        groups.forEach(group => {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = group.label;
+            group.options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.label;
+                optgroup.appendChild(option);
             });
-            this.channelSelect.appendChild(customGroup);
-        }
-
-        // Platform Events (gRPC) - Standard
-        if (standardEvents.length > 0) {
-            const standardGroup = document.createElement('optgroup');
-            standardGroup.label = 'Platform Events - Standard';
-            standardEvents.forEach(evt => {
-                const opt = document.createElement('option');
-                opt.value = `/event/${evt.name}`;
-                opt.textContent = evt.label;
-                standardGroup.appendChild(opt);
-            });
-            this.channelSelect.appendChild(standardGroup);
-        }
-
-        // PushTopics (CometD)
-        if (pushTopics.length > 0) {
-            const pushTopicGroup = document.createElement('optgroup');
-            pushTopicGroup.label = 'PushTopics';
-            pushTopics.forEach(topic => {
-                const opt = document.createElement('option');
-                opt.value = `/topic/${topic.Name}`;
-                opt.textContent = topic.Name;
-                pushTopicGroup.appendChild(opt);
-            });
-            this.channelSelect.appendChild(pushTopicGroup);
-        }
-
-        // System Topics (CometD)
-        if (systemTopics.length > 0) {
-            const systemGroup = document.createElement('optgroup');
-            systemGroup.label = 'System Topics';
-            systemTopics.forEach(topic => {
-                const opt = document.createElement('option');
-                opt.value = topic.channel;
-                opt.textContent = topic.label;
-                systemGroup.appendChild(opt);
-            });
-            this.channelSelect.appendChild(systemGroup);
-        }
+            this.channelSelect.appendChild(optgroup);
+        });
 
         // Build publish dropdown (Platform Events only - publishing only works for PE)
         this.publishChannelSelect.innerHTML = '';
@@ -354,15 +316,7 @@ class EventsTab extends HTMLElement {
         this.eventCount++;
         const timestamp = new Date().toISOString();
 
-        const eventEntry = {
-            _eventNumber: this.eventCount,
-            _receivedAt: timestamp,
-            _channel: event.channel,
-            _protocol: event.protocol,
-            replayId: event.replayId,
-            payload: event.payload,
-            error: event.error
-        };
+        const eventEntry = formatEventEntry(event, this.eventCount, timestamp);
 
         const currentValue = this.streamEditor.getValue();
         const newEntry = JSON.stringify(eventEntry, null, 2);
@@ -377,9 +331,8 @@ class EventsTab extends HTMLElement {
     }
 
     appendSystemMessage(msg) {
-        const timestamp = new Date().toLocaleTimeString();
         const current = this.streamEditor.getValue();
-        const newContent = current + `// [${timestamp}] ${msg}\n`;
+        const newContent = current + formatSystemMessage(msg) + '\n';
         this.streamEditor.setValue(newContent);
 
         this.scrollStreamToBottom();

@@ -16,6 +16,11 @@ import {
 
 import { debugInfo } from './debug.js';
 
+import {
+    parseLightningUrl,
+    findConnectionByDomain as findConnectionByDomainUtil
+} from '../lib/background-utils.js';
+
 // ============================================================================
 // Extension Action Handler
 // ============================================================================
@@ -62,72 +67,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     }
 });
 
-function parseLightningUrl(url) {
-    // Match Lightning record page URLs: /lightning/r/{SObjectType}/{RecordId}/view
-    const regex = /\/lightning\/r\/([^/]+)\/([a-zA-Z0-9]{15,18})\/view/;
-    const match = url.match(regex);
-    return match ? { objectType: match[1], recordId: match[2] } : null;
-}
-
-function extractOrgIdentifier(hostname) {
-    // Extract org-specific part from Salesforce domain formats
-    // Order matters - more specific patterns first
-    const patterns = [
-        // Developer Edition orgs (e.g., orgname.develop.my.salesforce.com)
-        /^([^.]+)\.develop\.lightning\.force\.com$/,
-        /^([^.]+)\.develop\.my\.salesforce\.com$/,
-        // Sandbox orgs
-        /^([^.]+)\.sandbox\.lightning\.force\.com$/,
-        /^([^.]+)\.sandbox\.my\.salesforce\.com$/,
-        // Scratch orgs
-        /^([^.]+)\.scratch\.lightning\.force\.com$/,
-        /^([^.]+)\.scratch\.my\.salesforce\.com$/,
-        // Demo orgs
-        /^([^.]+)\.demo\.lightning\.force\.com$/,
-        /^([^.]+)\.demo\.my\.salesforce\.com$/,
-        // Trailhead playgrounds
-        /^([^.]+)\.trailblaze\.lightning\.force\.com$/,
-        /^([^.]+)\.trailblaze\.my\.salesforce\.com$/,
-        // Standard production/enterprise orgs (most common - check last)
-        /^([^.]+)\.lightning\.force\.com$/,
-        /^([^.]+)\.my\.salesforce\.com$/
-    ];
-
-    for (const pattern of patterns) {
-        const match = hostname.match(pattern);
-        if (match) {
-            return match[1].toLowerCase();
-        }
-    }
-    return null;
-}
-
 async function findConnectionByDomain(tabUrl) {
-    const tabHostname = new URL(tabUrl).hostname;
     const { connections } = await chrome.storage.local.get(['connections']);
-
-    if (!connections || connections.length === 0) {
-        return null;
-    }
-
-    const tabOrgId = extractOrgIdentifier(tabHostname);
-
-    for (const connection of connections) {
-        const connHostname = new URL(connection.instanceUrl).hostname;
-
-        // Direct hostname match
-        if (tabHostname === connHostname) {
-            return connection;
-        }
-
-        // Match by org identifier (handles lightning vs my.salesforce domain differences)
-        const connOrgId = extractOrgIdentifier(connHostname);
-        if (tabOrgId && connOrgId && tabOrgId === connOrgId) {
-            return connection;
-        }
-    }
-
-    return null;
+    return findConnectionByDomainUtil(connections, tabUrl);
 }
 
 async function handleViewEditRecord(tab) {

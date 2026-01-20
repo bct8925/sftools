@@ -7,6 +7,7 @@ import { getObjectDescribe, getRecordWithRelationships, updateRecord } from '../
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { escapeHtml, escapeAttr } from '../../lib/text-utils.js';
 import { replaceIcons } from '../../lib/icons.js';
+import { sortFields, filterFields, formatValue, formatPreviewHtml, parseValue, getChangedFields } from '../../lib/record-utils.js';
 import '../modal-popup/modal-popup.js';
 
 class RecordPage extends HTMLElement {
@@ -177,8 +178,8 @@ class RecordPage extends HTMLElement {
     }
 
     renderFields(fields, record) {
-        const sortedFields = this.sortFields(fields);
-        const filteredFields = this.filterFields(sortedFields);
+        const sortedFields = sortFields(fields);
+        const filteredFields = filterFields(sortedFields);
 
         this.fieldsContainer.innerHTML = filteredFields
             .map(field => this.createFieldRowHtml(field, record))
@@ -187,29 +188,11 @@ class RecordPage extends HTMLElement {
         this.attachFieldEventListeners();
     }
 
-    sortFields(fields) {
-        return [...fields].sort((a, b) => {
-            if (a.name === 'Id') return -1;
-            if (b.name === 'Id') return 1;
-            if (a.nameField) return -1;
-            if (b.nameField) return 1;
-            return a.name.localeCompare(b.name);
-        });
-    }
-
-    filterFields(fields) {
-        const excludeTypes = ['address', 'location'];
-        const excludeNames = ['attributes'];
-        return fields.filter(f =>
-            !excludeNames.includes(f.name) &&
-            !excludeTypes.includes(f.type)
-        );
-    }
-
     createFieldRowHtml(field, record) {
         const value = record[field.name];
-        const displayValue = this.formatValue(value, field);
-        const previewHtml = this.formatPreviewHtml(value, field, record);
+        const displayValue = formatValue(value, field);
+        const previewHtmlRaw = formatPreviewHtml(value, field, record, this.nameFieldMap, this.connectionId);
+        const previewHtml = this.convertPreviewPlaceholders(previewHtmlRaw, field, value);
         const previewText = this.formatPreviewText(value, field, record);
         const isEditable = field.updateable && !field.calculated;
 
@@ -225,6 +208,29 @@ class RecordPage extends HTMLElement {
                 <div class="field-preview" title="${escapeAttr(previewText)}">${previewHtml}</div>
             </div>
         `;
+    }
+
+    convertPreviewPlaceholders(previewHtmlRaw, field, value) {
+        if (previewHtmlRaw === '__PREVIEW_BUTTON__') {
+            return `<button class="field-preview-btn" data-field="${field.name}" data-field-label="${escapeAttr(field.label)}">Preview</button>`;
+        }
+        if (previewHtmlRaw === '__CHECKBOX_CHECKED__') {
+            return '<input type="checkbox" checked disabled>';
+        }
+        if (previewHtmlRaw === '__CHECKBOX_UNCHECKED__') {
+            return '<input type="checkbox" disabled>';
+        }
+        if (previewHtmlRaw.startsWith('__LINK__')) {
+            const parts = previewHtmlRaw.split('__');
+            const relatedName = parts[2];
+            const displayType = parts[3];
+            const relatedType = parts[4];
+            const recordId = parts[5];
+            const connectionId = parts[6];
+            const url = `record.html?objectType=${encodeURIComponent(relatedType)}&recordId=${encodeURIComponent(recordId)}&connectionId=${encodeURIComponent(connectionId)}`;
+            return `<a href="${url}" target="_blank">${escapeHtml(relatedName)} (${escapeHtml(displayType)})</a>`;
+        }
+        return escapeHtml(previewHtmlRaw);
     }
 
     getTypeDisplay(field) {
@@ -273,57 +279,6 @@ class RecordPage extends HTMLElement {
         });
     }
 
-    formatValue(value, field) {
-        if (value === null || value === undefined) return '';
-
-        switch (field.type) {
-            case 'boolean':
-                return value ? 'true' : 'false';
-            case 'datetime':
-            case 'date':
-                return value;
-            case 'double':
-            case 'currency':
-            case 'percent':
-            case 'int':
-                return String(value);
-            default:
-                return String(value);
-        }
-    }
-
-    formatPreviewHtml(value, field, record) {
-        if (value === null || value === undefined) return '';
-
-        // Check if this is a rich text/textarea field that should have a preview button
-        const richTextTypes = ['textarea', 'html', 'encryptedstring'];
-        if (richTextTypes.includes(field.type) && value && String(value).trim()) {
-            return `<button class="field-preview-btn" data-field="${field.name}" data-field-label="${escapeAttr(field.label)}">Preview</button>`;
-        }
-
-        switch (field.type) {
-            case 'boolean':
-                return `<input type="checkbox" ${value ? 'checked' : ''} disabled>`;
-            case 'datetime':
-                return escapeHtml(new Date(value).toLocaleString());
-            case 'date':
-                return escapeHtml(new Date(value + 'T00:00:00').toLocaleDateString());
-            case 'reference':
-                if (field.relationshipName && field.referenceTo?.length > 0) {
-                    const related = record[field.relationshipName];
-                    const relatedType = field.referenceTo[0];
-                    const nameField = this.nameFieldMap[relatedType];
-                    const relatedName = nameField ? related?.[nameField] : null;
-                    if (relatedName) {
-                        const displayType = field.name === 'OwnerId' ? 'User/Group' : relatedType;
-                        const url = `record.html?objectType=${encodeURIComponent(relatedType)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(this.connectionId)}`;
-                        return `<a href="${url}" target="_blank">${escapeHtml(relatedName)} (${escapeHtml(displayType)})</a>`;
-                    }
-                }
-            default:
-                return escapeHtml(String(value ?? ''));
-        }
-    }
 
     formatPreviewText(value, field, record) {
         if (value === null || value === undefined) return '';
@@ -351,29 +306,10 @@ class RecordPage extends HTMLElement {
         }
     }
 
-    parseValue(stringValue, field) {
-        if (stringValue === '' || stringValue === null) return null;
-
-        switch (field.type) {
-            case 'boolean':
-                return stringValue.toLowerCase() === 'true';
-            case 'int':
-                const intVal = parseInt(stringValue, 10);
-                return isNaN(intVal) ? null : intVal;
-            case 'double':
-            case 'currency':
-            case 'percent':
-                const floatVal = parseFloat(stringValue);
-                return isNaN(floatVal) ? null : floatVal;
-            default:
-                return stringValue;
-        }
-    }
-
     handleFieldChange(input) {
         const fieldName = input.dataset.field;
         const field = this.fieldDescribe[fieldName];
-        const newValue = this.parseValue(input.value, field);
+        const newValue = parseValue(input.value, field);
 
         this.currentValues[fieldName] = newValue;
 
@@ -394,7 +330,7 @@ class RecordPage extends HTMLElement {
     }
 
     updateChangeCount() {
-        const changes = this.getChangedFields();
+        const changes = getChangedFields(this.originalValues, this.currentValues, this.fieldDescribe);
         const count = Object.keys(changes).length;
 
         if (count > 0) {
@@ -406,28 +342,8 @@ class RecordPage extends HTMLElement {
         }
     }
 
-    getChangedFields() {
-        const changes = {};
-
-        for (const [fieldName, field] of Object.entries(this.fieldDescribe)) {
-            if (!field.updateable || field.calculated) continue;
-
-            const original = this.originalValues[fieldName];
-            const current = this.currentValues[fieldName];
-
-            const originalStr = original === null || original === undefined ? '' : String(original);
-            const currentStr = current === null || current === undefined ? '' : String(current);
-
-            if (originalStr !== currentStr) {
-                changes[fieldName] = current;
-            }
-        }
-
-        return changes;
-    }
-
     async saveChanges() {
-        const changes = this.getChangedFields();
+        const changes = getChangedFields(this.originalValues, this.currentValues, this.fieldDescribe);
 
         if (Object.keys(changes).length === 0) {
             return;

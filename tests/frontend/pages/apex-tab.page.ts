@@ -154,4 +154,124 @@ export class ApexTabPage extends BasePage {
   async clear(): Promise<void> {
     await this.codeEditor.clear();
   }
+
+  /**
+   * Open history modal
+   */
+  async openHistory(): Promise<void> {
+    await this.slowClick(this.historyBtn);
+    await this.page.waitForSelector('apex-tab .apex-history-modal', { state: 'visible', timeout: 5000 });
+  }
+
+  /**
+   * Load an Apex script from history by index
+   */
+  async loadFromHistory(index: number): Promise<void> {
+    await this.openHistory();
+
+    // Make sure we're on the history tab
+    const historyTab = this.page.locator('apex-tab .dropdown-tab[data-tab="history"]');
+    await this.slowClick(historyTab);
+
+    await this.delay('beforeClick');
+    const historyItems = await this.page.$$('apex-tab .apex-history-list .script-item');
+    if (historyItems[index]) {
+      await historyItems[index].click();
+    } else {
+      throw new Error(`History item ${index} not found`);
+    }
+
+    // Wait for modal to close
+    await this.page.waitForSelector('apex-tab .apex-history-modal', { state: 'hidden', timeout: 5000 });
+  }
+
+  /**
+   * Delete an Apex script from history by index
+   */
+  async deleteFromHistory(index: number): Promise<void> {
+    await this.openHistory();
+
+    // Make sure we're on the history tab
+    const historyTab = this.page.locator('apex-tab .dropdown-tab[data-tab="history"]');
+    await this.slowClick(historyTab);
+
+    await this.delay('beforeClick');
+    const deleteButtons = await this.page.$$('apex-tab .apex-history-list .script-item .script-action.delete');
+    if (deleteButtons[index]) {
+      await deleteButtons[index].click();
+    } else {
+      throw new Error(`History item ${index} not found`);
+    }
+  }
+
+  /**
+   * Open favorites tab in history modal
+   */
+  async openFavorites(): Promise<void> {
+    await this.slowClick(this.historyBtn);
+    await this.page.waitForSelector('apex-tab .apex-history-modal', { state: 'visible', timeout: 5000 });
+
+    // Switch to favorites tab
+    const favoritesTab = this.page.locator('apex-tab .dropdown-tab[data-tab="favorites"]');
+    await this.slowClick(favoritesTab);
+  }
+
+  /**
+   * Save current Apex script to favorites with a label
+   */
+  async saveToFavorites(label: string): Promise<void> {
+    await this.openHistory();
+
+    // Click the favorite button on the first history item
+    await this.delay('beforeClick');
+    const favoriteBtn = this.page.locator('apex-tab .apex-history-list .script-item .script-action.favorite').first();
+    await this.slowClick(favoriteBtn);
+
+    // Wait for favorite modal to open
+    await this.page.waitForSelector('.apex-favorite-dialog', { state: 'visible', timeout: 5000 });
+
+    // Enter label
+    const labelInput = this.page.locator('.apex-favorite-input');
+    await labelInput.fill(label);
+
+    // Click save
+    const saveBtn = this.page.locator('.apex-favorite-save');
+    await this.slowClick(saveBtn);
+
+    // Wait for modal to close
+    await this.page.waitForSelector('.apex-favorite-dialog', { state: 'hidden', timeout: 5000 });
+  }
+
+  /**
+   * Load an Apex script from favorites by index
+   */
+  async loadFromFavorites(index: number): Promise<void> {
+    await this.openFavorites();
+
+    await this.delay('beforeClick');
+    const favoriteItems = await this.page.$$('apex-tab .apex-favorites-list .script-item');
+    if (favoriteItems[index]) {
+      await favoriteItems[index].click();
+    } else {
+      throw new Error(`Favorite item ${index} not found`);
+    }
+
+    // Wait for modal to close
+    await this.page.waitForSelector('apex-tab .apex-history-modal', { state: 'hidden', timeout: 5000 });
+  }
+
+  /**
+   * Delete an Apex script from favorites by index
+   */
+  async deleteFromFavorites(index: number): Promise<void> {
+    await this.openFavorites();
+
+    await this.delay('beforeClick');
+    const deleteButtons = await this.page.$$('apex-tab .apex-favorites-list .script-item .script-action.delete');
+    if (deleteButtons[index]) {
+      await deleteButtons[index].click();
+    } else {
+      throw new Error(`Favorite item ${index} not found`);
+    }
+  }
 }

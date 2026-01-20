@@ -113,4 +113,29 @@ export class RestApiTabPage extends BasePage {
   async getResponse(): Promise<string> {
     return this.responseMonaco.getValue();
   }
+
+  /**
+   * Execute request via Ctrl/Cmd+Enter keyboard shortcut in the body editor
+   */
+  async executeWithShortcut(): Promise<void> {
+    await this.requestMonaco.pressExecuteShortcut();
+
+    await this.page.waitForFunction(
+      () => {
+        const status = document.querySelector('rest-api-tab .status-badge');
+        if (!status) return false;
+        // Request is complete when status has success or error class (not loading)
+        return status.classList.contains('status-error') ||
+               status.classList.contains('status-success');
+      },
+      { timeout: 30000 }
+    );
+  }
+
+  /**
+   * Check if the request body editor is currently visible
+   */
+  async isBodyEditorVisible(): Promise<boolean> {
+    return this.bodyContainer.isVisible();
+  }
 }

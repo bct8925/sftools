@@ -3,9 +3,10 @@ import { SftoolsTest } from '../../framework/base-test';
 /**
  * Test subquery expansion
  *
- * Test IDs: Q-F-004, Q-F-005
+ * Test IDs: Q-F-004, Q-F-005, Q-F-006
  * - Q-F-004: Execute query with subquery - Nested records show as expandable "▶ N records"
  * - Q-F-005: Expand subquery results - Nested table displays inline
+ * - Q-F-006: Collapse subquery results - Nested table is hidden
  */
 export default class QuerySubqueryTest extends SftoolsTest {
   private accountId: string = '';
@@ -68,5 +69,12 @@ export default class QuerySubqueryTest extends SftoolsTest {
     const subqueryText = await this.queryTab.getSubqueryText(0);
     await this.expect(subqueryText).toContain('SubqueryContact1');
     await this.expect(subqueryText).toContain('SubqueryContact2');
+
+    // Collapse subquery at index 0
+    await this.queryTab.collapseSubquery(0);
+
+    // Verify subquery is no longer visible
+    const isSubqueryVisible = await this.queryTab.isSubqueryVisible(0);
+    await this.expect(isSubqueryVisible).toBe(false);
   }
 }

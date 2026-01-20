@@ -233,4 +233,383 @@ export class QueryTabPage extends BasePage {
     }
     return '';
   }
+
+  /**
+   * Enable edit mode by checking the editing checkbox
+   */
+  async enableEditMode(): Promise<void> {
+    const isChecked = await this.editingCheckbox.isChecked();
+    if (!isChecked) {
+      await this.resultsBtn.click();
+      await this.delay('beforeClick');
+      await this.editingCheckbox.click();
+      await this.delay('afterClick');
+    }
+  }
+
+  /**
+   * Disable edit mode by unchecking the editing checkbox
+   */
+  async disableEditMode(): Promise<void> {
+    const isChecked = await this.editingCheckbox.isChecked();
+    if (isChecked) {
+      await this.resultsBtn.click();
+      await this.delay('beforeClick');
+      await this.editingCheckbox.click();
+      await this.delay('afterClick');
+    }
+  }
+
+  /**
+   * Edit a cell in the results table
+   */
+  async editCell(rowIndex: number, fieldName: string, value: string): Promise<void> {
+    await this.delay('beforeType');
+
+    // Find the field index by matching header
+    const headers = await this.getResultsHeaders();
+    const fieldIndex = headers.indexOf(fieldName);
+    if (fieldIndex === -1) {
+      throw new Error(`Field ${fieldName} not found in results headers`);
+    }
+
+    // Get the input element for this cell
+    const input = this.page.locator(
+      `query-tab .query-results table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${fieldIndex + 1}) .query-field-input`
+    );
+
+    // Check if it's a checkbox or text input
+    const inputType = await input.getAttribute('type');
+
+    if (inputType === 'checkbox') {
+      const shouldCheck = value.toLowerCase() === 'true';
+      const isChecked = await input.isChecked();
+      if (shouldCheck !== isChecked) {
+        await this.slowClick(input);
+      }
+    } else {
+      await input.fill(value);
+      await this.delay('afterType');
+    }
+  }
+
+  /**
+   * Save changes to edited records
+   */
+  async saveChanges(): Promise<void> {
+    await this.resultsBtn.click();
+    await this.delay('beforeClick');
+    const saveBtn = this.page.locator('query-tab .query-save-btn');
+    await this.slowClick(saveBtn);
+
+    // Wait for save to complete
+    await this.page.waitForFunction(
+      () => {
+        const status = document.querySelector('query-tab .query-footer .status-badge');
+        if (!status) return false;
+        return status.classList.contains('status-success') ||
+               status.classList.contains('status-error');
+      },
+      { timeout: 15000 }
+    );
+  }
+
+  /**
+   * Clear all pending changes
+   */
+  async clearChanges(): Promise<void> {
+    await this.resultsBtn.click();
+    await this.delay('beforeClick');
+    const clearBtn = this.page.locator('query-tab .query-clear-btn');
+    await this.slowClick(clearBtn);
+  }
+
+  /**
+   * Get the number of pending changes
+   */
+  async getChangesCount(): Promise<number> {
+    return this.page.$$eval(
+      'query-tab .query-results table tbody td.modified',
+      (cells) => {
+        const recordIds = new Set();
+        cells.forEach((cell) => {
+          const row = cell.closest('tr');
+          if (row) {
+            const recordId = row.getAttribute('data-record-id');
+            if (recordId) recordIds.add(recordId);
+          }
+        });
+        return recordIds.size;
+      }
+    );
+  }
+
+  /**
+   * Export results as CSV
+   */
+  async exportCsv(): Promise<void> {
+    await this.resultsBtn.click();
+    await this.delay('beforeClick');
+    const exportBtn = this.page.locator('query-tab .query-export-btn');
+    await this.slowClick(exportBtn);
+  }
+
+  /**
+   * Bulk export using Salesforce Bulk API v2
+   */
+  async bulkExport(): Promise<void> {
+    await this.resultsBtn.click();
+    await this.delay('beforeClick');
+    const bulkExportBtn = this.page.locator('query-tab .query-bulk-export-btn');
+    await this.slowClick(bulkExportBtn);
+
+    // Wait for bulk export to complete (status will show "Export complete" or error)
+    await this.page.waitForFunction(
+      () => {
+        const status = document.querySelector('query-tab .query-footer .status-badge');
+        if (!status) return false;
+        const text = status.textContent || '';
+        return (text.includes('Export complete') && status.classList.contains('status-success')) ||
+               status.classList.contains('status-error');
+      },
+      { timeout: 120000 } // 2 min timeout for bulk jobs
+    );
+  }
+
+  /**
+   * Open history dropdown
+   */
+  async openHistory(): Promise<void> {
+    await this.slowClick(this.historyBtn);
+    await this.page.waitForSelector('query-tab .query-history-modal', { state: 'visible', timeout: 5000 });
+  }
+
+  /**
+   * Load a query from history by index
+   */
+  async loadFromHistory(index: number): Promise<void> {
+    await this.openHistory();
+
+    // Make sure we're on the history tab
+    const historyTab = this.page.locator('query-tab .dropdown-tab[data-tab="history"]');
+    await this.slowClick(historyTab);
+
+    await this.delay('beforeClick');
+    const historyItems = await this.page.$$('query-tab .query-history-list .script-item');
+    if (historyItems[index]) {
+      await historyItems[index].click();
+    } else {
+      throw new Error(`History item ${index} not found`);
+    }
+
+    // Wait for modal to close
+    await this.page.waitForSelector('query-tab .query-history-modal', { state: 'hidden', timeout: 5000 });
+  }
+
+  /**
+   * Delete a query from history by index
+   */
+  async deleteFromHistory(index: number): Promise<void> {
+    await this.openHistory();
+
+    // Make sure we're on the history tab
+    const historyTab = this.page.locator('query-tab .dropdown-tab[data-tab="history"]');
+    await this.slowClick(historyTab);
+
+    await this.delay('beforeClick');
+    const deleteButtons = await this.page.$$('query-tab .query-history-list .script-item .script-action.delete');
+    if (deleteButtons[index]) {
+      await deleteButtons[index].click();
+    } else {
+      throw new Error(`History item ${index} not found`);
+    }
+  }
+
+  /**
+   * Close the history modal
+   */
+  async closeHistory(): Promise<void> {
+    // Press Escape to close modal
+    await this.page.keyboard.press('Escape');
+    // Wait for modal to close
+    await this.page.waitForFunction(
+      () => {
+        const modal = document.querySelector('query-tab .query-history-modal');
+        return modal && !modal.classList.contains('open');
+      },
+      { timeout: 5000 }
+    );
+  }
+
+  /**
+   * Get the number of items in history
+   */
+  async getHistoryCount(): Promise<number> {
+    // Make sure we're on the history tab
+    const historyTab = this.page.locator('query-tab .dropdown-tab[data-tab="history"]');
+    const isHistoryActive = await historyTab.evaluate((el) => el.classList.contains('active'));
+    if (!isHistoryActive) {
+      await this.slowClick(historyTab);
+    }
+
+    const count = await this.page.$$eval('query-tab .query-history-list .script-item', (items) => items.length);
+
+    return count;
+  }
+
+  /**
+   * Get the text of all history items
+   */
+  async getHistoryItems(): Promise<string[]> {
+    // Make sure we're on the history tab
+    const historyTab = this.page.locator('query-tab .dropdown-tab[data-tab="history"]');
+    const isHistoryActive = await historyTab.evaluate((el) => el.classList.contains('active'));
+    if (!isHistoryActive) {
+      await this.slowClick(historyTab);
+    }
+
+    const items = await this.page.$$eval(
+      'query-tab .query-history-list .script-item .script-preview',
+      (previews) => previews.map((p) => p.textContent?.trim() || '')
+    );
+
+    return items;
+  }
+
+  /**
+   * Open favorites dropdown
+   */
+  async openFavorites(): Promise<void> {
+    await this.slowClick(this.historyBtn);
+    await this.page.waitForSelector('query-tab .query-history-modal', { state: 'visible', timeout: 5000 });
+
+    // Switch to favorites tab
+    const favoritesTab = this.page.locator('query-tab .dropdown-tab[data-tab="favorites"]');
+    await this.slowClick(favoritesTab);
+  }
+
+  /**
+   * Save current query to favorites with a label
+   */
+  async saveToFavorites(label: string): Promise<void> {
+    await this.openHistory();
+
+    // Click the favorite button on the first history item
+    await this.delay('beforeClick');
+    const favoriteBtn = this.page.locator('query-tab .query-history-list .script-item .script-action.favorite').first();
+    await this.slowClick(favoriteBtn);
+
+    // Wait for favorite modal to open
+    await this.page.waitForSelector('query-tab .query-favorite-modal', { state: 'visible', timeout: 5000 });
+
+    // Enter label
+    const labelInput = this.page.locator('query-tab .query-favorite-input');
+    await labelInput.fill(label);
+
+    // Click save
+    const saveBtn = this.page.locator('query-tab .query-favorite-save');
+    await this.slowClick(saveBtn);
+
+    // Wait for modal to close
+    await this.page.waitForSelector('query-tab .query-favorite-modal', { state: 'hidden', timeout: 5000 });
+  }
+
+  /**
+   * Load a query from favorites by index
+   */
+  async loadFromFavorites(index: number): Promise<void> {
+    await this.openFavorites();
+
+    await this.delay('beforeClick');
+    const favoriteItems = await this.page.$$('query-tab .query-favorites-list .script-item');
+    if (favoriteItems[index]) {
+      await favoriteItems[index].click();
+    } else {
+      throw new Error(`Favorite item ${index} not found`);
+    }
+
+    // Wait for modal to close
+    await this.page.waitForSelector('query-tab .query-history-modal', { state: 'hidden', timeout: 5000 });
+  }
+
+  /**
+   * Delete a query from favorites by index
+   */
+  async deleteFromFavorites(index: number): Promise<void> {
+    await this.openFavorites();
+
+    await this.delay('beforeClick');
+    const deleteButtons = await this.page.$$('query-tab .query-favorites-list .script-item .script-action.delete');
+    if (deleteButtons[index]) {
+      await deleteButtons[index].click();
+    } else {
+      throw new Error(`Favorite item ${index} not found`);
+    }
+  }
+
+  /**
+   * Refresh the current tab
+   */
+  async refreshTab(): Promise<void> {
+    const refreshBtn = this.page.locator('query-tab .query-tab.active .query-tab-refresh');
+    await this.slowClick(refreshBtn);
+
+    // Wait for refresh to complete
+    await this.page.waitForFunction(
+      () => {
+        const status = document.querySelector('query-tab .query-footer .status-badge');
+        if (!status) return false;
+        return status.classList.contains('status-error') ||
+               status.classList.contains('status-success');
+      },
+      { timeout: 30000 }
+    );
+  }
+
+  /**
+   * Click a record ID field to open Record Viewer
+   */
+  async clickRecordId(rowIndex: number): Promise<void> {
+    // Find the Id column (should be first column)
+    const headers = await this.getResultsHeaders();
+    const idIndex = headers.indexOf('Id');
+    if (idIndex === -1) {
+      throw new Error('Id field not found in results headers');
+    }
+
+    const idLink = this.page.locator(
+      `query-tab .query-results table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${idIndex + 1}) .query-id-link`
+    );
+
+    await this.slowClick(idLink);
+  }
+
+  /**
+   * Switch to a specific result tab by index
+   */
+  async switchToTab(index: number): Promise<void> {
+    const tabLabels = await this.page.$$('query-tab .query-tab-label');
+    if (tabLabels[index]) {
+      await this.slowClick(tabLabels[index]);
+      await this.delay('afterClick');
+    } else {
+      throw new Error(`Tab ${index} not found`);
+    }
+  }
+
+  /**
+   * Collapse an expanded subquery
+   */
+  async collapseSubquery(index: number): Promise<void> {
+    const toggles = await this.page.$$('query-tab .query-results .query-subquery-toggle');
+    if (toggles[index]) {
+      // Check if already expanded
+      const expanded = await toggles[index].evaluate((el) => el.getAttribute('data-expanded') === 'true');
+      if (expanded) {
+        await this.slowClick(toggles[index]);
+      }
+    } else {
+      throw new Error(`Subquery toggle ${index} not found`);
+    }
+  }
 }

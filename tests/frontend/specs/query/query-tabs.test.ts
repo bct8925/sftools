@@ -3,9 +3,10 @@ import { SftoolsTest } from '../../framework/base-test';
 /**
  * Test tab management
  *
- * Test IDs: Q-F-022, Q-F-023, Q-F-026
+ * Test IDs: Q-F-022, Q-F-023, Q-F-024, Q-F-026
  * - Q-F-022: Create new result tab - Same query reuses existing tab
  * - Q-F-023: Different query creates new tab - New tab appears
+ * - Q-F-024: Switch between tabs - Active tab changes
  * - Q-F-026: Close tab - Tab removed from list
  */
 export default class QueryTabsTest extends SftoolsTest {
@@ -56,6 +57,20 @@ export default class QueryTabsTest extends SftoolsTest {
     // Verify 2 tabs are open
     const tabs2 = await this.queryTab.getOpenTabs();
     await this.expect(tabs2.length).toBe(2);
+
+    // Switch to first tab
+    await this.queryTab.switchToTab(0);
+
+    // Verify first tab is active
+    const activeTab1 = await this.queryTab.getActiveTab();
+    await this.expect(activeTab1).toBe(0);
+
+    // Switch to second tab
+    await this.queryTab.switchToTab(1);
+
+    // Verify second tab is active
+    const activeTab2 = await this.queryTab.getActiveTab();
+    await this.expect(activeTab2).toBe(1);
 
     // Close first tab by index
     await this.queryTab.closeTab(0);

@@ -83,6 +83,17 @@ export class Assertion<T> {
     }
   }
 
+  async toNotContain(expected: string): Promise<void> {
+    const actual = await this.resolve();
+    if (typeof actual !== 'string' || actual.includes(expected)) {
+      throw new AssertionError(
+        `Expected "${actual}" to not contain "${expected}"`,
+        actual,
+        expected
+      );
+    }
+  }
+
   async toBeGreaterThan(expected: number): Promise<void> {
     const actual = await this.resolve();
     if (typeof actual !== 'number' || actual <= expected) {

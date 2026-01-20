@@ -60,9 +60,12 @@ export default class QueryFavoritesTest extends SftoolsTest {
     // Delete from favorites (Q-F-021)
     await this.queryTab.deleteFromFavorites(0);
 
+    // Close the modal after deletion
+    await this.queryTab.closeHistory();
+
     // Verify favorites list is now empty by opening it and checking for "No favorites"
     await this.queryTab.openFavorites();
-    const emptyMessage = await this.queryTab.page.locator('query-tab .query-favorites-list .query-empty-message').textContent();
-    await this.expect(emptyMessage?.trim()).toBe('No favorites saved');
+    const emptyMessage = await this.queryTab.page.locator('query-tab .query-favorites-list .script-empty').textContent();
+    await this.expect(emptyMessage?.trim()).toContain('No favorites yet');
   }
 }

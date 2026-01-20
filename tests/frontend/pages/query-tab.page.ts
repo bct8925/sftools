@@ -55,6 +55,14 @@ export class QueryTabPage extends BasePage {
   }
 
   /**
+   * Set a SOQL query without executing
+   */
+  async setQuery(query: string): Promise<void> {
+    await this.delay('beforeType');
+    await this.monaco.setValue(query);
+  }
+
+  /**
    * Execute a SOQL query
    */
   async executeQuery(query: string): Promise<void> {
@@ -297,9 +305,17 @@ export class QueryTabPage extends BasePage {
    * Save changes to edited records
    */
   async saveChanges(): Promise<void> {
-    await this.resultsBtn.click();
-    await this.delay('beforeClick');
     const saveBtn = this.page.locator('query-tab .query-save-btn');
+
+    // Wait for save button to be enabled (indicates changes are tracked)
+    await this.page.waitForFunction(
+      () => {
+        const btn = document.querySelector('query-tab .query-save-btn');
+        return btn && !(btn as HTMLButtonElement).disabled;
+      },
+      { timeout: 5000 }
+    );
+
     await this.slowClick(saveBtn);
 
     // Wait for save to complete
@@ -611,5 +627,29 @@ export class QueryTabPage extends BasePage {
     } else {
       throw new Error(`Subquery toggle ${index} not found`);
     }
+  }
+
+  /**
+   * Get the index of the currently active result tab
+   */
+  async getActiveTab(): Promise<number> {
+    const tabs = await this.page.$$('query-tab .query-tab');
+    for (let i = 0; i < tabs.length; i++) {
+      const isActive = await tabs[i].evaluate((el) => el.classList.contains('active'));
+      if (isActive) return i;
+    }
+    return -1;
+  }
+
+  /**
+   * Check if a subquery is visible (expanded)
+   */
+  async isSubqueryVisible(index: number): Promise<boolean> {
+    const subqueryTables = await this.page.$$('query-tab .query-results .query-subquery-table');
+    if (subqueryTables[index]) {
+      const isVisible = await subqueryTables[index].isVisible();
+      return isVisible;
+    }
+    return false;
   }
 }

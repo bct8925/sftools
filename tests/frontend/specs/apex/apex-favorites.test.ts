@@ -51,9 +51,12 @@ export default class ApexFavoritesTest extends SftoolsTest {
     // Delete from favorites (A-F-013)
     await this.apexTab.deleteFromFavorites(0);
 
+    // Close the modal after deletion
+    await this.apexTab.closeHistory();
+
     // Verify favorites list is now empty by opening it and checking for "No favorites"
     await this.apexTab.openFavorites();
-    const emptyMessage = await this.apexTab.page.locator('apex-tab .apex-favorites-list .apex-empty-message').textContent();
-    await this.expect(emptyMessage?.trim()).toBe('No favorites saved');
+    const emptyMessage = await this.apexTab.page.locator('apex-tab .apex-favorites-list .script-empty').textContent();
+    await this.expect(emptyMessage?.trim()).toContain('No favorites yet');
   }
 }

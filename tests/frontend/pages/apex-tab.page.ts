@@ -274,4 +274,20 @@ export class ApexTabPage extends BasePage {
       throw new Error(`Favorite item ${index} not found`);
     }
   }
+
+  /**
+   * Close the history modal
+   */
+  async closeHistory(): Promise<void> {
+    // Press Escape to close modal
+    await this.page.keyboard.press('Escape');
+    // Wait for modal to close
+    await this.page.waitForFunction(
+      () => {
+        const modal = document.querySelector('apex-tab .apex-history-modal');
+        return modal && !modal.classList.contains('open');
+      },
+      { timeout: 5000 }
+    );
+  }
 }

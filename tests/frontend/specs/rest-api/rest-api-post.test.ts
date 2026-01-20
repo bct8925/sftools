@@ -40,6 +40,6 @@ export default class RestApiPostTest extends SftoolsTest {
     // Verify response contains ID
     const response = await this.restApiTab.getResponse();
     await this.expect(response).toContain('"id"');
-    await this.expect(response).toContain('"success":true');
+    await this.expect(response).toContain('"success": true');
   }
 }

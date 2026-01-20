@@ -11,10 +11,9 @@ export default class RestApiDeleteTest extends SftoolsTest {
 
   async setup(): Promise<void> {
     // Create an Account via Salesforce client
-    const result = await this.salesforce.createRecord('Account', {
+    this.accountId = await this.salesforce.createRecord('Account', {
       Name: 'REST API DELETE Test Account'
     });
-    this.accountId = result.id;
   }
 
   async test(): Promise<void> {

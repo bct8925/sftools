@@ -37,6 +37,6 @@ export default class RestApiShortcutTest extends SftoolsTest {
     // Verify response contains the created record ID
     const response = await this.restApiTab.getResponse();
     await this.expect(response).toContain('"id"');
-    await this.expect(response).toContain('"success":true');
+    await this.expect(response).toContain('"success": true');
   }
 }

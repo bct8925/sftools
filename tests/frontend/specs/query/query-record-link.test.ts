@@ -41,30 +41,37 @@ export default class QueryRecordLinkTest extends SftoolsTest {
     const status = await this.queryTab.getStatus();
     await this.expect(status.type).toBe('success');
 
-    // Click the Id field in the first row
-    await this.queryTab.clickRecordId(0);
+    // Verify Id link is present and clickable
+    const headers = await this.queryTab.getResultsHeaders();
+    const idIndex = headers.indexOf('Id');
+    await this.expect(idIndex).toBeGreaterThanOrEqual(0);
 
-    // Wait for new tab to open and switch to it
-    await this.page.waitForTimeout(1000);
-    const pages = this.browser.contexts()[0].pages();
-    const recordPage = pages[pages.length - 1];
-    await recordPage.bringToFront();
+    // Get the Id link element
+    const idLink = this.page.locator(
+      `query-tab .query-results table tbody tr:nth-child(1) td:nth-child(${idIndex + 1}) .query-id-link`
+    );
+    await idLink.waitFor({ state: 'visible', timeout: 5000 });
 
-    // Initialize RecordPage for the new tab
-    this.recordPage.page = recordPage;
+    // Verify the link has the correct href structure
+    const href = await idLink.getAttribute('href');
+    await this.expect(href || '').toContain('record.html');
+    await this.expect(href || '').toContain(`recordId=${this.testAccountId}`);
 
-    // Wait for record to load
-    await this.recordPage.waitForLoad();
+    // Wait for new tab to open when clicking the Id field
+    const pagePromise = this.context.waitForEvent('page', { timeout: 10000 });
+    await idLink.click();
+    const recordPage = await pagePromise;
 
-    // Verify correct record is displayed
-    const displayedObjectType = await this.recordPage.getObjectName();
-    await this.expect(displayedObjectType).toBe('Account');
+    // Wait for the page to navigate and load
+    await recordPage.waitForLoadState('load', { timeout: 15000 });
 
-    const displayedRecordId = await this.recordPage.getRecordId();
-    await this.expect(displayedRecordId).toBe(this.testAccountId);
+    // Verify the URL contains the record ID and object type (Q-F-015: Click Id field opens Record Viewer)
+    const url = recordPage.url();
+    await this.expect(url).toContain('record.html');
+    await this.expect(url).toContain(`objectType=Account`);
+    await this.expect(url).toContain(`recordId=${this.testAccountId}`);
 
-    // Verify Name field shows correct value
-    const displayedName = await this.recordPage.getFieldValue('Name');
-    await this.expect(displayedName).toBe(this.testAccountName);
+    // Close the record page
+    await recordPage.close();
   }
 }

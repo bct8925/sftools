@@ -58,9 +58,9 @@ export default class ApexLogFilterTest extends SftoolsTest {
     await this.expect(filteredContent).toContain('UNIQUE keyword');
 
     // Verify filtered content does NOT contain non-matching lines
-    await this.expect(filteredContent).not.toContain('First debug message');
-    await this.expect(filteredContent).not.toContain('Second debug message');
-    await this.expect(filteredContent).not.toContain('Fourth debug message');
+    await this.expect(filteredContent).toNotContain('First debug message');
+    await this.expect(filteredContent).toNotContain('Second debug message');
+    await this.expect(filteredContent).toNotContain('Fourth debug message');
 
     // Verify fewer lines after filtering
     await this.expect(filteredLines).toBeLessThan(totalLines);

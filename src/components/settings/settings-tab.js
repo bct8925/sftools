@@ -380,7 +380,7 @@ class SettingsTab extends HTMLElement {
 
         // Store pending auth with connection's clientId and ID for re-auth
         await setPendingAuth({
-            loginDomain: connection.loginDomain || 'https://login.salesforce.com',
+            loginDomain: connection.instanceUrl,
             clientId: connection.clientId,
             connectionId: connectionId
         });
@@ -388,7 +388,7 @@ class SettingsTab extends HTMLElement {
         // Call startAuthorization from app.js
         if (window.startAuthorization) {
             window.startAuthorization(
-                connection.loginDomain || 'https://login.salesforce.com',
+                connection.instanceUrl,
                 connection.clientId,
                 connectionId
             );

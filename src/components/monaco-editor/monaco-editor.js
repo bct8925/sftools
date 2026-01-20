@@ -9,8 +9,40 @@ window.addEventListener('unhandledrejection', (event) => {
     }
 });
 
+// Define custom themes that read from CSS variables
+function defineCustomThemes() {
+    // Get computed styles to read CSS variable values
+    const styles = getComputedStyle(document.documentElement);
+    const navBg = styles.getPropertyValue('--nav-bg').trim();
+
+    // Define custom light theme
+    monaco.editor.defineTheme('sftools-light', {
+        base: 'vs',
+        inherit: true,
+        rules: [],
+        colors: {
+            'editor.background': navBg,
+            'editorGutter.background': navBg
+        }
+    });
+
+    // Define custom dark theme
+    monaco.editor.defineTheme('sftools-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [],
+        colors: {
+            'editor.background': navBg,
+            'editorGutter.background': navBg
+        }
+    });
+}
+
+// Initialize custom themes on first load
+defineCustomThemes();
+
 function getMonacoTheme() {
-    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'vs-dark' : 'vs';
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'sftools-dark' : 'sftools-light';
 }
 
 const defaultOptions = {
@@ -97,6 +129,8 @@ class MonacoEditor extends HTMLElement {
 
     updateEditorTheme() {
         if (this.editor) {
+            // Redefine themes with current CSS variable values
+            defineCustomThemes();
             monaco.editor.setTheme(getMonacoTheme());
         }
     }

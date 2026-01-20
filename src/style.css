@@ -61,6 +61,10 @@
 
     /* Typography */
     --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+
+    /* Monaco Editor */
+    --vscode-editor-background: var(--nav-bg);
+    --vscode-editorGutter-background: var(--nav-bg);
 }
 
 /* --- Dark Mode --- */
@@ -126,6 +130,10 @@
 
     /* Typography */
     --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+
+    /* Monaco Editor */
+    --vscode-editor-background: var(--nav-bg);
+    --vscode-editorGutter-background: var(--nav-bg);
 }
 
 html {

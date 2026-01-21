@@ -40,7 +40,7 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | Q-F-002 | Execute query via Ctrl/Cmd+Enter | Same as button click | `query/query-shortcut.test.ts` |
 | Q-F-004 | Execute query with subquery | Nested records show as expandable "▶ N records" | `query/query-subquery.test.ts` |
 | Q-F-005 | Expand subquery results | Nested table displays inline | `query/query-subquery.test.ts` |
-| Q-F-006 | Collapse subquery results | Nested table hides | - |
+| Q-F-006 | Collapse subquery results | Nested table hides | `query/query-subquery.test.ts` |
 | Q-F-008 | Toggle Edit mode | Input fields appear for editable fields | `query/query-edit-mode.test.ts` |
 | Q-F-009 | Edit field value | Field highlighted, changes counter updates | `query/query-edit-mode.test.ts` |
 | Q-F-010 | Save edited records | PATCH request sent, success feedback shown | `query/query-edit-mode.test.ts` |
@@ -57,12 +57,15 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | Q-F-021 | Delete query from favorites | Query removed from list | `query/query-favorites.test.ts` |
 | Q-F-022 | Create new result tab | Same query reuses existing tab | `query/query-tabs.test.ts` |
 | Q-F-023 | Different query creates new tab | New tab appears | `query/query-tabs.test.ts` |
-| Q-F-024 | Switch between tabs | Correct results displayed | - |
+| Q-F-024 | Switch between tabs | Correct results displayed | `query/query-tabs.test.ts` |
 | Q-F-025 | Refresh tab | Query re-executed, results updated | - |
 | Q-F-026 | Close tab | Tab removed from list | `query/query-tabs.test.ts` |
 | Q-F-027 | Status badge shows loading | Spinner during query execution | - |
 | Q-F-028 | Status badge shows success | Check icon with record count | - |
 | Q-F-029 | Status badge shows error | X icon with error message | `query/query-errors.test.ts` |
+| Q-F-033 | Status badge shows success | Check icon displayed | `query/basic-query.test.ts` |
+| Q-F-034 | Record count displayed | Record count shown in status | `query/basic-query.test.ts` |
+| Q-F-035 | Column headers displayed | Headers match query columns | `query/basic-query.test.ts` |
 
 ### Integration Tests
 
@@ -1248,8 +1251,6 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | PS-U-028 | `has()` | Returns false for missing UUID | `proxy/payload-store.test.js` |
 
 ---
-
-## Test Coverage Summary
 
 Note: Integration test counts include documented scenarios that may not yet be implemented (marked with "-").
 

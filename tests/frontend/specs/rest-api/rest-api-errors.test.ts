@@ -4,8 +4,8 @@ import { MockRouter } from '../../../shared/mocks/index.js';
 /**
  * Test REST API error handling
  *
- * Test IDs: R-I-007
- * - R-I-007: HTTP 400 error - Error response displayed
+ * Test IDs: R-F-009
+ * - R-F-009: Error response received - Status badge shows error state
  */
 export default class RestApiErrorsTest extends SftoolsTest {
   configureMocks() {

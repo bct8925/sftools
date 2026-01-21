@@ -297,7 +297,7 @@ export async function executeAnonymousApex(apexCode, onProgress) {
 
 /**
  * Execute a SOQL query with column metadata
- * Makes parallel requests for data and column info
+ * Fetches column metadata first, then query results
  * @param {string} soql - The SOQL query
  * @param {boolean} useToolingApi - If true, use the Tooling API endpoint
  * @returns {Promise<{records: array, totalSize: number, columnMetadata: array, entityName: string}>}
@@ -307,21 +307,13 @@ export async function executeQueryWithColumns(soql, useToolingApi = false) {
     const apiPath = useToolingApi ? 'tooling/query' : 'query';
     const baseUrl = `/services/data/v${API_VERSION}/${apiPath}/?q=${encodedQuery}`;
 
-    // Use allSettled to capture errors from both requests
-    // The data query returns better error messages than the columns query
-    const [columnsResult, dataResult] = await Promise.allSettled([
-        salesforceRequest(`${baseUrl}&columns=true`),
-        salesforceRequest(baseUrl)
-    ]);
+    // Execute columns request first to fail fast on query errors
+    const columnsResponse = await salesforceRequest(`${baseUrl}&columns=true`);
+    const columnData = columnsResponse.json || {};
 
-    // If data query failed, throw its error (more detailed than columns error)
-    if (dataResult.status === 'rejected') {
-        throw dataResult.reason;
-    }
-
-    // If only columns query failed, we can still return data (just without column metadata)
-    const columnData = columnsResult.status === 'fulfilled' ? columnsResult.value.json || {} : {};
-    const queryData = dataResult.value.json || {};
+    // Only proceed with data request if columns request succeeded
+    const dataResponse = await salesforceRequest(baseUrl);
+    const queryData = dataResponse.json || {};
 
     return {
         records: queryData.records || [],

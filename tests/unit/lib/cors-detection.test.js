@@ -23,6 +23,16 @@ import { isCorsError, showCorsErrorModal } from '../../../src/lib/cors-detection
 
 describe('cors-detection', () => {
     describe('isCorsError', () => {
+        it('UT-U-005: detects status 0 with "failed to fetch" error', () => {
+            const response = {
+                success: false,
+                status: 0,
+                error: 'Failed to fetch'
+            };
+
+            expect(isCorsError(response)).toBe(true);
+        });
+
         it('UT-U-056: returns true for status 0 with "failed to fetch" error', () => {
             const response = {
                 success: false,

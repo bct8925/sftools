@@ -2,9 +2,9 @@ import { SftoolsTest } from '../../framework/base-test';
 import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
- * Test SOQL query execution via keyboard shortcut
- *
- * @test Q-F-002: Execute query via Ctrl/Cmd+Enter
+ * Test IDs: Q-F-002
+ * 
+ * - Q-F-002: Execute query via Ctrl/Cmd+Enter
  */
 export default class QueryShortcutTest extends SftoolsTest {
   configureMocks() {

@@ -59,7 +59,22 @@ describe('salesforce-request', () => {
     });
 
     describe('successful requests', () => {
-        it('UT-U-009, UT-U-036: builds correct URL from instanceUrl and endpoint', async () => {
+        it('UT-U-009: builds correct URL', async () => {
+            smartFetch.mockResolvedValue({
+                success: true,
+                status: 200,
+                data: '{"result":"ok"}'
+            });
+
+            await salesforceRequest('/services/data/v59.0/sobjects');
+
+            expect(smartFetch).toHaveBeenCalledWith(
+                'https://test.salesforce.com/services/data/v59.0/sobjects',
+                expect.any(Object)
+            );
+        });
+
+        it('UT-U-036: builds correct URL from instanceUrl and endpoint', async () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,

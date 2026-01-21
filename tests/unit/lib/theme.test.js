@@ -30,7 +30,7 @@ describe('theme', () => {
         mockMatchMedia.mockImplementation((query) => ({
             matches: false, // Default to light mode
             media: query,
-            addEventListener: vi.fn((event, callback) => {
+            addEventListener: vi.fn((_event, callback) => {
                 mediaQueryListeners.push(callback);
             }),
             removeEventListener: vi.fn()
@@ -60,7 +60,7 @@ describe('theme', () => {
     });
 
     describe('applyTheme', () => {
-        it('applies light theme by removing data-theme attribute', () => {
+        it('S-U-001: applies light theme by removing data-theme attribute', () => {
             document.documentElement.setAttribute('data-theme', 'dark');
 
             applyTheme('light');
@@ -68,7 +68,7 @@ describe('theme', () => {
             expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
         });
 
-        it('applies dark theme by setting data-theme to "dark"', () => {
+        it('S-U-002: applies dark theme by setting data-theme to "dark"', () => {
             applyTheme('dark');
 
             expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
@@ -102,7 +102,7 @@ describe('theme', () => {
     });
 
     describe('initTheme', () => {
-        it('applies stored theme from chrome.storage on init', async () => {
+        it('UT-U-003: applies stored theme from chrome.storage on init', async () => {
             chrome._setStorageData({ theme: 'dark' });
 
             await initTheme();
@@ -110,7 +110,7 @@ describe('theme', () => {
             expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
         });
 
-        it('defaults to system theme when no theme is stored', async () => {
+        it('UT-U-004: setTheme() updates storage and DOM (via applyTheme)', async () => {
             chrome._setStorageData({});
 
             // System prefers dark

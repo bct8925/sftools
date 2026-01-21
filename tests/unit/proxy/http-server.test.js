@@ -29,15 +29,15 @@ describe('http-server', () => {
             expect(result.port).toBeGreaterThan(0);
         });
 
-        it('generates 64-character hex secret', async () => {
+        it('HS-U-001: generates 64-character hex secret', async () => {
             const result = await startServer();
 
-            // HS-U-001: Secret should be 64-char hex (32 bytes)
+            // Secret should be 64-char hex (32 bytes)
             expect(result.secret).toMatch(/^[a-f0-9]{64}$/);
         });
 
-        it('reuses existing server on multiple calls', async () => {
-            // HS-U-002: Multiple startServer() calls should return same port/secret
+        it('HS-U-002: reuses existing server on multiple calls', async () => {
+            // Multiple startServer() calls should return same port/secret
             const first = await startServer();
             const second = await startServer();
 

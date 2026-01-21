@@ -374,6 +374,16 @@ describe('query-utils', () => {
             expect(parseValueFromInput('42', { type: 'int' })).toBe(42);
         });
 
+        it('Q-U-017: parses booleans', () => {
+            expect(parseValueFromInput('true', { type: 'boolean' })).toBe(true);
+            expect(parseValueFromInput('false', { type: 'boolean' })).toBe(false);
+        });
+
+        it('Q-U-018: returns null for empty string', () => {
+            expect(parseValueFromInput('', { type: 'string' })).toBeNull();
+            expect(parseValueFromInput(null, { type: 'string' })).toBeNull();
+        });
+
         it('Q-U-043: parses numbers (double)', () => {
             expect(parseValueFromInput('3.14', { type: 'double' })).toBe(3.14);
         });
@@ -386,15 +396,23 @@ describe('query-utils', () => {
             expect(parseValueFromInput('0.25', { type: 'percent' })).toBe(0.25);
         });
 
-        it('Q-U-017: parses booleans', () => {
-            expect(parseValueFromInput('true', { type: 'boolean' })).toBe(true);
-            expect(parseValueFromInput('false', { type: 'boolean' })).toBe(false);
-            expect(parseValueFromInput(true, { type: 'boolean' })).toBe(true);
+        it('Q-U-053: parses numbers (string to number)', () => {
+            expect(parseValueFromInput('42', { type: 'int' })).toBe(42);
         });
 
-        it('Q-U-018: returns null for empty string', () => {
+        it('Q-U-054: parses string to boolean', () => {
+            expect(parseValueFromInput('true', { type: 'boolean' })).toBe(true);
+            expect(parseValueFromInput('false', { type: 'boolean' })).toBe(false);
+        });
+
+        it('Q-U-055: returns null for empty string', () => {
             expect(parseValueFromInput('', { type: 'string' })).toBeNull();
             expect(parseValueFromInput(null, { type: 'string' })).toBeNull();
+        });
+
+        it('Q-U-056: preserves regular strings', () => {
+            expect(parseValueFromInput('hello', { type: 'string' })).toBe('hello');
+            expect(parseValueFromInput('test value', { type: 'textarea' })).toBe('test value');
         });
 
         it('Q-U-046: returns string for text types', () => {
@@ -412,7 +430,15 @@ describe('query-utils', () => {
     });
 
     describe('isFieldEditable', () => {
-        it('Q-U-019: returns false for formula fields (calculated)', () => {
+        it('Q-U-019: returns false for formula fields', () => {
+            const fieldDescribe = {
+                FormulaField__c: { updateable: true, calculated: true }
+            };
+
+            expect(isFieldEditable('FormulaField__c', fieldDescribe)).toBe(false);
+        });
+
+        it('Q-U-057: returns false for formula/calculated fields', () => {
             const fieldDescribe = {
                 FormulaField__c: { updateable: true, calculated: true }
             };

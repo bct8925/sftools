@@ -10,7 +10,7 @@ import { replaceIcons, icons } from '../../../src/lib/icons.js';
 
 describe('icons', () => {
     describe('replaceIcons', () => {
-        it('replaces {{icon:close}} placeholder with close icon SVG', () => {
+        it('UT-U-011: replaces {{icon:close}} placeholder with close icon SVG', () => {
             const input = '<button>{{icon:close}}</button>';
             const result = replaceIcons(input);
 

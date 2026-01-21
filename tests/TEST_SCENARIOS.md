@@ -63,6 +63,7 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | Q-F-027 | Status badge shows loading | Spinner during query execution | - |
 | Q-F-028 | Status badge shows success | Check icon with record count | - |
 | Q-F-029 | Status badge shows error | X icon with error message | `query/query-errors.test.ts` |
+| Q-F-032 | Query with invalid SOQL | Error message with details | `query/query-errors.test.ts` |
 | Q-F-033 | Status badge shows success | Check icon displayed | `query/basic-query.test.ts` |
 | Q-F-034 | Record count displayed | Record count shown in status | `query/basic-query.test.ts` |
 | Q-F-035 | Column headers displayed | Headers match query columns | `query/basic-query.test.ts` |
@@ -169,6 +170,7 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | A-F-015 | Status badge success | Green check | - |
 | A-F-016 | Status badge compile error | Red X with "Compile Error" | `apex/apex-errors.test.ts` |
 | A-F-017 | Status badge runtime error | Red X with "Runtime Error" | - |
+| A-F-018 | Compilation error on specific line | Marker on line 5 | `apex/apex-errors.test.ts` |
 
 ### Integration Tests
 
@@ -188,24 +190,31 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Function | Test Case | Test File |
 |---------|----------|-----------|-----------|
-| A-U-001 | `getPreview()` | Returns first non-comment line | `lib/apex-utils.test.js` |
-| A-U-007 | `getPreview()` | Truncates long lines | `lib/apex-utils.test.js` |
-| A-U-008 | `getPreview()` | Handles empty code | `lib/apex-utils.test.js` |
-| A-U-011 | `setEditorMarkers()` | Creates marker for compile error with line/column | `lib/apex-utils.test.js` |
-| A-U-012 | `setEditorMarkers()` | Creates marker for runtime error | `lib/apex-utils.test.js` |
-| A-U-013 | `setEditorMarkers()` | Handles missing line/column info | `lib/apex-utils.test.js` |
-| A-U-014 | `setEditorMarkers()` | Clears markers when no error | `lib/apex-utils.test.js` |
-| A-U-015 | `formatOutput()` | Formats successful execution | `lib/apex-utils.test.js` |
-| A-U-016 | `formatOutput()` | Formats compilation error | `lib/apex-utils.test.js` |
-| A-U-017 | `formatOutput()` | Formats runtime error | `lib/apex-utils.test.js` |
-| A-U-018 | `formatOutput()` | Shows exceptionMessage when present | `lib/apex-utils.test.js` |
-| A-U-019 | `formatOutput()` | Shows exceptionStackTrace when present | `lib/apex-utils.test.js` |
-| A-U-020 | `formatOutput()` | Shows compileProblem when present | `lib/apex-utils.test.js` |
-| A-U-021 | `getStatusText()` | Returns "Success" for successful execution | `lib/apex-utils.test.js` |
-| A-U-022 | `getStatusText()` | Returns "Compile Error" for compilation failure | `lib/apex-utils.test.js` |
-| A-U-023 | `getStatusText()` | Returns "Runtime Error" for exception | `lib/apex-utils.test.js` |
-| A-U-024 | `getStatusText()` | Returns "Unknown" for unexpected state | `lib/apex-utils.test.js` |
-| A-U-025 | `filterLogLines()` | Filters debug log by search term | `lib/apex-utils.test.js` |
+| A-U-001 | `getPreview()` | Returns short lines unchanged | `lib/apex-utils.test.js` |
+| A-U-002 | `applyFilter()` | Filters to matching lines | `lib/apex-utils.test.js` |
+| A-U-003 | `applyFilter()` | Case insensitive match | `lib/apex-utils.test.js` |
+| A-U-004 | `clearFilter()` | Shows all output | `lib/apex-utils.test.js` |
+| A-U-005 | `getPreview()` | Returns first non-comment line | `lib/apex-utils.test.js` |
+| A-U-006 | `getPreview()` | Truncates long lines | `lib/apex-utils.test.js` |
+| A-U-007 | `getPreview()` | Skips empty lines | `lib/apex-utils.test.js` |
+| A-U-008 | `getPreview()` | Skips multiple comment lines | `lib/apex-utils.test.js` |
+| A-U-009 | `formatOutput()` | Formats success result | `lib/apex-utils.test.js` |
+| A-U-010 | `formatOutput()` | Formats error result | `lib/apex-utils.test.js` |
+| A-U-011 | `getPreview()` | Returns first line as fallback if all comments | `lib/apex-utils.test.js` |
+| A-U-012 | `getPreview()` | Returns "Empty script" for empty string | `lib/apex-utils.test.js` |
+| A-U-013 | `getPreview()` | Truncates first line fallback if over 50 chars | `lib/apex-utils.test.js` |
+| A-U-014 | `getPreview()` | Handles code with only whitespace | `lib/apex-utils.test.js` |
+| A-U-015 | `formatOutput()` | Formats runtime error without line number | `lib/apex-utils.test.js` |
+| A-U-016 | `formatOutput()` | Formats runtime error without stack trace | `lib/apex-utils.test.js` |
+| A-U-017 | `formatOutput()` | Uses default message for runtime error without exception message | `lib/apex-utils.test.js` |
+| A-U-018 | `formatOutput()` | Defaults column to 1 if missing in compile error | `lib/apex-utils.test.js` |
+| A-U-019 | `formatOutput()` | Includes debug log with successful execution | `lib/apex-utils.test.js` |
+| A-U-020 | `filterLines()` | Returns all lines when filter is null | `lib/apex-utils.test.js` |
+| A-U-021 | `filterLines()` | Returns all lines when filter is undefined | `lib/apex-utils.test.js` |
+| A-U-022 | `filterLines()` | Returns empty array when no matches | `lib/apex-utils.test.js` |
+| A-U-023 | `filterLines()` | Handles empty lines array | `lib/apex-utils.test.js` |
+| A-U-024 | `filterLines()` | Matches partial strings | `lib/apex-utils.test.js` |
+| A-U-025 | `filterLines()` | Matches multiple criteria across different lines | `lib/apex-utils.test.js` |
 
 ---
 
@@ -292,8 +301,8 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | E-I-008 | Query CustomNotificationType | Returns notification types | `tests/integration/events.test.js:33` |
 | E-I-009 | Query active PushTopics | Returns active PushTopic records | `tests/integration/events.test.js:42` |
 | E-I-010 | Query all PushTopics | Returns all PushTopic records | `tests/integration/events.test.js:50` |
-| E-I-011 | Get API versions | Returns API versions info | `tests/integration/events.test.js:133` |
-| E-I-012 | Verify streaming API support | Confirms PushTopic availability in org | `tests/integration/events.test.js:140` |
+| E-I-011 | Get API versions | Returns API versions info | `tests/integration/events.test.js:84` |
+| E-I-012 | Verify streaming API support | Confirms PushTopic availability in org | `tests/integration/events.test.js:93` |
 
 ### Unit Tests
 
@@ -350,7 +359,7 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | S-I-005 | Describe specific object | Returns field metadata | `tests/integration/settings.test.js:90` |
 | S-I-006 | Describe multiple objects | Returns metadata for each object | `tests/integration/settings.test.js:97` |
 | S-I-007 | Query API versions | Returns available API versions | `tests/integration/settings.test.js:109` |
-| S-I-008 | Access REST resources | Returns REST API resources list | `tests/integration/settings.test.js:119` |
+| S-I-008 | Access REST resources | Returns REST API resources list | `tests/integration/settings.test.js:100` |
 
 ### Unit Tests
 
@@ -915,66 +924,79 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 #### Unit Tests
 
-| Test ID | Function | File | Test Case | Test File |
-|---------|----------|------|-----------|-----------|
-| UT-U-016 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes < to &lt; | `lib/text-utils.test.js` |
-| UT-U-017 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes > to &gt; | `lib/text-utils.test.js` |
-| UT-U-018 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes & to &amp; | `lib/text-utils.test.js` |
-| UT-U-019 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes " to &quot; | `lib/text-utils.test.js` |
-| UT-U-020 | `escapeHtml()` | `src/lib/text-utils.js` | Escapes ' to &#x27; | `lib/text-utils.test.js` |
-| UT-U-021 | `escapeHtml()` | `src/lib/text-utils.js` | Handles null/undefined | `lib/text-utils.test.js` |
-| UT-U-022 | `escapeAttr()` | `src/lib/text-utils.js` | Escapes double quotes | `lib/text-utils.test.js` |
-| UT-U-023 | `escapeAttr()` | `src/lib/text-utils.js` | Escapes single quotes | `lib/text-utils.test.js` |
-| UT-U-024 | `escapeAttr()` | `src/lib/text-utils.js` | Escapes < > & | `lib/text-utils.test.js` |
-| UT-U-025 | `escapeAttr()` | `src/lib/text-utils.js` | Handles null/undefined | `lib/text-utils.test.js` |
-| UT-U-026 | `truncate()` | `src/lib/text-utils.js` | Truncates long strings | `lib/text-utils.test.js` |
-| UT-U-027 | `truncate()` | `src/lib/text-utils.js` | Adds ellipsis when truncated | `lib/text-utils.test.js` |
-| UT-U-028 | `truncate()` | `src/lib/text-utils.js` | Preserves short strings | `lib/text-utils.test.js` |
-| UT-U-029 | `truncate()` | `src/lib/text-utils.js` | Uses custom maxLength | `lib/text-utils.test.js` |
-| UT-U-030 | `truncate()` | `src/lib/text-utils.js` | Handles null/undefined | `lib/text-utils.test.js` |
-| UT-U-031 | `capitalize()` | `src/lib/text-utils.js` | Capitalizes first letter | `lib/text-utils.test.js` |
-| UT-U-032 | `capitalize()` | `src/lib/text-utils.js` | Handles empty string | `lib/text-utils.test.js` |
-| UT-U-033 | `capitalize()` | `src/lib/text-utils.js` | Handles null/undefined | `lib/text-utils.test.js` |
-| UT-U-036 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Makes authenticated GET request | `lib/salesforce-request.test.js` |
-| UT-U-037 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Makes authenticated POST request | `lib/salesforce-request.test.js` |
-| UT-U-038 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Makes authenticated PATCH request | `lib/salesforce-request.test.js` |
-| UT-U-039 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Makes authenticated DELETE request | `lib/salesforce-request.test.js` |
-| UT-U-040 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Adds Authorization header | `lib/salesforce-request.test.js` |
-| UT-U-041 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Adds Content-Type for POST | `lib/salesforce-request.test.js` |
-| UT-U-042 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Uses smartFetch for routing | `lib/salesforce-request.test.js` |
-| UT-U-043 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles query parameters | `lib/salesforce-request.test.js` |
-| UT-U-044 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Stringifies JSON body | `lib/salesforce-request.test.js` |
-| UT-U-045 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles null body | `lib/salesforce-request.test.js` |
-| UT-U-046 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Throws on non-OK response | `lib/salesforce-request.test.js` |
-| UT-U-047 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Returns JSON response | `lib/salesforce-request.test.js` |
-| UT-U-048 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Returns text response | `lib/salesforce-request.test.js` |
-| UT-U-049 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles 401 errors | `lib/salesforce-request.test.js` |
-| UT-U-050 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles 400 errors with message | `lib/salesforce-request.test.js` |
-| UT-U-051 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles 500 errors | `lib/salesforce-request.test.js` |
-| UT-U-052 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Handles network errors | `lib/salesforce-request.test.js` |
-| UT-U-053 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Merges custom headers | `lib/salesforce-request.test.js` |
-| UT-U-054 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Passes custom options through | `lib/salesforce-request.test.js` |
-| UT-U-055 | `salesforceRequest()` | `src/lib/salesforce-request.js` | Uses instance URL for relative paths | `lib/salesforce-request.test.js` |
-| UT-U-056 | `isCorsError()` | `src/lib/cors-detection.js` | Detects status 0 as CORS | `lib/cors-detection.test.js` |
-| UT-U-057 | `isCorsError()` | `src/lib/cors-detection.js` | Detects failed CORS message | `lib/cors-detection.test.js` |
-| UT-U-058 | `isCorsError()` | `src/lib/cors-detection.js` | Returns false for other errors | `lib/cors-detection.test.js` |
-| UT-U-059 | `isCorsError()` | `src/lib/cors-detection.js` | Handles null error | `lib/cors-detection.test.js` |
-| UT-U-060 | `showCorsErrorModal()` | `src/lib/cors-detection.js` | Dispatches cors-error event | `lib/cors-detection.test.js` |
-| UT-U-061 | `showCorsErrorModal()` | `src/lib/cors-detection.js` | Includes error details | `lib/cors-detection.test.js` |
-| UT-U-062 | `showCorsErrorModal()` | `src/lib/cors-detection.js` | Bubbles event to document | `lib/cors-detection.test.js` |
-| UT-U-063 | `handlePotentialCorsError()` | `src/lib/cors-detection.js` | Shows modal for CORS errors | `lib/cors-detection.test.js` |
-| UT-U-064 | `handlePotentialCorsError()` | `src/lib/cors-detection.js` | Re-throws non-CORS errors | `lib/cors-detection.test.js` |
-| UT-U-065 | `handlePotentialCorsError()` | `src/lib/cors-detection.js` | Returns error when catching | `lib/cors-detection.test.js` |
-| UT-U-066 | `checkCorsSupport()` | `src/lib/cors-detection.js` | Tests preflight request | `lib/cors-detection.test.js` |
-| UT-U-067 | `checkCorsSupport()` | `src/lib/cors-detection.js` | Returns boolean support status | `lib/cors-detection.test.js` |
-| UT-U-068 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Updates badge with success status | `lib/ui-helpers.test.js` |
-| UT-U-069 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Updates badge with error status | `lib/ui-helpers.test.js` |
-| UT-U-070 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Updates badge with loading status | `lib/ui-helpers.test.js` |
-| UT-U-071 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Sets badge text content | `lib/ui-helpers.test.js` |
-| UT-U-072 | `updateStatusBadge()` | `src/lib/ui-helpers.js` | Sets badge class for styling | `lib/ui-helpers.test.js` |
-| UT-U-073 | `showToast()` | `src/lib/ui-helpers.js` | Displays toast notification | `lib/ui-helpers.test.js` |
-| UT-U-074 | `showToast()` | `src/lib/ui-helpers.js` | Auto-dismisses after timeout | `lib/ui-helpers.test.js` |
-| UT-U-075 | `showToast()` | `src/lib/ui-helpers.js` | Supports success/error types | `lib/ui-helpers.test.js` |
+| Test ID | Function | Test Case | Test File |
+|---------|----------|-----------|-----------|
+| UT-U-003 | `initTheme()` | Applies stored theme | `lib/theme.test.js` |
+| UT-U-004 | `setTheme()` | Updates storage and DOM (via applyTheme) | `lib/theme.test.js` |
+| UT-U-005 | `isCorsError()` | Detects status 0 | `lib/cors-detection.test.js` |
+| UT-U-006 | `showCorsErrorModal()` | Dispatches event | `lib/cors-detection.test.js` |
+| UT-U-007 | `getOAuthCredentials()` | Returns connection client ID | `lib/oauth-credentials.test.js` |
+| UT-U-008 | `getOAuthCredentials()` | Returns manifest default | `lib/oauth-credentials.test.js` |
+| UT-U-009 | `salesforceRequest()` | Builds correct URL | `lib/salesforce-request.test.js` |
+| UT-U-010 | `updateStatusBadge()` | Updates badge element | `lib/ui-helpers.test.js` |
+| UT-U-011 | `replaceIcons()` | Replaces placeholders with SVG icons | `lib/icons.test.js` |
+| UT-U-012 | `getOAuthCredentials()` | Handles empty connections array | `lib/oauth-credentials.test.js` |
+| UT-U-013 | `getOAuthCredentials()` | Handles missing connections in storage | `lib/oauth-credentials.test.js` |
+| UT-U-014 | `getOAuthCredentials()` | Finds correct connection among multiple connections | `lib/oauth-credentials.test.js` |
+| UT-U-015 | `getOAuthCredentials()` | Returns isCustom false for manifest default, true for connection clientId | `lib/oauth-credentials.test.js` |
+| UT-U-016 | `escapeHtml()` | Does not escape quotes (use escapeAttr for attributes) | `lib/text-utils.test.js` |
+| UT-U-017 | `escapeHtml()` | Handles combined special characters | `lib/text-utils.test.js` |
+| UT-U-018 | `escapeHtml()` | Returns empty string for null | `lib/text-utils.test.js` |
+| UT-U-019 | `escapeHtml()` | Returns empty string for undefined | `lib/text-utils.test.js` |
+| UT-U-020 | `escapeHtml()` | Returns empty string for empty string | `lib/text-utils.test.js` |
+| UT-U-021 | `escapeHtml()` | Preserves safe strings unchanged | `lib/text-utils.test.js` |
+| UT-U-022 | `escapeAttr()` | Escapes ampersand | `lib/text-utils.test.js` |
+| UT-U-023 | `escapeAttr()` | Escapes angle brackets | `lib/text-utils.test.js` |
+| UT-U-024 | `escapeAttr()` | Returns empty string for null | `lib/text-utils.test.js` |
+| UT-U-025 | `escapeAttr()` | Returns empty string for undefined | `lib/text-utils.test.js` |
+| UT-U-026 | `escapeAttr()` | Preserves safe strings unchanged | `lib/text-utils.test.js` |
+| UT-U-027 | `truncate()` | Returns original string when shorter than limit | `lib/text-utils.test.js` |
+| UT-U-028 | `truncate()` | Returns original string when equal to limit | `lib/text-utils.test.js` |
+| UT-U-029 | `truncate()` | Truncates and adds ellipsis when longer than limit | `lib/text-utils.test.js` |
+| UT-U-030 | `truncate()` | Returns empty string for null | `lib/text-utils.test.js` |
+| UT-U-031 | `truncate()` | Returns empty string for undefined | `lib/text-utils.test.js` |
+| UT-U-032 | `truncate()` | Returns empty string for empty string | `lib/text-utils.test.js` |
+| UT-U-033 | `truncate()` | Truncates at exact position | `lib/text-utils.test.js` |
+| UT-U-036 | `salesforceRequest()` | Builds correct URL from instanceUrl and endpoint | `lib/salesforce-request.test.js` |
+| UT-U-037 | `salesforceRequest()` | Includes Authorization Bearer header | `lib/salesforce-request.test.js` |
+| UT-U-038 | `salesforceRequest()` | Includes Content-Type and Accept headers | `lib/salesforce-request.test.js` |
+| UT-U-039 | `salesforceRequest()` | Merges custom headers with defaults | `lib/salesforce-request.test.js` |
+| UT-U-040 | `salesforceRequest()` | Uses GET method by default | `lib/salesforce-request.test.js` |
+| UT-U-041 | `salesforceRequest()` | Passes method and body from options | `lib/salesforce-request.test.js` |
+| UT-U-042 | `salesforceRequest()` | Parses JSON response | `lib/salesforce-request.test.js` |
+| UT-U-043 | `salesforceRequest()` | Handles 200 response successfully | `lib/salesforce-request.test.js` |
+| UT-U-044 | `salesforceRequest()` | Handles 404 response without throwing | `lib/salesforce-request.test.js` |
+| UT-U-045 | `salesforceRequest()` | Returns null json when data is empty | `lib/salesforce-request.test.js` |
+| UT-U-046 | `salesforceRequest()` | Throws on CORS error and calls showCorsErrorModal | `lib/salesforce-request.test.js` |
+| UT-U-047 | `salesforceRequest()` | Triggers authExpired on 401 without authExpired flag | `lib/salesforce-request.test.js` |
+| UT-U-048 | `salesforceRequest()` | Does not trigger authExpired when authExpired flag already set | `lib/salesforce-request.test.js` |
+| UT-U-049 | `salesforceRequest()` | Extracts error from response.error | `lib/salesforce-request.test.js` |
+| UT-U-050 | `salesforceRequest()` | Extracts error from Salesforce array format [{ message }] | `lib/salesforce-request.test.js` |
+| UT-U-051 | `salesforceRequest()` | Extracts error from Salesforce object format { message } | `lib/salesforce-request.test.js` |
+| UT-U-052 | `salesforceRequest()` | Uses statusText when data is null | `lib/salesforce-request.test.js` |
+| UT-U-053 | `salesforceRequest()` | Falls back to Request failed when data is empty object | `lib/salesforce-request.test.js` |
+| UT-U-054 | `salesforceRequest()` | Defaults to "Request failed" when no message available | `lib/salesforce-request.test.js` |
+| UT-U-055 | `salesforceRequest()` | Uses statusText from empty data response | `lib/salesforce-request.test.js` |
+| UT-U-056 | `isCorsError()` | Returns true for status 0 with "failed to fetch" error | `lib/cors-detection.test.js` |
+| UT-U-057 | `isCorsError()` | Returns true for error containing "cors" keyword | `lib/cors-detection.test.js` |
+| UT-U-058 | `isCorsError()` | Returns true for error containing "cross-origin" keyword | `lib/cors-detection.test.js` |
+| UT-U-059 | `isCorsError()` | Returns true for error containing "access-control" keyword | `lib/cors-detection.test.js` |
+| UT-U-060 | `isCorsError()` | Is case-insensitive for keyword detection | `lib/cors-detection.test.js` |
+| UT-U-061 | `isCorsError()` | Returns false for successful responses | `lib/cors-detection.test.js` |
+| UT-U-062 | `isCorsError()` | Returns false for 401 Unauthorized errors | `lib/cors-detection.test.js` |
+| UT-U-063 | `isCorsError()` | Returns false for 500 server errors without CORS keywords | `lib/cors-detection.test.js` |
+| UT-U-064 | `isCorsError()` | Returns false for 404 not found errors | `lib/cors-detection.test.js` |
+| UT-U-065 | `isCorsError()` | Handles missing error property gracefully | `lib/cors-detection.test.js` |
+| UT-U-066 | `isCorsError()` | Handles null error property gracefully | `lib/cors-detection.test.js` |
+| UT-U-067 | `isCorsError()` | Requires both status 0 and "failed to fetch" for network error detection | `lib/cors-detection.test.js` |
+| UT-U-068 | `updateStatusBadge()` | Sets element text content to message | `lib/ui-helpers.test.js` |
+| UT-U-069 | `updateStatusBadge()` | Sets base class to status-badge | `lib/ui-helpers.test.js` |
+| UT-U-070 | `updateStatusBadge()` | Adds status-loading class for loading type | `lib/ui-helpers.test.js` |
+| UT-U-071 | `updateStatusBadge()` | Adds status-success class for success type | `lib/ui-helpers.test.js` |
+| UT-U-072 | `updateStatusBadge()` | Adds status-error class for error type | `lib/ui-helpers.test.js` |
+| UT-U-073 | `updateStatusBadge()` | Resets to base class when type is empty string | `lib/ui-helpers.test.js` |
+| UT-U-074 | `updateStatusBadge()` | Removes previous status classes on subsequent calls | `lib/ui-helpers.test.js` |
+| UT-U-075 | `updateStatusBadge()` | Defaults type to empty string when not provided | `lib/ui-helpers.test.js` |
 
 ---
 
@@ -1253,24 +1275,6 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 ---
 
 Note: Integration test counts include documented scenarios that may not yet be implemented (marked with "-").
-
-| Area | Frontend | Integration | Unit | Total |
-|------|----------|-------------|------|-------|
-| Query Tab | 29 | 11 | 57 | 97 |
-| Apex Tab | 17 | 9 | 18 | 44 |
-| REST API Tab | 9 | 13 | 5 | 27 |
-| Events Tab | 19 | 7 | 6 | 32 |
-| Settings Tab | 22 | 8 | 10 | 40 |
-| Utils Tab | 14 | 7 | 0 | 21 |
-| Record Viewer | 23 | 9 | 39 | 71 |
-| Schema Browser | 20 | 8 | 20 | 48 |
-| Monaco Editor | 11 | 2 | 0 | 13 |
-| App Shell | 12 | 4 | 15 | 31 |
-| OAuth | 4 | 7 | 15 | 26 |
-| Background | 0 | 11 | 17 | 28 |
-| Library Utils | 0 | 0 | 132 | 132 |
-| Local Proxy | 0 | 20 | 107 | 127 |
-| **Total** | **180** | **116** | **441** | **737** |
 
 ---
 

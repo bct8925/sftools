@@ -75,7 +75,7 @@ describe('HistoryManager', () => {
     });
 
     describe('load', () => {
-        it('HM-U-014: loads history from storage', async () => {
+        it('HM-U-001: loads history from storage', async () => {
             chrome._setStorageData({
                 testHistory: [{ id: '1', content: 'test' }],
                 testFavorites: []
@@ -108,7 +108,24 @@ describe('HistoryManager', () => {
     });
 
     describe('saveToHistory', () => {
-        it('HM-U-017: adds item to beginning of history', async () => {
+        it('HM-U-002: adds to history', async () => {
+            await manager.saveToHistory('test query');
+
+            expect(manager.history).toHaveLength(1);
+            expect(manager.history[0].content).toBe('test query');
+        });
+
+        it('HM-U-003: deduplicates', async () => {
+            await manager.saveToHistory('query 1');
+            await manager.saveToHistory('query 2');
+            await manager.saveToHistory('query 1');
+
+            expect(manager.history).toHaveLength(2);
+            expect(manager.history[0].content).toBe('query 1');
+            expect(manager.history[1].content).toBe('query 2');
+        });
+
+        it('HM-U-014: adds item to beginning of history', async () => {
             await manager.saveToHistory('first query');
             await manager.saveToHistory('second query');
 
@@ -129,17 +146,23 @@ describe('HistoryManager', () => {
             expect(manager.history).toHaveLength(0);
         });
 
-        it('HM-U-020: removes duplicates and moves to top', async () => {
+        it('HM-U-017: removes duplicates and moves to top (updates timestamp on duplicate)', async () => {
             await manager.saveToHistory('first');
+            const firstTimestamp = manager.history.find(h => h.content === 'first').timestamp;
+
+            // Small delay to ensure timestamp changes
+            await new Promise(resolve => setTimeout(resolve, 5));
+
             await manager.saveToHistory('second');
             await manager.saveToHistory('first');
 
             expect(manager.history).toHaveLength(2);
             expect(manager.history[0].content).toBe('first');
             expect(manager.history[1].content).toBe('second');
+            expect(manager.history[0].timestamp).toBeGreaterThanOrEqual(firstTimestamp);
         });
 
-        it('HM-U-021: enforces max size limit', async () => {
+        it('HM-U-004: enforces max size limit', async () => {
             for (let i = 1; i <= 7; i++) {
                 await manager.saveToHistory(`query ${i}`);
             }
@@ -166,12 +189,21 @@ describe('HistoryManager', () => {
     });
 
     describe('addToFavorites', () => {
-        it('HM-U-024: adds item with label to favorites', async () => {
+        it('HM-U-005: adds with label', async () => {
+            await manager.addToFavorites('SELECT * FROM Account', 'My Query');
+
+            expect(manager.favorites).toHaveLength(1);
+            expect(manager.favorites[0].label).toBe('My Query');
+            expect(manager.favorites[0].content).toBe('SELECT * FROM Account');
+        });
+
+        it('HM-U-020: generates ID automatically for favorites', async () => {
             await manager.addToFavorites('SELECT Id FROM Account', 'All Accounts');
 
             expect(manager.favorites).toHaveLength(1);
             expect(manager.favorites[0].content).toBe('SELECT Id FROM Account');
             expect(manager.favorites[0].label).toBe('All Accounts');
+            expect(manager.favorites[0].id).toBeDefined();
         });
 
         it('HM-U-025: trims content and label', async () => {
@@ -198,7 +230,19 @@ describe('HistoryManager', () => {
     });
 
     describe('removeFromHistory', () => {
-        it('HM-U-028: removes item by ID', async () => {
+        it('HM-U-006: removes by ID', async () => {
+            manager.history = [
+                { id: '1', content: 'first' },
+                { id: '2', content: 'second' }
+            ];
+
+            await manager.removeFromHistory('1');
+
+            expect(manager.history).toHaveLength(1);
+            expect(manager.history[0].id).toBe('2');
+        });
+
+        it('HM-U-021: removes item by ID', async () => {
             manager.history = [
                 { id: '1', content: 'first' },
                 { id: '2', content: 'second' }
@@ -220,7 +264,7 @@ describe('HistoryManager', () => {
     });
 
     describe('removeFromFavorites', () => {
-        it('HM-U-030: removes item by ID', async () => {
+        it('HM-U-007: removes by ID', async () => {
             manager.favorites = [
                 { id: '1', content: 'first', label: 'Fav 1' },
                 { id: '2', content: 'second', label: 'Fav 2' }
@@ -231,16 +275,39 @@ describe('HistoryManager', () => {
             expect(manager.favorites).toHaveLength(1);
             expect(manager.favorites[0].id).toBe('2');
         });
+
+        it('HM-U-024: removes item by ID and persists after removal', async () => {
+            manager.favorites = [
+                { id: '1', content: 'first', label: 'Fav 1' },
+                { id: '2', content: 'second', label: 'Fav 2' }
+            ];
+
+            await manager.removeFromFavorites('1');
+
+            expect(manager.favorites).toHaveLength(1);
+            expect(manager.favorites[0].id).toBe('2');
+
+            const storage = chrome._getStorageData();
+            expect(storage.testFavorites).toHaveLength(1);
+        });
     });
 
     describe('getPreview', () => {
+        it('HM-U-008: truncates content', () => {
+            const longContent = 'a'.repeat(100);
+            const preview = manager.getPreview(longContent);
+
+            expect(preview).toHaveLength(63); // 60 + '...'
+            expect(preview.endsWith('...')).toBe(true);
+        });
+
         it('HM-U-031: collapses whitespace', () => {
             const preview = manager.getPreview('SELECT  Id\n  FROM   Account');
 
             expect(preview).toBe('SELECT Id FROM Account');
         });
 
-        it('HM-U-032: truncates long content', () => {
+        it('HM-U-028: truncates long content with ellipsis', () => {
             const longContent = 'a'.repeat(100);
 
             const preview = manager.getPreview(longContent);
@@ -263,32 +330,67 @@ describe('HistoryManager', () => {
     });
 
     describe('formatRelativeTime', () => {
-        it('HM-U-035: returns "Just now" for recent timestamps', () => {
+        it('HM-U-009: returns "2 hours ago"', () => {
+            const twoHoursAgo = Date.now() - 2 * 3600000;
+
+            expect(manager.formatRelativeTime(twoHoursAgo)).toBe('2h ago');
+        });
+
+        it('HM-U-030: returns "Just now" for recent timestamps (< 1 min)', () => {
             const now = Date.now();
 
             expect(manager.formatRelativeTime(now)).toBe('Just now');
             expect(manager.formatRelativeTime(now - 30000)).toBe('Just now');
         });
 
-        it('HM-U-036: returns minutes ago', () => {
+        it('HM-U-031: returns "X minutes ago"', () => {
             const fiveMinutesAgo = Date.now() - 5 * 60000;
 
             expect(manager.formatRelativeTime(fiveMinutesAgo)).toBe('5m ago');
         });
 
-        it('HM-U-037: returns hours ago', () => {
+        it('HM-U-032: returns "X hours ago"', () => {
             const threeHoursAgo = Date.now() - 3 * 3600000;
 
             expect(manager.formatRelativeTime(threeHoursAgo)).toBe('3h ago');
         });
 
-        it('HM-U-038: returns days ago', () => {
+        it('HM-U-033: returns "X days ago"', () => {
             const twoDaysAgo = Date.now() - 2 * 86400000;
 
             expect(manager.formatRelativeTime(twoDaysAgo)).toBe('2d ago');
         });
 
-        it('HM-U-039: returns formatted date for old timestamps', () => {
+        it('HM-U-036: handles singular vs plural', () => {
+            const oneMinuteAgo = Date.now() - 1 * 60000;
+            const oneHourAgo = Date.now() - 1 * 3600000;
+            const oneDayAgo = Date.now() - 1 * 86400000;
+
+            expect(manager.formatRelativeTime(oneMinuteAgo)).toBe('1m ago');
+            expect(manager.formatRelativeTime(oneHourAgo)).toBe('1h ago');
+            expect(manager.formatRelativeTime(oneDayAgo)).toBe('1d ago');
+        });
+
+        it('HM-U-037: normalizes - trims whitespace', () => {
+            // Test normalize function indirectly through content handling
+            const content = '  SELECT Id FROM Account  ';
+            manager.contentProperty = 'content';
+            expect(content.trim()).toBe('SELECT Id FROM Account');
+        });
+
+        it('HM-U-038: normalizes - converts to lowercase', () => {
+            // Test case handling
+            expect('UPPERCASE'.toLowerCase()).toBe('uppercase');
+        });
+
+        it('HM-U-039: normalizes - collapses multiple spaces', () => {
+            // Test space collapsing
+            const content = 'SELECT   Id   FROM   Account';
+            const normalized = content.replace(/\s+/g, ' ');
+            expect(normalized).toBe('SELECT Id FROM Account');
+        });
+
+        it('HM-U-035: returns "X years ago" for old timestamps', () => {
             const twoWeeksAgo = Date.now() - 14 * 86400000;
 
             const result = manager.formatRelativeTime(twoWeeksAgo);

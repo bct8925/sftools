@@ -24,10 +24,18 @@ describe('ui-helpers', () => {
     });
 
     describe('updateStatusBadge', () => {
-        it('UT-U-068: sets element text content to message', () => {
-            updateStatusBadge(element, 'Loading...');
+        it('UT-U-010: updates badge element text content and class', () => {
+            updateStatusBadge(element, 'Loading...', 'loading');
 
             expect(element.textContent).toBe('Loading...');
+            expect(element.classList.contains('status-badge')).toBe(true);
+            expect(element.classList.contains('status-loading')).toBe(true);
+        });
+
+        it('UT-U-068: sets element text content to message', () => {
+            updateStatusBadge(element, 'Test Message', 'loading');
+
+            expect(element.textContent).toBe('Test Message');
         });
 
         it('UT-U-069: sets base class to status-badge', () => {

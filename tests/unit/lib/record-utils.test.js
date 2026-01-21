@@ -436,7 +436,20 @@ describe('getChangedFields', () => {
         expect(changes.Amount).toBe(200);
     });
 
-    it('RV-U-038: should return empty object when no changes', () => {
+    it('RV-U-038: handles null values', () => {
+        const originalValues = { Name: 'Original', Amount: null };
+        const currentValues = { Name: 'Original', Amount: 100 };
+        const fieldDescribe = {
+            Name: { updateable: true, calculated: false },
+            Amount: { updateable: true, calculated: false }
+        };
+
+        const changes = getChangedFields(originalValues, currentValues, fieldDescribe);
+        expect(changes.Amount).toBe(100);
+        expect(changes.Name).toBeUndefined();
+    });
+
+    it('RV-U-039: should return empty object when no changes', () => {
         const originalValues = { Name: 'Test', Email: 'test@example.com' };
         const currentValues = { Name: 'Test', Email: 'test@example.com' };
         const fieldDescribe = {

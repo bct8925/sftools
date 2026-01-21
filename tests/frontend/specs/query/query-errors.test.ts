@@ -4,9 +4,9 @@ import { MockRouter } from '../../../shared/mocks/index.js';
 /**
  * Test SOQL query error handling
  *
- * Test IDs: Q-I-002, Q-F-029
- * - Q-I-002: Query with invalid SOQL - Error message with details
+ * Test IDs: Q-F-029, Q-F-032
  * - Q-F-029: Status badge shows error - X icon with error message
+ * - Q-F-032: Query with invalid SOQL - Error message with details
  */
 export default class QueryErrorsTest extends SftoolsTest {
   configureMocks() {

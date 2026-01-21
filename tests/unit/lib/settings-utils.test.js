@@ -31,7 +31,7 @@ describe('settings-utils', () => {
             expect(result.customAppBadge).toContain('Custom App');
         });
 
-        it('renders inactive connection without badges', () => {
+        it('S-U-006: renders inactive connection without badges', () => {
             const connection = {
                 id: 'conn-456',
                 label: 'Sandbox Org',
@@ -47,7 +47,7 @@ describe('settings-utils', () => {
             expect(result.customAppBadge).toBe('');
         });
 
-        it('escapes HTML in connection label', () => {
+        it('S-U-007: escapes HTML in connection label', () => {
             const connection = {
                 id: 'conn-789',
                 label: '<script>alert("XSS")</script>',
@@ -62,7 +62,7 @@ describe('settings-utils', () => {
             expect(result.escapedLabel).not.toContain('<script>');
         });
 
-        it('handles connection with refresh token but no custom client ID', () => {
+        it('S-U-008: handles connection with refresh token but no custom client ID', () => {
             const connection = {
                 id: 'conn-101',
                 label: 'Test Org',
@@ -76,7 +76,7 @@ describe('settings-utils', () => {
             expect(result.customAppBadge).toBe('');
         });
 
-        it('handles connection with custom client ID but no refresh token', () => {
+        it('S-U-009: handles connection with custom client ID but no refresh token', () => {
             const connection = {
                 id: 'conn-102',
                 label: 'Test Org',
@@ -90,7 +90,7 @@ describe('settings-utils', () => {
             expect(result.customAppBadge).toContain('Custom App');
         });
 
-        it('defaults activeId to null when not provided', () => {
+        it('S-U-010: defaults activeId to null when not provided', () => {
             const connection = {
                 id: 'conn-103',
                 label: 'Test Org',

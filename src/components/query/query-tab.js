@@ -522,7 +522,6 @@ LIMIT 10`);
             tabData.error = error.message;
             tabData.isEditable = false;
             this.updateStatus('Error', 'error');
-            console.error('Query error:', error);
         }
 
         this.renderResults();

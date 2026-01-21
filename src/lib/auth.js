@@ -413,7 +413,6 @@ if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
                 // Update in-memory tokens if active connection was refreshed
                 ACCESS_TOKEN = activeConn.accessToken;
                 INSTANCE_URL = activeConn.instanceUrl;
-                debugInfo('Active connection tokens updated from storage');
             } else {
                 // Active connection was removed
                 triggerAuthExpired();

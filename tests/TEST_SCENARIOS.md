@@ -3,9 +3,9 @@
 Comprehensive test scenarios for the sftools Chrome Extension. Organized by feature and test type (Frontend, Integration, Unit).
 
 **Test Types:**
-- **Frontend**: User-facing browser tests using Playwright
-- **Integration**: End-to-end tests involving multiple components or real API calls
-- **Unit**: Isolated function tests with mocked dependencies
+- **Frontend**: UI/UX tests using Playwright with mocked API responses - validates user interactions, rendering, and display logic
+- **Integration**: End-to-end tests with real Salesforce API calls - validates API behavior and data accuracy
+- **Unit**: Isolated function tests with mocked dependencies - validates business logic and utilities
 
 ---
 
@@ -37,26 +37,24 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
 | Q-F-001 | Execute simple SOQL query | Results display in table with correct columns | `query/basic-query.test.ts` |
-| Q-F-002 | Execute query via Ctrl/Cmd+Enter | Same as button click | - |
-| Q-F-003 | Execute query with relationship fields | Columns show full path (e.g., Account.Owner.Name) | `query/query-relationships.test.ts` |
+| Q-F-002 | Execute query via Ctrl/Cmd+Enter | Same as button click | `query/query-shortcut.test.ts` |
 | Q-F-004 | Execute query with subquery | Nested records show as expandable "▶ N records" | `query/query-subquery.test.ts` |
 | Q-F-005 | Expand subquery results | Nested table displays inline | `query/query-subquery.test.ts` |
 | Q-F-006 | Collapse subquery results | Nested table hides | - |
-| Q-F-007 | Toggle Tooling API checkbox | Re-executes query against Tooling API | `query/query-tooling.test.ts` |
-| Q-F-008 | Toggle Edit mode | Input fields appear for editable fields | - |
-| Q-F-009 | Edit field value | Field highlighted, changes counter updates | - |
-| Q-F-010 | Save edited records | PATCH request sent, success feedback shown | - |
-| Q-F-011 | Clear changes | All edits discarded, counter resets | - |
-| Q-F-012 | Export to CSV | CSV file downloads with correct data | - |
+| Q-F-008 | Toggle Edit mode | Input fields appear for editable fields | `query/query-edit-mode.test.ts` |
+| Q-F-009 | Edit field value | Field highlighted, changes counter updates | `query/query-edit-mode.test.ts` |
+| Q-F-010 | Save edited records | PATCH request sent, success feedback shown | `query/query-edit-mode.test.ts` |
+| Q-F-011 | Clear changes | All edits discarded, counter resets | `query/query-edit-mode.test.ts` |
+| Q-F-012 | Export to CSV | CSV file downloads with correct data | `query/query-export.test.ts` |
 | Q-F-013 | Bulk export via Bulk API | Progress shown, CSV downloads | - |
 | Q-F-014 | Search/filter results | Table filters to matching rows | `query/query-filter.test.ts` |
-| Q-F-015 | Click Id field | Opens Record Viewer for that record | - |
-| Q-F-016 | View query history | Dropdown shows previous queries | - |
-| Q-F-017 | Load query from history | Editor populated with selected query | - |
-| Q-F-018 | Delete query from history | Query removed from list | - |
-| Q-F-019 | Save query to favorites | Prompt for label, query saved | - |
-| Q-F-020 | Load query from favorites | Editor populated with selected query | - |
-| Q-F-021 | Delete query from favorites | Query removed from list | - |
+| Q-F-015 | Click Id field | Opens Record Viewer for that record | `query/query-record-link.test.ts` |
+| Q-F-016 | View query history | Dropdown shows previous queries | `query/query-history.test.ts` |
+| Q-F-017 | Load query from history | Editor populated with selected query | `query/query-history.test.ts` |
+| Q-F-018 | Delete query from history | Query removed from list | `query/query-history.test.ts` |
+| Q-F-019 | Save query to favorites | Prompt for label, query saved | `query/query-favorites.test.ts` |
+| Q-F-020 | Load query from favorites | Editor populated with selected query | `query/query-favorites.test.ts` |
+| Q-F-021 | Delete query from favorites | Query removed from list | `query/query-favorites.test.ts` |
 | Q-F-022 | Create new result tab | Same query reuses existing tab | `query/query-tabs.test.ts` |
 | Q-F-023 | Different query creates new tab | New tab appears | `query/query-tabs.test.ts` |
 | Q-F-024 | Switch between tabs | Correct results displayed | - |
@@ -154,19 +152,16 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| A-F-001 | Execute anonymous Apex | Output panel shows result | `apex/execute-apex.test.ts` |
-| A-F-002 | Execute via Ctrl/Cmd+Enter | Same as button click | - |
-| A-F-003 | View successful execution | Success message, debug log | `apex/execute-apex.test.ts` |
+| A-F-002 | Execute via Ctrl/Cmd+Enter | Same as button click | `apex/apex-shortcut.test.ts` |
 | A-F-004 | View compilation error | Error marker on line/column | `apex/apex-errors.test.ts` |
-| A-F-005 | View runtime exception | Error marker, stack trace | `apex/apex-runtime-errors.test.ts` |
-| A-F-006 | Search/filter debug log | Output filtered to matches | - |
-| A-F-007 | Clear filter | All output visible | - |
-| A-F-008 | View execution history | Dropdown shows previous scripts | - |
-| A-F-009 | Load script from history | Editor populated | - |
-| A-F-010 | Delete script from history | Script removed | - |
-| A-F-011 | Save script to favorites | Prompt for label, saved | - |
-| A-F-012 | Load script from favorites | Editor populated | - |
-| A-F-013 | Delete script from favorites | Script removed | - |
+| A-F-006 | Search/filter debug log | Output filtered to matches | `apex/apex-log-filter.test.ts` |
+| A-F-007 | Clear filter | All output visible | `apex/apex-log-filter.test.ts` |
+| A-F-008 | View execution history | Dropdown shows previous scripts | `apex/apex-history.test.ts` |
+| A-F-009 | Load script from history | Editor populated | `apex/apex-history.test.ts` |
+| A-F-010 | Delete script from history | Script removed | `apex/apex-history.test.ts` |
+| A-F-011 | Save script to favorites | Prompt for label, saved | `apex/apex-favorites.test.ts` |
+| A-F-012 | Load script from favorites | Editor populated | `apex/apex-favorites.test.ts` |
+| A-F-013 | Delete script from favorites | Script removed | `apex/apex-favorites.test.ts` |
 | A-F-014 | Status badge loading | Spinner during execution | - |
 | A-F-015 | Status badge success | Green check | - |
 | A-F-016 | Status badge compile error | Red X with "Compile Error" | `apex/apex-errors.test.ts` |
@@ -219,15 +214,10 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| R-F-001 | Execute GET request | Response displayed in JSON editor | `rest-api/rest-api-get.test.ts` |
-| R-F-002 | Execute POST with JSON body | Request sent, response shown | - |
-| R-F-003 | Execute PATCH with JSON body | Request sent, response shown | - |
-| R-F-004 | Execute DELETE request | Request sent, response shown | - |
-| R-F-005 | Execute PUT request | Request sent, response shown | - |
-| R-F-006 | Select POST method | Request body editor appears | - |
-| R-F-007 | Select GET method | Request body editor hidden | - |
-| R-F-008 | Execute via Ctrl/Cmd+Enter in body | Request executed | - |
-| R-F-009 | Status badge shows HTTP status | e.g., "200 OK" or "404 Not Found" | `rest-api/rest-api-get.test.ts` |
+| R-F-006 | Select POST method | Request body editor appears | `rest-api/rest-api-body-visibility.test.ts` |
+| R-F-007 | Select GET method | Request body editor hidden | `rest-api/rest-api-body-visibility.test.ts` |
+| R-F-008 | Execute via Ctrl/Cmd+Enter in body | Request executed | `rest-api/rest-api-shortcut.test.ts` |
+| R-F-009 | Error response received | Status badge shows error state | `rest-api/rest-api-errors.test.ts` |
 
 ### Integration Tests
 
@@ -388,13 +378,11 @@ Comprehensive test scenarios for the sftools Chrome Extension. Organized by feat
 
 | Test ID | Scenario | Expected Behavior | Test File |
 |---------|----------|-------------------|-----------|
-| U-DL-F-001 | Enable trace flag for current user | Success status | `utils/utils-debug-logs-enable.test.ts` |
 | U-DL-F-002 | Search for other users | Results dropdown | - |
 | U-DL-F-003 | Enable trace flag for selected user | Success status | - |
 | U-DL-F-004 | Delete all trace flags | Confirmation, success | - |
 | U-DL-F-005 | Delete all debug logs | Confirmation, success | - |
 | U-DL-F-006 | Status indicator loading | Yellow spinner | - |
-| U-DL-F-007 | Status indicator success | Green check | `utils/utils-debug-logs-enable.test.ts` |
 | U-DL-F-008 | Status indicator error | Red X | - |
 | U-DL-F-009 | Not authenticated | Error message | - |
 

@@ -1,6 +1,6 @@
 // Fetch routing and proxy connection utilities
 
-import { getActiveConnectionId, triggerAuthExpired } from './auth.js';
+import { getActiveConnectionId, getInstanceUrl, triggerAuthExpired } from './auth.js';
 import { debugInfo } from './debug.js';
 
 // --- Proxy Connection State ---
@@ -86,14 +86,53 @@ export async function proxyFetch(url, options = {}) {
 }
 
 /**
- * Smart fetch: uses proxy if available, falls back to extensionFetch
+ * Fetch via content script in active Salesforce tab
+ * @param {string} url - URL to fetch
+ * @param {object} options - Fetch options
+ * @param {string|null} connectionId - Optional connection ID
+ * @returns {Promise<object>} - Response object
+ */
+export async function contentFetch(url, options = {}, connectionId = null) {
+    const connId = connectionId || getActiveConnectionId();
+    const instanceUrl = getInstanceUrl();  // Get active connection's instance URL
+
+    debugInfo('[contentFetch]', options.method || 'GET', url);
+
+    const response = await chrome.runtime.sendMessage({
+        type: 'contentFetch',
+        url,
+        options,
+        instanceUrl,
+        connectionId: connId
+    });
+
+    return handleAuthExpired(response, connId);
+}
+
+/**
+ * Smart fetch: uses proxy if available, tries content script, falls back to extensionFetch
  * @param {string} url - URL to fetch
  * @param {object} options - Fetch options
  * @returns {Promise<object>} - Response object
  */
 export async function smartFetch(url, options = {}) {
+    // 1. Proxy is best - no CORS issues
     if (PROXY_CONNECTED) {
+        debugInfo('[smartFetch] Using proxy');
         return await proxyFetch(url, options);
     }
+
+    // 2. Try content script if available
+    debugInfo('[smartFetch] Trying content script');
+    const contentResponse = await contentFetch(url, options);
+
+    // If content script succeeded OR failed for non-tab reasons, return response
+    if (contentResponse.success || !contentResponse.noTab) {
+        debugInfo('[smartFetch] Content script result:', contentResponse.success ? 'success' : 'failed');
+        return contentResponse;
+    }
+
+    // 3. Fall back to extension fetch (may hit CORS)
+    debugInfo('[smartFetch] Content script unavailable, falling back to extensionFetch');
     return await extensionFetch(url, options);
 }

@@ -31,7 +31,7 @@ export default defineConfig({
         // Background service worker
         background: resolve(__dirname, 'src/background/background.js'),
         // Content scripts
-        'content/token-refresh': resolve(__dirname, 'src/content/token-refresh.js')
+        'content/salesforce-fetch': resolve(__dirname, 'src/content/salesforce-fetch.js')
       },
       output: {
         entryFileNames: (chunkInfo) => {

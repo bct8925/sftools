@@ -28,21 +28,33 @@ export function extractOrgIdentifier(hostname) {
         // Developer Edition orgs (e.g., orgname.develop.my.salesforce.com)
         /^([^.]+)\.develop\.lightning\.force\.com$/,
         /^([^.]+)\.develop\.my\.salesforce\.com$/,
+        /^([^.]+)\.develop\.my\.salesforce-setup\.com$/,
+        /^([^.]+)\.develop\.lightning\.salesforce-setup\.com$/,
         // Sandbox orgs
         /^([^.]+)\.sandbox\.lightning\.force\.com$/,
         /^([^.]+)\.sandbox\.my\.salesforce\.com$/,
+        /^([^.]+)\.sandbox\.my\.salesforce-setup\.com$/,
+        /^([^.]+)\.sandbox\.lightning\.salesforce-setup\.com$/,
         // Scratch orgs
         /^([^.]+)\.scratch\.lightning\.force\.com$/,
         /^([^.]+)\.scratch\.my\.salesforce\.com$/,
+        /^([^.]+)\.scratch\.my\.salesforce-setup\.com$/,
+        /^([^.]+)\.scratch\.lightning\.salesforce-setup\.com$/,
         // Demo orgs
         /^([^.]+)\.demo\.lightning\.force\.com$/,
         /^([^.]+)\.demo\.my\.salesforce\.com$/,
+        /^([^.]+)\.demo\.my\.salesforce-setup\.com$/,
+        /^([^.]+)\.demo\.lightning\.salesforce-setup\.com$/,
         // Trailhead playgrounds
         /^([^.]+)\.trailblaze\.lightning\.force\.com$/,
         /^([^.]+)\.trailblaze\.my\.salesforce\.com$/,
+        /^([^.]+)\.trailblaze\.my\.salesforce-setup\.com$/,
+        /^([^.]+)\.trailblaze\.lightning\.salesforce-setup\.com$/,
         // Standard production/enterprise orgs (most common - check last)
         /^([^.]+)\.lightning\.force\.com$/,
-        /^([^.]+)\.my\.salesforce\.com$/
+        /^([^.]+)\.my\.salesforce\.com$/,
+        /^([^.]+)\.my\.salesforce-setup\.com$/,
+        /^([^.]+)\.lightning\.salesforce-setup\.com$/
     ];
 
     for (const pattern of patterns) {

@@ -14,6 +14,8 @@ import {
     updateConnectionToken
 } from './auth.js';
 
+import { fetchViaContentScript } from './content-script.js';
+
 import { debugInfo } from './debug.js';
 
 import {
@@ -228,6 +230,19 @@ const handlers = {
                 };
             },
             request.options.headers,
+            request.connectionId
+        );
+    },
+
+    contentFetch: async (request) => {
+        return await fetchWithRetry(
+            (headers) => fetchViaContentScript(
+                request.url,
+                { ...request.options, headers },
+                request.instanceUrl
+            ),
+            (response) => response,  // Already in standard format
+            request.options?.headers,
             request.connectionId
         );
     },

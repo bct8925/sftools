@@ -4,7 +4,7 @@
 import { isProxyConnected, sendProxyRequest } from './native-messaging.js';
 import { getOAuthCredentials } from '../lib/oauth-credentials.js';
 import { debugInfo } from './debug.js';
-import { refreshViaContentScript } from './content-script-refresh.js';
+import { refreshViaContentScript } from './content-script.js';
 
 /**
  * Exchange authorization code for tokens via proxy

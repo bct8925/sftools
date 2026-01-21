@@ -43,7 +43,7 @@
         "*://*.visualforce.com/*",
         "*://*.salesforce-sites.com/*"
       ],
-      "js": ["dist/content/token-refresh.js"],
+      "js": ["dist/content/salesforce-fetch.js"],
       "run_at": "document_start",
       "all_frames": false
     }

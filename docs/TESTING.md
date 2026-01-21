@@ -2,68 +2,56 @@
 
 sftools uses three testing frameworks:
 
-- **Frontend Tests** (`tests/frontend/`) - Playwright-based browser tests with real Salesforce API calls
+- **Frontend Tests** (`tests/frontend/`) - Playwright-based browser tests with mocked API responses
 - **Integration Tests** (`tests/integration/`) - Vitest-based tests with real Salesforce API calls (no browser)
 - **Unit Tests** (`tests/unit/`) - Vitest-based unit tests with mocked dependencies
+
+**Documentation:**
+- This file (`docs/TESTING.md`) - Detailed framework documentation and API reference
+- `docs/TEST_SCENARIOS.md` - Comprehensive test scenarios organized by feature with test IDs
 
 ## Quick Commands
 
 ```bash
 # Frontend tests (Playwright - requires visible browser)
-npm test                       # Run all frontend tests
-npm test -- --filter=query     # Run tests matching "query"
-npm run test:slow              # Run with human-like timing (for visual debugging)
-npm run test:slow -- --filter=query  # Combine slow mode with filter
+npm run test:frontend          # Run all frontend tests
+npm run test:frontend:slow     # Run with human-like timing (for visual debugging)
 
 # Integration tests (Vitest - real Salesforce API calls)
 npm run test:integration       # Run all integration tests
 npm run test:integration:watch # Run in watch mode
 
 # Unit tests (Vitest - mocked dependencies)
-npm run test:unit              # Run all unit tests
-npm run test:unit:watch        # Run in watch mode
-npm run test:unit:coverage     # Run with coverage report
+npm test                       # Run all unit tests
+npm run test:watch             # Run in watch mode
+npm run test:coverage          # Run with coverage report
 ```
 
 ---
 
 # Frontend Tests (Playwright)
 
-The frontend test framework makes **real Salesforce API calls** against a test org. Tests run in an actual Chrome browser with the extension loaded.
+The frontend test framework uses **mocked API responses** via `MockRouter` for fast, reliable UI testing. Tests run in an actual Chrome browser with the extension loaded.
 
 ## Design Principles
 
-1. **Real Salesforce Calls** - No API mocking. Tests hit actual Salesforce endpoints.
-2. **Pre-authenticated** - Access token and instance URL provided via environment variables (no OAuth flow testing).
-3. **Explicit Lifecycle** - Each test class has `setup()` and `teardown()` methods for reliable test data management.
-4. **Guaranteed Cleanup** - Test data is always cleaned up, even on test failure.
+1. **Mocked API Responses** - Uses `MockRouter` to intercept Playwright routes and return predefined responses. No real Salesforce API calls.
+2. **UI/UX Focus** - Tests validate user interactions, rendering, and display logic without external dependencies.
+3. **Fast Execution** - Mocks eliminate network latency and Salesforce rate limits.
+4. **Deterministic** - Consistent test data ensures repeatable results.
 
 ## Quick Start
 
-### 1. Create Environment File
-
-Create `.env.test` in the project root:
-
-```
-SF_ACCESS_TOKEN=00D...!...
-SF_INSTANCE_URL=https://your-org.my.salesforce.com
-```
-
-To get an access token, you can:
-- Use the Salesforce CLI: `sf org display --target-org your-org --json` (look for `accessToken`)
-- Copy from an existing sftools connection in Chrome DevTools (`chrome.storage.local.get('connections')`)
-
-### 2. Build the Extension
+### 1. Build the Extension
 
 ```bash
 npm run build
 ```
 
-### 3. Run Tests
+### 2. Run Tests
 
 ```bash
-npm test                       # Run all frontend tests
-npm test -- --filter=query     # Run tests matching "query"
+npm run test:frontend          # Run all frontend tests
 ```
 
 > **Note:** Frontend tests always run with a visible browser window. Chrome extensions cannot run in headless mode.
@@ -75,14 +63,13 @@ The framework supports two speed modes:
 **Fast Mode (default)** - Tests run as fast as possible with no artificial delays. Best for CI and quick iteration.
 
 ```bash
-npm test
+npm run test:frontend
 ```
 
 **Slow Mode** - Adds human-like delays (~1 second) before clicks, typing, and navigation. Use this to visually verify that tests are clicking the correct elements and navigating properly.
 
 ```bash
-npm run test:slow
-npm run test:slow -- --filter=query-errors
+npm run test:frontend:slow
 ```
 
 Slow mode timing:
@@ -102,26 +89,24 @@ tests/frontend/
 │   ├── base-test.ts          # SftoolsTest base class
 │   └── runner.ts             # Test runner with setup/teardown guarantee
 ├── services/
-│   ├── salesforce-client.ts  # Direct Salesforce API client for test data
 │   └── extension-loader.ts   # Chrome extension loading + connection injection
 ├── pages/
 │   ├── query-tab.page.ts     # Query tab page object
 │   ├── apex-tab.page.ts      # Apex tab page object
 │   ├── record.page.ts        # Record viewer page object
-│   └── schema.page.ts        # Schema browser page object
+│   ├── schema.page.ts        # Schema browser page object
+│   ├── rest-api-tab.page.ts  # REST API tab page object
+│   ├── settings-tab.page.ts  # Settings tab page object
+│   └── utils-tab.page.ts     # Utils tab page object
 ├── helpers/
 │   └── monaco-helpers.ts     # Monaco Editor interaction utilities
-├── specs/
-│   ├── query/
-│   │   ├── basic-query.test.ts
-│   │   └── query-errors.test.ts
-│   ├── apex/
-│   │   └── execute-apex.test.ts
-│   ├── record/
-│   │   ├── view-record.test.ts
-│   │   └── edit-record.test.ts
-│   └── schema/
-│       └── browse-schema.test.ts
+├── specs/                    # Test files organized by feature
+│   ├── query/                # 11 test files
+│   ├── apex/                 # 5 test files
+│   ├── record/               # 4 test files
+│   ├── schema/               # 1 test file
+│   ├── rest-api/             # 3 test files
+│   └── settings/             # 1 test file
 └── run-tests.ts              # CLI entry point
 ```
 
@@ -133,21 +118,24 @@ Each test file exports a class that extends `SftoolsTest`:
 
 ```typescript
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 export default class MyFeatureTest extends SftoolsTest {
-  // Instance variables for test data
-  private testAccountId: string = '';
+  // Configure mocks - called automatically before test()
+  configureMocks() {
+    const router = new MockRouter();
 
-  // Called BEFORE test() - create test data here
-  async setup(): Promise<void> {
-    this.testAccountId = await this.salesforce.createAccount('Test Account');
-  }
+    // Mock API responses
+    router.onQuery(
+      /\/query/,
+      [{ Id: '001MOCK123', Name: 'Test Account' }],
+      [
+        { columnName: 'Id', displayName: 'Id', aggregate: false },
+        { columnName: 'Name', displayName: 'Name', aggregate: false }
+      ]
+    );
 
-  // Called AFTER test() - cleanup here (always runs, even on failure)
-  async teardown(): Promise<void> {
-    if (this.testAccountId) {
-      await this.salesforce.deleteRecord('Account', this.testAccountId);
-    }
+    return router;
   }
 
   // The actual test logic
@@ -155,9 +143,8 @@ export default class MyFeatureTest extends SftoolsTest {
     await this.navigateToExtension();
     await this.queryTab.navigateTo();
 
-    await this.queryTab.executeQuery(
-      `SELECT Id, Name FROM Account WHERE Id = '${this.testAccountId}'`
-    );
+    // Execute query (will use mocked response)
+    await this.queryTab.executeQuery('SELECT Id, Name FROM Account LIMIT 10');
 
     const count = await this.queryTab.getResultsCount();
     await this.expect(count).toBe(1);
@@ -175,14 +162,14 @@ this.page        // Playwright Page instance
 this.context     // BrowserContext instance
 this.extensionId // Chrome extension ID
 
-// Salesforce client (for setup/teardown)
-this.salesforce  // SalesforceClient instance
-
 // Page objects (lazy-loaded)
-this.queryTab    // QueryTabPage
-this.apexTab     // ApexTabPage
-this.recordPage  // RecordPage
-this.schemaPage  // SchemaPage
+this.queryTab      // QueryTabPage
+this.apexTab       // ApexTabPage
+this.recordPage    // RecordPage
+this.schemaPage    // SchemaPage
+this.restApiTab    // RestApiTabPage
+this.settingsTab   // SettingsTabPage
+this.utilsTab      // UtilsTabPage
 ```
 
 ### Navigation Helpers
@@ -224,54 +211,42 @@ await this.expect(someValue).toBe(1);
 await this.expect(someAsyncMethod()).toBe(1);
 ```
 
-## Salesforce Client
+## MockRouter API
 
-The `SalesforceClient` is used in `setup()` and `teardown()` to manage test data:
-
-### Creating Records
+Frontend tests use `MockRouter` to intercept Playwright routes and return mocked responses:
 
 ```typescript
-// Create an Account
-const accountId = await this.salesforce.createAccount('Test Account');
+import { MockRouter } from '../../../shared/mocks/index.js';
 
-// Create an Account with extra fields
-const accountId = await this.salesforce.createAccount('Test Account', {
-  Industry: 'Technology',
-  Website: 'https://example.com'
-});
+configureMocks() {
+  const router = new MockRouter();
 
-// Create a Contact
-const contactId = await this.salesforce.createContact({
-  LastName: 'Smith',
-  FirstName: 'John',
-  AccountId: accountId
-});
+  // Mock SOQL query
+  router.onQuery(/\/query/, records, columnMetadata);
 
-// Create any record type
-const recordId = await this.salesforce.createRecord('CustomObject__c', {
-  Name: 'Test',
-  CustomField__c: 'value'
-});
+  // Mock object describe
+  router.onDescribe('Account', fields);
+
+  // Mock record GET
+  router.onRecord('Account', '001xxx', recordData);
+
+  // Mock record PATCH
+  router.onRecordUpdate('Account', '001xxx', updatedData);
+
+  // Mock Apex execution
+  router.onApex({ compiled: true, success: true }, logBody);
+
+  // Mock REST API request
+  router.onRest('GET', /\/sobjects/, responseData);
+
+  // Mock generic fetch (catch-all)
+  router.onFetch(/pattern/, responseData, { status: 200 });
+
+  return router;
+}
 ```
 
-### Deleting Records
-
-```typescript
-// Delete a specific record
-await this.salesforce.deleteRecord('Account', accountId);
-
-// Delete all records created during the test (automatic tracking)
-await this.salesforce.cleanupAll();
-```
-
-### Querying
-
-```typescript
-// Query records
-const records = await this.salesforce.query<{ Id: string; Name: string }>(
-  'SELECT Id, Name FROM Account LIMIT 10'
-);
-```
+See `tests/shared/mocks/` for available mock factories and scenarios.
 
 ## Page Objects
 
@@ -466,25 +441,7 @@ await this.expect(value).toBe(1);
 this.expect(value).toBe(1);
 ```
 
-## Test Org Requirements
-
-The test org should have:
-
-1. **API Access** - API enabled for the user
-2. **Standard Objects** - Account, Contact available
-3. **Permissions** - User can create/delete Account and Contact records
-4. **Apex Execution** - User can execute anonymous Apex
-5. **Tooling API** - Access to TraceFlag, ApexLog objects
-
-A Developer Edition org or Scratch org works well. Avoid production orgs.
-
 ## Debugging Tests
-
-### Filter to Single Test
-
-```bash
-npm test -- --filter=basic-query
-```
 
 ### Add Console Logging
 
@@ -765,17 +722,33 @@ tests/unit/
 │   ├── chrome.js             # Chrome extension API mock
 │   └── salesforce.js         # Salesforce API response factories
 ├── setup.js                  # Global test setup
-└── lib/
-    ├── auth.test.js
-    ├── cors-detection.test.js
-    ├── fetch.test.js
-    ├── history-manager.test.js
-    ├── oauth-credentials.test.js
-    ├── salesforce-request.test.js
-    ├── salesforce.test.js
-    ├── soql-autocomplete.test.js
-    ├── text-utils.test.js
-    └── ui-helpers.test.js
+├── lib/                      # 21 test files for src/lib/* utilities
+│   ├── apex-utils.test.js
+│   ├── app-utils.test.js
+│   ├── auth.test.js
+│   ├── background-utils.test.js
+│   ├── cors-detection.test.js
+│   ├── events-utils.test.js
+│   ├── fetch.test.js
+│   ├── history-manager.test.js
+│   ├── icons.test.js
+│   ├── oauth-credentials.test.js
+│   ├── query-utils.test.js
+│   ├── record-utils.test.js
+│   ├── rest-api-utils.test.js
+│   ├── salesforce.test.js
+│   ├── salesforce-request.test.js
+│   ├── schema-utils.test.js
+│   ├── settings-utils.test.js
+│   ├── soql-autocomplete.test.js
+│   ├── text-utils.test.js
+│   ├── theme.test.js
+│   └── ui-helpers.test.js
+└── proxy/                    # 4 test files for proxy utilities
+    ├── http-server.test.js
+    ├── payload-store.test.js
+    ├── router.test.js
+    └── subscription-manager.test.js
 ```
 
 ## Running Unit Tests

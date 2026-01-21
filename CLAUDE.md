@@ -16,31 +16,54 @@ npm run watch                  # Build with watch mode for development
 
 ## Testing
 
-Browser tests use Playwright with real Salesforce API calls against a test org. See `TESTING.md` for detailed framework documentation.
+sftools uses three testing frameworks for comprehensive coverage. See `docs/TESTING.md` for detailed framework documentation and `docs/TEST_SCENARIOS.md` for comprehensive test scenarios with test IDs.
 
-**Setup:**
-1. Create `.env.test` with credentials:
-   ```
-   SF_ACCESS_TOKEN=your_access_token
-   SF_INSTANCE_URL=https://your-org.my.salesforce.com
-   ```
-2. Build the extension: `npm run build`
+**Test Types:**
+- **Frontend Tests** (`tests/frontend/`) - Playwright-based browser tests with mocked API responses
+- **Integration Tests** (`tests/integration/`) - Vitest tests with real Salesforce API calls (no browser)
+- **Unit Tests** (`tests/unit/`) - Vitest tests with mocked dependencies
+
+**Setup for Integration Tests:**
+Create `.env.test` in the project root (only needed for integration tests):
+```
+SF_ACCESS_TOKEN=your_access_token
+SF_INSTANCE_URL=https://your-org.my.salesforce.com
+```
 
 **Commands:**
 ```bash
-npm test                       # Run all tests
-npm run test:slow              # Run with human-like timing (for visual debugging)
-npm test -- --filter=query     # Run tests matching "query"
+# Frontend tests (Playwright with mocks)
+npm run test:frontend          # Run all frontend tests
+npm run test:frontend:slow     # Run with human-like timing (for visual debugging)
+
+# Integration tests (real Salesforce API)
+npm run test:integration       # Run all integration tests
+npm run test:integration:watch # Watch mode
+
+# Unit tests (mocked dependencies)
+npm test                       # Run all unit tests
+npm run test:watch             # Watch mode
+npm run test:coverage          # With coverage report
 ```
 
 **Test Structure:**
 ```
 tests/
-├── framework/                 # Base test class, runner, assertions
-├── services/                  # Salesforce client, extension loader
-├── pages/                     # Page objects for each component
-├── helpers/                   # Monaco editor helpers
-└── specs/                     # Test files organized by feature
+├── frontend/                  # Playwright browser tests with mocks
+│   ├── framework/             # Base test class, runner, assertions
+│   ├── services/              # Extension loader
+│   ├── pages/                 # Page objects for each component
+│   ├── helpers/               # Monaco editor helpers
+│   └── specs/                 # Test files organized by feature
+├── integration/               # Vitest tests with real API calls
+│   ├── setup.js               # Salesforce client, TestDataManager
+│   └── *.test.js              # Integration test files
+├── unit/                      # Vitest unit tests with mocks
+│   ├── mocks/                 # Chrome and Salesforce mocks
+│   ├── setup.js               # Global test setup
+│   └── lib/                   # Unit tests for src/lib/* utilities
+└── shared/                    # Shared mock infrastructure
+    └── mocks/                 # MockRouter for Playwright route interception
 ```
 
 ## Loading the Extension

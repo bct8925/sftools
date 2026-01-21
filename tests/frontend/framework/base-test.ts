@@ -41,6 +41,17 @@ export abstract class SftoolsTest {
   async teardown(): Promise<void> {}
   abstract test(): Promise<void>;
 
+  /**
+   * Configure mock responses for this test.
+   * Override this method to set up custom mock routes.
+   * The MockRouter will be set up before the test runs.
+   *
+   * @returns MockRouter instance or null if no custom mocks needed
+   */
+  configureMocks(): any | null {
+    return null;
+  }
+
   // Page object getters (lazy loaded to avoid circular imports)
   get queryTab(): QueryTabPage {
     if (!this._queryTab) {

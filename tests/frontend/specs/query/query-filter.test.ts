@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test results filtering
@@ -7,24 +8,24 @@ import { SftoolsTest } from '../../framework/base-test';
  * - Q-F-014: Search/filter results - Table filters to matching rows
  */
 export default class QueryFilterTest extends SftoolsTest {
-  private accountIds: string[] = [];
-  private testPrefix: string = '';
+  configureMocks() {
+    const router = new MockRouter();
 
-  async setup(): Promise<void> {
-    // Create 3 accounts with unique prefix that includes timestamp
-    const timestamp = Date.now();
-    this.testPrefix = `QFT${timestamp}`;
-    const account1 = await this.salesforce.createAccount(`${this.testPrefix} Alpha`);
-    const account2 = await this.salesforce.createAccount(`${this.testPrefix} Beta`);
-    const account3 = await this.salesforce.createAccount(`${this.testPrefix} Gamma`);
-    this.accountIds.push(account1, account2, account3);
-  }
+    // Mock query response with 3 accounts
+    router.onQuery(
+      /\/query/,
+      [
+        { Id: '001MOCKACCOUNT01', Name: 'QFT Alpha' },
+        { Id: '001MOCKACCOUNT02', Name: 'QFT Beta' },
+        { Id: '001MOCKACCOUNT03', Name: 'QFT Gamma' }
+      ],
+      [
+        { columnName: 'Id', displayName: 'Id', aggregate: false },
+        { columnName: 'Name', displayName: 'Name', aggregate: false }
+      ]
+    );
 
-  async teardown(): Promise<void> {
-    // Delete the 3 accounts
-    for (const accountId of this.accountIds) {
-      await this.salesforce.deleteRecord('Account', accountId);
-    }
+    return router;
   }
 
   async test(): Promise<void> {
@@ -34,8 +35,8 @@ export default class QueryFilterTest extends SftoolsTest {
     // Navigate to Query tab
     await this.queryTab.navigateTo();
 
-    // Execute query to get accounts with our unique prefix
-    const query = `SELECT Id, Name FROM Account WHERE Name LIKE '${this.testPrefix}%' ORDER BY Name`;
+    // Execute query
+    const query = `SELECT Id, Name FROM Account LIMIT 10`;
     await this.queryTab.executeQuery(query);
 
     // Verify 3 results

@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test Apex history functionality
@@ -13,12 +14,17 @@ export default class ApexHistoryTest extends SftoolsTest {
 Integer result = 10 + 5;
 System.debug('Result: ' + result);`;
 
-  async setup(): Promise<void> {
-    // No setup needed - using simple Apex script
-  }
+  configureMocks() {
+    const router = new MockRouter();
 
-  async teardown(): Promise<void> {
-    // No teardown needed
+    // Mock successful Apex execution
+    router.onApexExecute(
+      true,
+      true,
+      'USER_DEBUG|[1]|DEBUG|Test history script\nUSER_DEBUG|[3]|DEBUG|Result: 15'
+    );
+
+    return router;
   }
 
   async test(): Promise<void> {
@@ -28,7 +34,7 @@ System.debug('Result: ' + result);`;
     // Navigate to Apex tab
     await this.apexTab.navigateTo();
 
-    // Execute an Apex script to add it to history
+    // Execute an Apex script to add it to history (will use mocked response)
     await this.apexTab.setCode(this.testScript);
     await this.apexTab.execute();
 

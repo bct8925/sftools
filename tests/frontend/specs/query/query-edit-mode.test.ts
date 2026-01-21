@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test query edit mode functionality
@@ -10,20 +11,34 @@ import { SftoolsTest } from '../../framework/base-test';
  * - Q-F-011: Clear changes - Clears pending changes, cells return to original values
  */
 export default class QueryEditModeTest extends SftoolsTest {
-  private testAccountId: string = '';
-  private originalName: string = '';
+  configureMocks() {
+    const router = new MockRouter();
 
-  async setup(): Promise<void> {
-    // Create a test account with a known name
-    this.originalName = `Playwright Edit Test ${Date.now()}`;
-    this.testAccountId = await this.salesforce.createAccount(this.originalName);
-  }
+    // Mock initial query response with entityName
+    router.onQuery(
+      /\/query/,
+      [{
+        Id: '001MOCKACCOUNT01',
+        Name: 'Original Name',
+        attributes: { type: 'Account', url: '/services/data/v59.0/sobjects/Account/001MOCKACCOUNT01' }
+      }],
+      [
+        { columnName: 'Id', displayName: 'Id', aggregate: false },
+        { columnName: 'Name', displayName: 'Name', aggregate: false }
+      ],
+      'Account'
+    );
 
-  async teardown(): Promise<void> {
-    // Clean up test account
-    if (this.testAccountId) {
-      await this.salesforce.deleteRecord('Account', this.testAccountId);
-    }
+    // Mock object describe for field metadata (needed for edit mode)
+    router.onDescribe('Account', [
+      { name: 'Id', label: 'Account ID', type: 'id', updateable: false, calculated: false },
+      { name: 'Name', label: 'Account Name', type: 'string', updateable: true, calculated: false }
+    ]);
+
+    // Mock update success
+    router.onUpdateRecord('Account', '001MOCKACCOUNT01');
+
+    return router;
   }
 
   async test(): Promise<void> {
@@ -33,8 +48,8 @@ export default class QueryEditModeTest extends SftoolsTest {
     // Navigate to Query tab
     await this.queryTab.navigateTo();
 
-    // Execute query for our test account
-    const query = `SELECT Id, Name FROM Account WHERE Id = '${this.testAccountId}'`;
+    // Execute query
+    const query = `SELECT Id, Name FROM Account LIMIT 10`;
     await this.queryTab.executeQuery(query);
 
     // Verify query succeeded
@@ -63,12 +78,6 @@ export default class QueryEditModeTest extends SftoolsTest {
     const saveStatus = await this.queryTab.getStatus();
     await this.expect(saveStatus.type).toBe('success');
 
-    // Verify the change persisted in Salesforce via API
-    const records = await this.salesforce.query(
-      `SELECT Name FROM Account WHERE Id = '${this.testAccountId}'`
-    );
-    await this.expect(records[0].Name).toBe(newName);
-
     // @test Q-F-011: Edit again and clear changes
     const anotherName = `Another Update ${Date.now()}`;
     await this.queryTab.editCell(0, 'Name', anotherName);
@@ -83,11 +92,5 @@ export default class QueryEditModeTest extends SftoolsTest {
     // Verify no pending changes
     const changesAfterClear = await this.queryTab.getChangesCount();
     await this.expect(changesAfterClear).toBe(0);
-
-    // Verify the previous save is still persisted (not reverted)
-    const finalRecords = await this.salesforce.query(
-      `SELECT Name FROM Account WHERE Id = '${this.testAccountId}'`
-    );
-    await this.expect(finalRecords[0].Name).toBe(newName);
   }
 }

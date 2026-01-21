@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test Schema Browser functionality
@@ -10,7 +11,26 @@ import { SftoolsTest } from '../../framework/base-test';
  * - SB-F-005: Filter fields - Matching fields shown
  */
 export default class BrowseSchemaTest extends SftoolsTest {
-  // No setup/teardown needed - just browsing metadata
+  configureMocks() {
+    const router = new MockRouter();
+
+    // Mock global describe with common objects
+    router.onGlobalDescribe([
+      { name: 'Account', label: 'Account', keyPrefix: '001', queryable: true },
+      { name: 'Contact', label: 'Contact', keyPrefix: '003', queryable: true },
+      { name: 'Opportunity', label: 'Opportunity', keyPrefix: '006', queryable: true }
+    ]);
+
+    // Mock Account describe
+    router.onDescribe('Account', [
+      { name: 'Id', label: 'Record ID', type: 'id', updateable: false },
+      { name: 'Name', label: 'Account Name', type: 'string', updateable: true },
+      { name: 'Phone', label: 'Phone', type: 'phone', updateable: true },
+      { name: 'Industry', label: 'Industry', type: 'picklist', updateable: true }
+    ]);
+
+    return router;
+  }
 
   async test(): Promise<void> {
     // Navigate to schema browser

@@ -3,6 +3,7 @@ import type { TestContext, TestResult, TestClass, TestConfig } from './types';
 import { DEFAULT_CONFIG, SLOW_MODE_CONFIG } from './types';
 import { loadExtension, injectConnectionViaServiceWorker } from '../services/extension-loader';
 import { SalesforceClient } from '../services/salesforce-client';
+import { MockRouter } from '../../shared/mocks/index.js';
 
 export class TestRunner {
   private browserContext!: BrowserContext;
@@ -54,10 +55,17 @@ export class TestRunner {
 
       const test = new TestClass(testContext);
 
+      // Set up mock route interception at context level (to catch service worker requests)
+      const mockRouter = test.configureMocks();
+      if (mockRouter) {
+        console.log('  🎭 Setting up mocks...');
+        await mockRouter.setup(this.browserContext);
+      }
+
       // Inject connection via service worker (before any navigation)
       await injectConnectionViaServiceWorker(this.serviceWorker, this.salesforce);
 
-      // Setup phase (API calls to create test data)
+      // Setup phase (no longer makes real API calls - mocks are used)
       console.log('  ⏳ Setup...');
       await test.setup();
 
@@ -107,19 +115,15 @@ export class TestRunner {
   }
 
   private async initBrowser(): Promise<void> {
-    // Validate environment variables
-    const accessToken = process.env.SF_ACCESS_TOKEN;
-    const instanceUrl = process.env.SF_INSTANCE_URL;
-
-    if (!accessToken || !instanceUrl) {
-      throw new Error(
-        'Missing required environment variables: SF_ACCESS_TOKEN and SF_INSTANCE_URL\n' +
-        'Create a .env.test file or set them in your environment.'
-      );
-    }
+    // Environment variables are now optional - mock credentials are fine
+    const accessToken = process.env.SF_ACCESS_TOKEN || 'mock-access-token';
+    const instanceUrl = process.env.SF_INSTANCE_URL || 'https://test.salesforce.com';
 
     console.log('🚀 Initializing test context...');
     console.log(`   Instance URL: ${instanceUrl}`);
+    if (accessToken === 'mock-access-token') {
+      console.log('   ⚠️  Using mock credentials (mocked API calls)');
+    }
 
     // Load extension (browser context + extension ID + service worker)
     const { context, extensionId, serviceWorker } = await loadExtension();
@@ -129,7 +133,7 @@ export class TestRunner {
 
     console.log(`   Extension ID: ${extensionId}`);
 
-    // Initialize Salesforce client with env vars
+    // Initialize Salesforce client (real or mock credentials)
     this.salesforce = new SalesforceClient();
     this.salesforce.setCredentials(accessToken, instanceUrl);
 

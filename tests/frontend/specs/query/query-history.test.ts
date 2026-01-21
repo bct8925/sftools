@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test query history functionality
@@ -9,14 +10,20 @@ import { SftoolsTest } from '../../framework/base-test';
  * - Q-F-018: Delete a query from history and verify removal
  */
 export default class QueryHistoryTest extends SftoolsTest {
-  private testQuery: string = 'SELECT Id, Name FROM Account LIMIT 1';
+  configureMocks() {
+    const router = new MockRouter();
 
-  async setup(): Promise<void> {
-    // No setup needed - using simple query
-  }
+    // Mock query response
+    router.onQuery(
+      /\/query/,
+      [{ Id: '001MOCKACCOUNT01', Name: 'Test Account' }],
+      [
+        { columnName: 'Id', displayName: 'Id', aggregate: false },
+        { columnName: 'Name', displayName: 'Name', aggregate: false }
+      ]
+    );
 
-  async teardown(): Promise<void> {
-    // No teardown needed
+    return router;
   }
 
   async test(): Promise<void> {
@@ -27,7 +34,8 @@ export default class QueryHistoryTest extends SftoolsTest {
     await this.queryTab.navigateTo();
 
     // Execute a query to add it to history
-    await this.queryTab.executeQuery(this.testQuery);
+    const testQuery = 'SELECT Id, Name FROM Account LIMIT 1';
+    await this.queryTab.executeQuery(testQuery);
 
     // Q-F-016: Verify query appears in history
     await this.queryTab.openHistory();
@@ -35,7 +43,7 @@ export default class QueryHistoryTest extends SftoolsTest {
     await this.expect(historyCount).toBeGreaterThan(0);
 
     const historyItems = await this.queryTab.getHistoryItems();
-    await this.expect(historyItems).toInclude(this.testQuery);
+    await this.expect(historyItems).toInclude(testQuery);
 
     await this.queryTab.closeHistory();
 
@@ -46,7 +54,7 @@ export default class QueryHistoryTest extends SftoolsTest {
     await this.queryTab.loadFromHistory(0);
 
     const editorValue = await this.queryTab.monaco.getValue();
-    await this.expect(editorValue.trim()).toBe(this.testQuery);
+    await this.expect(editorValue.trim()).toBe(testQuery);
 
     // Q-F-018: Delete from history and verify removal
     await this.queryTab.openHistory();

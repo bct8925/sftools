@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test SOQL query execution via keyboard shortcut
@@ -6,19 +7,20 @@ import { SftoolsTest } from '../../framework/base-test';
  * @test Q-F-002: Execute query via Ctrl/Cmd+Enter
  */
 export default class QueryShortcutTest extends SftoolsTest {
-  private testAccountId: string = '';
+  configureMocks() {
+    const router = new MockRouter();
 
-  async setup(): Promise<void> {
-    // Create a test account for querying
-    const uniqueName = `Playwright Query Shortcut Test ${Date.now()}`;
-    this.testAccountId = await this.salesforce.createAccount(uniqueName);
-  }
+    // Mock query response
+    router.onQuery(
+      /\/query/,
+      [{ Id: '001MOCKACCOUNT01', Name: 'Test Account' }],
+      [
+        { columnName: 'Id', displayName: 'Id', aggregate: false },
+        { columnName: 'Name', displayName: 'Name', aggregate: false }
+      ]
+    );
 
-  async teardown(): Promise<void> {
-    // Clean up test account
-    if (this.testAccountId) {
-      await this.salesforce.deleteRecord('Account', this.testAccountId);
-    }
+    return router;
   }
 
   async test(): Promise<void> {
@@ -29,7 +31,7 @@ export default class QueryShortcutTest extends SftoolsTest {
     await this.queryTab.navigateTo();
 
     // Set query in Monaco editor
-    const query = `SELECT Id, Name FROM Account WHERE Id = '${this.testAccountId}'`;
+    const query = `SELECT Id, Name FROM Account LIMIT 10`;
     await this.queryTab.setQuery(query);
 
     // Execute via Ctrl/Cmd+Enter keyboard shortcut

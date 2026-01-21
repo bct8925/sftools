@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test REST API keyboard shortcut execution
@@ -8,6 +9,22 @@ import { SftoolsTest } from '../../framework/base-test';
  * @test R-F-008
  */
 export default class RestApiShortcutTest extends SftoolsTest {
+  configureMocks() {
+    const router = new MockRouter();
+
+    // Mock POST to create Account
+    router.onRestRequest('/sobjects/Account$', 'POST', {
+      status: 201,
+      data: {
+        id: '001NEWRECORD0001',
+        success: true,
+        errors: []
+      }
+    });
+
+    return router;
+  }
+
   async test(): Promise<void> {
     // Navigate to extension
     await this.navigateToExtension();
@@ -23,7 +40,7 @@ export default class RestApiShortcutTest extends SftoolsTest {
 
     // Set request body with account data
     const requestBody = JSON.stringify({
-      Name: `Test Account ${Date.now()}`
+      Name: 'Test Account'
     }, null, 2);
     await this.restApiTab.setRequestBody(requestBody);
 

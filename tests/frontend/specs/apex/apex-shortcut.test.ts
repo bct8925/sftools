@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test Anonymous Apex execution via keyboard shortcut
@@ -8,7 +9,35 @@ import { SftoolsTest } from '../../framework/base-test';
  * Description: Execute Apex via Ctrl/Cmd+Enter - Executes successfully
  */
 export default class ApexShortcutTest extends SftoolsTest {
-  // No setup/teardown needed - just executing Apex
+  configureMocks() {
+    const router = new MockRouter();
+
+    // Mock successful Apex execution
+    router.onApexExecute(
+      true,
+      true,
+      'USER_DEBUG|[1]|DEBUG|Executed via keyboard shortcut\nUSER_DEBUG|[3]|DEBUG|Result: 100'
+    );
+
+    // Mock ApexLog query (returns the log record metadata)
+    router.addRoute(/\/tooling\/query.*ApexLog/, {
+      done: true,
+      totalSize: 1,
+      records: [{
+        Id: '07LMOCKLOG001',
+        LogLength: 500,
+        Status: 'Success'
+      }]
+    }, 'GET');
+
+    // Mock ApexLog body retrieval (returns the actual log content as plain text)
+    router.addRoute(/\/tooling\/sobjects\/ApexLog\/07LMOCKLOG001\/Body/, {
+      data: 'USER_DEBUG|[1]|DEBUG|Executed via keyboard shortcut\nUSER_DEBUG|[3]|DEBUG|Result: 100',
+      contentType: 'text/plain'
+    }, 'GET');
+
+    return router;
+  }
 
   async test(): Promise<void> {
     // Navigate to extension
@@ -25,7 +54,7 @@ export default class ApexShortcutTest extends SftoolsTest {
     `;
     await this.apexTab.setCode(apexCode);
 
-    // Execute using Ctrl/Cmd+Enter
+    // Execute using Ctrl/Cmd+Enter (will use mocked response)
     await this.apexTab.executeWithShortcut();
 
     // Verify success

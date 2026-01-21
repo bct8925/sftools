@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test SOQL query error handling
@@ -8,7 +9,26 @@ import { SftoolsTest } from '../../framework/base-test';
  * - Q-F-029: Status badge shows error - X icon with error message
  */
 export default class QueryErrorsTest extends SftoolsTest {
-  // No setup/teardown needed - we're testing error cases
+  configureMocks() {
+    const router = new MockRouter();
+
+    // Mock query error response
+    router.addRoute(
+      /\/query/,
+      {
+        status: 400,
+        data: [
+          {
+            message: 'ERROR at Row:1:Column:8\nline 1:7 mismatched input \'FROM\'',
+            errorCode: 'MALFORMED_QUERY'
+          }
+        ]
+      },
+      'GET'
+    );
+
+    return router;
+  }
 
   async test(): Promise<void> {
     // Navigate to extension

@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test Apex favorites functionality
@@ -12,20 +13,31 @@ export default class ApexFavoritesTest extends SftoolsTest {
   private testApex: string = '';
   private favoriteLabel: string = '';
 
-  async setup(): Promise<void> {
-    // Create test Apex code
-    this.testApex = `System.debug('Favorite Test ${Date.now()}');\nInteger x = 42;`;
-    this.favoriteLabel = `Test Favorite ${Date.now()}`;
+  configureMocks() {
+    const router = new MockRouter();
+
+    // Mock successful Apex execution
+    router.onApexExecute(
+      true,
+      true,
+      'USER_DEBUG|[1]|DEBUG|Favorite Test\nUSER_DEBUG|[2]|DEBUG|x=42'
+    );
+
+    return router;
   }
 
   async test(): Promise<void> {
+    // Create test Apex code
+    this.testApex = `System.debug('Favorite Test ${Date.now()}');\nInteger x = 42;`;
+    this.favoriteLabel = `Test Favorite ${Date.now()}`;
+
     // Navigate to extension
     await this.navigateToExtension();
 
     // Navigate to Apex tab
     await this.apexTab.navigateTo();
 
-    // Execute the test Apex
+    // Execute the test Apex (will use mocked response)
     await this.apexTab.setCode(this.testApex);
     await this.apexTab.execute();
 

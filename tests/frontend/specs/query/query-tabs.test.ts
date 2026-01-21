@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test tab management
@@ -10,21 +11,20 @@ import { SftoolsTest } from '../../framework/base-test';
  * - Q-F-026: Close tab - Tab removed from list
  */
 export default class QueryTabsTest extends SftoolsTest {
-  private accountIds: string[] = [];
+  configureMocks() {
+    const router = new MockRouter();
 
-  async setup(): Promise<void> {
-    // Create 2 test accounts with different names
-    const timestamp = Date.now();
-    const account1 = await this.salesforce.createAccount(`Tab Test Alpha ${timestamp}`);
-    const account2 = await this.salesforce.createAccount(`Tab Test Beta ${timestamp}`);
-    this.accountIds.push(account1, account2);
-  }
+    // Mock query responses for both queries
+    router.onQuery(
+      /\/query/,
+      [{ Id: '001MOCKACCOUNT01', Name: 'Tab Test Alpha' }],
+      [
+        { columnName: 'Id', displayName: 'Id', aggregate: false },
+        { columnName: 'Name', displayName: 'Name', aggregate: false }
+      ]
+    );
 
-  async teardown(): Promise<void> {
-    // Delete both accounts
-    for (const accountId of this.accountIds) {
-      await this.salesforce.deleteRecord('Account', accountId);
-    }
+    return router;
   }
 
   async test(): Promise<void> {
@@ -34,8 +34,8 @@ export default class QueryTabsTest extends SftoolsTest {
     // Navigate to Query tab
     await this.queryTab.navigateTo();
 
-    // Execute first query for account 1
-    const query1 = `SELECT Id, Name FROM Account WHERE Id = '${this.accountIds[0]}'`;
+    // Execute first query
+    const query1 = `SELECT Id, Name FROM Account WHERE Name LIKE 'Alpha%'`;
     await this.queryTab.executeQuery(query1);
 
     // Verify success
@@ -46,8 +46,8 @@ export default class QueryTabsTest extends SftoolsTest {
     const tabs1 = await this.queryTab.getOpenTabs();
     await this.expect(tabs1.length).toBe(1);
 
-    // Execute second query for account 2
-    const query2 = `SELECT Id, Name FROM Account WHERE Id = '${this.accountIds[1]}'`;
+    // Execute second query
+    const query2 = `SELECT Id, Name FROM Account WHERE Name LIKE 'Beta%'`;
     await this.queryTab.executeQuery(query2);
 
     // Verify success

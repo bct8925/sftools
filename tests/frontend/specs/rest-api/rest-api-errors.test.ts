@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test REST API error handling
@@ -7,6 +8,23 @@ import { SftoolsTest } from '../../framework/base-test';
  * - R-I-007: HTTP 400 error - Error response displayed
  */
 export default class RestApiErrorsTest extends SftoolsTest {
+  configureMocks() {
+    const router = new MockRouter();
+
+    // Mock error response for invalid endpoint
+    router.onRestRequest('/invalid-endpoint', 'GET', {
+      status: 404,
+      data: [
+        {
+          message: 'The requested resource does not exist',
+          errorCode: 'NOT_FOUND'
+        }
+      ]
+    });
+
+    return router;
+  }
+
   async test(): Promise<void> {
     // Navigate to extension
     await this.navigateToExtension();
@@ -18,7 +36,7 @@ export default class RestApiErrorsTest extends SftoolsTest {
     await this.restApiTab.setMethod('GET');
 
     // Set endpoint to invalid endpoint
-    await this.restApiTab.setEndpoint('/services/data/v62.0/invalid-endpoint-that-does-not-exist');
+    await this.restApiTab.setEndpoint('/services/data/v62.0/invalid-endpoint');
 
     // Send request
     await this.restApiTab.send();

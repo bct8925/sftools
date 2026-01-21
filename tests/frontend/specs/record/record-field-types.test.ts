@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test Record Viewer field type rendering and editability
@@ -9,25 +10,36 @@ import { SftoolsTest } from '../../framework/base-test';
  * - RV-F-006: Display field type - Type indicator shown
  */
 export default class RecordFieldTypesTest extends SftoolsTest {
-  private testAccountId: string = '';
-  private testAccountName: string = '';
+  configureMocks() {
+    const router = new MockRouter();
 
-  async setup(): Promise<void> {
-    // Create a test account
-    this.testAccountName = `Playwright Field Types Test ${Date.now()}`;
-    this.testAccountId = await this.salesforce.createAccount(this.testAccountName);
-  }
+    // Mock describe for Account object
+    router.onDescribe('Account', [
+      { name: 'Id', label: 'Record ID', type: 'id', updateable: false },
+      { name: 'Name', label: 'Account Name', type: 'string', updateable: true },
+      { name: 'Phone', label: 'Phone', type: 'phone', updateable: true },
+      { name: 'CreatedDate', label: 'Created Date', type: 'datetime', updateable: false }
+    ]);
 
-  async teardown(): Promise<void> {
-    // Clean up test account
-    if (this.testAccountId) {
-      await this.salesforce.deleteRecord('Account', this.testAccountId);
-    }
+    // Mock SOQL query for record retrieval (used by getRecordWithRelationships)
+    // Pattern matches URL-encoded SOQL: "FROM%20Account%20WHERE%20Id"
+    router.onQuery(
+      /\/query\/?\?q=.*FROM%20Account%20WHERE%20Id/,
+      [{
+        attributes: { type: 'Account' },
+        Id: '001MOCKACCOUNT01',
+        Name: 'Test Account',
+        Phone: '555-9999',
+        CreatedDate: '2024-01-15T10:30:00.000+0000'
+      }]
+    );
+
+    return router;
   }
 
   async test(): Promise<void> {
     // Navigate to record viewer
-    await this.navigateToRecord('Account', this.testAccountId);
+    await this.navigateToRecord('Account', '001MOCKACCOUNT01');
 
     // Wait for record to load
     await this.recordPage.waitForLoad();
@@ -42,10 +54,10 @@ export default class RecordFieldTypesTest extends SftoolsTest {
 
     // Verify field values display correctly
     const nameValue = await this.recordPage.getFieldValue('Name');
-    await this.expect(nameValue).toBe(this.testAccountName);
+    await this.expect(nameValue).toBe('Test Account');
 
     // Verify Id value is the record ID
     const idValue = await this.recordPage.getFieldValue('Id');
-    await this.expect(idValue).toBe(this.testAccountId);
+    await this.expect(idValue).toBe('001MOCKACCOUNT01');
   }
 }

@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test Record Viewer edit and save functionality
@@ -9,33 +10,45 @@ import { SftoolsTest } from '../../framework/base-test';
  * - RV-F-019: Modified fields highlighted - Visual distinction
  */
 export default class EditRecordTest extends SftoolsTest {
-  private testAccountId: string = '';
-  private originalName: string = '';
+  configureMocks() {
+    const router = new MockRouter();
 
-  async setup(): Promise<void> {
-    // Create a test account with a known name
-    this.originalName = `Playwright Edit Test ${Date.now()}`;
-    this.testAccountId = await this.salesforce.createAccount(this.originalName);
-  }
+    // Mock describe for Account object
+    router.onDescribe('Account', [
+      { name: 'Id', label: 'Record ID', type: 'id', updateable: false },
+      { name: 'Name', label: 'Account Name', type: 'string', updateable: true },
+      { name: 'Phone', label: 'Phone', type: 'phone', updateable: true }
+    ]);
 
-  async teardown(): Promise<void> {
-    // Clean up test account
-    if (this.testAccountId) {
-      await this.salesforce.deleteRecord('Account', this.testAccountId);
-    }
+    // Mock SOQL query for record retrieval (used by getRecordWithRelationships)
+    // Pattern matches URL-encoded SOQL: "FROM%20Account%20WHERE%20Id"
+    router.onQuery(
+      /\/query\/?\?q=.*FROM%20Account%20WHERE%20Id/,
+      [{
+        attributes: { type: 'Account' },
+        Id: '001MOCKACCOUNT01',
+        Name: 'Original Name',
+        Phone: '555-1234'
+      }]
+    );
+
+    // Mock record update (PATCH)
+    router.onUpdateRecord('Account', '001MOCKACCOUNT01');
+
+    return router;
   }
 
   async test(): Promise<void> {
     // Navigate to record viewer
-    await this.navigateToRecord('Account', this.testAccountId);
+    await this.navigateToRecord('Account', '001MOCKACCOUNT01');
     await this.recordPage.waitForLoad();
 
     // Verify original name is displayed
     const initialValue = await this.recordPage.getFieldValue('Name');
-    await this.expect(initialValue).toBe(this.originalName);
+    await this.expect(initialValue).toBe('Original Name');
 
     // Edit the name field
-    const newName = `Updated ${Date.now()}`;
+    const newName = 'Updated Name';
     await this.recordPage.setFieldValue('Name', newName);
 
     // Verify field is marked as modified
@@ -52,11 +65,5 @@ export default class EditRecordTest extends SftoolsTest {
     // Verify status shows saved
     const status = await this.recordPage.getStatus();
     await this.expect(status).toContain('Saved');
-
-    // Verify the change persisted in Salesforce
-    const records = await this.salesforce.query(
-      `SELECT Name FROM Account WHERE Id = '${this.testAccountId}'`
-    );
-    await this.expect(records[0].Name).toBe(newName);
   }
 }

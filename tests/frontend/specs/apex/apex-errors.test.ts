@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test Apex compilation error handling
@@ -9,7 +10,14 @@ import { SftoolsTest } from '../../framework/base-test';
  * - A-I-004: Compilation error on specific line - Marker on line 5
  */
 export default class ApexErrorsTest extends SftoolsTest {
-  // No setup/teardown needed
+  configureMocks() {
+    const router = new MockRouter();
+
+    // Mock compilation error response
+    router.onApexExecute(false, false, '');
+
+    return router;
+  }
 
   async test(): Promise<void> {
     // Navigate to extension
@@ -22,7 +30,7 @@ export default class ApexErrorsTest extends SftoolsTest {
     const invalidCode = `System.debug(undefinedVariable);`;
     await this.apexTab.setCode(invalidCode);
 
-    // Execute
+    // Execute (will use mocked error response)
     await this.apexTab.execute();
 
     // Verify status indicates failure (Compile Error or Error)

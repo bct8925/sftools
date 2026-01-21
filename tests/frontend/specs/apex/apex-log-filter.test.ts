@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test debug log filtering
@@ -8,6 +9,38 @@ import { SftoolsTest } from '../../framework/base-test';
  * - A-F-007: Clear debug log filter - All lines visible again
  */
 export default class ApexLogFilterTest extends SftoolsTest {
+  configureMocks() {
+    const router = new MockRouter();
+
+    // Mock successful Apex execution with multi-line debug log
+    const mockLog = `USER_DEBUG|[1]|DEBUG|First debug message
+USER_DEBUG|[2]|DEBUG|Second debug message
+USER_DEBUG|[3]|DEBUG|Third debug message with UNIQUE keyword
+USER_DEBUG|[4]|DEBUG|Fourth debug message
+USER_DEBUG|[6]|DEBUG|Calculation result: 30`;
+
+    router.onApexExecute(true, true, mockLog);
+
+    // Mock ApexLog query (returns the log record metadata)
+    router.addRoute(/\/tooling\/query.*ApexLog/, {
+      done: true,
+      totalSize: 1,
+      records: [{
+        Id: '07LMOCKLOG002',
+        LogLength: 500,
+        Status: 'Success'
+      }]
+    }, 'GET');
+
+    // Mock ApexLog body retrieval (returns the actual log content as plain text)
+    router.addRoute(/\/tooling\/sobjects\/ApexLog\/07LMOCKLOG002\/Body/, {
+      data: mockLog,
+      contentType: 'text/plain'
+    }, 'GET');
+
+    return router;
+  }
+
   async test(): Promise<void> {
     // Navigate to extension
     await this.navigateToExtension();
@@ -26,7 +59,7 @@ export default class ApexLogFilterTest extends SftoolsTest {
     `;
     await this.apexTab.setCode(apexCode);
 
-    // Execute
+    // Execute (will use mocked response)
     await this.apexTab.execute();
 
     // Verify execution succeeded

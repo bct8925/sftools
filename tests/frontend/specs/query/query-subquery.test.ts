@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test subquery expansion
@@ -9,38 +10,43 @@ import { SftoolsTest } from '../../framework/base-test';
  * - Q-F-006: Collapse subquery results - Nested table is hidden
  */
 export default class QuerySubqueryTest extends SftoolsTest {
-  private accountId: string = '';
-  private contactIds: string[] = [];
+  configureMocks() {
+    const router = new MockRouter();
 
-  async setup(): Promise<void> {
-    // Create an Account
-    const accountName = `Subquery Test ${Date.now()}`;
-    this.accountId = await this.salesforce.createAccount(accountName);
+    // Mock query response with subquery data
+    router.onQuery(
+      /\/query/,
+      [
+        {
+          Id: '001MOCKACCOUNT01',
+          Name: 'Test Account',
+          Contacts: {
+            totalSize: 2,
+            done: true,
+            records: [
+              { Id: '003MOCKCONTACT01', FirstName: 'Test', LastName: 'SubqueryContact1' },
+              { Id: '003MOCKCONTACT02', FirstName: 'Demo', LastName: 'SubqueryContact2' }
+            ]
+          }
+        }
+      ],
+      [
+        { columnName: 'Id', displayName: 'Id', aggregate: false },
+        { columnName: 'Name', displayName: 'Name', aggregate: false },
+        {
+          columnName: 'Contacts',
+          displayName: 'Contacts',
+          aggregate: true,
+          joinColumns: [
+            { columnName: 'Id', displayName: 'Id', aggregate: false },
+            { columnName: 'FirstName', displayName: 'FirstName', aggregate: false },
+            { columnName: 'LastName', displayName: 'LastName', aggregate: false }
+          ]
+        }
+      ]
+    );
 
-    // Create 2 Contacts linked to the Account
-    const contact1 = await this.salesforce.createContact({
-      LastName: 'SubqueryContact1',
-      FirstName: 'Test',
-      AccountId: this.accountId
-    });
-    const contact2 = await this.salesforce.createContact({
-      LastName: 'SubqueryContact2',
-      FirstName: 'Demo',
-      AccountId: this.accountId
-    });
-    this.contactIds.push(contact1, contact2);
-  }
-
-  async teardown(): Promise<void> {
-    // Delete contacts first (children before parent)
-    for (const contactId of this.contactIds) {
-      await this.salesforce.deleteRecord('Contact', contactId);
-    }
-
-    // Delete account
-    if (this.accountId) {
-      await this.salesforce.deleteRecord('Account', this.accountId);
-    }
+    return router;
   }
 
   async test(): Promise<void> {
@@ -51,7 +57,7 @@ export default class QuerySubqueryTest extends SftoolsTest {
     await this.queryTab.navigateTo();
 
     // Execute subquery
-    const query = `SELECT Id, Name, (SELECT Id, FirstName, LastName FROM Contacts) FROM Account WHERE Id = '${this.accountId}'`;
+    const query = `SELECT Id, Name, (SELECT Id, FirstName, LastName FROM Contacts) FROM Account LIMIT 10`;
     await this.queryTab.executeQuery(query);
 
     // Verify success status

@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test clicking record ID to open Record Viewer
@@ -10,20 +11,25 @@ import { SftoolsTest } from '../../framework/base-test';
  * - Verifies Record Viewer opens with correct record
  */
 export default class QueryRecordLinkTest extends SftoolsTest {
-  private testAccountId: string = '';
-  private testAccountName: string = '';
+  configureMocks() {
+    const router = new MockRouter();
 
-  async setup(): Promise<void> {
-    // Create a test account for querying
-    this.testAccountName = `Playwright Record Link Test ${Date.now()}`;
-    this.testAccountId = await this.salesforce.createAccount(this.testAccountName);
-  }
+    // Mock query response with entityName for ID link rendering
+    router.onQuery(
+      /\/query/,
+      [{
+        Id: '001MOCKACCOUNT01',
+        Name: 'Test Account',
+        attributes: { type: 'Account', url: '/services/data/v59.0/sobjects/Account/001MOCKACCOUNT01' }
+      }],
+      [
+        { columnName: 'Id', displayName: 'Id', aggregate: false },
+        { columnName: 'Name', displayName: 'Name', aggregate: false }
+      ],
+      'Account'
+    );
 
-  async teardown(): Promise<void> {
-    // Clean up test account
-    if (this.testAccountId) {
-      await this.salesforce.deleteRecord('Account', this.testAccountId);
-    }
+    return router;
   }
 
   async test(): Promise<void> {
@@ -33,8 +39,8 @@ export default class QueryRecordLinkTest extends SftoolsTest {
     // Navigate to Query tab
     await this.queryTab.navigateTo();
 
-    // Execute query for our test account
-    const query = `SELECT Id, Name FROM Account WHERE Id = '${this.testAccountId}'`;
+    // Execute query
+    const query = `SELECT Id, Name FROM Account LIMIT 10`;
     await this.queryTab.executeQuery(query);
 
     // Verify query succeeded
@@ -55,7 +61,7 @@ export default class QueryRecordLinkTest extends SftoolsTest {
     // Verify the link has the correct href structure
     const href = await idLink.getAttribute('href');
     await this.expect(href || '').toContain('record.html');
-    await this.expect(href || '').toContain(`recordId=${this.testAccountId}`);
+    await this.expect(href || '').toContain(`recordId=001MOCKACCOUNT01`);
 
     // Wait for new tab to open when clicking the Id field
     const pagePromise = this.context.waitForEvent('page', { timeout: 10000 });
@@ -69,7 +75,7 @@ export default class QueryRecordLinkTest extends SftoolsTest {
     const url = recordPage.url();
     await this.expect(url).toContain('record.html');
     await this.expect(url).toContain(`objectType=Account`);
-    await this.expect(url).toContain(`recordId=${this.testAccountId}`);
+    await this.expect(url).toContain(`recordId=001MOCKACCOUNT01`);
 
     // Close the record page
     await recordPage.close();

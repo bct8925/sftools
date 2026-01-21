@@ -1,4 +1,5 @@
 import { SftoolsTest } from '../../framework/base-test';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test query favorites functionality
@@ -9,23 +10,20 @@ import { SftoolsTest } from '../../framework/base-test';
  * - Q-F-021: Delete from favorites and verify removal
  */
 export default class QueryFavoritesTest extends SftoolsTest {
-  private testAccountId: string = '';
-  private testQuery: string = '';
-  private favoriteLabel: string = '';
+  configureMocks() {
+    const router = new MockRouter();
 
-  async setup(): Promise<void> {
-    // Create a test account
-    const uniqueName = `Playwright Favorite Test ${Date.now()}`;
-    this.testAccountId = await this.salesforce.createAccount(uniqueName);
-    this.testQuery = `SELECT Id, Name FROM Account WHERE Id = '${this.testAccountId}'`;
-    this.favoriteLabel = `Test Favorite ${Date.now()}`;
-  }
+    // Mock query response
+    router.onQuery(
+      /\/query/,
+      [{ Id: '001MOCKACCOUNT01', Name: 'Test Account' }],
+      [
+        { columnName: 'Id', displayName: 'Id', aggregate: false },
+        { columnName: 'Name', displayName: 'Name', aggregate: false }
+      ]
+    );
 
-  async teardown(): Promise<void> {
-    // Clean up test account
-    if (this.testAccountId) {
-      await this.salesforce.deleteRecord('Account', this.testAccountId);
-    }
+    return router;
   }
 
   async test(): Promise<void> {
@@ -36,14 +34,16 @@ export default class QueryFavoritesTest extends SftoolsTest {
     await this.queryTab.navigateTo();
 
     // Execute the test query
-    await this.queryTab.executeQuery(this.testQuery);
+    const testQuery = `SELECT Id, Name FROM Account LIMIT 10`;
+    await this.queryTab.executeQuery(testQuery);
 
     // Verify query succeeded
     const status = await this.queryTab.getStatus();
     await this.expect(status.type).toBe('success');
 
     // Save to favorites with a label (Q-F-019)
-    await this.queryTab.saveToFavorites(this.favoriteLabel);
+    const favoriteLabel = `Test Favorite ${Date.now()}`;
+    await this.queryTab.saveToFavorites(favoriteLabel);
 
     // Clear the editor to verify loading works
     await this.queryTab.monaco.setValue('');
@@ -55,7 +55,7 @@ export default class QueryFavoritesTest extends SftoolsTest {
 
     // Verify editor is populated with the saved query
     const loadedQuery = await this.queryTab.monaco.getValue();
-    await this.expect(loadedQuery).toBe(this.testQuery);
+    await this.expect(loadedQuery).toBe(testQuery);
 
     // Delete from favorites (Q-F-021)
     await this.queryTab.deleteFromFavorites(0);

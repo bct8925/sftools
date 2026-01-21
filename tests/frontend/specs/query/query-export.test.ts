@@ -1,5 +1,6 @@
 import { SftoolsTest } from '../../framework/base-test';
 import type { Download } from 'playwright';
+import { MockRouter } from '../../../shared/mocks/index.js';
 
 /**
  * Test CSV export functionality
@@ -10,35 +11,34 @@ import type { Download } from 'playwright';
  * - Q-F-012: Export to CSV button triggers download with correct data
  */
 export default class QueryExportTest extends SftoolsTest {
-  private accountIds: string[] = [];
-  private testTimestamp: string = '';
   private readonly RECORD_COUNT = 5;
 
-  async setup(): Promise<void> {
-    // Generate unique timestamp for this test run
-    this.testTimestamp = Date.now().toString();
+  configureMocks() {
+    const router = new MockRouter();
 
-    // Create test accounts
-    const promises = [];
+    // Mock query response with multiple records
+    const records = [];
     for (let i = 0; i < this.RECORD_COUNT; i++) {
-      const name = `Export Test ${this.testTimestamp}-${i}`;
-      promises.push(
-        this.salesforce.createAccount(name, {
-          BillingCity: `City ${i}`,
-          BillingState: 'CA',
-        })
-      );
+      records.push({
+        Id: `001MOCKACCOUNT0${i}`,
+        Name: `Export Test ${i}`,
+        BillingCity: `City ${i}`,
+        BillingState: 'CA'
+      });
     }
 
-    this.accountIds = await Promise.all(promises);
-  }
-
-  async teardown(): Promise<void> {
-    // Clean up test accounts
-    await Promise.all(
-      this.accountIds.map(id => this.salesforce.deleteRecord('Account', id).catch(() => {}))
+    router.onQuery(
+      /\/query/,
+      records,
+      [
+        { columnName: 'Id', displayName: 'Id', aggregate: false },
+        { columnName: 'Name', displayName: 'Name', aggregate: false },
+        { columnName: 'BillingCity', displayName: 'BillingCity', aggregate: false },
+        { columnName: 'BillingState', displayName: 'BillingState', aggregate: false }
+      ]
     );
-    this.accountIds = [];
+
+    return router;
   }
 
   async test(): Promise<void> {
@@ -48,8 +48,8 @@ export default class QueryExportTest extends SftoolsTest {
     // Navigate to Query tab
     await this.queryTab.navigateTo();
 
-    // Execute query for test accounts
-    const query = `SELECT Id, Name, BillingCity, BillingState FROM Account WHERE Name LIKE 'Export Test ${this.testTimestamp}%' ORDER BY Name`;
+    // Execute query
+    const query = `SELECT Id, Name, BillingCity, BillingState FROM Account LIMIT 10`;
     await this.queryTab.executeQuery(query);
 
     // Verify query succeeded
@@ -97,7 +97,7 @@ export default class QueryExportTest extends SftoolsTest {
 
     // Verify at least one data row contains expected values
     const dataLine = lines[1];
-    await this.expect(dataLine).toContain(`Export Test ${this.testTimestamp}`);
+    await this.expect(dataLine).toContain('Export Test');
     await this.expect(dataLine).toContain('CA');
   }
 }

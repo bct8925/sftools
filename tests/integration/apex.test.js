@@ -95,12 +95,13 @@ describe('Apex Tab Integration', () => {
         });
 
         it('handles code that approaches governor limits', async () => {
-            // Use smaller batch size to avoid cleanup timeout
+            // Use unique prefix to avoid querying accounts from other tests
+            const prefix = uniqueName('GovernorTest');
             const batchSize = 10;
             const code = `
                 List<Account> accounts = new List<Account>();
                 for (Integer i = 0; i < ${batchSize}; i++) {
-                    accounts.add(new Account(Name = 'Test ' + i));
+                    accounts.add(new Account(Name = '${prefix}_' + i));
                 }
                 insert accounts;
                 System.debug('Inserted ' + accounts.size() + ' accounts');
@@ -111,9 +112,9 @@ describe('Apex Tab Integration', () => {
             expect(result.compiled).toBe(true);
             expect(result.success).toBe(true);
 
-            // Clean up the test accounts
+            // Clean up the test accounts - only query the ones we just created
             const accounts = await salesforce.query(
-                "SELECT Id FROM Account WHERE Name LIKE 'Test %'"
+                `SELECT Id FROM Account WHERE Name LIKE '${prefix}_%'`
             );
             for (const acc of accounts) {
                 testData.track('Account', acc.Id);

@@ -23,40 +23,43 @@ export class BasePage {
   }
 
   /**
-   * Execute a test step with timeout enforcement.
-   * Fails the test if the step takes longer than STEP_TIMEOUT_MS (5 seconds).
+   * Execute a test step with active timeout enforcement.
+   * Uses Promise.race to abort if the step exceeds the timeout.
+   *
+   * @param description - Human-readable step description for error messages
+   * @param fn - Async function to execute
+   * @param timeoutMs - Optional custom timeout (default: 5000ms)
    */
-  protected async step<T>(description: string, fn: () => Promise<T>): Promise<T> {
+  protected async step<T>(
+    description: string,
+    fn: () => Promise<T>,
+    timeoutMs: number = this.STEP_TIMEOUT_MS
+  ): Promise<T> {
     const startTime = Date.now();
 
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(
+          `Step "${description}" timed out after ${timeoutMs}ms`
+        ));
+      }, timeoutMs);
+    });
+
     try {
-      const result = await fn();
-      const duration = Date.now() - startTime;
-
-      if (duration > this.STEP_TIMEOUT_MS) {
-        throw new Error(
-          `Step "${description}" took ${duration}ms (exceeded ${this.STEP_TIMEOUT_MS}ms limit)`
-        );
-      }
-
+      const result = await Promise.race([fn(), timeoutPromise]);
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
 
       // If it's already a timeout error, re-throw it
-      if (error instanceof Error && error.message.includes('exceeded')) {
+      if (error instanceof Error && error.message.includes('timed out')) {
         throw error;
       }
 
-      // If the step failed AND took too long, mention both issues
-      if (duration > this.STEP_TIMEOUT_MS) {
-        throw new Error(
-          `Step "${description}" failed after ${duration}ms (exceeded ${this.STEP_TIMEOUT_MS}ms limit): ${error}`
-        );
-      }
-
-      // Otherwise, just re-throw the original error
-      throw error;
+      // Enhance other errors with duration context
+      throw new Error(
+        `Step "${description}" failed after ${duration}ms: ${error instanceof Error ? error.message : error}`
+      );
     }
   }
 

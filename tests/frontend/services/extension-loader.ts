@@ -26,8 +26,22 @@ export async function loadExtension(): Promise<ExtensionLoadResult> {
       `--load-extension=${extensionPath}`,
       '--no-first-run',
       '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-background-timer-throttling',
+      '--disable-hang-monitor',
+      '--disable-popup-blocking',
+      '--disable-prompt-on-repost',
+      '--disable-sync',
+      '--no-default-browser-check',
     ],
+    viewport: { width: 1280, height: 720 },
   });
+
+  // Set default timeout to 5 seconds for all operations
+  // Individual operations can override this with explicit timeout parameters
+  context.setDefaultTimeout(5000);
 
   // Wait for service worker to be ready and extract extension ID
   let [background] = context.serviceWorkers();

@@ -13,18 +13,21 @@ sftools uses three testing frameworks:
 ## Quick Commands
 
 ```bash
-# Frontend tests (Playwright - requires visible browser)
-npm run test:frontend          # Run all frontend tests
-npm run test:frontend:slow     # Run with human-like timing (for visual debugging)
-
-# Integration tests (Vitest - real Salesforce API calls)
-npm run test:integration       # Run all integration tests
-npm run test:integration:watch # Run in watch mode
-
 # Unit tests (Vitest - mocked dependencies)
-npm test                       # Run all unit tests
-npm run test:watch             # Run in watch mode
-npm run test:coverage          # Run with coverage report
+npm run test:unit                        # Run all unit tests
+npm run test:unit -- auth.test.js        # Run specific test file
+npm run test:unit:watch                  # Watch mode
+npm run test:unit:coverage               # With coverage report
+
+# Integration tests (Vitest - real Salesforce API)
+npm run test:integration                 # Run all integration tests
+npm run test:integration -- query        # Run tests matching "query"
+npm run test:integration:watch           # Watch mode
+
+# Frontend tests (Playwright - requires visible browser)
+npm run test:frontend                    # Run all frontend tests
+npm run test:frontend -- --filter=query  # Run tests matching "query"
+npm run test:frontend:slow               # With human-like timing (for visual debugging)
 ```
 
 ---
@@ -78,6 +81,32 @@ Slow mode timing:
 - 500ms before typing
 - 1000ms after navigation
 - 1200ms after page load
+
+### Running Specific Tests
+
+Each test framework supports filtering to run specific tests:
+
+**Unit Tests (Vitest)**
+```bash
+npm run test:unit -- auth.test.js           # Run single file
+npm run test:unit -- lib/                   # Run all tests in lib/
+npm run test:unit -- -t "returns empty"     # Run tests matching name pattern
+```
+
+**Integration Tests (Vitest)**
+```bash
+npm run test:integration -- query.test.js   # Run single file
+npm run test:integration -- -t "Q-I-001"    # Run test by ID
+```
+
+**Frontend Tests (Custom Runner)**
+```bash
+npm run test:frontend -- --filter=basic-query  # Run single test file
+npm run test:frontend -- --filter=apex         # Run all apex tests
+npm run test:frontend -- --filter=apex/errors  # Run tests matching path
+```
+
+The frontend `--filter` matches against the full file path, so `--filter=query` matches all files containing "query" in their path.
 
 ## Directory Structure
 
@@ -476,7 +505,7 @@ try {
 1. Create a new file in the appropriate `tests/frontend/specs/` subdirectory
 2. Export a default class extending `SftoolsTest`
 3. Implement `setup()`, `teardown()`, and `test()` methods
-4. Run with `npm test -- --filter=your-test-name`
+4. Run with `npm run test:frontend -- --filter=your-test-name`
 
 ## Adding New Page Objects
 

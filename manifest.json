@@ -20,6 +20,7 @@
     "sidePanel",
     "activeTab",
     "storage",
+    "unlimitedStorage",
     "contextMenus",
     "notifications",
     "nativeMessaging"

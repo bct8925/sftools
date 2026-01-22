@@ -67,7 +67,8 @@ sftools includes an optional local proxy feature for advanced streaming capabili
 |------------|----------------|
 | `sidePanel` | Opens the extension in Chrome's side panel |
 | `activeTab` | Reads the current tab URL to detect Salesforce login domains for authentication and to enable the "View Record" feature |
-| `storage` | Stores your connections and preferences locally |
+| `storage` | Stores your connections, preferences, and cached metadata locally |
+| `unlimitedStorage` | Allows caching object metadata for large Salesforce orgs |
 | `contextMenus` | Adds "View/Edit Record" to the extension's right-click menu |
 | `notifications` | Shows brief confirmations for actions like saving records |
 | `nativeMessaging` | Communicates with the optional local proxy for streaming |

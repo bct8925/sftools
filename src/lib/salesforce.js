@@ -58,7 +58,16 @@ function escapeSoql(str) {
 // Describe Cache
 // ============================================================
 
-const DESCRIBE_CACHE_KEY = 'describeCache';
+const DESCRIBE_CACHE_PREFIX = 'describeCache_';
+
+/**
+ * Get the storage key for a connection's describe cache
+ * @param {string} connectionId
+ * @returns {string}
+ */
+function getDescribeCacheKey(connectionId) {
+    return `${DESCRIBE_CACHE_PREFIX}${connectionId}`;
+}
 
 /**
  * Get the describe cache for the current connection
@@ -68,9 +77,9 @@ async function getDescribeCache() {
     const connectionId = getActiveConnectionId();
     if (!connectionId) return { global: null, objects: {} };
 
-    const data = await chrome.storage.local.get([DESCRIBE_CACHE_KEY]);
-    const cache = data[DESCRIBE_CACHE_KEY] || {};
-    return cache[connectionId] || { global: null, objects: {} };
+    const key = getDescribeCacheKey(connectionId);
+    const data = await chrome.storage.local.get([key]);
+    return data[key] || { global: null, objects: {} };
 }
 
 /**
@@ -82,20 +91,17 @@ async function setDescribeCache(type, data) {
     const connectionId = getActiveConnectionId();
     if (!connectionId) return;
 
-    const stored = await chrome.storage.local.get([DESCRIBE_CACHE_KEY]);
-    const cache = stored[DESCRIBE_CACHE_KEY] || {};
-
-    if (!cache[connectionId]) {
-        cache[connectionId] = { global: null, objects: {} };
-    }
+    const key = getDescribeCacheKey(connectionId);
+    const stored = await chrome.storage.local.get([key]);
+    const cache = stored[key] || { global: null, objects: {} };
 
     if (type === 'global') {
-        cache[connectionId].global = data;
+        cache.global = data;
     } else {
-        cache[connectionId].objects[type] = data;
+        cache.objects[type] = data;
     }
 
-    await chrome.storage.local.set({ [DESCRIBE_CACHE_KEY]: cache });
+    await chrome.storage.local.set({ [key]: cache });
 }
 
 /**
@@ -106,12 +112,45 @@ export async function clearDescribeCache() {
     const connectionId = getActiveConnectionId();
     if (!connectionId) return;
 
-    const stored = await chrome.storage.local.get([DESCRIBE_CACHE_KEY]);
-    const cache = stored[DESCRIBE_CACHE_KEY] || {};
+    await chrome.storage.local.remove(getDescribeCacheKey(connectionId));
+}
 
-    delete cache[connectionId];
+/**
+ * Clear describe cache for a specific connection
+ * Used when removing a connection from storage
+ * @param {string} connectionId
+ * @returns {Promise<void>}
+ */
+export async function clearDescribeCacheForConnection(connectionId) {
+    if (!connectionId) return;
+    await chrome.storage.local.remove(getDescribeCacheKey(connectionId));
+}
 
-    await chrome.storage.local.set({ [DESCRIBE_CACHE_KEY]: cache });
+/**
+ * Migrate describe cache from old single-key format to per-connection keys
+ * Should be called once during app initialization
+ * @returns {Promise<boolean>} - Whether migration was performed
+ */
+export async function migrateDescribeCache() {
+    const OLD_KEY = 'describeCache';
+    const data = await chrome.storage.local.get([OLD_KEY]);
+    const oldCache = data[OLD_KEY];
+
+    if (!oldCache || typeof oldCache !== 'object') return false;
+
+    // Migrate each connection to its own key
+    const updates = {};
+    for (const [connectionId, cacheData] of Object.entries(oldCache)) {
+        updates[getDescribeCacheKey(connectionId)] = cacheData;
+    }
+
+    // Write new keys and remove old
+    if (Object.keys(updates).length > 0) {
+        await chrome.storage.local.set(updates);
+    }
+    await chrome.storage.local.remove(OLD_KEY);
+
+    return true;
 }
 
 // ============================================================

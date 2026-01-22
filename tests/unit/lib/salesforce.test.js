@@ -95,17 +95,15 @@ describe('salesforce', () => {
 
     describe('clearDescribeCache', () => {
         it('SF-U-025: clears cache for current connection', async () => {
-            // Set up cache first
+            // Set up cache first (using per-connection key format)
             chrome._setStorageData({
-                describeCache: {
-                    'conn-123': { global: { sobjects: [] }, objects: {} }
-                }
+                'describeCache_conn-123': { global: { sobjects: [] }, objects: {} }
             });
 
             await clearDescribeCache();
 
             const storage = chrome._getStorageData();
-            expect(storage.describeCache['conn-123']).toBeUndefined();
+            expect(storage['describeCache_conn-123']).toBeUndefined();
         });
 
         it('does nothing when no active connection', async () => {
@@ -117,16 +115,14 @@ describe('salesforce', () => {
 
         it('preserves other connections cache', async () => {
             chrome._setStorageData({
-                describeCache: {
-                    'conn-123': { global: { sobjects: [] }, objects: {} },
-                    'other-conn': { global: { sobjects: ['Account'] }, objects: {} }
-                }
+                'describeCache_conn-123': { global: { sobjects: [] }, objects: {} },
+                'describeCache_other-conn': { global: { sobjects: ['Account'] }, objects: {} }
             });
 
             await clearDescribeCache();
 
             const storage = chrome._getStorageData();
-            expect(storage.describeCache['other-conn']).toBeDefined();
+            expect(storage['describeCache_other-conn']).toBeDefined();
         });
     });
 
@@ -155,11 +151,9 @@ describe('salesforce', () => {
     describe('getGlobalDescribe', () => {
         it('SF-U-004: returns cached data when available', async () => {
             chrome._setStorageData({
-                describeCache: {
-                    'conn-123': {
-                        global: { sobjects: [{ name: 'CachedObject' }] },
-                        objects: {}
-                    }
+                'describeCache_conn-123': {
+                    global: { sobjects: [{ name: 'CachedObject' }] },
+                    objects: {}
                 }
             });
 
@@ -181,18 +175,16 @@ describe('salesforce', () => {
                 expect.stringContaining('/sobjects')
             );
 
-            // Verify it was cached
+            // Verify it was cached (using per-connection key format)
             const storage = chrome._getStorageData();
-            expect(storage.describeCache['conn-123'].global.sobjects).toHaveLength(2);
+            expect(storage['describeCache_conn-123'].global.sobjects).toHaveLength(2);
         });
 
         it('bypasses cache when bypassCache is true', async () => {
             chrome._setStorageData({
-                describeCache: {
-                    'conn-123': {
-                        global: { sobjects: [{ name: 'CachedObject' }] },
-                        objects: {}
-                    }
+                'describeCache_conn-123': {
+                    global: { sobjects: [{ name: 'CachedObject' }] },
+                    objects: {}
                 }
             });
             salesforceRequest.mockResolvedValue({
@@ -209,12 +201,10 @@ describe('salesforce', () => {
     describe('getObjectDescribe', () => {
         it('SF-U-005: returns cached data when available', async () => {
             chrome._setStorageData({
-                describeCache: {
-                    'conn-123': {
-                        global: null,
-                        objects: {
-                            'Account': { name: 'Account', fields: [{ name: 'Id' }] }
-                        }
+                'describeCache_conn-123': {
+                    global: null,
+                    objects: {
+                        'Account': { name: 'Account', fields: [{ name: 'Id' }] }
                     }
                 }
             });
@@ -238,18 +228,16 @@ describe('salesforce', () => {
                 expect.stringContaining('/sobjects/Contact/describe')
             );
 
-            // Verify it was cached
+            // Verify it was cached (using per-connection key format)
             const storage = chrome._getStorageData();
-            expect(storage.describeCache['conn-123'].objects['Contact']).toBeDefined();
+            expect(storage['describeCache_conn-123'].objects['Contact']).toBeDefined();
         });
 
         it('bypasses cache when bypassCache is true', async () => {
             chrome._setStorageData({
-                describeCache: {
-                    'conn-123': {
-                        global: null,
-                        objects: { 'Account': { name: 'Account', fields: [] } }
-                    }
+                'describeCache_conn-123': {
+                    global: null,
+                    objects: { 'Account': { name: 'Account', fields: [] } }
                 }
             });
             salesforceRequest.mockResolvedValue({

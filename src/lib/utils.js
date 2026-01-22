@@ -52,3 +52,9 @@ export {
 export {
     salesforceRequest
 } from './salesforce-request.js';
+
+// --- Cache Utilities ---
+// Re-exported from salesforce.js for convenient access
+export {
+    migrateDescribeCache
+} from './salesforce.js';

@@ -168,11 +168,15 @@ export async function updateConnection(connectionId, updates) {
 
 /**
  * Remove a connection from storage
+ * Also cleans up the connection's describe cache
  */
 export async function removeConnection(connectionId) {
     const connections = await loadConnections();
     const filtered = connections.filter(c => c.id !== connectionId);
     await saveConnections(filtered);
+
+    // Clean up the connection's describe cache
+    await chrome.storage.local.remove(`describeCache_${connectionId}`);
 }
 
 /**

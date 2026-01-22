@@ -18,7 +18,9 @@ import {
     getOAuthCredentials,
     setPendingAuth,
     generateOAuthState,
-    migrateCustomConnectedApp
+    migrateCustomConnectedApp,
+    // Cache
+    migrateDescribeCache
 } from '../../lib/utils.js';
 import { replaceIcons } from '../../lib/icons.js';
 import { initTheme } from '../../lib/theme.js';
@@ -91,6 +93,8 @@ async function initializeConnections() {
     await migrateFromSingleConnection();
     // Migrate from global customConnectedApp to per-connection clientId
     await migrateCustomConnectedApp();
+    // Migrate describe cache from single-key to per-connection keys
+    await migrateDescribeCache();
 
     // Use refreshConnectionList with auto-select enabled
     await refreshConnectionList(true);

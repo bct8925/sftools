@@ -7,7 +7,7 @@
  * @returns {string} - HTML-safe string
  */
 export function escapeHtml(str) {
-    if (!str) return '';
+    if (str === null || str === undefined) return '';
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
@@ -20,7 +20,8 @@ export function escapeHtml(str) {
  * @returns {string} - Attribute-safe string
  */
 export function escapeAttr(str) {
-    if (!str) return '';
+    if (str === null || str === undefined) return '';
+    if (typeof str !== 'string') str = String(str);
     return str
         .replace(/&/g, '&amp;')
         .replace(/"/g, '&quot;')

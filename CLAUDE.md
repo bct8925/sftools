@@ -32,18 +32,21 @@ SF_INSTANCE_URL=https://your-org.my.salesforce.com
 
 **Commands:**
 ```bash
-# Frontend tests (Playwright with mocks)
-npm run test:frontend          # Run all frontend tests
-npm run test:frontend:slow     # Run with human-like timing (for visual debugging)
+# Unit tests (Vitest with mocks)
+npm run test:unit                        # Run all unit tests
+npm run test:unit -- auth.test.js        # Run specific test file
+npm run test:unit:watch                  # Watch mode
+npm run test:unit:coverage               # With coverage report
 
 # Integration tests (real Salesforce API)
-npm run test:integration       # Run all integration tests
-npm run test:integration:watch # Watch mode
+npm run test:integration                 # Run all integration tests
+npm run test:integration -- query        # Run tests matching "query"
+npm run test:integration:watch           # Watch mode
 
-# Unit tests (mocked dependencies)
-npm test                       # Run all unit tests
-npm run test:watch             # Watch mode
-npm run test:coverage          # With coverage report
+# Frontend tests (Playwright with mocks)
+npm run test:frontend                    # Run all frontend tests
+npm run test:frontend -- --filter=query  # Run tests matching "query"
+npm run test:frontend:slow               # With human-like timing (for visual debugging)
 ```
 
 **Test Structure:**

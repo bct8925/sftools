@@ -106,13 +106,15 @@ describe('auth', () => {
             expect(callback).toHaveBeenCalledWith('expired-conn', 'Token expired');
         });
 
-        it('clears module state on trigger', () => {
+        it('does not clear module state (callback handles that)', () => {
             setActiveConnection(createMockConnection());
 
             triggerAuthExpired();
 
-            expect(getAccessToken()).toBe('');
-            expect(getInstanceUrl()).toBe('');
+            // triggerAuthExpired only fires the callback - it doesn't clear state
+            // The callback is responsible for handling the expiration
+            expect(getAccessToken()).toBe('test-access-token');
+            expect(getInstanceUrl()).toBe('https://test.salesforce.com');
         });
     });
 

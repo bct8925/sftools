@@ -1,0 +1,480 @@
+/* Settings Tab - Full styles for Shadow DOM */
+
+/* Card styles */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 2px 0 var(--shadow-md);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-header-bg);
+}
+
+.card-header-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.card-body {
+    padding: 15px;
+}
+
+/* Form elements */
+.form-element {
+    margin-bottom: 1rem;
+}
+
+.form-element label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input,
+.select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-color);
+    color: var(--text-main);
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+}
+
+.input:focus,
+.select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+/* Buttons */
+.button-brand,
+.button-neutral {
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+}
+
+.button-brand {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.button-brand:hover {
+    background: var(--primary-hover);
+}
+
+.button-brand:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-neutral {
+    background: var(--bg-color);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.button-neutral:hover {
+    background: var(--bg-hover);
+}
+
+.button-neutral:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Settings-specific styles */
+.settings-content {
+    padding: 1rem;
+}
+
+.settings-description {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+}
+
+/* Connection List */
+.settings-connection-list {
+    margin-bottom: 1rem;
+}
+
+.settings-connection-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 0.5rem;
+    transition: all 0.15s;
+}
+
+.settings-connection-item:hover {
+    border-color: var(--primary-color);
+}
+
+.settings-connection-item.active {
+    border-color: var(--primary-color);
+    background: var(--bg-selected);
+}
+
+.settings-connection-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-connection-label {
+    font-weight: 500;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-connection-detail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.settings-connection-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: var(--status-loading-bg);
+    color: var(--primary-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.settings-connection-badge.refresh-enabled {
+    background: var(--status-success-bg);
+    color: var(--status-success-text);
+}
+
+.settings-connection-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.settings-connection-actions button {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-connection-actions button:hover {
+    border-color: var(--border-color);
+    background: var(--bg-color);
+    color: var(--primary-color);
+}
+
+.settings-connection-actions button.settings-connection-delete:hover {
+    color: var(--error-color);
+}
+
+.settings-no-connections {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+}
+
+/* Add Connection Form */
+.settings-add-connection-form {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.settings-add-connection-btn {
+    width: auto;
+}
+
+.settings-field-hint {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.settings-button-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Edit Modal */
+.settings-edit-modal {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.settings-edit-modal-content {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 20px var(--shadow-lg);
+    width: 400px;
+    max-width: 90vw;
+}
+
+.settings-edit-modal-content h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: var(--text-main);
+}
+
+/* Proxy Status */
+.settings-proxy-status {
+    margin-top: 1rem;
+}
+
+.settings-status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0;
+    padding: 0.75rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-indicator.connected {
+    background-color: var(--indicator-success);
+    box-shadow: 0 0 6px rgba(75, 202, 129, 0.5);
+}
+
+.status-indicator.disconnected {
+    background-color: var(--indicator-error);
+}
+
+.status-indicator.connecting {
+    background-color: var(--indicator-loading);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-text {
+    flex: 1;
+}
+
+.status-text .label {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.status-text .detail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.settings-version-info {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* Toggle label for proxy checkbox */
+.settings-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.settings-toggle-label input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.settings-toggle-label span {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+/* Theme Options */
+.settings-theme-section {
+    margin-top: 0.5rem;
+}
+
+.settings-theme-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.settings-theme-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.settings-theme-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.settings-theme-option:hover {
+    border-color: var(--primary-color);
+}
+
+.settings-theme-option:has(input:checked) {
+    border-color: var(--primary-color);
+    background: var(--bg-selected);
+}
+
+.settings-theme-radio {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.settings-theme-option-label {
+    font-weight: 500;
+    color: var(--text-main);
+    min-width: 60px;
+}
+
+.settings-theme-option-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* Cache Management */
+.settings-cache-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.settings-cache-status {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.settings-cache-status.success {
+    color: var(--indicator-success);
+}
+
+.settings-cache-status.error {
+    color: var(--error-color);
+}
+
+/* Install Instructions */
+.settings-install-instructions {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.settings-install-instructions summary {
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 0.5rem 0;
+}
+
+.settings-install-instructions p {
+    margin: 0.5rem 0;
+    color: var(--text-muted);
+}
+
+.settings-install-instructions ol {
+    margin: 0.5rem 0 0 1.5rem;
+    color: var(--text-muted);
+}
+
+.settings-install-instructions li {
+    margin-bottom: 0.5rem;
+}
+
+.settings-install-instructions code {
+    background: var(--bg-color);
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.settings-install-instructions a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.settings-install-instructions a:hover {
+    text-decoration: underline;
+}

@@ -1,0 +1,298 @@
+<template>
+    <div class="settings-content">
+        <!-- Connections Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-header-icon" style="background-color: #4bca81">C</div>
+                <h2>Connections</h2>
+            </div>
+            <div class="card-body">
+                <p class="settings-description">
+                    Manage your Salesforce org connections. Each connection can use its own Connected App.
+                </p>
+
+                <!-- Connection List -->
+                <div class="settings-connection-list">
+                    <template lwc:if={hasConnections}>
+                        <template for:each={connectionItems} for:item="conn">
+                            <div key={conn.id} class={conn.cssClass} data-id={conn.id}>
+                                <div class="settings-connection-info">
+                                    <div class="settings-connection-label">{conn.label}</div>
+                                    <div class="settings-connection-detail">
+                                        <template lwc:if={conn.hasRefreshToken}>
+                                            <span class="settings-connection-badge refresh-enabled">
+                                                <c-sf-icon name="refreshSmall"></c-sf-icon> Auto-refresh
+                                            </span>
+                                        </template>
+                                        <template lwc:if={conn.hasCustomApp}>
+                                            <span class="settings-connection-badge">Custom App</span>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="settings-connection-actions">
+                                    <button
+                                        class="settings-connection-edit"
+                                        title="Edit"
+                                        data-id={conn.id}
+                                        onclick={handleConnectionEdit}
+                                    >
+                                        <c-sf-icon name="edit"></c-sf-icon>
+                                    </button>
+                                    <button
+                                        class="settings-connection-reauth"
+                                        title="Re-authorize"
+                                        data-id={conn.id}
+                                        onclick={handleConnectionReauth}
+                                    >
+                                        <c-sf-icon name="refresh"></c-sf-icon>
+                                    </button>
+                                    <button
+                                        class="settings-connection-delete"
+                                        title="Delete"
+                                        data-id={conn.id}
+                                        onclick={handleConnectionDelete}
+                                    >
+                                        <c-sf-icon name="trash"></c-sf-icon>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                    <template lwc:else>
+                        <div class="settings-no-connections">No connections saved</div>
+                    </template>
+                </div>
+
+                <!-- Add Connection Button -->
+                <template lwc:if={showAddForm}>
+                    <div class="settings-add-connection-form">
+                        <div class="form-element">
+                            <label>LOGIN DOMAIN</label>
+                            <select class="select settings-login-domain" onchange={handleLoginDomainChange}>
+                                <option value="auto">Auto-detect (Current Tab)</option>
+                                <option value="https://login.salesforce.com">Production (login.salesforce.com)</option>
+                                <option value="https://test.salesforce.com">Sandbox (test.salesforce.com)</option>
+                                <option value="custom">Custom Domain...</option>
+                            </select>
+                        </div>
+                        <template lwc:if={showCustomDomainField}>
+                            <div class="form-element">
+                                <label>CUSTOM DOMAIN</label>
+                                <input
+                                    type="text"
+                                    class="input"
+                                    value={customDomain}
+                                    oninput={handleCustomDomainInput}
+                                    placeholder="https://mycompany.my.salesforce.com"
+                                />
+                            </div>
+                        </template>
+                        <div class="form-element">
+                            <label>CLIENT ID (OPTIONAL)</label>
+                            <input
+                                type="text"
+                                class="input"
+                                value={newClientId}
+                                oninput={handleNewClientIdInput}
+                                placeholder="Leave blank to use default"
+                            />
+                            <span class="settings-field-hint">
+                                External Client App or Connected App client ID for this org
+                            </span>
+                        </div>
+                        <div class="settings-button-row">
+                            <button class="button-brand" onclick={handleAddConnection}>Authorize</button>
+                            <button class="button-neutral" onclick={handleCancelAdd}>Cancel</button>
+                        </div>
+                    </div>
+                </template>
+                <template lwc:else>
+                    <button class="button-brand settings-add-connection-btn" onclick={handleShowAddForm}>
+                        + Add Connection
+                    </button>
+                </template>
+
+                <details class="settings-install-instructions">
+                    <summary>Connected App Configuration</summary>
+                    <ol>
+                        <li>In Salesforce Setup, create an External Client App or Connected App</li>
+                        <li>Callback URL: <code>https://sftools.dev/sftools-callback</code></li>
+                        <li>OAuth Scopes: <code>api, web, refresh_token</code></li>
+                        <li>Disable <code>PKCE, Require secret for Web Server, Require secret for Refresh Token</code></li>
+                    </ol>
+                </details>
+            </div>
+        </div>
+
+        <!-- Appearance Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-header-icon" style="background-color: #6366f1">A</div>
+                <h2>Appearance</h2>
+            </div>
+            <div class="card-body">
+                <p class="settings-description">Customize the look and feel of sftools.</p>
+
+                <div class="settings-theme-section">
+                    <label class="settings-theme-label">Theme</label>
+                    <div class="settings-theme-options">
+                        <label class="settings-theme-option">
+                            <input
+                                type="radio"
+                                name="theme"
+                                value="system"
+                                class="settings-theme-radio"
+                                checked={isSystemTheme}
+                                onchange={handleThemeChange}
+                            />
+                            <span class="settings-theme-option-label">System</span>
+                            <span class="settings-theme-option-desc">Follow system preference</span>
+                        </label>
+                        <label class="settings-theme-option">
+                            <input
+                                type="radio"
+                                name="theme"
+                                value="light"
+                                class="settings-theme-radio"
+                                checked={isLightTheme}
+                                onchange={handleThemeChange}
+                            />
+                            <span class="settings-theme-option-label">Light</span>
+                            <span class="settings-theme-option-desc">Always use light mode</span>
+                        </label>
+                        <label class="settings-theme-option">
+                            <input
+                                type="radio"
+                                name="theme"
+                                value="dark"
+                                class="settings-theme-radio"
+                                checked={isDarkTheme}
+                                onchange={handleThemeChange}
+                            />
+                            <span class="settings-theme-option-label">Dark</span>
+                            <span class="settings-theme-option-desc">Always use dark mode</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Local Proxy Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-header-icon" style="background-color: #0070d2">P</div>
+                <h2>Local Proxy</h2>
+            </div>
+            <div class="card-body">
+                <p class="settings-description">
+                    The local proxy enables advanced features like Platform Event streaming via gRPC and automatic token refresh.
+                </p>
+
+                <label class="settings-toggle-label">
+                    <input
+                        type="checkbox"
+                        checked={proxyEnabled}
+                        onchange={handleProxyToggle}
+                    />
+                    <span>Enable Local Proxy</span>
+                </label>
+
+                <template lwc:if={showProxyStatus}>
+                    <div class="settings-proxy-status">
+                        <div class="settings-status-row">
+                            <span class={proxyIndicatorClass}></span>
+                            <div class="status-text">
+                                <div class="label">{proxyStatusText}</div>
+                                <div class="detail">{proxyDetailText}</div>
+                            </div>
+                        </div>
+                        <template lwc:if={proxyVersion}>
+                            <div class="settings-version-info">Proxy version: {proxyVersion}</div>
+                        </template>
+                    </div>
+                </template>
+
+                <details class="settings-install-instructions">
+                    <summary>Installation Instructions</summary>
+                    <ol>
+                        <li>Install <a href="https://nodejs.org/" target="_blank">Node.js 18</a> or later</li>
+                        <li>Open a terminal in the <code>sftools-proxy</code> folder</li>
+                        <li>Run: <code>npm run install-host</code></li>
+                        <li>Restart Chrome completely</li>
+                        <li>Enable the toggle above</li>
+                    </ol>
+                </details>
+
+                <details class="settings-install-instructions">
+                    <summary>CORS Configuration (Salesforce)</summary>
+                    <p>To allow the Chrome extension to make requests to your Salesforce org, add a CORS entry:</p>
+                    <ol>
+                        <li>In Salesforce Setup, search for "CORS"</li>
+                        <li>Click "CORS" under Security</li>
+                        <li>Click "New" to add an allowed origin pattern</li>
+                        <li>Enter: <code>chrome-extension://mckblnkfhlgocgmehmnihmagmhbnjioj</code></li>
+                        <li>Save the CORS entry</li>
+                    </ol>
+                    <p><strong>Note:</strong> When the local proxy is enabled, CORS restrictions are bypassed automatically and this configuration is not required.</p>
+                </details>
+            </div>
+        </div>
+
+        <!-- Data Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-header-icon" style="background-color: #ff9a3c">D</div>
+                <h2>Data</h2>
+            </div>
+            <div class="card-body">
+                <p class="settings-description">
+                    SObject definitions are cached locally for faster performance. Refresh if schema changes aren't appearing.
+                </p>
+
+                <div class="settings-cache-row">
+                    <button
+                        class="button-neutral"
+                        onclick={handleRefreshCache}
+                        disabled={refreshingCache}
+                    >
+                        Refresh SObject Definitions
+                    </button>
+                    <span class={cacheStatusClass}>{cacheStatus}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Connection Modal -->
+        <template lwc:if={showEditModal}>
+            <div class="settings-edit-modal" onclick={handleEditModalOverlayClick}>
+                <div class="settings-edit-modal-content">
+                    <h3>Edit Connection</h3>
+                    <div class="form-element">
+                        <label>LABEL</label>
+                        <input
+                            type="text"
+                            class="input"
+                            value={editLabel}
+                            oninput={handleEditLabelInput}
+                        />
+                    </div>
+                    <div class="form-element">
+                        <label>CLIENT ID</label>
+                        <input
+                            type="text"
+                            class="input"
+                            value={editClientId}
+                            oninput={handleEditClientIdInput}
+                            placeholder="Leave blank for default"
+                        />
+                        <span class="settings-field-hint">Changing Client ID requires re-authorization</span>
+                    </div>
+                    <div class="settings-button-row">
+                        <button class="button-brand" onclick={handleSaveEdit}>Save</button>
+                        <button class="button-neutral" onclick={hideEditModal}>Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>

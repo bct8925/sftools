@@ -1,0 +1,14 @@
+/* SF Icon - Display-only icon wrapper */
+
+sf-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+sf-icon svg {
+    display: block;
+    fill: currentColor;
+}

@@ -45,11 +45,3 @@ export const icons = {
     clock: processSvg(clockIcon, { size: 16 }),
     settings: processSvg(settingsIcon, { size: 16 }),
 };
-
-/**
- * Replaces icon placeholders in HTML string with actual SVG icons
- * Usage: {{icon:close}}, {{icon:edit}}, etc.
- */
-export function replaceIcons(html) {
-    return html.replace(/\{\{icon:(\w+)\}\}/g, (match, iconName) => icons[iconName] || match);
-}

@@ -8,7 +8,7 @@ import {
 } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { escapeHtml, escapeAttr } from '../../lib/text-utils.js';
-import { replaceIcons } from '../../lib/icons.js';
+import '../sf-icon/sf-icon.js';
 import {
     sortFields,
     filterFields,
@@ -51,7 +51,7 @@ class RecordPage extends HTMLElement {
     boundCorsHandler = null;
 
     connectedCallback() {
-        this.innerHTML = replaceIcons(template);
+        this.innerHTML = template;
         this.initElements();
         this.attachEventListeners();
         this.initCorsModal();

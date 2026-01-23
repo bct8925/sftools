@@ -1,77 +1,11 @@
 /**
  * Tests for src/lib/icons.js
- *
- * Test ID: UT-U-011
- * - UT-U-011: replaceIcons() - Replaces placeholders with SVG icons
  */
 
 import { describe, it, expect } from 'vitest';
-import { replaceIcons, icons } from '../../../src/lib/icons.js';
+import { icons } from '../../../src/lib/icons.js';
 
 describe('icons', () => {
-    describe('replaceIcons', () => {
-        it('UT-U-011: replaces {{icon:close}} placeholder with close icon SVG', () => {
-            const input = '<button>{{icon:close}}</button>';
-            const result = replaceIcons(input);
-
-            expect(result).toContain('<svg');
-            expect(result).not.toContain('{{icon:close}}');
-        });
-
-        it('replaces {{icon:edit}} placeholder with edit icon SVG', () => {
-            const input = '<button>{{icon:edit}}</button>';
-            const result = replaceIcons(input);
-
-            expect(result).toContain('<svg');
-            expect(result).not.toContain('{{icon:edit}}');
-        });
-
-        it('replaces {{icon:refresh}} placeholder with refresh icon SVG', () => {
-            const input = '<button>{{icon:refresh}}</button>';
-            const result = replaceIcons(input);
-
-            expect(result).toContain('<svg');
-            expect(result).not.toContain('{{icon:refresh}}');
-        });
-
-        it('replaces multiple icon placeholders in same string', () => {
-            const input = '<div>{{icon:close}} and {{icon:edit}}</div>';
-            const result = replaceIcons(input);
-
-            expect(result).not.toContain('{{icon:close}}');
-            expect(result).not.toContain('{{icon:edit}}');
-            // Should have two SVG elements
-            expect(result.match(/<svg/g)?.length).toBe(2);
-        });
-
-        it('leaves unknown icon placeholders unchanged', () => {
-            const input = '<button>{{icon:nonexistent}}</button>';
-            const result = replaceIcons(input);
-
-            expect(result).toBe('<button>{{icon:nonexistent}}</button>');
-        });
-
-        it('leaves non-icon template syntax unchanged', () => {
-            const input = '<div>{{something:else}}</div>';
-            const result = replaceIcons(input);
-
-            expect(result).toBe('<div>{{something:else}}</div>');
-        });
-
-        it('handles string with no placeholders', () => {
-            const input = '<div>Plain text</div>';
-            const result = replaceIcons(input);
-
-            expect(result).toBe('<div>Plain text</div>');
-        });
-
-        it('handles empty string', () => {
-            const result = replaceIcons('');
-
-            expect(result).toBe('');
-        });
-    });
-
     describe('icons object', () => {
         it('contains expected icon keys', () => {
             expect(icons).toHaveProperty('close');

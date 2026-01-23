@@ -7,7 +7,8 @@ import {
     updateFormulaField,
 } from '../../lib/salesforce.js';
 import { escapeHtml, escapeAttr } from '../../lib/text-utils.js';
-import { icons, replaceIcons } from '../../lib/icons.js';
+import { icons } from '../../lib/icons.js';
+import '../sf-icon/sf-icon.js';
 import {
     filterObjects as filterObjectsUtil,
     filterFields as filterFieldsUtil,
@@ -513,7 +514,7 @@ class SchemaPage extends HTMLElement {
     boundCorsHandler = null;
 
     connectedCallback() {
-        this.innerHTML = replaceIcons(template);
+        this.innerHTML = template;
         this.initElements();
         this.attachEventListeners();
         this.initCorsModal();

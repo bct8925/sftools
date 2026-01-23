@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_INPUT\" == *\"rm -rf\"* ]] || [[ \"$CLAUDE_TOOL_INPUT\" == *\"--force\"* && \"$CLAUDE_TOOL_INPUT\" == *\"push\"* ]]; then echo 'BLOCKED: Dangerous command requires confirmation' && exit 2; fi"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "for file in $CLAUDE_FILE_PATHS; do if [[ \"$file\" =~ \\.(js|css|html|json)$ ]]; then npx prettier --write \"$file\" 2>/dev/null || true; fi; done"
+          }
+        ]
+      }
+    ]
+  }
+}

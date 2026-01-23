@@ -1,8 +1,14 @@
-# CLAUDE.md - sftools-proxy
+# sftools-proxy - Native Messaging Host
 
-This file provides guidance to Claude Code when working with the sftools-proxy codebase.
+> **Parent context**: This extends [../CLAUDE.md](../CLAUDE.md)
 
 ## Overview
+
+| Aspect | Details |
+|--------|---------|
+| **Runtime** | Node.js >= 18.0.0 |
+| **Protocol** | Chrome Native Messaging |
+| **Purpose** | gRPC, CometD streaming, CORS bypass |
 
 sftools-proxy is a Node.js native messaging host for the sftools Chrome extension. It enables capabilities that browsers cannot provide directly:
 
@@ -11,13 +17,29 @@ sftools-proxy is a Node.js native messaging host for the sftools Chrome extensio
 - **REST API proxying** to bypass CORS restrictions
 - **Large payload handling** via HTTP fallback (Native Messaging has 1MB limit)
 
-## Commands
+## Quick Commands
 
 ```bash
 npm install           # Install dependencies
 npm start             # Run the proxy (normally launched by Chrome)
 npm run install-host  # Install native messaging host manifest
 node install.js -u    # Uninstall native messaging host manifest
+npm run logs          # Tail proxy logs
+```
+
+## Installation
+
+The installer creates:
+
+1. **Shell wrapper** (`sftools-proxy.sh`) with correct Node.js path
+2. **Native host manifest** at:
+   - macOS: `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.sftools.proxy.json`
+   - Linux: `~/.config/google-chrome/NativeMessagingHosts/com.sftools.proxy.json`
+
+```bash
+cd sftools-proxy
+npm install
+node install.js
 ```
 
 ## Project Structure
@@ -52,11 +74,17 @@ sftools-proxy/
 
 ### Message Flow
 
-1. Chrome extension sends JSON via Native Messaging (stdin)
-2. `native-messaging.js` reads 4-byte length prefix + JSON payload
-3. `index.js` routes by message `type` to appropriate handler
-4. Handler returns response, sent back via stdout
-5. For streaming subscriptions, events are pushed via `sendMessage()`
+```
+Chrome Extension
+    ↓ Native Messaging (stdin)
+native-messaging.js
+    ↓ JSON parse
+index.js (message router)
+    ↓ Route by type
+handlers/*
+    ↓ Process
+Response (stdout)
+```
 
 ### Message Types
 
@@ -70,9 +98,9 @@ sftools-proxy/
 | `getTopic` | grpc.js | Get Pub/Sub topic metadata |
 | `getSchema` | grpc.js | Get Avro schema for event decoding |
 
-### Streaming Protocol Routing
+### Protocol Routing
 
-The protocol router (`protocols/router.js`) determines which protocol to use based on channel prefix:
+The protocol router (`protocols/router.js`) determines which protocol to use:
 
 | Channel Pattern | Protocol | Use Case |
 |-----------------|----------|----------|
@@ -80,19 +108,6 @@ The protocol router (`protocols/router.js`) determines which protocol to use bas
 | `/topic/*` | CometD | PushTopics |
 | `/data/*` | CometD | Change Data Capture |
 | `/systemTopic/*` | CometD | System Topics |
-
-### gRPC Pub/Sub API
-
-- Connects to `api.pubsub.salesforce.com:443`
-- Uses bidirectional streaming for subscriptions
-- Events are Avro-encoded; schemas are fetched and cached
-- Org ID extracted from session token format (`00Dxxxxxx!...`)
-
-### CometD Streaming
-
-- Uses Faye client library
-- Clients are pooled by instance URL + token
-- Supports replay IDs: -1 (LATEST), -2 (EARLIEST), or custom
 
 ## Key Implementation Details
 
@@ -117,6 +132,7 @@ process.stdout.write(messageBuffer);
 ### Large Payload Handling
 
 When responses exceed 800KB:
+
 1. Payload stored in memory with UUID and 60-second TTL
 2. Response contains `{ largePayload: uuid }` instead of data
 3. Extension fetches via HTTP: `GET http://127.0.0.1:{port}/payload/{uuid}`
@@ -150,6 +166,30 @@ Events pushed to extension via Native Messaging:
 { type: 'streamEnd', subscriptionId }
 ```
 
+## gRPC Pub/Sub API
+
+- Connects to `api.pubsub.salesforce.com:443`
+- Uses bidirectional streaming for subscriptions
+- Events are Avro-encoded; schemas are fetched and cached
+- Org ID extracted from session token format (`00Dxxxxxx!...`)
+
+### Key Files
+
+- `grpc/pubsub-client.js` - gRPC client for subscriptions
+- `grpc/schema-cache.js` - Avro schema caching and decoding
+- `proto/pubsub_api.proto` - Protocol definitions
+
+## CometD Streaming
+
+- Uses Faye client library
+- Clients are pooled by instance URL + token
+- Supports replay IDs: -1 (LATEST), -2 (EARLIEST), or custom
+
+### Key Files
+
+- `cometd/cometd-client.js` - Faye-based client
+- `handlers/cometd.js` - CometD message handlers
+
 ## Dependencies
 
 | Package | Purpose |
@@ -171,40 +211,47 @@ console.error(`[Schema] Cache hit for schema ${schemaId}`);
 
 Logs are written to `/tmp/sftools-proxy.log` by the shell wrapper.
 
-View logs: `tail -f /tmp/sftools-proxy.log`
+```bash
+# View logs
+tail -f /tmp/sftools-proxy.log
 
-## Installation
-
-The installer (`install.js`) creates:
-
-1. **Shell wrapper** (`sftools-proxy.sh`) with correct Node.js path
-2. **Native host manifest** at:
-   - macOS: `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.sftools.proxy.json`
-   - Linux: `~/.config/google-chrome/NativeMessagingHosts/com.sftools.proxy.json`
-   - Windows: Registry entry + manifest file
-
-The manifest includes:
-- Host name: `com.sftools.proxy`
-- Path to wrapper script
-- Allowed extension origin (computed from extension's public key)
+# Or use npm script
+npm run logs
+```
 
 ## Adding a New Handler
 
-1. Create handler in `src/handlers/`:
+1. **Create handler in `src/handlers/`**:
+
 ```javascript
+// src/handlers/my-handler.js
+
+/**
+ * Handle my custom message type.
+ * @param {Object} request - Message from extension
+ * @returns {Promise<Object>} Response to send back
+ */
 async function handleMyType(request) {
     const { requiredField } = request;
+
     if (!requiredField) {
         return { success: false, error: 'Missing requiredField' };
     }
-    // Do work
-    return { success: true, data: result };
+
+    try {
+        // Do work
+        const result = await doSomething(requiredField);
+        return { success: true, data: result };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
 }
 
 module.exports = { handleMyType };
 ```
 
-2. Register in `src/index.js`:
+2. **Register in `src/index.js`**:
+
 ```javascript
 const { handleMyType } = require('./handlers/my-handler');
 
@@ -230,7 +277,35 @@ const handlers = {
 
 ## Security
 
-- HTTP server binds only to `127.0.0.1`
+- HTTP server binds only to `127.0.0.1` (localhost)
 - Secret shared only via Native Messaging (secure channel)
 - Payloads are one-time retrieval
 - No external network exposure
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Proxy not starting | Check native host manifest exists |
+| Connection refused | Verify port 7443 not blocked |
+| Events not received | Check proxy logs for errors |
+| Large payload timeout | Increase TTL in payload-store.js |
+
+### Verify Installation
+
+```bash
+# Check manifest exists
+ls ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/com.sftools.proxy.json
+
+# Check Node.js version
+node --version  # Should be >= 18.0.0
+
+# Test manual start
+node src/index.js  # Should wait for stdin
+```
+
+### Chrome Extension Errors
+
+Check `chrome://extensions` > Errors for native messaging issues:
+- "Native host has exited" - Check proxy logs
+- "Specified native messaging host not found" - Run install.js

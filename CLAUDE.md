@@ -1,36 +1,56 @@
-# CLAUDE.md
+# sftools - Chrome Extension for Salesforce Developers
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> **This CLAUDE.md is the authoritative source for development guidelines.**
+> Subdirectories contain specialized CLAUDE.md files that extend these rules.
 
-## Project Overview
+## Overview
 
-sftools is a Chrome Extension (Manifest V3) that combines multiple Salesforce developer tools into a single tabbed interface. Built using Vite with Monaco Editor for code/JSON editing.
+| Aspect | Details |
+|--------|---------|
+| **Type** | Chrome Extension (Manifest V3) |
+| **Stack** | Vite, Monaco Editor, Web Components, Chrome APIs |
+| **Architecture** | Custom Elements without Shadow DOM |
+| **Optional** | Node.js native messaging proxy for gRPC/CometD streaming |
 
-## Build Commands
+## Universal Development Rules
+
+### Code Quality (MUST)
+
+- **MUST** use CSS variables for all colors, shadows, z-index, and radii
+- **MUST** follow the component pattern: `template.html?raw` + CSS + class
+- **MUST** use `smartFetch()` for all Salesforce API calls (handles proxy routing)
+- **MUST** listen for `connection-changed` events in tab components
+- **MUST** include tests for new features (unit for lib/, frontend for UI)
+
+### Best Practices (SHOULD)
+
+- **SHOULD** use shared CSS classes from `style.css` before creating new ones
+- **SHOULD** keep components under 300 lines; extract logic to `src/lib/`
+- **SHOULD** use Monaco editor's `execute` event for Ctrl+Enter actions
+- **SHOULD** prefer `querySelector` with class selectors over IDs
+- **SHOULD** use semantic CSS variable names (purpose, not color)
+
+### Anti-Patterns (MUST NOT)
+
+- **MUST NOT** hard-code colors, use `var(--variable-name)` instead
+- **MUST NOT** create Shadow DOM - all components use light DOM
+- **MUST NOT** bypass extension fetch - always use `smartFetch()` or `extensionFetch()`
+- **MUST NOT** store secrets in code - use Chrome storage or `.env.test`
+- **MUST NOT** use inline styles - use CSS classes or variables
+
+## Quick Reference
+
+### Build Commands
 
 ```bash
 npm install                    # Install dependencies
 npm run build                  # Build for production (outputs to dist/)
 npm run watch                  # Build with watch mode for development
+npm run package                # Build production + create zip archive
 ```
 
-## Testing
+### Test Commands
 
-sftools uses three testing frameworks for comprehensive coverage. See `docs/TESTING.md` for detailed framework documentation and `docs/TEST_SCENARIOS.md` for comprehensive test scenarios with test IDs.
-
-**Test Types:**
-- **Frontend Tests** (`tests/frontend/`) - Playwright-based browser tests with mocked API responses
-- **Integration Tests** (`tests/integration/`) - Vitest tests with real Salesforce API calls (no browser)
-- **Unit Tests** (`tests/unit/`) - Vitest tests with mocked dependencies
-
-**Setup for Integration Tests:**
-Create `.env.test` in the project root (only needed for integration tests):
-```
-SF_ACCESS_TOKEN=your_access_token
-SF_INSTANCE_URL=https://your-org.my.salesforce.com
-```
-
-**Commands:**
 ```bash
 # Unit tests (Vitest with mocks)
 npm run test:unit                        # Run all unit tests
@@ -41,310 +61,162 @@ npm run test:unit:coverage               # With coverage report
 # Integration tests (real Salesforce API)
 npm run test:integration                 # Run all integration tests
 npm run test:integration -- query        # Run tests matching "query"
-npm run test:integration:watch           # Watch mode
 
 # Frontend tests (Playwright with mocks)
 npm run test:frontend                    # Run all frontend tests
 npm run test:frontend -- --filter=query  # Run tests matching "query"
-npm run test:frontend:slow               # With human-like timing (for visual debugging)
+npm run test:frontend:slow               # With human-like timing
 ```
 
-**Test Structure:**
-```
-tests/
-├── frontend/                  # Playwright browser tests with mocks
-│   ├── framework/             # Base test class, runner, assertions
-│   ├── services/              # Extension loader
-│   ├── pages/                 # Page objects for each component
-│   ├── helpers/               # Monaco editor helpers
-│   └── specs/                 # Test files organized by feature
-├── integration/               # Vitest tests with real API calls
-│   ├── setup.js               # Salesforce client, TestDataManager
-│   └── *.test.js              # Integration test files
-├── unit/                      # Vitest unit tests with mocks
-│   ├── mocks/                 # Chrome and Salesforce mocks
-│   ├── setup.js               # Global test setup
-│   └── lib/                   # Unit tests for src/lib/* utilities
-└── shared/                    # Shared mock infrastructure
-    └── mocks/                 # MockRouter for Playwright route interception
-```
+### Pre-PR Validation
 
-## Loading the Extension
-
-1. Run `npm run build`
-2. Open `chrome://extensions/`
-3. Enable "Developer mode"
-4. Click "Load unpacked" and select the repository root
-5. The manifest references `dist/` for all built assets
+```bash
+npm run build && npm run test:unit && npm run test:frontend
+```
 
 ## Project Structure
 
-```
-src/
-├── components/               # Reusable UI components (custom elements)
-│   ├── monaco-editor/        # Monaco editor web component
-│   │   └── monaco-editor.js
-│   ├── query/                # Query tab component
-│   │   ├── query-tab.js
-│   │   ├── query.html
-│   │   └── query.css
-│   ├── apex/                 # Apex tab component
-│   │   ├── apex-tab.js
-│   │   └── apex.html
-│   ├── rest-api/             # REST API tab component
-│   │   ├── rest-api-tab.js
-│   │   └── rest-api.html
-│   ├── events/               # Events tab component
-│   │   ├── events-tab.js
-│   │   └── events.html
-│   ├── settings/             # Settings tab component
-│   │   ├── settings-tab.js
-│   │   ├── settings.html
-│   │   └── settings.css
-│   ├── utils/                # Utils tab container
-│   │   ├── utils-tab.js
-│   │   └── utils.html
-│   ├── utils-tools/          # Individual utility tool components
-│   │   ├── utils-tools.css   # Shared styles for all tools
-│   │   ├── debug-logs.js     # <debug-logs> - Trace flags + log deletion
-│   │   ├── debug-logs.html
-│   │   ├── flow-cleanup.js   # <flow-cleanup> - Delete inactive flow versions
-│   │   ├── flow-cleanup.html
-│   │   ├── schema-browser-link.js  # <schema-browser-link> - Link to open Schema Browser
-│   │   └── schema-browser-link.html
-│   ├── record/               # Record Viewer page component
-│   │   ├── record-page.js
-│   │   ├── record.html
-│   │   └── record.css
-│   └── schema/               # Schema Browser page component
-│       ├── schema-page.js
-│       ├── schema.html
-│       └── schema.css
-├── pages/                    # Page entry points (minimal shells)
-│   ├── app/                  # Main tabbed interface
-│   │   ├── app.html
-│   │   └── app.js
-│   ├── callback/             # OAuth callback
-│   │   ├── callback.html
-│   │   └── callback.js
-│   ├── record/               # Record Viewer entry (loads <record-page>)
-│   │   ├── record.html
-│   │   └── record.js
-│   └── schema/               # Schema Browser entry (loads <schema-page>)
-│       ├── schema.html
-│       └── schema.js
-├── background/               # Service worker
-│   ├── background.js
-│   ├── native-messaging.js
-│   └── auth.js
-├── lib/                      # Shared utilities
-│   ├── auth.js               # Multi-connection storage, active connection context
-│   ├── salesforce.js         # Salesforce API helpers
-│   ├── theme.js              # Theme management (light/dark mode)
-│   └── utils.js              # Shared utilities, re-exports auth functions
-├── public/                   # Static assets (copied to dist/)
-│   └── icon.png
-└── style.css                 # Global styles
-```
+### Applications
 
-### Build Output (`dist/`)
+- **`src/`** → Extension source code
+  - `components/` → Web Components ([see src/components/CLAUDE.md](src/components/CLAUDE.md))
+  - `lib/` → Shared utilities ([see src/lib/CLAUDE.md](src/lib/CLAUDE.md))
+  - `pages/` → Entry points (app, callback, record, schema)
+  - `background/` → Service worker (auth, messaging, context menu)
+
+- **`sftools-proxy/`** → Native messaging host ([see sftools-proxy/CLAUDE.md](sftools-proxy/CLAUDE.md))
+  - gRPC client for Pub/Sub API
+  - CometD client for PushTopics
+  - REST proxy for CORS bypass
+
+### Testing
+
+- **`tests/`** → All test files ([see tests/CLAUDE.md](tests/CLAUDE.md))
+  - `unit/` → Vitest with mocks (jsdom)
+  - `integration/` → Vitest with real API (node)
+  - `frontend/` → Playwright browser tests
+
+### Build Output
+
+- **`dist/`** → Built extension (referenced by manifest.json)
+  - `pages/` → Built HTML/JS
+  - `chunks/` → Shared code
+  - `assets/` → Monaco workers, fonts
+
+## Directory Structure
 
 ```
-dist/
-├── pages/
-│   ├── app/app.html, app.js
-│   ├── callback/callback.html, callback.js
-│   ├── record/record.html, record.js
-│   └── schema/schema.html, schema.js
-├── chunks/                   # Shared code chunks
-├── assets/                   # Monaco workers, fonts
-├── background.js             # Service worker
-├── style.css                 # Global styles
-├── app.css                   # Tab component styles (bundled)
-├── record.css                # Record page component styles
-├── schema.css                # Schema page component styles
-└── icon.png                  # Copied from public/
+sftools/
+├── src/
+│   ├── components/           # Web Components
+│   │   ├── apex/             # Apex tab
+│   │   ├── events/           # Events tab (streaming)
+│   │   ├── monaco-editor/    # Monaco wrapper component
+│   │   ├── query/            # Query tab
+│   │   ├── record/           # Record Viewer (standalone)
+│   │   ├── rest-api/         # REST API tab
+│   │   ├── schema/           # Schema Browser (standalone)
+│   │   ├── settings/         # Settings tab
+│   │   ├── utils/            # Utils tab container
+│   │   └── utils-tools/      # Individual utility components
+│   ├── pages/                # Entry points
+│   │   ├── app/              # Main tabbed interface
+│   │   ├── callback/         # OAuth callback
+│   │   ├── record/           # Record Viewer entry
+│   │   └── schema/           # Schema Browser entry
+│   ├── background/           # Service worker
+│   │   ├── background.js     # Message routing, context menu
+│   │   ├── auth.js           # Token exchange/refresh
+│   │   └── native-messaging.js # Proxy communication
+│   ├── lib/                  # Shared utilities
+│   │   ├── auth.js           # Multi-connection storage
+│   │   ├── salesforce.js     # Salesforce API helpers
+│   │   ├── fetch.js          # Smart fetch routing
+│   │   ├── theme.js          # Dark/light mode
+│   │   └── utils.js          # Central re-exports
+│   ├── public/               # Static assets
+│   └── style.css             # Global styles + CSS variables
+├── tests/
+│   ├── unit/                 # Vitest unit tests
+│   ├── integration/          # Vitest integration tests
+│   ├── frontend/             # Playwright tests
+│   └── shared/               # Shared mock infrastructure
+├── sftools-proxy/            # Native messaging host
+│   ├── src/                  # Proxy source
+│   ├── proto/                # gRPC proto files
+│   └── install.js            # Native host installer
+├── manifest.json             # Chrome MV3 manifest
+├── vite.config.js            # Vite build config
+└── rules.json                # Declarative net request rules
 ```
 
-### Local Proxy (`sftools-proxy/`)
+## Quick Find Commands
 
-A Node.js native messaging host that enables gRPC/CometD streaming and bypasses CORS restrictions. See `sftools-proxy/CLAUDE.md` for detailed architecture and implementation documentation.
+### Find Components
 
-Root files:
-- `manifest.json` - Extension manifest (MV3) with OAuth2 config
-- `rules.json` - Declarative net request rules
-- `vite.config.js` - Vite build config (root: 'src')
+```bash
+# Find component definition
+rg -n "class.*extends HTMLElement" src/components
 
-## Tool Tabs (OAuth-authenticated)
+# Find component usage in HTML
+rg -n "<[a-z]+-[a-z]+" src/
 
-- **Query** - SOQL query editor with tabbed results
-- **Apex** - Anonymous Apex execution with debug log retrieval
-- **REST API** - Salesforce REST API explorer with Monaco editors
-- **Events** - Unified streaming for Platform Events (gRPC), PushTopics, and System Topics (CometD) - requires local proxy
-- **Utils** - Collection of utility tools (debug logs, flow cleanup)
+# Find CSS class definition
+rg -n "^\." src/style.css src/components
+```
+
+### Find API Methods
+
+```bash
+# Find Salesforce API functions
+rg -n "^export (async )?function" src/lib/salesforce.js
+
+# Find background message handlers
+rg -n "^\s+\w+:" src/background/background.js
+
+# Find auth functions
+rg -n "^export" src/lib/auth.js
+```
+
+### Find Tests
+
+```bash
+# Find test for a function
+rg -n "describe.*functionName" tests/
+
+# Find page object methods
+rg -n "async \w+\(" tests/frontend/pages/
+```
+
+## Tool Tabs
+
+| Tab | Purpose | Key Files |
+|-----|---------|-----------|
+| **Query** | SOQL editor with tabbed results | `components/query/query-tab.js` |
+| **Apex** | Anonymous Apex execution | `components/apex/apex-tab.js` |
+| **REST API** | REST explorer with Monaco | `components/rest-api/rest-api-tab.js` |
+| **Events** | Streaming (requires proxy) | `components/events/events-tab.js` |
+| **Utils** | Debug logs, flow cleanup | `components/utils/utils-tab.js` |
+| **Settings** | Connections, appearance | `components/settings/settings-tab.js` |
 
 ## Standalone Tools
 
-Standalone tools use the same custom element pattern as tabs. Each tool has a component in `src/components/` and a minimal entry point in `src/pages/`.
-
-### Record Viewer (`src/components/record/`)
-
-A standalone tool for viewing and editing field values on a Salesforce record. Accessed via context menu when right-clicking the extension icon.
-
-**How to Use:**
-1. Navigate to a Lightning record page (e.g., `/lightning/r/Account/001.../view`)
-2. Right-click the sftools extension icon
-3. Click "View/Edit Record"
-4. A new tab opens showing all fields with their values
-
-**Features:**
-- Displays all fields with Label, API Name, Type, and Value columns
-- Fields sorted: Id first, Name second, then alphabetically by API name
-- Text inputs for updateable fields, disabled for read-only
-- Modified fields highlighted visually
-- Save button sends only changed fields via PATCH
-- Refresh button reloads current values
-
-**Context Menu Setup** (`src/background/background.js`):
-- Registered via `chrome.contextMenus.create()` with `contexts: ['action']`
-- `parseLightningUrl()` extracts object type and record ID from URL
-- `findConnectionByDomain()` matches tab domain against saved connections
-- Opens record viewer with URL params: `?objectType=X&recordId=Y&connectionId=Z`
-
-**API Methods** (`src/lib/salesforce.js`):
-- `getObjectDescribe(objectType)` - Gets field metadata
-- `getRecord(objectType, recordId)` - Gets record data
-- `updateRecord(objectType, recordId, fields)` - Updates record fields
-
-### Schema Browser (`src/components/schema/`)
-
-A standalone tool for browsing Salesforce object metadata and editing formula fields. Accessed via a link in the Utils tab.
-
-**How to Use:**
-1. Open sftools and go to the Utils tab
-2. Click "Open Schema Browser" link
-3. Browse objects on the left, click to view fields on the right
-
-**Features:**
-- Lists all queryable Salesforce objects sorted by API name
-- Filter objects by name with search input
-- Click object to view fields in side panel (2/3 width)
-- Fields display Label, API Name, and Type columns
-- Formula fields show edit button (triple-dot menu on hover)
-- Edit formula fields in Monaco editor modal with save/cancel
-
-**Formula Field Editing:**
-- Triple-dot menu appears on hover for formula fields
-- "Edit" opens modal with Monaco editor pre-loaded with formula code
-- Save updates formula via Tooling API (CustomField metadata)
-- Fields automatically reload after successful save
-
-**API Methods** (`src/lib/salesforce.js`):
-- `getGlobalDescribe()` - Gets all sObject metadata
-- `getObjectDescribe(objectType)` - Gets field metadata for an object
-- `getFormulaFieldMetadata(objectType, fieldName)` - Gets formula field details from Tooling API
-- `updateFormulaField(objectType, fieldName, formula)` - Updates formula via Tooling API
-
-## Local Proxy Setup
-
-The local proxy enables gRPC and CometD streaming connections for all Salesforce event types. When connected, it also handles all Salesforce API requests to bypass CORS restrictions (useful for orgs with restrictive CORS settings).
-
-**Installation:**
-```bash
-cd sftools-proxy
-npm install
-node install.js
-```
-
-This installs the native messaging host manifest at:
-- macOS: `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.sftools.proxy.json`
-
-**Connecting:**
-1. Open sftools Settings tab
-2. Enable the "Local Proxy" toggle
-3. Status shows "Connected" when successful
-
-**Logging:**
-Proxy logs are written to `/tmp/sftools-proxy.log`. To view:
-```bash
-tail -f /tmp/sftools-proxy.log
-```
-
-**Troubleshooting:**
-- If port 7443 is blocked (corporate firewall), the proxy uses port 443 instead
-- Verify native host is installed: check the manifest file exists
-- Check Chrome's native messaging errors in `chrome://extensions` > Errors
-
-## Opening the Extension
-
-Clicking the extension icon opens sftools in the side panel. Authorization is handled directly in the app header via the connection selector dropdown.
-
-Side panel support is configured in `manifest.json` via the `sidePanel` permission and `side_panel.default_path` pointing to `dist/pages/app/app.html`.
-
-## Header Features
-
-- **Connection Selector** - Dropdown in the header to switch between saved Salesforce connections. Shows "Authorize" button if no connections exist. Each sftools instance (browser tab or sidepanel) can have its own active connection. Connection labels and Client IDs are managed in Settings → Connections.
-- **Open Org Button** - Icon button that opens the authenticated org in a new browser tab using `frontdoor.jsp` with the current session token
-- **Open in Tab Button** - Icon button that opens sftools in a new browser tab
-- **Responsive Nav** - Tab navigation with overflow dropdown. When tabs don't fit (e.g., in side panel), excess tabs move to a "More" dropdown menu
+| Tool | Purpose | Entry Point |
+|------|---------|-------------|
+| **Record Viewer** | View/edit record fields | `pages/record/record.html` |
+| **Schema Browser** | Browse object metadata | `pages/schema/schema.html` |
 
 ## Component Architecture
 
-Both tool tabs and standalone pages are implemented as Custom Elements (Web Components) without Shadow DOM. This keeps CSS simple while providing encapsulation for JS logic. All components follow the same pattern: template loaded via `?raw` import, CSS in separate file, state as class properties.
-
-### Monaco Editor Component
-
-The `<monaco-editor>` custom element wraps Monaco Editor:
-
-```html
-<!-- In template HTML -->
-<monaco-editor class="monaco-container" language="json"></monaco-editor>
-<monaco-editor class="monaco-container" language="apex" readonly></monaco-editor>
-```
+All components follow this pattern:
 
 ```javascript
-// In component JS
-import '../monaco-editor/monaco-editor.js';
+// src/components/example/example-tab.js
+import template from './example.html?raw';
+import './example.css';
+import { salesforceRequest } from '../../lib/salesforce-request.js';
 
-// Get reference and use
-const editor = this.querySelector('.my-editor');
-editor.setValue('content');
-const value = editor.getValue();
-
-// Listen for Ctrl/Cmd+Enter
-editor.addEventListener('execute', () => this.handleExecute());
-
-// Access underlying Monaco instance if needed
-editor.editor?.getModel().getLineCount();
-```
-
-**Attributes:**
-- `language` - Editor language (json, sql, apex, text, etc.)
-- `readonly` - Makes editor read-only
-
-**Methods:**
-- `getValue()` / `setValue(value)` - Get/set editor content
-- `appendValue(text)` - Append text and scroll to bottom
-- `clear()` - Clear editor content
-- `setMarkers(markers)` / `clearMarkers()` - Set/clear error markers
-
-**Events:**
-- `execute` - Fired on Ctrl/Cmd+Enter
-
-**Property:**
-- `editor` - Access the underlying Monaco editor instance
-
-### Tab Component Pattern
-
-Each tab is a custom element that loads its HTML template via Vite's `?raw` import:
-
-```javascript
-// src/components/query/query-tab.js
-import template from './query.html?raw';
-import './query.css';
-import '../monaco-editor/monaco-editor.js';
-
-class QueryTab extends HTMLElement {
+class ExampleTab extends HTMLElement {
     connectedCallback() {
         this.innerHTML = template;
         this.initElements();
@@ -352,580 +224,100 @@ class QueryTab extends HTMLElement {
     }
 
     initElements() {
-        this.editor = this.querySelector('.query-editor');
-        this.executeBtn = this.querySelector('.query-execute-btn');
+        this.button = this.querySelector('.example-button');
     }
-    // ...
+
+    attachEventListeners() {
+        this.button.addEventListener('click', () => this.handleClick());
+        document.addEventListener('connection-changed', () => this.refresh());
+    }
 }
 
-customElements.define('query-tab', QueryTab);
+customElements.define('example-tab', ExampleTab);
 ```
 
-```html
-<!-- src/components/query/query.html -->
-<div class="card">
-    <div class="card-header">...</div>
-    <div class="card-body">
-        <monaco-editor class="query-editor monaco-container" language="sql"></monaco-editor>
-        <button class="query-execute-btn button-brand">Execute</button>
-    </div>
-</div>
-```
+### Adding a New Tab
 
-```html
-<!-- src/pages/app/app.html -->
-<main class="content-area">
-    <query-tab id="query" class="tab-content active"></query-tab>
-    <apex-tab id="apex" class="tab-content"></apex-tab>
-    <!-- ... -->
-</main>
-```
+1. Create `src/components/<name>/`:
+   - `<name>-tab.js` - Component class
+   - `<name>.html` - Template
+   - `<name>.css` - Styles (optional)
 
-### Adding a New Tool Tab
-
-1. Create component folder: `src/components/<name>/`
-2. Create files:
-   - `<name>-tab.js` - Custom element class
-   - `<name>.html` - Template HTML
-   - `<name>.css` - Component-specific styles (optional)
-3. Import in `src/pages/app/app.js`:
+2. Import in `src/pages/app/app.js`:
    ```javascript
    import '../../components/<name>/<name>-tab.js';
    ```
-4. Add to `src/pages/app/app.html`:
+
+3. Add to `src/pages/app/app.html`:
    ```html
    <button class="tab-link" data-tab="<name>">Tab Name</button>
-   <!-- ... -->
    <<name>-tab id="<name>" class="tab-content"></<name>-tab>
    ```
 
-### Standalone Page Component Pattern
+### Adding a Standalone Tool
 
-Standalone pages use the same custom element pattern as tabs. The page entry point is a minimal HTML shell that loads a custom element:
+1. Create `src/components/<name>/`:
+   - `<name>-page.js` - Component class
+   - `<name>.html` - Template (body content only)
+   - `<name>.css` - Styles
 
-```html
-<!-- src/pages/record/record.html (entry point - minimal shell) -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Record Viewer - sftools</title>
-    <link rel="stylesheet" href="../../style.css">
-</head>
-<body>
-    <record-page></record-page>
-    <script type="module" src="record.js"></script>
-</body>
-</html>
-```
+2. Create `src/pages/<name>/`:
+   - `<name>.html` - Entry shell
+   - `<name>.js` - Single import
 
-```javascript
-// src/pages/record/record.js (entry point - single import)
-import '../../components/record/record-page.js';
-```
-
-```javascript
-// src/components/record/record-page.js (component)
-import template from './record.html?raw';
-import './record.css';
-
-class RecordPage extends HTMLElement {
-    // State as class properties
-    objectType = null;
-    recordId = null;
-
-    connectedCallback() {
-        this.innerHTML = template;
-        this.initElements();
-        this.attachEventListeners();
-    }
-
-    initElements() {
-        this.fieldsTable = this.querySelector('.fields-table');
-        // ...
-    }
-    // ...
-}
-
-customElements.define('record-page', RecordPage);
-```
-
-### Adding a New Standalone Tool
-
-1. Create component folder: `src/components/<name>/`
-2. Create files:
-   - `<name>-page.js` - Custom element class
-   - `<name>.html` - Template HTML (body content only, no DOCTYPE)
-   - `<name>.css` - Component-specific styles
-3. Create page entry: `src/pages/<name>/`
-   - `<name>.html` - Minimal shell with `<<name>-page></<name>-page>`
-   - `<name>.js` - Single import: `import '../../components/<name>/<name>-page.js';`
-4. Add to `vite.config.js` `rollupOptions.input`:
-   ```javascript
-   <name>: resolve(__dirname, 'src/pages/<name>/<name>.html'),
-   ```
+3. Add to `vite.config.js` `rollupOptions.input`
 
 ## Key Patterns
 
-**Background service worker** (`src/background/background.js`):
-- ES module with handler map pattern for message routing
-- `proxyRequired()` wrapper for handlers that need proxy connection
-- All handlers return promises, unified error handling
-- Context menu registration via `chrome.runtime.onInstalled` listener
-- URL parsing and connection matching for Record Viewer
+### Monaco Editor Component
 
-```javascript
-// Frontend calls:
-chrome.runtime.sendMessage({ type: 'fetch', url, options });
-// Background handles actual fetch to bypass extension CORS restrictions
+```html
+<monaco-editor class="my-editor" language="sql"></monaco-editor>
 ```
 
-**Auth utilities** (`src/lib/utils.js`):
 ```javascript
-import {
-    extensionFetch,
-    smartFetch,         // Uses proxy when available, falls back to extensionFetch
-    getAccessToken,
-    getInstanceUrl,
-    isAuthenticated,
-    // Multi-connection
-    loadConnections,
-    setActiveConnection,
-    getActiveConnectionId,
-    addConnection,
-    updateConnection,
-    removeConnection,
-    // OAuth
-    getOAuthCredentials,
-    setPendingAuth,
-    consumePendingAuth
-} from '../../lib/utils.js';
+const editor = this.querySelector('.my-editor');
+editor.setValue('SELECT Id FROM Account');
+const value = editor.getValue();
+editor.addEventListener('execute', () => this.run());
 ```
 
-**Fetch routing:**
-- `smartFetch(url, options)` automatically routes through proxy when connected, otherwise uses extension fetch
-- All `salesforceRequest()` calls use `smartFetch` for CORS bypass when proxy is enabled
-- Direct API calls in `salesforce.js` also use `smartFetch`
+### Salesforce API Calls
 
-**Connection change events:**
 ```javascript
-// Listen for connection switches (in tool tab components)
-document.addEventListener('connection-changed', (e) => {
-    const connection = e.detail;
-    this.reloadDataForNewOrg();
+import { salesforceRequest } from '../../lib/salesforce-request.js';
+
+// Query
+const result = await salesforceRequest('/services/data/v62.0/query', {
+    method: 'GET',
+    params: { q: 'SELECT Id FROM Account' }
+});
+
+// Update record
+await salesforceRequest(`/services/data/v62.0/sobjects/Account/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ Name: 'New Name' })
 });
 ```
 
-## CSS Specificity for Component Overrides
+### Connection Change Handling
 
-When component CSS needs to override global styles, use compound selectors for higher specificity:
-
-```css
-/* In query.css - overrides .card-body from style.css */
-.card-body.query-card-body {
-    padding: 0;
-}
-```
-
-Component CSS is bundled into `app.css` by Vite. Global `style.css` loads via HTML link, so component CSS may load in different order. Using compound selectors ensures overrides work regardless of load order.
-
-## OAuth Flow & Multi-Connection Architecture
-
-Supports multiple saved Salesforce connections. Each sftools instance (browser tab or sidepanel) selects one active connection from the shared list. Different instances can use different connections simultaneously.
-
-**Storage Schema:**
 ```javascript
-{
-  connections: [{
-    id: string,          // UUID
-    label: string,       // Editable label (defaults to hostname)
-    instanceUrl: string,
-    loginDomain: string,
-    accessToken: string,
-    refreshToken: string | null,
-    clientId: string | null,  // Per-connection Client ID (null = use manifest default)
-    createdAt: number,
-    lastUsedAt: number
-  }]
+connectedCallback() {
+    document.addEventListener('connection-changed', (e) => {
+        this.handleConnectionChange(e.detail);
+    });
+}
+
+handleConnectionChange(connection) {
+    // Reload data for new org
+    this.loadData();
 }
 ```
-
-**Per-Instance Connection State:**
-- Each sftools instance has isolated module-level state (`ACCESS_TOKEN`, `INSTANCE_URL`, `ACTIVE_CONNECTION_ID`)
-- `setActiveConnection(connection)` sets the active connection for that instance
-- Components call `getAccessToken()` / `getInstanceUrl()` which return the instance's active connection
-
-**OAuth Flows (based on proxy availability):**
-
-*Without Proxy (Implicit Flow):*
-- Uses `response_type=token` - tokens returned directly in URL hash
-- No refresh tokens - user must re-authorize when session expires
-
-*With Proxy (Authorization Code Flow):*
-- Uses `response_type=code` - authorization code exchanged for tokens via proxy
-- Automatic token refresh on 401 responses (transparent to frontend)
-- Token exchange routed through proxy to bypass CORS on Salesforce token endpoint
-
-**Key Files:**
-- `src/lib/auth.js` - Connection storage functions, active connection context, migration
-- `src/pages/app/app.js` - Connection selector UI, authorization flow
-- `src/pages/callback/callback.js` - Handles both code and token responses, adds/updates connections
-- `src/background/auth.js` - Token exchange and refresh (per-connection)
-- `src/background/background.js` - Fetch handler with connection-targeted 401 retry
-
-**Token Refresh Flow:**
-1. Frontend request includes `connectionId`
-2. Background receives 401, finds connection by ID
-3. If refresh token exists + proxy connected, refreshes that connection's token
-4. Updates specific connection in storage array
-5. Retries original request with new token
-6. Frontend's in-memory token updated via `chrome.storage.onChanged` listener
-
-**Authorization Flow:**
-1. User clicks "Authorize" button (or "+ Add Connection" in dropdown)
-2. OAuth redirect opens in new tab
-3. Callback page adds connection to storage (or updates if same instanceUrl)
-4. All sftools instances refresh their connection list via storage listener
-5. If no prior connections, the new connection is auto-selected
-
-**Configuration:**
-- Callback URL: `https://sftools.dev/sftools-callback`
-- Default Client ID: `manifest.json` `oauth2.client_id`
-
-**Per-Connection Client ID:**
-
-Each connection can have its own Client ID for Salesforce External Client Apps (or Connected Apps). This is configured in Settings → Connections.
-
-- If a connection has a `clientId` set, that ID is used for authorization and token refresh
-- If `clientId` is null, the default Client ID from `manifest.json` is used
-- Changing a connection's Client ID requires re-authorization
-
-Key functions in `src/lib/auth.js`:
-- `getOAuthCredentials(connectionId?)` - Returns connection's client ID if set, otherwise manifest default
-- `setPendingAuth(params)` / `consumePendingAuth()` - Store/retrieve OAuth flow state (loginDomain, clientId, connectionId)
-
-The background service worker has its own `getBackgroundOAuthCredentials(connectionId?)` helper for token refresh.
-
-## Query Tab Implementation
-
-The Query tab uses the REST Query API with the `columns=true` parameter to get accurate column metadata:
-
-1. **Parallel API Calls** - Makes two simultaneous requests for better performance:
-   - `?q=...&columns=true` - Returns column metadata without query results
-   - `?q=...` - Returns actual query results
-2. **Column Metadata** - The `columnMetadata` array provides column names, display names, and nested `joinColumns` for relationship fields
-3. **Nested Relationships** - Relationship fields (e.g., `Account.Owner.Name`) are flattened recursively from the `joinColumns` structure, with the full path used as the column header
-4. **Subquery Support** - Subqueries (e.g., `SELECT Id, (SELECT Id FROM Contacts) FROM Account`) are detected via `aggregate=true` + `joinColumns` in column metadata. Results display as expandable "▶ N records" buttons that toggle nested tables inline.
-
-This approach is more reliable than client-side SOQL parsing, especially for aggregate functions (`COUNT()`, `SUM()`) and complex relationship queries.
-
-## Apex Tab Implementation
-
-The Apex tab uses the REST Tooling API for anonymous Apex execution:
-
-1. **Trace Flag Setup** - Ensures a `TraceFlag` exists for the current user with a `DebugLevel` named `SFTOOLS_DEBUG`. Optimized to skip API calls if already configured correctly.
-2. **Execute Anonymous** - Calls `/services/data/vXX/tooling/executeAnonymous/`
-3. **Fetch Debug Log** - Queries `ApexLog WHERE Operation LIKE '%executeAnonymous/'` and fetches the log body
-
-Monaco editor markers are used to highlight compilation errors with line/column info. Access the underlying editor via `this.codeEditor.editor` for marker APIs.
-
-## Events Tab Implementation
-
-The Events tab provides unified streaming across multiple Salesforce protocols. Protocol selection is transparent to users - they select a channel and the proxy routes to the appropriate client.
-
-**Channel Types & Protocols:**
-| Channel Pattern | Protocol | Example |
-|----------------|----------|---------|
-| `/event/*` | gRPC Pub/Sub | `/event/Order_Event__e` |
-| `/topic/*` | CometD | `/topic/InvoiceUpdates` |
-| `/systemTopic/*` | CometD | `/systemTopic/Logging` |
-
-**Architecture:**
-1. **Frontend** (`src/components/events/events-tab.js`) - Grouped dropdown for all channel types, subscribe/unsubscribe, event display
-2. **Background** (`src/background/background.js`) - Routes messages between frontend and native host, forwards streaming events
-3. **Local Proxy** (`sftools-proxy/`) - Routes to gRPC or CometD based on channel prefix
-
-**Subscription Flow:**
-1. Frontend sends `{ type: 'subscribe', channel, accessToken, instanceUrl, replayPreset }` to background
-2. Background generates a `subscriptionId` and forwards to proxy
-3. Proxy routes based on channel: `/event/*` → gRPC, others → CometD
-4. Proxy sends streaming events back via native messaging with `{ type: 'streamEvent', subscriptionId, event }`
-5. Background forwards these to all extension pages via `chrome.runtime.sendMessage`
-6. Frontend filters by `subscriptionId` and displays events
-
-**Key Proxy Components:**
-- `subscription-manager.js` - Central registry for all subscriptions
-- `protocols/router.js` - Routes channels to correct protocol
-- `grpc/pubsub-client.js` - gRPC client for Platform Events
-- `cometd/cometd-client.js` - Faye-based CometD client for PushTopics/System Topics
-
-**Unified Message Types:**
-- `streamEvent` - Event received from either protocol
-- `streamError` - Error from stream
-- `streamEnd` - Stream closed by server
-
-**Replay Options:**
-- LATEST - New events only (default)
-- EARLIEST - All retained events
-- CUSTOM - Start from specific replay ID
-
-**Feature Gating:**
-- Tab is disabled when proxy is not connected
-- `isProxyConnected()` utility checks connection status
-- Overlay prompts user to connect via Settings
-
-## Utils Tab Implementation
-
-The Utils tab is a container for modular utility tools. Each tool is a self-contained custom element in `src/components/utils-tools/`.
-
-**Architecture:**
-```
-src/components/
-├── utils/
-│   ├── utils-tab.js      # Container that imports tool components
-│   └── utils.html        # Layout with <tool-name> elements
-└── utils-tools/
-    ├── utils-tools.css   # Shared styles (status indicators, results, etc.)
-    ├── debug-logs.js     # <debug-logs> component
-    ├── debug-logs.html
-    ├── flow-cleanup.js   # <flow-cleanup> component
-    ├── flow-cleanup.html
-    ├── schema-browser-link.js  # <schema-browser-link> component
-    └── schema-browser-link.html
-```
-
-**Current Tools:**
-
-1. **Debug Logs** (`<debug-logs>`)
-   - Enable trace flag for current user or search for another user
-   - Bulk delete all ApexLog records
-   - Uses Tooling API for TraceFlag and ApexLog operations
-
-2. **Flow Cleanup** (`<flow-cleanup>`)
-   - Search flows by API name
-   - View all versions with active version highlighted
-   - Delete inactive versions via Tooling API composite delete
-
-3. **Schema Browser Link** (`<schema-browser-link>`)
-   - Simple link component to open Schema Browser in new tab
-   - Opens the standalone Schema Browser page
-
-**Adding a New Utility Tool:**
-
-1. Create component files in `src/components/utils-tools/`:
-   ```
-   new-tool.js    # Custom element class
-   new-tool.html  # Template (card structure)
-   ```
-
-2. Import shared styles and define the element:
-   ```javascript
-   import template from './new-tool.html?raw';
-   import './utils-tools.css';
-
-   class NewTool extends HTMLElement {
-       connectedCallback() {
-           this.innerHTML = template;
-           // ... init and event listeners
-       }
-   }
-   customElements.define('new-tool', NewTool);
-   ```
-
-3. Register in `utils-tab.js`:
-   ```javascript
-   import '../utils-tools/new-tool.js';
-   ```
-
-4. Add to `utils.html`:
-   ```html
-   <new-tool></new-tool>
-   ```
-
-**Shared Styles** (`utils-tools.css`):
-- `.tool-description` - Muted description text
-- `.tool-status` - Status row with indicator and text
-- `.status-indicator.status-loading/success/error` - Status dot colors (global class in style.css)
-- `.tool-results`, `.tool-result-item` - Search result list styling
-- `.tool-summary` - Info box with background
-- `.tool-divider` - Horizontal separator
-- `.tool-section-title` - Section heading within a card
-
-**API Helpers** (`src/lib/salesforce.js`):
-- `deleteAllDebugLogs()` - Bulk delete ApexLog records
-- `searchUsers(term)` - Search User by name/username
-- `enableTraceFlagForUser(userId)` - Create/update TraceFlag (30 min)
-- `searchFlows(term)` - Search FlowDefinition by API name
-- `getFlowVersions(flowId)` - Get Flow versions for a definition
-- `deleteInactiveFlowVersions(ids)` - Composite delete inactive versions
-
-## Styling Conventions
-
-- Salesforce Lightning-inspired design
-- CSS variables defined in `:root` for theming (see CSS Variables & Theming below)
-- No external CSS frameworks
-- Card-based layouts with `.card`, `.card-header`, `.card-body`
-- Form elements use `.input`, `.select`, `.button-brand` classes
-- Monaco containers use `.monaco-container` and `.monaco-container-lg`
-
-### Shared Component Classes
-
-Global reusable component classes in `style.css` to avoid duplication:
-
-| Pattern | Classes | Usage |
-|---------|---------|-------|
-| Modal Overlay | `.modal-overlay`, `.modal-dialog`, `.modal-buttons` | Fixed overlay with centered dialog |
-| Dropdown Menu | `.dropdown-menu`, `.dropdown-item` | Absolute-positioned dropdown |
-| Script List | `.script-list`, `.script-item`, `.script-preview`, `.script-label`, `.script-meta`, `.script-actions`, `.script-action` | History/favorites list items |
-| Search Input | `.search-input` | Compact filter input |
-| Dropdown Tabs | `.dropdown-tabs`, `.dropdown-tab`, `.dropdown-content` | Tab switcher inside dropdowns |
-| Standalone Header | `.standalone-header`, `.tool-name` | Header for standalone pages |
-| Status Indicator | `.status-indicator.status-loading/success/error` | Animated status dots |
-
-When building new components, prefer these shared classes over component-specific duplicates.
-
-## CSS Variables & Theming
-
-The app supports light and dark modes via CSS variables. Theme preference is stored in `chrome.storage.local` and syncs across all sftools windows/tabs.
-
-**Theme Options** (Settings → Appearance):
-- **System** - Follows OS preference via `prefers-color-scheme`
-- **Light** - Always light mode
-- **Dark** - Always dark mode
-
-### CSS Variable Categories
-
-All colors should use CSS variables defined in `src/style.css`:
-
-```css
-/* Primary colors */
---primary-color          /* Brand blue, buttons, links */
---primary-hover          /* Button hover state */
---brand-color            /* Alias for primary */
-
-/* Backgrounds */
---bg-color               /* Page background */
---card-bg                /* Card/component backgrounds */
---bg-primary             /* Alias for card-bg */
---bg-secondary           /* Subtle background (headers, disabled inputs) */
---bg-hover               /* Hover state background */
---bg-selected            /* Selection highlight */
---card-header-bg         /* Card header background */
---input-bg               /* Form input backgrounds */
---nav-bg                 /* Navigation background */
-
-/* Text */
---text-main              /* Primary text */
---text-primary           /* Alias for text-main */
---text-muted             /* Secondary/muted text */
---text-secondary         /* Alias for text-muted */
-
-/* Borders */
---border-color           /* Standard borders */
-
-/* Status colors */
---error-color            /* Error text/icons */
---success-color          /* Success text/icons */
---status-success-bg      /* Success badge background */
---status-success-text    /* Success badge text */
---status-error-bg        /* Error badge background */
---status-error-text      /* Error badge text */
---status-loading-bg      /* Loading badge background */
---status-loading-text    /* Loading badge text */
-
-/* Status indicators (dots) */
---indicator-success      /* Green dot */
---indicator-error        /* Red dot */
---indicator-loading      /* Yellow dot */
-
-/* Overlays & shadows */
---overlay-bg             /* Modal backdrop */
---shadow-sm              /* Subtle shadow */
---shadow-md              /* Medium shadow */
---shadow-lg              /* Large shadow (modals, dropdowns) */
-
-/* Z-index scale */
---z-dropdown             /* 100 - Dropdowns */
---z-sticky               /* 200 - Sticky elements */
---z-modal-backdrop       /* 900 - Modal backdrop */
---z-modal                /* 1000 - Modal content */
---z-toast                /* 1100 - Toast notifications */
-
-/* Border radius */
---radius-sm              /* 3px - Small elements */
---radius-md              /* 4px - Default (inputs, buttons) */
---radius-lg              /* 8px - Large elements (modals, cards) */
-
-/* Typography */
---font-mono              /* Monospace font stack for code */
-```
-
-### Rules for Adding CSS
-
-1. **Never hard-code colors** - Always use `var(--variable-name)`
-2. **Use semantic variables** - Choose variables by purpose, not color:
-   ```css
-   /* Good */
-   background: var(--card-header-bg);
-   color: var(--error-color);
-
-   /* Bad */
-   background: #f8f9fa;
-   color: #c23934;
-   ```
-
-3. **Shadows use variables too**:
-   ```css
-   /* Good */
-   box-shadow: 0 4px 12px var(--shadow-lg);
-
-   /* Bad */
-   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-   ```
-
-4. **Overlays use --overlay-bg**:
-   ```css
-   /* Good */
-   background: var(--overlay-bg);
-
-   /* Bad */
-   background: rgba(0, 0, 0, 0.5);
-   ```
-
-5. **Use z-index scale variables** for layering:
-   ```css
-   /* Good */
-   z-index: var(--z-dropdown);
-   z-index: var(--z-modal);
-
-   /* Bad */
-   z-index: 100;
-   z-index: 1000;
-   ```
-
-6. **Use border-radius variables** for consistency:
-   ```css
-   /* Good */
-   border-radius: var(--radius-md);
-   border-radius: var(--radius-lg);
-
-   /* Bad */
-   border-radius: 4px;
-   border-radius: 8px;
-   ```
-
-7. **Use --font-mono for code/monospace text**:
-   ```css
-   /* Good */
-   font-family: var(--font-mono);
-
-   /* Bad */
-   font-family: 'SF Mono', Monaco, Consolas, monospace;
-   ```
 
 ### Theme Initialization
 
-All page entry points must initialize the theme early to prevent flash of wrong theme:
+All page entry points must initialize theme:
 
 ```javascript
 // src/pages/<name>/<name>.js
@@ -935,49 +327,187 @@ import '../../components/<name>/<name>-page.js';
 initTheme();
 ```
 
-The `initTheme()` function:
-- Reads theme preference from storage
-- Applies `data-theme="dark"` attribute to `<html>` if dark mode
-- Sets up listeners for system preference changes
-- Syncs theme changes across tabs via storage listener
+## CSS Variables
 
-### Dark Mode Implementation
+All colors, shadows, and z-indexes use CSS variables. See `src/style.css` for definitions.
 
-Dark mode works by setting `data-theme="dark"` on the document root:
+### Key Variables
 
 ```css
-/* Light mode (default) */
-:root {
-    --bg-color: #f3f3f3;
-    --card-bg: #ffffff;
-    /* ... */
-}
+/* Colors */
+--primary-color          /* Brand blue */
+--bg-color               /* Page background */
+--card-bg                /* Card backgrounds */
+--text-main              /* Primary text */
+--text-muted             /* Secondary text */
+--border-color           /* Borders */
+--error-color            /* Errors */
+--success-color          /* Success */
 
-/* Dark mode */
-[data-theme="dark"] {
-    --bg-color: #1a1a2e;
-    --card-bg: #16213e;
-    /* ... */
+/* Shadows */
+--shadow-sm, --shadow-md, --shadow-lg
+
+/* Z-index scale */
+--z-dropdown: 100
+--z-sticky: 200
+--z-modal-backdrop: 900
+--z-modal: 1000
+--z-toast: 1100
+
+/* Border radius */
+--radius-sm: 3px
+--radius-md: 4px
+--radius-lg: 8px
+```
+
+### Theming Rules
+
+```css
+/* GOOD */
+background: var(--card-bg);
+color: var(--text-muted);
+box-shadow: 0 4px 12px var(--shadow-lg);
+
+/* BAD - never hard-code */
+background: #ffffff;
+color: #666;
+box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+```
+
+## Shared CSS Classes
+
+Prefer these shared classes from `style.css`:
+
+| Pattern | Classes |
+|---------|---------|
+| Modal | `.modal-overlay`, `.modal-dialog`, `.modal-buttons` |
+| Dropdown | `.dropdown-menu`, `.dropdown-item` |
+| Script List | `.script-list`, `.script-item`, `.script-preview` |
+| Search | `.search-input` |
+| Status | `.status-indicator.status-loading/success/error` |
+
+## OAuth & Multi-Connection
+
+Supports multiple Salesforce connections with per-instance active connection.
+
+### Storage Schema
+
+```javascript
+{
+  connections: [{
+    id: string,
+    label: string,
+    instanceUrl: string,
+    accessToken: string,
+    refreshToken: string | null,
+    clientId: string | null
+  }]
 }
 ```
 
-Components automatically inherit the correct colors because they use CSS variables.
+### Key Auth Functions
 
-### Adding New Variables
+```javascript
+import {
+    getAccessToken,
+    getInstanceUrl,
+    isAuthenticated,
+    loadConnections,
+    setActiveConnection,
+    getActiveConnectionId
+} from '../../lib/utils.js';
+```
 
-When adding a new color variable:
+### OAuth Flows
 
-1. Add to both `:root` (light) and `[data-theme="dark"]` (dark) in `src/style.css`
-2. Choose a semantic name that describes purpose, not color
-3. Use existing variables as reference for the dark mode equivalent
+- **Without Proxy**: Implicit flow (`response_type=token`)
+- **With Proxy**: Authorization code flow with token refresh
 
-## Responsive Nav Implementation
+## Background Service Worker
 
-The tab navigation handles overflow for narrow viewports (side panel):
+Handler map pattern for message routing:
 
-- `.tab-scroll-container` uses `display: flex`, `flex-wrap: nowrap`, `overflow: hidden`
-- `.nav-overflow-dropdown` contains a "More" trigger button and `.nav-overflow-menu`
-- JS in `app.js` (`initTabs`) measures tab widths on load/resize
-- Tabs that don't fit are hidden with `.nav-hidden` and cloned into the dropdown menu
-- Dropdown menu uses `position: fixed` to escape the container's `overflow: hidden`
-- Menu position is set dynamically based on trigger button location
+```javascript
+// src/background/background.js
+const handlers = {
+    fetch: handleFetch,
+    subscribe: handleSubscribe,
+    // ...
+};
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    const handler = handlers[request.type];
+    if (handler) {
+        handler(request).then(sendResponse);
+        return true; // async response
+    }
+});
+```
+
+## Local Proxy
+
+Enables gRPC/CometD streaming and CORS bypass.
+
+### Installation
+
+```bash
+cd sftools-proxy
+npm install
+node install.js
+```
+
+### Protocol Routing
+
+| Channel Pattern | Protocol |
+|-----------------|----------|
+| `/event/*` | gRPC Pub/Sub |
+| `/topic/*` | CometD |
+| `/data/*` | CometD (CDC) |
+| `/systemTopic/*` | CometD |
+
+## Testing Overview
+
+See [tests/CLAUDE.md](tests/CLAUDE.md) for comprehensive testing documentation.
+
+### Three Test Types
+
+1. **Unit Tests** (`tests/unit/`) - Vitest with mocks
+2. **Integration Tests** (`tests/integration/`) - Real Salesforce API
+3. **Frontend Tests** (`tests/frontend/`) - Playwright browser tests
+
+### Test Files to Match Source
+
+| Source | Test Location |
+|--------|---------------|
+| `src/lib/auth.js` | `tests/unit/lib/auth.test.js` |
+| `components/query/` | `tests/frontend/specs/query/` |
+
+## Security Guidelines
+
+- **NEVER** commit tokens, API keys, or credentials
+- Use `.env.test` for test org credentials (gitignored)
+- Use environment variables for CI/CD secrets
+- Review generated bash commands before execution
+
+## Git Workflow
+
+- Branch from `main`: `claude/issue-{number}-{date}` or `feature/description`
+- Use Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`
+- PRs require: passing tests, type checks, lint
+- Squash commits on merge
+
+## Loading the Extension
+
+1. Run `npm run build`
+2. Open `chrome://extensions/`
+3. Enable "Developer mode"
+4. Click "Load unpacked" and select the repository root
+
+## Specialized CLAUDE.md Files
+
+| Directory | Focus |
+|-----------|-------|
+| [src/components/CLAUDE.md](src/components/CLAUDE.md) | Component development patterns |
+| [src/lib/CLAUDE.md](src/lib/CLAUDE.md) | Utility function patterns |
+| [tests/CLAUDE.md](tests/CLAUDE.md) | Testing framework and patterns |
+| [sftools-proxy/CLAUDE.md](sftools-proxy/CLAUDE.md) | Proxy architecture |

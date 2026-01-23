@@ -498,6 +498,8 @@ LIMIT 10`);
 
         this.updateStatus('Loading...', 'loading');
         tabData.error = null;
+        tabData.loading = true;
+        this.renderResults(); // Show loading state
 
         try {
             const useToolingApi = this.toolingCheckbox.checked;
@@ -522,6 +524,8 @@ LIMIT 10`);
             tabData.error = error.message;
             tabData.isEditable = false;
             this.updateStatus('Error', 'error');
+        } finally {
+            tabData.loading = false;
         }
 
         this.renderResults();
@@ -588,7 +592,8 @@ LIMIT 10`);
             totalSize: 0,
             fieldDescribe: null,
             modifiedRecords: new Map(), // recordId -> { fieldName: newValue }
-            isEditable: false
+            isEditable: false,
+            loading: false
         };
 
         this.queryTabs.set(normalizedQuery, tabData);
@@ -727,6 +732,11 @@ LIMIT 10`);
         const tabData = this.getTabDataById(this.activeTabId);
         if (!tabData) {
             this.resultsContainer.innerHTML = '<div class="query-results-empty">No query results to display</div>';
+            return;
+        }
+
+        if (tabData.loading) {
+            this.resultsContainer.innerHTML = '<div class="query-results-loading"><div class="query-spinner"></div><div>Loading query results...</div></div>';
             return;
         }
 

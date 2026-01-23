@@ -180,7 +180,8 @@
 }
 
 .query-results-empty,
-.query-results-error {
+.query-results-error,
+.query-results-loading {
     color: var(--text-muted);
     font-size: 13px;
     font-style: italic;
@@ -193,6 +194,29 @@
     background-color: var(--status-error-bg);
     border-radius: var(--radius-md);
     font-style: normal;
+}
+
+.query-results-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    font-style: normal;
+}
+
+.query-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: query-spin 0.8s linear infinite;
+}
+
+@keyframes query-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .query-results-table {

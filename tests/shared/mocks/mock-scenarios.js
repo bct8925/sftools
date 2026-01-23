@@ -535,3 +535,239 @@ export const RestApiEmptyScenario = {
         }
     ]
 };
+
+/**
+ * Events channels loaded successfully
+ * Returns platform events and push topics
+ */
+export const EventsChannelsScenario = {
+    name: 'events-channels',
+    routes: [
+        {
+            // Match Tooling API query for Platform Events (EntityDefinition)
+            // Pattern needs to match both URL-encoded and non-encoded versions
+            pattern: /\/services\/data\/v[\d.]+\/tooling\/query/,
+            method: 'GET',
+            response: {
+                totalSize: 2,
+                done: true,
+                records: [
+                    {
+                        DeveloperName: 'Order_Event',
+                        QualifiedApiName: 'Order_Event__e',
+                        Label: 'Order Event'
+                    },
+                    {
+                        DeveloperName: 'Notification_Event',
+                        QualifiedApiName: 'Notification_Event__e',
+                        Label: 'Notification Event'
+                    }
+                ]
+            }
+        },
+        {
+            // Match regular query for PushTopics
+            pattern: /\/services\/data\/v[\d.]+\/query\?q=.*PushTopic/,
+            method: 'GET',
+            response: {
+                totalSize: 1,
+                done: true,
+                records: [
+                    {
+                        Id: '0PT000000000001',
+                        Name: 'AccountUpdates',
+                        Query: 'SELECT Id, Name FROM Account',
+                        ApiVersion: 62.0,
+                        IsActive: true
+                    }
+                ]
+            }
+        }
+    ]
+};
+
+/**
+ * Successful Platform Event publish
+ */
+export const EventsPublishSuccessScenario = {
+    name: 'events-publish-success',
+    routes: [
+        {
+            pattern: /\/sobjects\/.*__e$/,
+            method: 'POST',
+            response: {
+                id: 'e00MOCKPUBLISH001',
+                success: true,
+                errors: []
+            }
+        }
+    ]
+};
+
+/**
+ * Failed Platform Event publish (invalid payload)
+ */
+export const EventsPublishErrorScenario = {
+    name: 'events-publish-error',
+    routes: [
+        {
+            pattern: /\/sobjects\/.*__e$/,
+            method: 'POST',
+            response: {
+                status: 400,
+                data: [
+                    {
+                        message: 'Required field missing: Message__c',
+                        errorCode: 'REQUIRED_FIELD_MISSING',
+                        fields: ['Message__c']
+                    }
+                ]
+            }
+        }
+    ]
+};
+
+/**
+ * Debug Logs user search
+ * Returns matching User records for trace flag setup
+ */
+export const DebugLogsUserSearchScenario = {
+    name: 'debug-logs-user-search',
+    routes: [
+        {
+            pattern: /\/query\/.*User.*WHERE/,
+            method: 'GET',
+            response: {
+                totalSize: 2,
+                done: true,
+                records: [
+                    {
+                        Id: '005MOCKUSER00001',
+                        Name: 'John Developer',
+                        Username: 'john.dev@example.com'
+                    },
+                    {
+                        Id: '005MOCKUSER00002',
+                        Name: 'Jane Admin',
+                        Username: 'jane.admin@example.com'
+                    }
+                ]
+            }
+        }
+    ]
+};
+
+/**
+ * Debug Logs trace flag creation success
+ * Returns successful TraceFlag creation response
+ */
+export const DebugLogsTraceSuccessScenario = {
+    name: 'debug-logs-trace-success',
+    routes: [
+        {
+            // Query for existing TraceFlag - returns empty (no existing flag)
+            pattern: /\/tooling\/query.*TraceFlag.*WHERE.*TracedEntityId/,
+            method: 'GET',
+            response: {
+                totalSize: 0,
+                done: true,
+                records: []
+            }
+        },
+        {
+            // Query for DebugLevel - returns empty (needs to create one)
+            pattern: /\/tooling\/query.*DebugLevel.*WHERE.*DeveloperName/,
+            method: 'GET',
+            response: {
+                totalSize: 0,
+                done: true,
+                records: []
+            }
+        },
+        {
+            // Create DebugLevel
+            pattern: /\/tooling\/sobjects\/DebugLevel/,
+            method: 'POST',
+            response: {
+                id: '7dlMOCKDEBUGLVL1',
+                success: true,
+                errors: []
+            }
+        },
+        {
+            // Create TraceFlag
+            pattern: /\/tooling\/sobjects\/TraceFlag/,
+            method: 'POST',
+            response: {
+                id: '7tfMOCKTRACE0001',
+                success: true,
+                errors: []
+            }
+        }
+    ]
+};
+
+/**
+ * Flow search results
+ * Returns FlowDefinition records matching search term
+ */
+export const FlowSearchScenario = {
+    name: 'flow-search',
+    routes: [
+        {
+            pattern: /\/tooling\/query.*FlowDefinition/,
+            method: 'GET',
+            response: {
+                totalSize: 2,
+                done: true,
+                records: [
+                    {
+                        Id: '300MOCKFLOW00001',
+                        DeveloperName: 'Order_Approval_Flow',
+                        Label: 'Order Approval Flow'
+                    },
+                    {
+                        Id: '300MOCKFLOW00002',
+                        DeveloperName: 'Case_Auto_Response',
+                        Label: 'Case Auto Response'
+                    }
+                ]
+            }
+        }
+    ]
+};
+
+/**
+ * Flow versions for a specific flow definition
+ * Returns multiple versions with Active/Inactive statuses
+ */
+export const FlowVersionsScenario = {
+    name: 'flow-versions',
+    routes: [
+        {
+            pattern: /\/tooling\/query.*Flow.*WHERE.*Definition/,
+            method: 'GET',
+            response: {
+                totalSize: 3,
+                done: true,
+                records: [
+                    {
+                        Id: '301MOCKFLOWVER01',
+                        VersionNumber: 3,
+                        Status: 'Active'
+                    },
+                    {
+                        Id: '301MOCKFLOWVER02',
+                        VersionNumber: 2,
+                        Status: 'Inactive'
+                    },
+                    {
+                        Id: '301MOCKFLOWVER03',
+                        VersionNumber: 1,
+                        Status: 'Inactive'
+                    }
+                ]
+            }
+        }
+    ]
+};

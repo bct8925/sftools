@@ -11,6 +11,7 @@ import type { SchemaPage } from '../pages/schema.page';
 import type { UtilsTabPage } from '../pages/utils-tab.page';
 import type { SettingsTabPage } from '../pages/settings-tab.page';
 import type { RestApiTabPage } from '../pages/rest-api-tab.page';
+import type { EventsTabPage } from '../pages/events-tab.page';
 
 export abstract class SftoolsTest {
   protected page: Page;
@@ -27,6 +28,7 @@ export abstract class SftoolsTest {
   private _utilsTab?: UtilsTabPage;
   private _settingsTab?: SettingsTabPage;
   private _restApiTab?: RestApiTabPage;
+  private _eventsTab?: EventsTabPage;
 
   constructor(ctx: TestContext) {
     this.page = ctx.page;
@@ -114,6 +116,15 @@ export abstract class SftoolsTest {
       this._restApiTab.setConfig(this.config);
     }
     return this._restApiTab!;
+  }
+
+  get eventsTab(): EventsTabPage {
+    if (!this._eventsTab) {
+      const { EventsTabPage } = require('../pages/events-tab.page');
+      this._eventsTab = new EventsTabPage(this.page);
+      this._eventsTab.setConfig(this.config);
+    }
+    return this._eventsTab!;
   }
 
   // Navigation helpers

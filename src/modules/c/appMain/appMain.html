@@ -1,0 +1,97 @@
+<template>
+    <div class="app-container">
+        <!-- Top Navigation Bar -->
+        <nav class="tab-nav">
+            <button class="hamburger-btn" aria-label="Menu" onclick={handleHamburgerClick}>
+                <c-sf-icon name="hamburger"></c-sf-icon>
+            </button>
+            <div class="nav-brand">
+                <img src="../../icon.png" alt="" class="nav-brand-icon" />sftools
+            </div>
+            <div class="current-connection-display" title={activeConnectionLabel}>
+                {activeConnectionLabel}
+            </div>
+        </nav>
+
+        <!-- Mobile Menu -->
+        <div class={menuClass}>
+            <div class="mobile-menu-header">
+                <div class="nav-brand">
+                    <img src="../../icon.png" alt="" class="nav-brand-icon" />sftools
+                </div>
+                <button class="mobile-menu-close" aria-label="Close menu" onclick={handleCloseClick}>
+                    <c-sf-icon name="closeLarge"></c-sf-icon>
+                </button>
+            </div>
+            <div class="mobile-menu-content">
+                <nav class="mobile-nav">
+                    <template for:each={tabs} for:item="tab">
+                        <button
+                            key={tab.id}
+                            class={tab.cssClass}
+                            data-tab={tab.id}
+                            onclick={handleTabClick}
+                        >
+                            {tab.label}
+                        </button>
+                    </template>
+                </nav>
+                <hr class="mobile-menu-divider" />
+                <button class={openOrgClass} onclick={handleOpenOrg}>Open Org</button>
+                <button class="mobile-nav-item" onclick={handleOpenTab}>Open in Tab</button>
+                <hr class="mobile-menu-divider" />
+                <div class="mobile-connection-section">
+                    <span class="mobile-section-label">Connections</span>
+                    <div class="mobile-connection-list">
+                        <template for:each={connections} for:item="conn">
+                            <div
+                                key={conn.id}
+                                class="mobile-connection-item"
+                                data-id={conn.id}
+                                onclick={handleConnectionSelect}
+                            >
+                                <span class="mobile-connection-name">{conn.label}</span>
+                                <button
+                                    class="mobile-connection-remove"
+                                    title="Remove"
+                                    data-id={conn.id}
+                                    onclick={handleConnectionRemove}
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                    <template lwc:if={hasConnections}>
+                        <button class="mobile-nav-item mobile-add-connection" onclick={handleAddConnection}>
+                            + Add Connection
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+        <div class={overlayClass} onclick={handleOverlayClick}></div>
+
+        <!-- Main Content Area -->
+        <main class="content-area">
+            <template lwc:if={showQueryTab}>
+                <c-query-tab-placeholder></c-query-tab-placeholder>
+            </template>
+            <template lwc:if={showApexTab}>
+                <c-apex-tab-placeholder></c-apex-tab-placeholder>
+            </template>
+            <template lwc:if={showRestApiTab}>
+                <c-rest-api-tab-placeholder></c-rest-api-tab-placeholder>
+            </template>
+            <template lwc:if={showEventsTab}>
+                <c-events-tab-placeholder></c-events-tab-placeholder>
+            </template>
+            <template lwc:if={showUtilsTab}>
+                <c-utils-tab></c-utils-tab>
+            </template>
+            <template lwc:if={showSettingsTab}>
+                <c-settings-tab-placeholder></c-settings-tab-placeholder>
+            </template>
+        </main>
+    </div>
+</template>

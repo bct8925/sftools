@@ -1,0 +1,6 @@
+.placeholder-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 4px; box-shadow: 0 2px 2px 0 var(--shadow-md); }
+.placeholder-header { padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--card-header-bg); }
+.placeholder-header h2 { margin: 0; font-size: 16px; font-weight: 600; color: var(--text-main); }
+.placeholder-body { padding: 40px 20px; text-align: center; }
+.placeholder-body p { margin: 0 0 10px 0; color: var(--text-main); font-size: 18px; }
+.placeholder-hint { color: var(--text-muted) !important; font-size: 14px !important; }

@@ -1,0 +1,261 @@
+/* Shared styles for LWC components */
+/* These styles replicate global styles that don't penetrate Shadow DOM */
+
+/* --- Card --- */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 2px 0 var(--shadow-md);
+    overflow: visible;
+}
+
+.card-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--card-header-bg);
+}
+
+.card-header-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.card-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.card-body {
+    padding: 15px;
+    overflow: visible;
+}
+
+/* --- Buttons --- */
+.button-brand {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: 1px solid var(--primary-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.button-brand:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.button-brand:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-neutral {
+    background-color: var(--card-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.button-neutral:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.button-neutral:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- Form Elements --- */
+.form-element {
+    margin-bottom: 15px;
+}
+
+.form-element label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input,
+.select,
+.textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+    color: var(--text-main);
+    background-color: var(--input-bg);
+    font-family: inherit;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+    outline: 0;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color) inset;
+}
+
+/* --- Status Indicator --- */
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-indicator.status-loading {
+    background-color: var(--indicator-loading);
+    animation: pulse 1s infinite;
+}
+
+.status-indicator.status-success {
+    background-color: var(--indicator-success);
+}
+
+.status-indicator.status-error {
+    background-color: var(--indicator-error);
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* --- Utility Classes --- */
+.hidden {
+    display: none !important;
+}
+
+/* --- Tool-Specific Shared Styles --- */
+.tool-description {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.tool-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+}
+
+.tool-status.hidden {
+    display: none;
+}
+
+.tool-status-text {
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.tool-results {
+    margin-top: 0.75rem;
+}
+
+.tool-results.hidden {
+    display: none;
+}
+
+.tool-result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.tool-result-item:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-selected);
+}
+
+.tool-result-name {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.tool-result-detail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
+}
+
+.tool-no-results {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+}
+
+.tool-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 1rem 0;
+}
+
+.tool-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 0 0 0.75rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tool-summary {
+    padding: 1rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}

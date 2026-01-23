@@ -1,0 +1,40 @@
+<template>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon" style="background-color: #ff9a3c">F</div>
+            <h2>Flow Version Cleanup</h2>
+        </div>
+        <div class="card-body">
+            <p class="tool-description">Delete inactive flow versions to reduce metadata size.</p>
+
+            <c-search-box
+                label="FLOW SEARCH"
+                placeholder="Search flows by name..."
+                onselect={handleFlowSelect}
+                data-testid="flow-search"
+            ></c-search-box>
+
+            <div class={versionsClass}>
+                <div class="tool-summary flow-info">
+                    <strong>{selectedFlowName}</strong><br />
+                    Total versions: {totalVersions}<br />
+                    Active version: {activeVersionNumber}<br />
+                    Inactive versions: {inactiveCount}
+                </div>
+                <button
+                    class="button-brand delete-versions-btn"
+                    disabled={deleteDisabled}
+                    onclick={handleDeleteVersions}
+                    data-testid="delete-versions-btn"
+                >
+                    {deleteButtonText}
+                </button>
+            </div>
+
+            <div class={statusClass} data-testid="flow-status">
+                <span class={statusIndicatorClass}></span>
+                <span class="tool-status-text">{status.message}</span>
+            </div>
+        </div>
+    </div>
+</template>

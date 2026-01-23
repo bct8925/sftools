@@ -1,0 +1,72 @@
+/* Schema Browser Link - Complete styles for Shadow DOM */
+
+/* --- Card --- */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 2px 0 var(--shadow-md);
+    overflow: visible;
+}
+
+.card-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--card-header-bg);
+}
+
+.card-header-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.card-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.card-body {
+    padding: 15px;
+    overflow: visible;
+}
+
+/* --- Button --- */
+.button-brand {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: 1px solid var(--primary-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.button-brand:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+/* --- Tool Description --- */
+.tool-description {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    font-size: 14px;
+}

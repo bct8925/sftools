@@ -1,0 +1,88 @@
+<template>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon" style="background-color: #4bca81">D</div>
+            <h2>Debug Logs</h2>
+        </div>
+        <div class="card-body">
+            <p class="tool-description">Manage debug logging and trace flags.</p>
+
+            <div class="debug-logs-section">
+                <h3 class="tool-section-title">Enable Trace Flag</h3>
+                <button
+                    class="button-brand enable-for-me-btn"
+                    disabled={enableForMeDisabled}
+                    onclick={handleEnableForMe}
+                    data-testid="enable-for-me-btn"
+                >
+                    Enable for Me
+                </button>
+                <div class="tool-divider"></div>
+                <div class="form-element">
+                    <label>USER LOOKUP</label>
+                    <input
+                        type="text"
+                        class="input user-search"
+                        placeholder="Search by name or username..."
+                        oninput={handleSearchInput}
+                        data-testid="user-search-input"
+                    />
+                </div>
+                <div class={userResultsClass}>
+                    <template lwc:if={hasNoUsers}>
+                        <div class="tool-no-results">No users found</div>
+                    </template>
+                    <template lwc:if={hasUserResults}>
+                        <template for:each={userResults} for:item="user">
+                            <div
+                                key={user.id}
+                                class="tool-result-item"
+                                data-id={user.id}
+                                data-name={user.name}
+                                onclick={handleUserSelect}
+                                data-testid="user-result-item"
+                            >
+                                <div>
+                                    <span class="tool-result-name">{user.name}</span>
+                                    <span class="tool-result-detail">{user.username}</span>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+                <div class={traceStatusClass} data-testid="trace-status">
+                    <span class={traceIndicatorClass}></span>
+                    <span class="tool-status-text">{traceStatus.message}</span>
+                </div>
+            </div>
+
+            <div class="tool-divider"></div>
+
+            <div class="debug-logs-section">
+                <h3 class="tool-section-title">Cleanup</h3>
+                <div class={deleteStatusClass} data-testid="delete-status">
+                    <span class={deleteIndicatorClass}></span>
+                    <span class="tool-status-text">{deleteStatus.message}</span>
+                </div>
+                <div class="debug-logs-buttons">
+                    <button
+                        class="button-neutral delete-logs-btn"
+                        disabled={deleteLogsDisabled}
+                        onclick={handleDeleteLogs}
+                        data-testid="delete-logs-btn"
+                    >
+                        Delete All Logs
+                    </button>
+                    <button
+                        class="button-neutral delete-flags-btn"
+                        disabled={deleteFlagsDisabled}
+                        onclick={handleDeleteFlags}
+                        data-testid="delete-flags-btn"
+                    >
+                        Delete All Trace Flags
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

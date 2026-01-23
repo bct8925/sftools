@@ -1,0 +1,41 @@
+/* Modal Popup Component - LWC styles */
+
+:host {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: var(--z-modal-backdrop, 900);
+}
+
+:host(.open) {
+    display: flex;
+    pointer-events: auto;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--overlay-bg, rgba(0, 0, 0, 0.5));
+    z-index: -1;
+}
+
+.modal-content {
+    position: relative;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #d8dde6);
+    border-radius: var(--radius-md, 4px);
+    box-shadow: 0 8px 32px var(--shadow-lg, rgba(0,0,0,0.15));
+    max-height: 90vh;
+    max-width: 90vw;
+    overflow: auto;
+    padding: 20px;
+}

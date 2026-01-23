@@ -1,0 +1,106 @@
+/* Search Box Component - Complete styles for Shadow DOM */
+
+/* --- Form Elements --- */
+.form-element {
+    margin-bottom: 0;
+}
+
+.input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+    color: var(--text-main);
+    background-color: var(--input-bg);
+    font-family: inherit;
+}
+
+.input:focus {
+    outline: 0;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color) inset;
+}
+
+/* --- Search Box --- */
+.search-box {
+    position: relative;
+}
+
+.search-box-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.search-box-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+    color: var(--text-main);
+    background-color: var(--input-bg);
+    font-family: inherit;
+}
+
+.search-box-input:focus {
+    outline: 0;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color) inset;
+}
+
+.search-box-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: var(--z-dropdown);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    box-shadow: 0 4px 8px var(--shadow-md);
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.search-box-dropdown.hidden {
+    display: none;
+}
+
+.search-box-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.search-box-item:hover {
+    background: var(--bg-selected);
+}
+
+.search-box-item-name {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.search-box-item-detail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-left: 1rem;
+}
+
+.search-box-no-results {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+}

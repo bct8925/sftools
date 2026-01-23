@@ -1,0 +1,152 @@
+/* Flow Cleanup Tool - Complete styles for Shadow DOM */
+
+/* --- Card --- */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 2px 0 var(--shadow-md);
+    overflow: visible;
+}
+
+.card-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--card-header-bg);
+}
+
+.card-header-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.card-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.card-body {
+    padding: 15px;
+    overflow: visible;
+}
+
+/* --- Button --- */
+.button-brand {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: 1px solid var(--primary-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.button-brand:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.button-brand:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- Status Indicator --- */
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-indicator.status-loading {
+    background-color: var(--indicator-loading);
+    animation: pulse 1s infinite;
+}
+
+.status-indicator.status-success {
+    background-color: var(--indicator-success);
+}
+
+.status-indicator.status-error {
+    background-color: var(--indicator-error);
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* --- Tool-Specific Styles --- */
+.tool-description {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.tool-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    margin-top: 1rem;
+}
+
+.tool-status.hidden {
+    display: none;
+}
+
+.tool-status-text {
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.tool-summary {
+    padding: 1rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.flow-versions {
+    margin-top: 1rem;
+}
+
+.flow-versions.hidden {
+    display: none;
+}
+
+.flow-info {
+    font-size: 14px;
+    color: var(--text-main);
+}
+
+.flow-info strong {
+    font-weight: 600;
+}

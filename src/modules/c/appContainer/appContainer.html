@@ -1,0 +1,79 @@
+<template>
+    <div class="container">
+        <h1>{message}</h1>
+        <p>Counter: {counter}</p>
+        <button onclick={handleClick}>
+            <c-sf-icon name="refresh"></c-sf-icon>
+            Click me
+        </button>
+
+        <h2>Icon Tests</h2>
+        <div class="icon-row">
+            <span><c-sf-icon name="close"></c-sf-icon> close</span>
+            <span><c-sf-icon name="edit"></c-sf-icon> edit</span>
+            <span><c-sf-icon name="refresh"></c-sf-icon> refresh</span>
+            <span><c-sf-icon name="trash"></c-sf-icon> trash</span>
+            <span><c-sf-icon name="hamburger"></c-sf-icon> hamburger</span>
+            <span><c-sf-icon name="settings"></c-sf-icon> settings</span>
+        </div>
+
+        <div class="icon-row color-test">
+            <span style="color: var(--primary-color);"><c-sf-icon name="edit"></c-sf-icon> primary</span>
+            <span style="color: var(--error-color);"><c-sf-icon name="trash"></c-sf-icon> error</span>
+            <span style="color: var(--success-color);"><c-sf-icon name="refresh"></c-sf-icon> success</span>
+        </div>
+
+        <h2>Button Icon Tests</h2>
+        <div class="icon-row">
+            <c-button-icon icon="refresh" title="Refresh" onclick={handleButtonClick}></c-button-icon>
+            <c-button-icon icon="edit" title="Edit" onclick={handleButtonClick}></c-button-icon>
+            <c-button-icon icon="trash" title="Delete" onclick={handleButtonClick}></c-button-icon>
+            <c-button-icon icon="settings" title="Settings" disabled></c-button-icon>
+        </div>
+        <div class="button-click-result">{buttonClickResult}</div>
+
+        <h2>Button Icon with Menu</h2>
+        <div class="icon-row">
+            <c-button-icon icon="verticalDots" title="More options">
+                <button class="btn-icon-option" onclick={handleMenuOption} data-value="option1">Option 1</button>
+                <button class="btn-icon-option" onclick={handleMenuOption} data-value="option2">Option 2</button>
+                <button class="btn-icon-option" onclick={handleMenuOption} data-value="option3">Option 3</button>
+            </c-button-icon>
+        </div>
+        <div class="menu-result">{menuResult}</div>
+
+        <h2>Button Dropdown Test</h2>
+        <c-button-dropdown
+            label="Execute"
+            onclickmain={handleDropdownMain}
+            onclickoption={handleDropdownOption}
+        ></c-button-dropdown>
+        <div class="dropdown-result">{dropdownResult}</div>
+
+        <h2>Modal Popup Test</h2>
+        <button onclick={handleOpenModal}>Open Modal</button>
+
+        <c-modal-popup onclose={handleModalClose}>
+            <h3>Modal Title</h3>
+            <p>This is modal content. Click backdrop or press Escape to close.</p>
+            <button onclick={handleCloseModal}>Close</button>
+        </c-modal-popup>
+        <div class="modal-result">{modalResult}</div>
+
+        <h2>Search Box Test</h2>
+        <c-search-box
+            label="SEARCH TEST"
+            placeholder="Type to search..."
+            onselect={handleSearchSelect}
+        ></c-search-box>
+        <div class="search-result">{searchResult}</div>
+
+        <h2>Utility Components (Phase 3)</h2>
+        <div class="utils-grid">
+            <c-schema-browser-link></c-schema-browser-link>
+            <c-debug-logs></c-debug-logs>
+            <c-flow-cleanup></c-flow-cleanup>
+        </div>
+
+    </div>
+</template>

@@ -1,0 +1,29 @@
+<template>
+    <button
+        class="btn-dropdown-main button-brand"
+        disabled={buttonDisabled}
+        onclick={handleMainClick}
+    >
+        {label}
+    </button>
+    <button
+        class="btn-dropdown-trigger button-brand"
+        disabled={buttonDisabled}
+        onclick={handleTriggerClick}
+    >
+        &#9662;
+    </button>
+    <div class={menuClass}>
+        <template for:each={options} for:item="option">
+            <button
+                key={option.key}
+                class="btn-dropdown-option"
+                data-index={option.index}
+                disabled={option.disabled}
+                onclick={handleOptionClick}
+            >
+                {option.label}
+            </button>
+        </template>
+    </div>
+</template>

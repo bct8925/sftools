@@ -1,0 +1,38 @@
+<template>
+    <div class="search-box">
+        <div class="form-element">
+            <label class="search-box-label">{label}</label>
+            <input
+                type="text"
+                class="input search-box-input"
+                placeholder={placeholder}
+                oninput={handleInput}
+                onfocus={handleFocus}
+                data-testid="search-box-input"
+            />
+        </div>
+        <div class={dropdownClass}>
+            <div class="search-box-results">
+                <template lwc:if={hasNoResults}>
+                    <div class="search-box-no-results">No results found</div>
+                </template>
+                <template lwc:if={showResults}>
+                    <template for:each={results} for:item="result" for:index="index">
+                        <div
+                            key={result.id}
+                            class="search-box-item"
+                            data-index={index}
+                            onclick={handleResultClick}
+                            data-testid="search-box-item"
+                        >
+                            <span class="search-box-item-name">{result.name}</span>
+                            <template lwc:if={result.detail}>
+                                <span class="search-box-item-detail">{result.detail}</span>
+                            </template>
+                        </div>
+                    </template>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>

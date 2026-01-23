@@ -1,0 +1,8 @@
+<template>
+    <template lwc:if={_isOpen}>
+        <div class="modal-backdrop" onclick={handleBackdropClick}></div>
+        <div class="modal-content">
+            <slot></slot>
+        </div>
+    </template>
+</template>

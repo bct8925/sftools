@@ -1,0 +1,93 @@
+/* Button Icon Component - LWC styles */
+
+:host {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.btn-icon-trigger {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color, #d8dde6);
+    background: var(--card-bg, #fff);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted, #666);
+    font-size: 18px;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.btn-icon-trigger:hover:not(:disabled) {
+    border-color: var(--primary-color, #0070d2);
+    color: var(--primary-color, #0070d2);
+}
+
+.btn-icon-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-icon-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    min-width: 140px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #d8dde6);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px var(--shadow-lg, rgba(0,0,0,0.15));
+    z-index: 200;
+    overflow: hidden;
+}
+
+.btn-icon-menu.open {
+    display: block;
+}
+
+/* Slotted menu item styles */
+::slotted(.btn-icon-option) {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 13px;
+    color: var(--text-main, #333);
+    cursor: pointer;
+    transition: background-color 0.15s;
+    display: block;
+}
+
+::slotted(.btn-icon-option:hover:not(:disabled)) {
+    background-color: var(--bg-hover, #f3f3f3);
+}
+
+::slotted(.btn-icon-option:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Checkbox option style */
+::slotted(.btn-icon-checkbox) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-main, #333);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+::slotted(.btn-icon-checkbox:hover) {
+    background-color: var(--bg-hover, #f3f3f3);
+}

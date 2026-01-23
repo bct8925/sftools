@@ -1,0 +1,85 @@
+/* Button Dropdown Component - LWC styles */
+
+:host {
+    display: inline-flex;
+    position: relative;
+}
+
+.btn-dropdown-main,
+.btn-dropdown-trigger {
+    background: var(--primary-color, #0070d2);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-dropdown-main {
+    border-top-left-radius: var(--radius-md, 4px);
+    border-bottom-left-radius: var(--radius-md, 4px);
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-dropdown-trigger {
+    border-top-right-radius: var(--radius-md, 4px);
+    border-bottom-right-radius: var(--radius-md, 4px);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding: 8px 10px;
+    font-size: 10px;
+}
+
+.btn-dropdown-main:hover:not(:disabled),
+.btn-dropdown-trigger:hover:not(:disabled) {
+    background: var(--primary-hover, #005fb2);
+}
+
+.btn-dropdown-main:disabled,
+.btn-dropdown-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #d8dde6);
+    border-radius: var(--radius-md, 4px);
+    box-shadow: 0 4px 12px var(--shadow-lg, rgba(0,0,0,0.15));
+    z-index: var(--z-dropdown, 100);
+    overflow: hidden;
+}
+
+.btn-dropdown-menu.open {
+    display: block;
+}
+
+.btn-dropdown-option {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 13px;
+    color: var(--text-main, #333);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.btn-dropdown-option:hover:not(:disabled) {
+    background-color: var(--bg-hover, #f3f3f3);
+}
+
+.btn-dropdown-option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

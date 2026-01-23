@@ -1,0 +1,18 @@
+<template>
+    <button
+        class="btn-icon-trigger"
+        title={title}
+        disabled={buttonDisabled}
+        onclick={handleTriggerClick}
+    >
+        <c-sf-icon name={icon}></c-sf-icon>
+    </button>
+    <template lwc:if={hasMenu}>
+        <div class={menuClass}>
+            <slot onslotchange={handleSlotChange}></slot>
+        </div>
+    </template>
+    <template lwc:else>
+        <slot onslotchange={handleSlotChange}></slot>
+    </template>
+</template>

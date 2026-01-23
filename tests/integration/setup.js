@@ -19,7 +19,7 @@ const instanceUrl = process.env.SF_INSTANCE_URL?.replace(/\/$/, '');
 if (!accessToken || !instanceUrl) {
     throw new Error(
         'Missing required environment variables: SF_ACCESS_TOKEN and SF_INSTANCE_URL\n' +
-        'Create a .env.test file with your Salesforce credentials.'
+            'Create a .env.test file with your Salesforce credentials.'
     );
 }
 
@@ -39,7 +39,7 @@ export const salesforce = {
         const options = {
             method,
             headers: {
-                'Authorization': `Bearer ${accessToken}`,
+                Authorization: `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
             },
         };
@@ -79,7 +79,7 @@ export const salesforce = {
         const options = {
             method,
             headers: {
-                'Authorization': `Bearer ${accessToken}`,
+                Authorization: `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
             },
         };
@@ -200,9 +200,9 @@ export const salesforce = {
         const options = {
             method,
             headers: {
-                'Authorization': `Bearer ${accessToken}`,
+                Authorization: `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                Accept: 'application/json',
             },
         };
 

@@ -55,7 +55,7 @@ export async function extensionFetch(url, options = {}, connectionId = null) {
         type: 'fetch',
         url,
         options,
-        connectionId: connId
+        connectionId: connId,
     });
     return handleAuthExpired(response, connId);
 }
@@ -77,7 +77,7 @@ export async function proxyFetch(url, options = {}) {
             method: options.method,
             headers: options.headers,
             body: options.body,
-            connectionId: connId
+            connectionId: connId,
         });
 
         return handleAuthExpired(response, connId);
@@ -91,9 +91,9 @@ export async function proxyFetch(url, options = {}) {
  * @param {object} options - Fetch options
  * @returns {Promise<object>} - Response object
  */
-export async function smartFetch(url, options = {}) {
+export function smartFetch(url, options = {}) {
     if (PROXY_CONNECTED) {
-        return await proxyFetch(url, options);
+        return proxyFetch(url, options);
     }
-    return await extensionFetch(url, options);
+    return extensionFetch(url, options);
 }

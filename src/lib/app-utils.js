@@ -25,7 +25,7 @@ export function detectLoginDomain(url) {
         }
 
         return null;
-    } catch (e) {
+    } catch {
         return null;
     }
 }
@@ -41,9 +41,11 @@ export function detectLoginDomain(url) {
  */
 export function buildOAuthUrl(loginDomain, clientId, redirectUri, state, useCodeFlow = false) {
     const responseType = useCodeFlow ? 'code' : 'token';
-    return `${loginDomain}/services/oauth2/authorize` +
+    return (
+        `${loginDomain}/services/oauth2/authorize` +
         `?client_id=${clientId}` +
         `&response_type=${responseType}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-        `&state=${encodeURIComponent(state)}`;
+        `&state=${encodeURIComponent(state)}`
+    );
 }

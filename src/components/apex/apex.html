@@ -1,8 +1,12 @@
 <div class="card">
     <div class="card-header">
-        <div class="card-header-icon" style="background-color: #6a67ce;">A</div>
+        <div class="card-header-icon" style="background-color: #6a67ce">A</div>
         <h2>Anonymous Apex</h2>
-        <button-icon class="apex-history-btn" data-icon="clock" title="History & Favorites"></button-icon>
+        <button-icon
+            class="apex-history-btn"
+            data-icon="clock"
+            title="History & Favorites"
+        ></button-icon>
         <modal-popup class="apex-history-modal">
             <div class="dropdown-tabs">
                 <button class="dropdown-tab active" data-tab="history">History</button>
@@ -10,7 +14,7 @@
             </div>
             <div class="dropdown-content">
                 <div class="script-list apex-history-list"></div>
-                <div class="script-list apex-favorites-list" style="display: none;"></div>
+                <div class="script-list apex-favorites-list" style="display: none"></div>
             </div>
         </modal-popup>
     </div>
@@ -26,13 +30,17 @@
 </div>
 <div class="card">
     <div class="card-header">
-        <div class="card-header-icon" style="background-color: #3ba755;">L</div>
+        <div class="card-header-icon" style="background-color: #3ba755">L</div>
         <h2>Debug Log</h2>
         <div class="apex-output-search">
-            <input type="text" class="search-input" placeholder="Filter...">
+            <input type="text" class="search-input" placeholder="Filter..." />
         </div>
     </div>
     <div class="card-body">
-        <monaco-editor class="apex-output-editor monaco-container monaco-container-lg" language="text" readonly></monaco-editor>
+        <monaco-editor
+            class="apex-output-editor monaco-container monaco-container-lg"
+            language="text"
+            readonly
+        ></monaco-editor>
     </div>
 </div>

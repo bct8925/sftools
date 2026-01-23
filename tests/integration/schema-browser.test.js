@@ -130,8 +130,8 @@ describe('Schema Browser Integration', () => {
                     `/sobjects/CustomField/${invalidFieldId}`,
                     {
                         Metadata: {
-                            formula: 'Invalid Formula Syntax ((('
-                        }
+                            formula: 'Invalid Formula Syntax (((',
+                        },
                     }
                 );
                 expect.fail('Should have thrown an error');
@@ -149,8 +149,8 @@ describe('Schema Browser Integration', () => {
                     `/sobjects/CustomField/${nonExistentFieldId}`,
                     {
                         Metadata: {
-                            formula: 'Name'
-                        }
+                            formula: 'Name',
+                        },
                     }
                 );
                 expect.fail('Should have thrown an error');
@@ -168,8 +168,8 @@ describe('Schema Browser Integration', () => {
                     `/sobjects/CustomField/${malformedFieldId}`,
                     {
                         Metadata: {
-                            formula: 'Name'
-                        }
+                            formula: 'Name',
+                        },
                     }
                 );
                 expect.fail('Should have thrown an error');
@@ -196,14 +196,10 @@ describe('Schema Browser Integration', () => {
 
             try {
                 // Try to update without required metadata structure
-                await salesforce.toolingRequest(
-                    'PATCH',
-                    `/sobjects/CustomField/${fieldId}`,
-                    {
-                        // Invalid - missing Metadata wrapper
-                        formula: 'Name'
-                    }
-                );
+                await salesforce.toolingRequest('PATCH', `/sobjects/CustomField/${fieldId}`, {
+                    // Invalid - missing Metadata wrapper
+                    formula: 'Name',
+                });
                 expect.fail('Should have thrown an error');
             } catch (error) {
                 expect(error.message).toContain('Salesforce Tooling API error');
@@ -220,7 +216,6 @@ describe('Schema Browser Integration', () => {
             expect(describe.fields).toBeDefined();
             expect(describe.fields.length).toBeGreaterThan(0);
         });
-
     });
 
     describe('SB-I-006: Query CustomField records', () => {
@@ -232,7 +227,6 @@ describe('Schema Browser Integration', () => {
             expect(response).toBeDefined();
             expect(Array.isArray(response)).toBe(true);
         });
-
     });
 
     describe('SB-I-007: Get field metadata from describe', () => {
@@ -244,7 +238,6 @@ describe('Schema Browser Integration', () => {
             expect(nameField.label).toBe('Account Name');
             expect(nameField.type).toBeDefined();
         });
-
     });
 
     describe('SB-I-008: Identify formula fields', () => {
@@ -258,7 +251,6 @@ describe('Schema Browser Integration', () => {
                 expect(field.name).toBeDefined();
             });
         });
-
     });
 
     describe('SB-I-009: Get global describe', () => {

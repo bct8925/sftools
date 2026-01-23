@@ -24,16 +24,6 @@ function processSvg(svg, { size = 16 } = {}) {
         .replace(/fill="#ffffff"/g, 'fill="currentColor"');
 }
 
-/**
- * Replaces icon placeholders in HTML string with actual SVG icons
- * Usage: {{icon:close}}, {{icon:edit}}, etc.
- */
-export function replaceIcons(html) {
-    return html.replace(/\{\{icon:(\w+)\}\}/g, (match, iconName) => {
-        return icons[iconName] || match;
-    });
-}
-
 export const icons = {
     // Navigation and UI
     hamburger: processSvg(rowsIcon, { size: 20 }),
@@ -53,5 +43,13 @@ export const icons = {
 
     // Button-icon replacements (for HTML entity migration)
     clock: processSvg(clockIcon, { size: 16 }),
-    settings: processSvg(settingsIcon, { size: 16 })
+    settings: processSvg(settingsIcon, { size: 16 }),
 };
+
+/**
+ * Replaces icon placeholders in HTML string with actual SVG icons
+ * Usage: {{icon:close}}, {{icon:edit}}, etc.
+ */
+export function replaceIcons(html) {
+    return html.replace(/\{\{icon:(\w+)\}\}/g, (match, iconName) => icons[iconName] || match);
+}

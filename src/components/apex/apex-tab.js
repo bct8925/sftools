@@ -1,15 +1,15 @@
 // Apex Tab - Anonymous Apex Execution with History & Favorites
-import template from './apex.html?raw';
-import './apex.css';
-import { monaco } from '../monaco-editor/monaco-editor.js';
-import '../button-icon/button-icon.js';
-import '../modal-popup/modal-popup.js';
 import { isAuthenticated } from '../../lib/utils.js';
 import { executeAnonymousApex } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { HistoryManager } from '../../lib/history-manager.js';
 import { escapeHtml } from '../../lib/text-utils.js';
 import { getPreview, formatOutput, filterLines } from '../../lib/apex-utils.js';
+import { monaco } from '../monaco-editor/monaco-editor.js';
+import '../button-icon/button-icon.js';
+import '../modal-popup/modal-popup.js';
+import template from './apex.html?raw';
+import './apex.css';
 
 class ApexTab extends HTMLElement {
     // DOM references
@@ -30,7 +30,7 @@ class ApexTab extends HTMLElement {
 
     // History/Favorites manager
     historyManager = null;
-    fullOutput = '';  // Store unfiltered output for search
+    fullOutput = ''; // Store unfiltered output for search
     filterDebounceTimeout = null;
 
     connectedCallback() {
@@ -93,8 +93,8 @@ for (Account acc : accounts) {
         });
 
         // List click delegation
-        this.historyList.addEventListener('click', (e) => this.handleListClick(e, 'history'));
-        this.favoritesList.addEventListener('click', (e) => this.handleListClick(e, 'favorites'));
+        this.historyList.addEventListener('click', e => this.handleListClick(e, 'history'));
+        this.favoritesList.addEventListener('click', e => this.handleListClick(e, 'favorites'));
 
         // Search filtering with debounce for performance on large logs
         this.searchInput.addEventListener('input', () => {
@@ -163,7 +163,7 @@ for (Account acc : accounts) {
     }
 
     renderHistoryList() {
-        const history = this.historyManager.history;
+        const { history } = this.historyManager;
 
         if (history.length === 0) {
             this.historyList.innerHTML = `
@@ -174,7 +174,9 @@ for (Account acc : accounts) {
             return;
         }
 
-        this.historyList.innerHTML = history.map(item => `
+        this.historyList.innerHTML = history
+            .map(
+                item => `
             <div class="script-item" data-id="${item.id}">
                 <div class="script-preview">${escapeHtml(getPreview(item.code))}</div>
                 <div class="script-meta">
@@ -186,11 +188,13 @@ for (Account acc : accounts) {
                     </div>
                 </div>
             </div>
-        `).join('');
+        `
+            )
+            .join('');
     }
 
     renderFavoritesList() {
-        const favorites = this.historyManager.favorites;
+        const { favorites } = this.historyManager;
 
         if (favorites.length === 0) {
             this.favoritesList.innerHTML = `
@@ -201,7 +205,9 @@ for (Account acc : accounts) {
             return;
         }
 
-        this.favoritesList.innerHTML = favorites.map(item => `
+        this.favoritesList.innerHTML = favorites
+            .map(
+                item => `
             <div class="script-item" data-id="${item.id}">
                 <div class="script-label">${escapeHtml(item.label)}</div>
                 <div class="script-meta">
@@ -212,15 +218,18 @@ for (Account acc : accounts) {
                     </div>
                 </div>
             </div>
-        `).join('');
+        `
+            )
+            .join('');
     }
 
     handleListClick(event, listType) {
         const item = event.target.closest('.script-item');
         if (!item) return;
 
-        const id = item.dataset.id;
-        const list = listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
+        const { id } = item.dataset;
+        const list =
+            listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
         const scriptData = list.find(s => s.id === id);
         if (!scriptData) return;
 
@@ -272,7 +281,7 @@ for (Account acc : accounts) {
         const close = () => modal.remove();
 
         cancelBtn.addEventListener('click', close);
-        modal.addEventListener('click', (e) => {
+        modal.addEventListener('click', e => {
             if (e.target === modal) close();
         });
 
@@ -284,7 +293,7 @@ for (Account acc : accounts) {
             }
         });
 
-        input.addEventListener('keydown', (e) => {
+        input.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
                 saveBtn.click();
             } else if (e.key === 'Escape') {
@@ -310,9 +319,10 @@ for (Account acc : accounts) {
         const filter = this.searchInput.value.trim();
         const lines = this.fullOutput.split('\n');
         const filtered = filterLines(lines, filter);
-        const result = filtered.length > 0
-            ? filtered.join('\n')
-            : `// No lines match "${this.searchInput.value}"`;
+        const result =
+            filtered.length > 0
+                ? filtered.join('\n')
+                : `// No lines match "${this.searchInput.value}"`;
         this.outputEditor.setValue(result);
     }
 
@@ -320,8 +330,6 @@ for (Account acc : accounts) {
         this.searchInput.value = '';
         this.outputEditor.setValue(this.fullOutput);
     }
-
-
 
     // ============================================================
     // UI Helpers
@@ -342,7 +350,7 @@ for (Account acc : accounts) {
                 startLineNumber: result.line,
                 startColumn: result.column || 1,
                 endLineNumber: result.line,
-                endColumn: result.column ? result.column + 10 : model.getLineMaxColumn(result.line)
+                endColumn: result.column ? result.column + 10 : model.getLineMaxColumn(result.line),
             });
         } else if (!result.success && result.exceptionMessage && result.line) {
             markers.push({
@@ -351,7 +359,7 @@ for (Account acc : accounts) {
                 startLineNumber: result.line,
                 startColumn: 1,
                 endLineNumber: result.line,
-                endColumn: model.getLineMaxColumn(result.line)
+                endColumn: model.getLineMaxColumn(result.line),
             });
         }
 
@@ -359,7 +367,6 @@ for (Account acc : accounts) {
             monaco.editor.setModelMarkers(model, 'apex', markers);
         }
     }
-
 
     updateStatus(text, type = '') {
         updateStatusBadge(this.statusSpan, text, type);
@@ -391,7 +398,7 @@ for (Account acc : accounts) {
         this.executeBtn.disabled = true;
 
         try {
-            const result = await executeAnonymousApex(apexCode, (status) => {
+            const result = await executeAnonymousApex(apexCode, status => {
                 this.updateStatus(status, 'loading');
                 this.setOutput(`// ${status}`);
             });
@@ -410,7 +417,6 @@ for (Account acc : accounts) {
 
             // Save to history after execution
             await this.saveToHistory(apexCode);
-
         } catch (error) {
             this.updateStatus('Error', 'error');
             this.setOutput(`Error: ${error.message}`);

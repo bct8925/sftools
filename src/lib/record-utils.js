@@ -24,10 +24,7 @@ export function sortFields(fields) {
 export function filterFields(fields) {
     const excludeTypes = ['address', 'location'];
     const excludeNames = ['attributes'];
-    return fields.filter(f =>
-        !excludeNames.includes(f.name) &&
-        !excludeTypes.includes(f.type)
-    );
+    return fields.filter(f => !excludeNames.includes(f.name) && !excludeTypes.includes(f.type));
 }
 
 /**
@@ -81,7 +78,7 @@ export function formatPreviewHtml(value, field, record, nameFieldMap = {}, conne
         case 'datetime':
             return new Date(value).toLocaleString();
         case 'date':
-            return new Date(value + 'T00:00:00').toLocaleDateString();
+            return new Date(`${value}T00:00:00`).toLocaleDateString();
         case 'reference':
             if (field.relationshipName && field.referenceTo?.length > 0) {
                 const related = record[field.relationshipName];

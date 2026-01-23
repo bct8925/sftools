@@ -394,7 +394,7 @@
     box-shadow: 0 0 0 1px var(--primary-color) inset;
 }
 
-.query-field-input[type="checkbox"] {
+.query-field-input[type='checkbox'] {
     width: auto;
     cursor: pointer;
 }
@@ -407,4 +407,3 @@
 .query-results-table td.modified .query-field-input {
     background-color: var(--bg-selected);
 }
-

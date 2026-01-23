@@ -34,7 +34,7 @@ import {
     triggerAuthExpired,
     setPendingAuth,
     consumePendingAuth,
-    migrateFromSingleConnection
+    migrateFromSingleConnection,
 } from '../../../src/lib/auth.js';
 
 describe('auth', () => {
@@ -53,7 +53,7 @@ describe('auth', () => {
         it('returns connection values after setActiveConnection', () => {
             const connection = createMockConnection({
                 accessToken: 'my-token',
-                instanceUrl: 'https://my.salesforce.com'
+                instanceUrl: 'https://my.salesforce.com',
             });
 
             setActiveConnection(connection);
@@ -150,7 +150,7 @@ describe('auth', () => {
         it('OA-U-013: creates new connection when connectionId is null', async () => {
             const result = await addConnection({
                 instanceUrl: 'https://test.salesforce.com',
-                accessToken: 'token-123'
+                accessToken: 'token-123',
             });
 
             expect(result.id).toBe('test-uuid-1');
@@ -160,7 +160,7 @@ describe('auth', () => {
         it('OA-U-001: deriveLoginDomain() extracts login.salesforce.com', async () => {
             const result = await addConnection({
                 instanceUrl: 'https://myorg.my.salesforce.com',
-                accessToken: 'token'
+                accessToken: 'token',
             });
 
             expect(result.loginDomain).toBe('https://login.salesforce.com');
@@ -170,7 +170,7 @@ describe('auth', () => {
             const result = await addConnection({
                 instanceUrl: 'https://myorg.sandbox.my.salesforce.com',
                 accessToken: 'token',
-                loginDomain: 'https://test.salesforce.com'
+                loginDomain: 'https://test.salesforce.com',
             });
 
             expect(result.loginDomain).toBe('https://test.salesforce.com');
@@ -179,7 +179,7 @@ describe('auth', () => {
         it('OA-U-003: deriveLoginDomain() handles custom domains', async () => {
             const result = await addConnection({
                 instanceUrl: 'https://customdomain.my.salesforce.com',
-                accessToken: 'token'
+                accessToken: 'token',
             });
 
             expect(result.loginDomain).toBe('https://login.salesforce.com');
@@ -188,7 +188,7 @@ describe('auth', () => {
         it('OA-U-015: deriveLoginDomain() derives login domain from instance URL', async () => {
             const result = await addConnection({
                 instanceUrl: 'https://myorg.my.salesforce.com',
-                accessToken: 'token'
+                accessToken: 'token',
             });
 
             expect(result.loginDomain).toBe('https://login.salesforce.com');
@@ -197,7 +197,7 @@ describe('auth', () => {
         it('OA-U-004: addOrUpdateConnection() creates new if not exists', async () => {
             const result = await addConnection({
                 instanceUrl: 'https://new.salesforce.com',
-                accessToken: 'new-token'
+                accessToken: 'new-token',
             });
 
             expect(result.id).toBeTruthy();
@@ -207,7 +207,7 @@ describe('auth', () => {
         it('defaults loginDomain to login.salesforce.com', async () => {
             const result = await addConnection({
                 instanceUrl: 'https://test.salesforce.com',
-                accessToken: 'token'
+                accessToken: 'token',
             });
 
             expect(result.loginDomain).toBe('https://login.salesforce.com');
@@ -218,7 +218,7 @@ describe('auth', () => {
 
             await addConnection({
                 instanceUrl: 'https://new.salesforce.com',
-                accessToken: 'new-token'
+                accessToken: 'new-token',
             });
 
             const storage = chrome._getStorageData();
@@ -229,7 +229,7 @@ describe('auth', () => {
             const before = Date.now();
             const result = await addConnection({
                 instanceUrl: 'https://test.salesforce.com',
-                accessToken: 'token'
+                accessToken: 'token',
             });
             const after = Date.now();
 
@@ -242,7 +242,7 @@ describe('auth', () => {
     describe('updateConnection', () => {
         it('OA-U-014: updates existing connection by connectionId', async () => {
             chrome._setStorageData({
-                connections: [createMockConnection({ id: 'conn-1', label: 'Old Label' })]
+                connections: [createMockConnection({ id: 'conn-1', label: 'Old Label' })],
             });
 
             const result = await updateConnection('conn-1', { label: 'Updated Label' });
@@ -253,7 +253,7 @@ describe('auth', () => {
 
         it('OA-U-005: addOrUpdateConnection() updates if connectionId matches', async () => {
             chrome._setStorageData({
-                connections: [createMockConnection({ id: 'conn-1', label: 'Old Label' })]
+                connections: [createMockConnection({ id: 'conn-1', label: 'Old Label' })],
             });
 
             const result = await updateConnection('conn-1', { label: 'New Label' });
@@ -272,7 +272,7 @@ describe('auth', () => {
         it('updates lastUsedAt timestamp', async () => {
             const oldTime = Date.now() - 10000;
             chrome._setStorageData({
-                connections: [createMockConnection({ id: 'conn-1', lastUsedAt: oldTime })]
+                connections: [createMockConnection({ id: 'conn-1', lastUsedAt: oldTime })],
             });
 
             const result = await updateConnection('conn-1', { label: 'Updated' });
@@ -282,11 +282,13 @@ describe('auth', () => {
 
         it('preserves other fields', async () => {
             chrome._setStorageData({
-                connections: [createMockConnection({
-                    id: 'conn-1',
-                    accessToken: 'original-token',
-                    instanceUrl: 'https://original.salesforce.com'
-                })]
+                connections: [
+                    createMockConnection({
+                        id: 'conn-1',
+                        accessToken: 'original-token',
+                        instanceUrl: 'https://original.salesforce.com',
+                    }),
+                ],
             });
 
             const result = await updateConnection('conn-1', { label: 'New Label' });
@@ -301,8 +303,8 @@ describe('auth', () => {
             chrome._setStorageData({
                 connections: [
                     createMockConnection({ id: 'conn-1' }),
-                    createMockConnection({ id: 'conn-2' })
-                ]
+                    createMockConnection({ id: 'conn-2' }),
+                ],
             });
 
             await removeConnection('conn-1');
@@ -326,9 +328,15 @@ describe('auth', () => {
         it('finds connection by instance URL', async () => {
             chrome._setStorageData({
                 connections: [
-                    createMockConnection({ id: 'conn-1', instanceUrl: 'https://prod.salesforce.com' }),
-                    createMockConnection({ id: 'conn-2', instanceUrl: 'https://sandbox.salesforce.com' })
-                ]
+                    createMockConnection({
+                        id: 'conn-1',
+                        instanceUrl: 'https://prod.salesforce.com',
+                    }),
+                    createMockConnection({
+                        id: 'conn-2',
+                        instanceUrl: 'https://sandbox.salesforce.com',
+                    }),
+                ],
             });
 
             const result = await findConnectionByInstance('https://sandbox.salesforce.com');
@@ -350,7 +358,7 @@ describe('auth', () => {
             const params = {
                 loginDomain: 'https://test.salesforce.com',
                 clientId: 'client-123',
-                connectionId: 'conn-456'
+                connectionId: 'conn-456',
             };
 
             await setPendingAuth(params);
@@ -380,7 +388,7 @@ describe('auth', () => {
             const params = {
                 loginDomain: 'https://test.salesforce.com',
                 clientId: 'client-123',
-                connectionId: 'conn-456'
+                connectionId: 'conn-456',
             };
 
             await setPendingAuth(params);
@@ -401,7 +409,6 @@ describe('auth', () => {
 
             expect(result).toBeNull();
         });
-
     });
 
     describe('migrateFromSingleConnection', () => {
@@ -426,7 +433,7 @@ describe('auth', () => {
                 accessToken: 'old-token',
                 instanceUrl: 'https://old.salesforce.com',
                 refreshToken: 'refresh-token',
-                loginDomain: 'https://test.salesforce.com'
+                loginDomain: 'https://test.salesforce.com',
             });
 
             const result = await migrateFromSingleConnection();
@@ -447,7 +454,7 @@ describe('auth', () => {
         it('removes legacy keys after migration', async () => {
             chrome._setStorageData({
                 accessToken: 'old-token',
-                instanceUrl: 'https://old.salesforce.com'
+                instanceUrl: 'https://old.salesforce.com',
             });
 
             await migrateFromSingleConnection();

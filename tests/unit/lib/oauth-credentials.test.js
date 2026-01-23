@@ -32,7 +32,7 @@ describe('oauth-credentials', () => {
 
         it('UT-U-008: returns manifest clientId when connection not found', async () => {
             chrome._setStorageData({
-                connections: [createMockConnection({ id: 'conn-1' })]
+                connections: [createMockConnection({ id: 'conn-1' })],
             });
 
             const result = await getOAuthCredentials('non-existent-connection');
@@ -43,7 +43,7 @@ describe('oauth-credentials', () => {
 
         it('UT-U-008: returns manifest clientId when connection has no clientId', async () => {
             chrome._setStorageData({
-                connections: [createMockConnection({ id: 'conn-1', clientId: null })]
+                connections: [createMockConnection({ id: 'conn-1', clientId: null })],
             });
 
             const result = await getOAuthCredentials('conn-1');
@@ -54,7 +54,7 @@ describe('oauth-credentials', () => {
 
         it('UT-U-007: returns connection clientId when available', async () => {
             chrome._setStorageData({
-                connections: [createMockConnection({ id: 'conn-1', clientId: 'custom-client-id' })]
+                connections: [createMockConnection({ id: 'conn-1', clientId: 'custom-client-id' })],
             });
 
             const result = await getOAuthCredentials('conn-1');
@@ -86,8 +86,8 @@ describe('oauth-credentials', () => {
                 connections: [
                     createMockConnection({ id: 'conn-1', clientId: 'client-1' }),
                     createMockConnection({ id: 'conn-2', clientId: 'client-2' }),
-                    createMockConnection({ id: 'conn-3', clientId: null })
-                ]
+                    createMockConnection({ id: 'conn-3', clientId: null }),
+                ],
             });
 
             const result = await getOAuthCredentials('conn-2');
@@ -98,7 +98,7 @@ describe('oauth-credentials', () => {
 
         it('UT-U-015: returns isCustom false for manifest default, true for connection clientId', async () => {
             chrome._setStorageData({
-                connections: [createMockConnection({ id: 'custom-conn', clientId: 'custom-id' })]
+                connections: [createMockConnection({ id: 'custom-conn', clientId: 'custom-id' })],
             });
 
             const defaultResult = await getOAuthCredentials(null);

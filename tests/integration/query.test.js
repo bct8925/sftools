@@ -221,9 +221,7 @@ describe('Query Tab Integration', () => {
     describe('Q-I-009: Query Tooling API object', () => {
         it('returns results from Tooling API', async () => {
             // Query ApexClass (Tooling API object)
-            const result = await salesforce.toolingQuery(
-                'SELECT Id, Name FROM ApexClass LIMIT 5'
-            );
+            const result = await salesforce.toolingQuery('SELECT Id, Name FROM ApexClass LIMIT 5');
 
             expect(Array.isArray(result)).toBe(true);
             // Most orgs have at least some Apex classes

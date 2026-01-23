@@ -28,13 +28,13 @@ async function bulkDeleteTooling(sobjectType, ids) {
             compositeRequest: batch.map((id, idx) => ({
                 method: 'DELETE',
                 url: `/services/data/v${API_VERSION}/tooling/sobjects/${sobjectType}/${id}`,
-                referenceId: `delete_${idx}`
-            }))
+                referenceId: `delete_${idx}`,
+            })),
         };
 
         await salesforceRequest(`/services/data/v${API_VERSION}/tooling/composite`, {
             method: 'POST',
-            body: JSON.stringify(compositeRequest)
+            body: JSON.stringify(compositeRequest),
         });
         deletedCount += batch.length;
     }
@@ -48,10 +48,7 @@ async function bulkDeleteTooling(sobjectType, ids) {
  * @returns {string} - Escaped string safe for SOQL LIKE clauses
  */
 function escapeSoql(str) {
-    return str
-        .replace(/'/g, "\\'")
-        .replace(/%/g, '\\%')
-        .replace(/_/g, '\\_');
+    return str.replace(/'/g, "\\'").replace(/%/g, '\\%').replace(/_/g, '\\_');
 }
 
 // ============================================================
@@ -167,7 +164,7 @@ const DEBUG_LEVELS = {
     System: 'DEBUG',
     Validation: 'INFO',
     Visualforce: 'INFO',
-    Workflow: 'INFO'
+    Workflow: 'INFO',
 };
 
 // ============================================================
@@ -192,21 +189,28 @@ export async function getCurrentUserId() {
  * @returns {Promise<string>} Debug level ID
  */
 async function getOrCreateDebugLevel() {
-    const query = encodeURIComponent(`SELECT Id FROM DebugLevel WHERE DeveloperName = '${DEBUG_LEVEL_NAME}'`);
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const query = encodeURIComponent(
+        `SELECT Id FROM DebugLevel WHERE DeveloperName = '${DEBUG_LEVEL_NAME}'`
+    );
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
+    );
 
     if (response.json.records && response.json.records.length > 0) {
         return response.json.records[0].Id;
     }
 
-    const createResponse = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/DebugLevel`, {
-        method: 'POST',
-        body: JSON.stringify({
-            DeveloperName: DEBUG_LEVEL_NAME,
-            MasterLabel: 'sftools Debug Level',
-            ...DEBUG_LEVELS
-        })
-    });
+    const createResponse = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/sobjects/DebugLevel`,
+        {
+            method: 'POST',
+            body: JSON.stringify({
+                DeveloperName: DEBUG_LEVEL_NAME,
+                MasterLabel: 'sftools Debug Level',
+                ...DEBUG_LEVELS,
+            }),
+        }
+    );
 
     return createResponse.json.id;
 }
@@ -223,7 +227,9 @@ async function ensureTraceFlag(userId) {
     const query = encodeURIComponent(
         `SELECT Id, DebugLevelId, DebugLevel.DeveloperName, ExpirationDate FROM TraceFlag WHERE TracedEntityId = '${userId}' AND LogType = 'USER_DEBUG' AND ExpirationDate > ${now}`
     );
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
+    );
 
     if (response.json.records && response.json.records.length > 0) {
         const existing = response.json.records[0];
@@ -234,16 +240,21 @@ async function ensureTraceFlag(userId) {
             return existing.Id;
         }
 
-        const debugLevelId = hasCorrectDebugLevel ? existing.DebugLevelId : await getOrCreateDebugLevel();
+        const debugLevelId = hasCorrectDebugLevel
+            ? existing.DebugLevelId
+            : await getOrCreateDebugLevel();
         const newExpiration = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${existing.Id}`, {
-            method: 'PATCH',
-            body: JSON.stringify({
-                ExpirationDate: newExpiration,
-                DebugLevelId: debugLevelId
-            })
-        });
+        await salesforceRequest(
+            `/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${existing.Id}`,
+            {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    ExpirationDate: newExpiration,
+                    DebugLevelId: debugLevelId,
+                }),
+            }
+        );
 
         return existing.Id;
     }
@@ -252,16 +263,19 @@ async function ensureTraceFlag(userId) {
     const startDate = new Date().toISOString();
     const expirationDate = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-    const createResponse = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag`, {
-        method: 'POST',
-        body: JSON.stringify({
-            TracedEntityId: userId,
-            DebugLevelId: debugLevelId,
-            LogType: 'USER_DEBUG',
-            StartDate: startDate,
-            ExpirationDate: expirationDate
-        })
-    });
+    const createResponse = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag`,
+        {
+            method: 'POST',
+            body: JSON.stringify({
+                TracedEntityId: userId,
+                DebugLevelId: debugLevelId,
+                LogType: 'USER_DEBUG',
+                StartDate: startDate,
+                ExpirationDate: expirationDate,
+            }),
+        }
+    );
 
     return createResponse.json.id;
 }
@@ -274,7 +288,9 @@ async function getLatestAnonymousLog() {
     const query = encodeURIComponent(
         `SELECT Id, LogLength, Status FROM ApexLog WHERE Operation LIKE '%executeAnonymous/' ORDER BY StartTime DESC LIMIT 1`
     );
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
+    );
 
     if (!response.json.records || response.json.records.length === 0) {
         return null;
@@ -286,8 +302,8 @@ async function getLatestAnonymousLog() {
         `${getInstanceUrl()}/services/data/v${API_VERSION}/tooling/sobjects/ApexLog/${logId}/Body`,
         {
             headers: {
-                'Authorization': `Bearer ${getAccessToken()}`
-            }
+                Authorization: `Bearer ${getAccessToken()}`,
+            },
         }
     );
 
@@ -358,7 +374,7 @@ export async function executeQueryWithColumns(soql, useToolingApi = false) {
         records: queryData.records || [],
         totalSize: queryData.totalSize || 0,
         columnMetadata: columnData.columnMetadata || [],
-        entityName: columnData.entityName || null
+        entityName: columnData.entityName || null,
     };
 }
 
@@ -404,7 +420,9 @@ export async function getObjectDescribe(objectType, bypassCache = false) {
         }
     }
 
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/${objectType}/describe`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/sobjects/${objectType}/describe`
+    );
     const data = response.json;
 
     // Cache the result
@@ -420,7 +438,9 @@ export async function getObjectDescribe(objectType, bypassCache = false) {
  * @returns {Promise<object>} Record data
  */
 export async function getRecord(objectType, recordId) {
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/${objectType}/${recordId}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/sobjects/${objectType}/${recordId}`
+    );
     return response.json;
 }
 
@@ -444,9 +464,7 @@ export async function getRecordWithRelationships(objectType, recordId, fields) {
     const nameFieldMap = {};
     if (referencedTypes.size > 0) {
         const describes = await Promise.all(
-            [...referencedTypes].map(type =>
-                getObjectDescribe(type).catch(() => null)
-            )
+            [...referencedTypes].map(type => getObjectDescribe(type).catch(() => null))
         );
 
         [...referencedTypes].forEach((type, index) => {
@@ -478,7 +496,9 @@ export async function getRecordWithRelationships(objectType, recordId, fields) {
     }
 
     const soql = `SELECT ${fieldNames.join(', ')} FROM ${objectType} WHERE Id = '${recordId}'`;
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/query/?q=${encodeURIComponent(soql)}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/query/?q=${encodeURIComponent(soql)}`
+    );
 
     if (!response.json.records || response.json.records.length === 0) {
         throw new Error('Record not found');
@@ -497,7 +517,7 @@ export async function getRecordWithRelationships(objectType, recordId, fields) {
 export async function updateRecord(objectType, recordId, fields) {
     await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/${objectType}/${recordId}`, {
         method: 'PATCH',
-        body: JSON.stringify(fields)
+        body: JSON.stringify(fields),
     });
 }
 
@@ -517,17 +537,17 @@ export async function executeRestRequest(endpoint, method, body = null) {
     const response = await smartFetch(`${getInstanceUrl()}${endpoint}`, {
         method,
         headers: {
-            'Authorization': `Bearer ${getAccessToken()}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${getAccessToken()}`,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
         },
-        body
+        body,
     });
 
-    let data = response.data;
+    let { data } = response;
     try {
         data = JSON.parse(response.data);
-    } catch (e) {
+    } catch {
         // Keep as raw string if not JSON
     }
 
@@ -537,7 +557,7 @@ export async function executeRestRequest(endpoint, method, body = null) {
         statusText: response.statusText,
         error: response.error,
         data,
-        raw: response.data
+        raw: response.data,
     };
 }
 
@@ -555,10 +575,12 @@ export async function getEventChannels() {
         "SELECT DeveloperName, QualifiedApiName, Label FROM EntityDefinition WHERE QualifiedApiName LIKE '%__e' AND IsCustomizable = true ORDER BY Label"
     );
 
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query?q=${query}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/query?q=${query}`
+    );
 
     return {
-        customEvents: response.json.records || []
+        customEvents: response.json.records || [],
     };
 }
 
@@ -568,7 +590,7 @@ export async function getEventChannels() {
  */
 export async function getPushTopics() {
     const query = encodeURIComponent(
-        "SELECT Id, Name, Query, ApiVersion, IsActive FROM PushTopic WHERE IsActive = true ORDER BY Name"
+        'SELECT Id, Name, Query, ApiVersion, IsActive FROM PushTopic WHERE IsActive = true ORDER BY Name'
     );
 
     const response = await salesforceRequest(`/services/data/v${API_VERSION}/query?q=${query}`);
@@ -581,13 +603,11 @@ const STANDARD_EVENTS = [
     { name: 'BatchApexErrorEvent', label: 'Batch Apex Error Event' },
     { name: 'FlowExecutionErrorEvent', label: 'Flow Execution Error Event' },
     { name: 'PlatformStatusAlertEvent', label: 'Platform Status Alert Event' },
-    { name: 'AsyncOperationEvent', label: 'Async Operation Event' }
+    { name: 'AsyncOperationEvent', label: 'Async Operation Event' },
 ];
 
 // System Topics (CometD only)
-const SYSTEM_TOPICS = [
-    { channel: '/systemTopic/Logging', label: 'Debug Logs' }
-];
+const SYSTEM_TOPICS = [{ channel: '/systemTopic/Logging', label: 'Debug Logs' }];
 
 /**
  * Get all streaming channels (unified)
@@ -596,14 +616,14 @@ const SYSTEM_TOPICS = [
 export async function getAllStreamingChannels() {
     const [platformEvents, pushTopics] = await Promise.all([
         getEventChannels(),
-        getPushTopics().catch(() => [])
+        getPushTopics().catch(() => []),
     ]);
 
     return {
         platformEvents: platformEvents.customEvents,
         standardEvents: STANDARD_EVENTS,
         pushTopics,
-        systemTopics: SYSTEM_TOPICS
+        systemTopics: SYSTEM_TOPICS,
     };
 }
 
@@ -619,10 +639,10 @@ export async function publishPlatformEvent(eventType, payload) {
         {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${getAccessToken()}`,
-                'Content-Type': 'application/json'
+                Authorization: `Bearer ${getAccessToken()}`,
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
         }
     );
 
@@ -637,7 +657,7 @@ export async function publishPlatformEvent(eventType, payload) {
         if (Array.isArray(errorData) && errorData[0]?.message) {
             errorMsg = errorData[0].message;
         }
-    } catch (e) {
+    } catch {
         // Use default error message
     }
 
@@ -654,7 +674,9 @@ export async function publishPlatformEvent(eventType, payload) {
  */
 export async function deleteAllDebugLogs() {
     const query = encodeURIComponent('SELECT Id FROM ApexLog');
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
+    );
 
     const logIds = (response.json.records || []).map(l => l.Id);
     if (logIds.length === 0) {
@@ -692,33 +714,41 @@ export async function enableTraceFlagForUser(userId) {
     const query = encodeURIComponent(
         `SELECT Id, DebugLevelId, ExpirationDate FROM TraceFlag WHERE TracedEntityId = '${userId}' AND LogType = 'USER_DEBUG' AND DebugLevel.DeveloperName = '${DEBUG_LEVEL_NAME}'`
     );
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
+    );
 
     if (response.json.records && response.json.records.length > 0) {
         const existing = response.json.records[0];
 
-        await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${existing.Id}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ 
-                StartDate: now,
-                ExpirationDate: thirtyMinutesFromNow 
-            })
-        });
+        await salesforceRequest(
+            `/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag/${existing.Id}`,
+            {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    StartDate: now,
+                    ExpirationDate: thirtyMinutesFromNow,
+                }),
+            }
+        );
         return existing.Id;
     }
 
     // Create new trace flag
     const debugLevelId = await getOrCreateDebugLevel();
-    const createResponse = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag`, {
-        method: 'POST',
-        body: JSON.stringify({
-            TracedEntityId: userId,
-            DebugLevelId: debugLevelId,
-            LogType: 'USER_DEBUG',
-            StartDate: now,
-            ExpirationDate: thirtyMinutesFromNow
-        })
-    });
+    const createResponse = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag`,
+        {
+            method: 'POST',
+            body: JSON.stringify({
+                TracedEntityId: userId,
+                DebugLevelId: debugLevelId,
+                LogType: 'USER_DEBUG',
+                StartDate: now,
+                ExpirationDate: thirtyMinutesFromNow,
+            }),
+        }
+    );
     return createResponse.json.id;
 }
 
@@ -728,7 +758,9 @@ export async function enableTraceFlagForUser(userId) {
  */
 export async function deleteAllTraceFlags() {
     const query = encodeURIComponent('SELECT Id FROM TraceFlag');
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
+    );
 
     const flagIds = (response.json.records || []).map(f => f.Id);
     if (flagIds.length === 0) {
@@ -749,7 +781,9 @@ export async function searchFlows(searchTerm) {
     const query = encodeURIComponent(
         `SELECT Id, DeveloperName, ActiveVersionId FROM FlowDefinition WHERE DeveloperName LIKE '%${escaped}%' ORDER BY DeveloperName LIMIT 10`
     );
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
+    );
     return response.json.records || [];
 }
 
@@ -762,7 +796,9 @@ export async function getFlowVersions(flowDefinitionId) {
     const query = encodeURIComponent(
         `SELECT Id, VersionNumber, Status, Description FROM Flow WHERE DefinitionId = '${flowDefinitionId}' ORDER BY VersionNumber DESC`
     );
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
+    );
     return response.json.records || [];
 }
 
@@ -808,8 +844,8 @@ export async function createBulkQueryJob(soql) {
         method: 'POST',
         body: JSON.stringify({
             operation: 'query',
-            query: soql
-        })
+            query: soql,
+        }),
     });
     return response.json;
 }
@@ -834,9 +870,9 @@ export async function getBulkQueryResults(jobId) {
         `${getInstanceUrl()}/services/data/v${API_VERSION}/jobs/query/${jobId}/results`,
         {
             headers: {
-                'Authorization': `Bearer ${getAccessToken()}`,
-                'Accept': 'text/csv'
-            }
+                Authorization: `Bearer ${getAccessToken()}`,
+                Accept: 'text/csv',
+            },
         }
     );
 
@@ -855,7 +891,7 @@ export async function getBulkQueryResults(jobId) {
 export async function abortBulkQueryJob(jobId) {
     await salesforceRequest(`/services/data/v${API_VERSION}/jobs/query/${jobId}`, {
         method: 'PATCH',
-        body: JSON.stringify({ state: 'Aborted' })
+        body: JSON.stringify({ state: 'Aborted' }),
     });
 }
 
@@ -881,18 +917,22 @@ export async function executeBulkQueryExport(soql, onProgress) {
 
         if (status.state === 'JobComplete') {
             onProgress?.('Downloading...');
-            return await getBulkQueryResults(jobId);
+            return getBulkQueryResults(jobId);
         }
 
         if (status.state === 'Failed' || status.state === 'Aborted') {
-            throw new Error(`Bulk query ${status.state.toLowerCase()}: ${status.errorMessage || 'Unknown error'}`);
+            throw new Error(
+                `Bulk query ${status.state.toLowerCase()}: ${status.errorMessage || 'Unknown error'}`
+            );
         }
 
         await new Promise(resolve => setTimeout(resolve, pollInterval));
         attempts++;
     }
 
-    await abortBulkQueryJob(jobId).catch(() => {});
+    await abortBulkQueryJob(jobId).catch(() => {
+        /* ignore */
+    });
     throw new Error('Bulk query timed out');
 }
 
@@ -911,7 +951,9 @@ export async function getFormulaFieldMetadata(objectType, fieldName) {
     const query = encodeURIComponent(
         `SELECT Id, FullName, Metadata FROM CustomField WHERE TableEnumOrId = '${objectType}' AND DeveloperName = '${fieldName.replace(/__c$/, '')}'`
     );
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/tooling/query/?q=${query}`);
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
+    );
 
     if (!response.json.records || response.json.records.length === 0) {
         throw new Error('Formula field not found');
@@ -922,7 +964,7 @@ export async function getFormulaFieldMetadata(objectType, fieldName) {
         id: record.Id,
         formula: record.Metadata?.formula || '',
         fullName: record.FullName,
-        metadata: record.Metadata
+        metadata: record.Metadata,
     };
 }
 
@@ -937,13 +979,16 @@ export async function updateFormulaField(fieldId, formula, existingMetadata) {
     // Update only the formula property, preserve other metadata
     const updatedMetadata = {
         ...existingMetadata,
-        formula
+        formula,
     };
 
-    await salesforceRequest(`/services/data/v${API_VERSION}/tooling/sobjects/CustomField/${fieldId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-            Metadata: updatedMetadata
-        })
-    });
+    await salesforceRequest(
+        `/services/data/v${API_VERSION}/tooling/sobjects/CustomField/${fieldId}`,
+        {
+            method: 'PATCH',
+            body: JSON.stringify({
+                Metadata: updatedMetadata,
+            }),
+        }
+    );
 }

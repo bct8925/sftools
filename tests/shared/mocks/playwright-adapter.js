@@ -24,7 +24,7 @@ export class MockRouter {
         // Intercept all Salesforce API requests (both data and tooling APIs)
         // Pattern matches any Salesforce domain variant (.salesforce.com, .my.salesforce.com, etc.)
         // Use context-level routing to catch requests from service workers
-        const routeHandler = async (route) => {
+        const routeHandler = async route => {
             const request = route.request();
             const url = request.url();
             const method = request.method();
@@ -34,27 +34,25 @@ export class MockRouter {
 
             if (handler) {
                 const mockResponse = handler.response;
-                const responseData = typeof mockResponse.data !== 'undefined'
-                    ? mockResponse.data
-                    : mockResponse;
+                const responseData =
+                    typeof mockResponse.data !== 'undefined' ? mockResponse.data : mockResponse;
 
                 // Check if this is a plain text response (e.g., ApexLog Body endpoint)
                 const contentType = mockResponse.contentType || 'application/json';
-                const body = contentType === 'text/plain'
-                    ? responseData
-                    : JSON.stringify(responseData);
+                const body =
+                    contentType === 'text/plain' ? responseData : JSON.stringify(responseData);
 
                 await route.fulfill({
                     status: mockResponse.status || 200,
                     contentType,
-                    body
+                    body,
                 });
             } else {
                 // No mock defined - return empty response to prevent actual API call
                 await route.fulfill({
                     status: 200,
                     contentType: 'application/json',
-                    body: JSON.stringify({ records: [], totalSize: 0 })
+                    body: JSON.stringify({ records: [], totalSize: 0 }),
                 });
             }
         };
@@ -68,9 +66,10 @@ export class MockRouter {
     findMatchingRoute(url, method) {
         return this.routes.find(route => {
             const methodMatches = !route.method || route.method === method;
-            const urlMatches = route.pattern instanceof RegExp
-                ? route.pattern.test(url)
-                : url.includes(route.pattern);
+            const urlMatches =
+                route.pattern instanceof RegExp
+                    ? route.pattern.test(url)
+                    : url.includes(route.pattern);
             return methodMatches && urlMatches;
         });
     }
@@ -95,17 +94,29 @@ export class MockRouter {
      */
     onQuery(queryPattern, records, columnMetadata = null, entityName = null) {
         // Infer entityName from first record's attributes if not provided
-        const inferredEntityName = entityName || (records[0]?.attributes?.type) || null;
+        const inferredEntityName = entityName || records[0]?.attributes?.type || null;
 
         // Query endpoint returns column metadata when columns=true parameter is present
-        const metadataResponse = this.mockData.queryResponse([], columnMetadata || [], inferredEntityName);
+        const metadataResponse = this.mockData.queryResponse(
+            [],
+            columnMetadata || [],
+            inferredEntityName
+        );
         const dataResponse = this.mockData.queryResponse(records);
 
         // Match query requests with columns=true
-        this.addRoute(/\/services\/data\/v[\d.]+\/query\/?\?.*columns=true/, metadataResponse, 'GET');
+        this.addRoute(
+            /\/services\/data\/v[\d.]+\/query\/?\?.*columns=true/,
+            metadataResponse,
+            'GET'
+        );
 
         // Match regular query requests
-        this.addRoute(queryPattern instanceof RegExp ? queryPattern : /\/services\/data\/v[\d.]+\/query/, dataResponse, 'GET');
+        this.addRoute(
+            queryPattern instanceof RegExp ? queryPattern : /\/services\/data\/v[\d.]+\/query/,
+            dataResponse,
+            'GET'
+        );
 
         return this;
     }
@@ -117,7 +128,11 @@ export class MockRouter {
      */
     onDescribe(objectType, fields) {
         const response = this.mockData.objectDescribe(objectType, fields);
-        this.addRoute(new RegExp(`/services/data/v[\\d.]+/sobjects/${objectType}/describe`), response, 'GET');
+        this.addRoute(
+            new RegExp(`/services/data/v[\\d.]+/sobjects/${objectType}/describe`),
+            response,
+            'GET'
+        );
         return this;
     }
 
@@ -151,7 +166,11 @@ export class MockRouter {
      */
     onGetRecord(objectType, recordId, record) {
         const response = this.mockData.recordResponse(record);
-        this.addRoute(new RegExp(`/services/data/v[\\d.]+/sobjects/${objectType}/${recordId}`), response, 'GET');
+        this.addRoute(
+            new RegExp(`/services/data/v[\\d.]+/sobjects/${objectType}/${recordId}`),
+            response,
+            'GET'
+        );
         return this;
     }
 
@@ -162,7 +181,11 @@ export class MockRouter {
      */
     onCreateRecord(objectType, recordId) {
         const response = this.mockData.createResponse(recordId);
-        this.addRoute(new RegExp(`/services/data/v[\\d.]+/sobjects/${objectType}$`), response, 'POST');
+        this.addRoute(
+            new RegExp(`/services/data/v[\\d.]+/sobjects/${objectType}$`),
+            response,
+            'POST'
+        );
         return this;
     }
 
@@ -173,7 +196,11 @@ export class MockRouter {
      */
     onUpdateRecord(objectType, recordId) {
         const response = { ok: true, status: 204, data: null };
-        this.addRoute(new RegExp(`/services/data/v[\\d.]+/sobjects/${objectType}/${recordId}`), response, 'PATCH');
+        this.addRoute(
+            new RegExp(`/services/data/v[\\d.]+/sobjects/${objectType}/${recordId}`),
+            response,
+            'PATCH'
+        );
         return this;
     }
 

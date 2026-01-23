@@ -1,8 +1,12 @@
 <div class="card">
     <div class="card-header">
-        <div class="card-header-icon" style="background-color: #0070d2;">S</div>
+        <div class="card-header-icon" style="background-color: #0070d2">S</div>
         <h2>SOQL Query</h2>
-        <button-icon class="query-history-btn" data-icon="clock" title="History & Favorites"></button-icon>
+        <button-icon
+            class="query-history-btn"
+            data-icon="clock"
+            title="History & Favorites"
+        ></button-icon>
         <modal-popup class="query-history-modal">
             <div class="dropdown-tabs">
                 <button class="dropdown-tab active" data-tab="history">History</button>
@@ -10,13 +14,17 @@
             </div>
             <div class="dropdown-content">
                 <div class="script-list query-history-list"></div>
-                <div class="script-list query-favorites-list" style="display: none;"></div>
+                <div class="script-list query-favorites-list" style="display: none"></div>
             </div>
         </modal-popup>
         <modal-popup class="query-favorite-modal">
             <div class="query-favorite-dialog">
                 <h3>Add to Favorites</h3>
-                <input type="text" class="query-favorite-input" placeholder="Enter a label for this query">
+                <input
+                    type="text"
+                    class="query-favorite-input"
+                    placeholder="Enter a label for this query"
+                />
                 <div class="query-favorite-buttons">
                     <button class="button-neutral query-favorite-cancel">Cancel</button>
                     <button class="button-brand query-favorite-save">Save</button>
@@ -25,7 +33,7 @@
         </modal-popup>
         <button-icon class="query-settings-btn" data-icon="settings" title="Settings">
             <label class="btn-icon-checkbox">
-                <input type="checkbox" class="query-tooling-checkbox">
+                <input type="checkbox" class="query-tooling-checkbox" />
                 Tooling API
             </label>
         </button-icon>
@@ -42,16 +50,16 @@
 </div>
 <div class="card">
     <div class="card-header">
-        <div class="card-header-icon" style="background-color: #4bca81;">Q</div>
+        <div class="card-header-icon" style="background-color: #4bca81">Q</div>
         <h2>Results</h2>
         <div class="query-results-search">
-            <input type="text" class="search-input" placeholder="Filter...">
+            <input type="text" class="search-input" placeholder="Filter..." />
         </div>
         <button-icon class="query-results-btn" data-icon="verticalDots" title="Options">
             <button class="btn-icon-option query-export-btn" disabled>Export</button>
             <button class="btn-icon-option query-bulk-export-btn" disabled>Bulk Export</button>
             <label class="btn-icon-checkbox">
-                <input type="checkbox" class="query-editing-checkbox">
+                <input type="checkbox" class="query-editing-checkbox" />
                 Enable Editing
             </label>
             <button class="btn-icon-option query-save-btn" disabled>Save Changes</button>

@@ -147,7 +147,7 @@ describe('REST API Tab Integration', () => {
                 'POST',
                 {
                     Name: accountName,
-                    InvalidFieldName__c: 'test' // Field doesn't exist
+                    InvalidFieldName__c: 'test', // Field doesn't exist
                 }
             );
 
@@ -198,7 +198,6 @@ describe('REST API Tab Integration', () => {
             const record = await salesforce.getRecord('Account', accountId, ['Name']);
             expect(record.Name).toBe(updatedName);
         });
-
     });
 
     describe('R-I-010: GET retrieves record by ID', () => {
@@ -225,7 +224,6 @@ describe('REST API Tab Integration', () => {
             expect(getResult.body.Id).toBe(accountId);
             expect(getResult.body.Name).toBe(accountName);
         });
-
     });
 
     describe('R-I-011: DELETE removes record', () => {
@@ -271,8 +269,9 @@ describe('REST API Tab Integration', () => {
 
             // Salesforce includes a unique request ID header
             const hasRequestId = Object.keys(result.headers).some(
-                key => key.toLowerCase().includes('request-id') ||
-                       key.toLowerCase().includes('requestid')
+                key =>
+                    key.toLowerCase().includes('request-id') ||
+                    key.toLowerCase().includes('requestid')
             );
             expect(hasRequestId).toBe(true);
         });

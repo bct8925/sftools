@@ -12,7 +12,7 @@ export function createMockResponse(data, options = {}) {
         status,
         data,
         json: () => Promise.resolve(data),
-        text: () => Promise.resolve(typeof data === 'string' ? data : JSON.stringify(data))
+        text: () => Promise.resolve(typeof data === 'string' ? data : JSON.stringify(data)),
     };
 }
 
@@ -25,7 +25,7 @@ export function createErrorResponse(message, status = 400) {
         status,
         data: [{ message, errorCode: 'ERROR' }],
         json: () => Promise.resolve([{ message, errorCode: 'ERROR' }]),
-        text: () => Promise.resolve(JSON.stringify([{ message, errorCode: 'ERROR' }]))
+        text: () => Promise.resolve(JSON.stringify([{ message, errorCode: 'ERROR' }])),
     };
 }
 
@@ -41,7 +41,7 @@ export function createSalesforceMocks() {
             const response = {
                 done: true,
                 totalSize: records.length,
-                records
+                records,
             };
             if (columnMetadata) {
                 response.columnMetadata = columnMetadata;
@@ -68,8 +68,8 @@ export function createSalesforceMocks() {
                     type: f.type || 'string',
                     updateable: f.updateable !== false,
                     nillable: f.nillable !== false,
-                    ...f
-                }))
+                    ...f,
+                })),
             });
         },
 
@@ -83,8 +83,8 @@ export function createSalesforceMocks() {
                     label: s.label || s.name || s,
                     keyPrefix: s.keyPrefix || '001',
                     queryable: s.queryable !== false,
-                    ...(typeof s === 'object' ? s : {})
-                }))
+                    ...(typeof s === 'object' ? s : {}),
+                })),
             });
         },
 
@@ -96,8 +96,10 @@ export function createSalesforceMocks() {
                 ...record,
                 attributes: {
                     type: record.attributes?.type || 'SObject',
-                    url: record.attributes?.url || `/services/data/v59.0/sobjects/SObject/${record.Id}`
-                }
+                    url:
+                        record.attributes?.url ||
+                        `/services/data/v59.0/sobjects/SObject/${record.Id}`,
+                },
             });
         },
 
@@ -105,11 +107,14 @@ export function createSalesforceMocks() {
          * Mock record create response
          */
         createResponse(id, success = true) {
-            return createMockResponse({
-                id,
-                success,
-                errors: []
-            }, { status: 201 });
+            return createMockResponse(
+                {
+                    id,
+                    success,
+                    errors: [],
+                },
+                { status: 201 }
+            );
         },
 
         /**
@@ -124,7 +129,7 @@ export function createSalesforceMocks() {
                 exceptionStackTrace: success ? null : 'at line 1',
                 line: compiled ? -1 : 1,
                 column: compiled ? -1 : 1,
-                log
+                log,
             });
         },
 
@@ -136,8 +141,8 @@ export function createSalesforceMocks() {
                 compositeResponse: results.map((r, i) => ({
                     body: r.body || r,
                     httpStatusCode: r.status || 200,
-                    referenceId: r.referenceId || `ref${i}`
-                }))
+                    referenceId: r.referenceId || `ref${i}`,
+                })),
             });
         },
 
@@ -148,9 +153,9 @@ export function createSalesforceMocks() {
             return createMockResponse({
                 done: true,
                 totalSize: records.length,
-                records
+                records,
             });
-        }
+        },
     };
 }
 
@@ -168,6 +173,6 @@ export function createMockConnection(overrides = {}) {
         clientId: overrides.clientId || null,
         createdAt: overrides.createdAt || Date.now(),
         lastUsedAt: overrides.lastUsedAt || Date.now(),
-        ...overrides
+        ...overrides,
     };
 }

@@ -42,7 +42,7 @@ export function extractOrgIdentifier(hostname) {
         /^([^.]+)\.trailblaze\.my\.salesforce\.com$/,
         // Standard production/enterprise orgs (most common - check last)
         /^([^.]+)\.lightning\.force\.com$/,
-        /^([^.]+)\.my\.salesforce\.com$/
+        /^([^.]+)\.my\.salesforce\.com$/,
     ];
 
     for (const pattern of patterns) {

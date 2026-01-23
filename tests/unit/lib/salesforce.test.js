@@ -34,17 +34,17 @@ import { createMockConnection } from '../mocks/salesforce.js';
 
 // Mock dependencies
 vi.mock('../../../src/lib/salesforce-request.js', () => ({
-    salesforceRequest: vi.fn()
+    salesforceRequest: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/fetch.js', () => ({
-    smartFetch: vi.fn()
+    smartFetch: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/auth.js', () => ({
     getAccessToken: vi.fn(),
     getInstanceUrl: vi.fn(),
-    getActiveConnectionId: vi.fn()
+    getActiveConnectionId: vi.fn(),
 }));
 
 // Import after mocking
@@ -76,7 +76,7 @@ import {
     abortBulkQueryJob,
     executeBulkQueryExport,
     getFormulaFieldMetadata,
-    updateFormulaField
+    updateFormulaField,
 } from '../../../src/lib/salesforce.js';
 import { salesforceRequest } from '../../../src/lib/salesforce-request.js';
 import { smartFetch } from '../../../src/lib/fetch.js';
@@ -97,7 +97,7 @@ describe('salesforce', () => {
         it('SF-U-025: clears cache for current connection', async () => {
             // Set up cache first (using per-connection key format)
             chrome._setStorageData({
-                'describeCache_conn-123': { global: { sobjects: [] }, objects: {} }
+                'describeCache_conn-123': { global: { sobjects: [] }, objects: {} },
             });
 
             await clearDescribeCache();
@@ -116,7 +116,7 @@ describe('salesforce', () => {
         it('preserves other connections cache', async () => {
             chrome._setStorageData({
                 'describeCache_conn-123': { global: { sobjects: [] }, objects: {} },
-                'describeCache_other-conn': { global: { sobjects: ['Account'] }, objects: {} }
+                'describeCache_other-conn': { global: { sobjects: ['Account'] }, objects: {} },
             });
 
             await clearDescribeCache();
@@ -129,7 +129,7 @@ describe('salesforce', () => {
     describe('getCurrentUserId', () => {
         it('SF-U-001: returns user ID from chatter response', async () => {
             salesforceRequest.mockResolvedValue({
-                json: { id: '005XXXXXXXXXXXXXXX', name: 'Test User' }
+                json: { id: '005XXXXXXXXXXXXXXX', name: 'Test User' },
             });
 
             const userId = await getCurrentUserId();
@@ -153,8 +153,8 @@ describe('salesforce', () => {
             chrome._setStorageData({
                 'describeCache_conn-123': {
                     global: { sobjects: [{ name: 'CachedObject' }] },
-                    objects: {}
-                }
+                    objects: {},
+                },
             });
 
             const result = await getGlobalDescribe();
@@ -165,15 +165,13 @@ describe('salesforce', () => {
 
         it('fetches and caches when no cache exists', async () => {
             salesforceRequest.mockResolvedValue({
-                json: { sobjects: [{ name: 'Account' }, { name: 'Contact' }] }
+                json: { sobjects: [{ name: 'Account' }, { name: 'Contact' }] },
             });
 
             const result = await getGlobalDescribe();
 
             expect(result.sobjects).toHaveLength(2);
-            expect(salesforceRequest).toHaveBeenCalledWith(
-                expect.stringContaining('/sobjects')
-            );
+            expect(salesforceRequest).toHaveBeenCalledWith(expect.stringContaining('/sobjects'));
 
             // Verify it was cached (using per-connection key format)
             const storage = chrome._getStorageData();
@@ -184,11 +182,11 @@ describe('salesforce', () => {
             chrome._setStorageData({
                 'describeCache_conn-123': {
                     global: { sobjects: [{ name: 'CachedObject' }] },
-                    objects: {}
-                }
+                    objects: {},
+                },
             });
             salesforceRequest.mockResolvedValue({
-                json: { sobjects: [{ name: 'FreshObject' }] }
+                json: { sobjects: [{ name: 'FreshObject' }] },
             });
 
             const result = await getGlobalDescribe(true);
@@ -204,9 +202,9 @@ describe('salesforce', () => {
                 'describeCache_conn-123': {
                     global: null,
                     objects: {
-                        'Account': { name: 'Account', fields: [{ name: 'Id' }] }
-                    }
-                }
+                        Account: { name: 'Account', fields: [{ name: 'Id' }] },
+                    },
+                },
             });
 
             const result = await getObjectDescribe('Account');
@@ -217,7 +215,7 @@ describe('salesforce', () => {
 
         it('fetches and caches when no cache exists', async () => {
             salesforceRequest.mockResolvedValue({
-                json: { name: 'Contact', fields: [{ name: 'Id' }, { name: 'Name' }] }
+                json: { name: 'Contact', fields: [{ name: 'Id' }, { name: 'Name' }] },
             });
 
             const result = await getObjectDescribe('Contact');
@@ -237,11 +235,11 @@ describe('salesforce', () => {
             chrome._setStorageData({
                 'describeCache_conn-123': {
                     global: null,
-                    objects: { 'Account': { name: 'Account', fields: [] } }
-                }
+                    objects: { Account: { name: 'Account', fields: [] } },
+                },
             });
             salesforceRequest.mockResolvedValue({
-                json: { name: 'Account', fields: [{ name: 'NewField' }] }
+                json: { name: 'Account', fields: [{ name: 'NewField' }] },
             });
 
             const result = await getObjectDescribe('Account', true);
@@ -254,7 +252,7 @@ describe('salesforce', () => {
     describe('getRecord', () => {
         it('SF-U-006: fetches record by objectType and recordId', async () => {
             salesforceRequest.mockResolvedValue({
-                json: { Id: '001abc', Name: 'Test Account' }
+                json: { Id: '001abc', Name: 'Test Account' },
             });
 
             const result = await getRecord('Account', '001abc');
@@ -277,7 +275,7 @@ describe('salesforce', () => {
                 expect.stringContaining('/sobjects/Account/001abc'),
                 expect.objectContaining({
                     method: 'PATCH',
-                    body: JSON.stringify({ Name: 'Updated Name' })
+                    body: JSON.stringify({ Name: 'Updated Name' }),
                 })
             );
         });
@@ -287,10 +285,8 @@ describe('salesforce', () => {
         it('SF-U-013: returns matching users', async () => {
             salesforceRequest.mockResolvedValue({
                 json: {
-                    records: [
-                        { Id: '005abc', Name: 'John Doe', Username: 'john@test.com' }
-                    ]
-                }
+                    records: [{ Id: '005abc', Name: 'John Doe', Username: 'john@test.com' }],
+                },
             });
 
             const result = await searchUsers('john');
@@ -305,9 +301,7 @@ describe('salesforce', () => {
             await searchUsers("O'Brien");
 
             // The escaped quote is URL encoded: \' becomes %5C'
-            expect(salesforceRequest).toHaveBeenCalledWith(
-                expect.stringContaining("O%5C'Brien")
-            );
+            expect(salesforceRequest).toHaveBeenCalledWith(expect.stringContaining("O%5C'Brien"));
         });
 
         it('returns empty array when no matches', async () => {
@@ -324,9 +318,9 @@ describe('salesforce', () => {
             salesforceRequest.mockResolvedValue({
                 json: {
                     records: [
-                        { Id: '300abc', DeveloperName: 'My_Flow', ActiveVersionId: '301abc' }
-                    ]
-                }
+                        { Id: '300abc', DeveloperName: 'My_Flow', ActiveVersionId: '301abc' },
+                    ],
+                },
             });
 
             const result = await searchFlows('My_Flow');
@@ -355,9 +349,9 @@ describe('salesforce', () => {
                     records: [
                         { Id: '301v3', VersionNumber: 3, Status: 'Active' },
                         { Id: '301v2', VersionNumber: 2, Status: 'Obsolete' },
-                        { Id: '301v1', VersionNumber: 1, Status: 'Obsolete' }
-                    ]
-                }
+                        { Id: '301v1', VersionNumber: 1, Status: 'Obsolete' },
+                    ],
+                },
             });
 
             const result = await getFlowVersions('300abc');
@@ -380,8 +374,8 @@ describe('salesforce', () => {
             // First call returns log IDs
             salesforceRequest.mockResolvedValueOnce({
                 json: {
-                    records: Array.from({ length: 30 }, (_, i) => ({ Id: `07L${i}` }))
-                }
+                    records: Array.from({ length: 30 }, (_, i) => ({ Id: `07L${i}` })),
+                },
             });
             // Subsequent calls are composite deletes
             salesforceRequest.mockResolvedValue({ json: { compositeResponse: [] } });
@@ -436,14 +430,14 @@ describe('salesforce', () => {
                 .mockResolvedValueOnce({
                     json: {
                         columnMetadata: [{ columnName: 'Id' }, { columnName: 'Name' }],
-                        entityName: 'Account'
-                    }
+                        entityName: 'Account',
+                    },
                 })
                 .mockResolvedValueOnce({
                     json: {
                         records: [{ Id: '001abc', Name: 'Test' }],
-                        totalSize: 1
-                    }
+                        totalSize: 1,
+                    },
                 });
 
             const result = await executeQueryWithColumns('SELECT Id, Name FROM Account');
@@ -486,7 +480,7 @@ describe('salesforce', () => {
                 success: true,
                 status: 200,
                 statusText: 'OK',
-                data: '{"result":"ok"}'
+                data: '{"result":"ok"}',
             });
 
             await executeRestRequest('/services/data/v60.0/sobjects', 'GET');
@@ -496,10 +490,10 @@ describe('salesforce', () => {
                 expect.objectContaining({
                     method: 'GET',
                     headers: expect.objectContaining({
-                        'Authorization': 'Bearer test-token',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    })
+                        Authorization: 'Bearer test-token',
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    }),
                 })
             );
         });
@@ -509,7 +503,7 @@ describe('salesforce', () => {
                 success: true,
                 status: 200,
                 statusText: 'OK',
-                data: '{"Id":"001abc","Name":"Test"}'
+                data: '{"Id":"001abc","Name":"Test"}',
             });
 
             const result = await executeRestRequest('/test', 'GET');
@@ -523,7 +517,7 @@ describe('salesforce', () => {
                 success: true,
                 status: 200,
                 statusText: 'OK',
-                data: 'Plain text response'
+                data: 'Plain text response',
             });
 
             const result = await executeRestRequest('/test', 'GET');
@@ -538,7 +532,7 @@ describe('salesforce', () => {
                 status: 400,
                 statusText: 'Bad Request',
                 error: 'Invalid request',
-                data: '{"error":"bad"}'
+                data: '{"error":"bad"}',
             });
 
             const result = await executeRestRequest('/test', 'POST', '{}');
@@ -554,9 +548,13 @@ describe('salesforce', () => {
             salesforceRequest.mockResolvedValue({
                 json: {
                     records: [
-                        { DeveloperName: 'Order_Event', QualifiedApiName: 'Order_Event__e', Label: 'Order Event' }
-                    ]
-                }
+                        {
+                            DeveloperName: 'Order_Event',
+                            QualifiedApiName: 'Order_Event__e',
+                            Label: 'Order Event',
+                        },
+                    ],
+                },
             });
 
             const result = await getEventChannels();
@@ -582,9 +580,14 @@ describe('salesforce', () => {
             salesforceRequest.mockResolvedValue({
                 json: {
                     records: [
-                        { Id: '0IF123', Name: 'AccountUpdates', Query: 'SELECT Id FROM Account', IsActive: true }
-                    ]
-                }
+                        {
+                            Id: '0IF123',
+                            Name: 'AccountUpdates',
+                            Query: 'SELECT Id FROM Account',
+                            IsActive: true,
+                        },
+                    ],
+                },
             });
 
             const result = await getPushTopics();
@@ -609,10 +612,10 @@ describe('salesforce', () => {
         it('combines all channel types', async () => {
             salesforceRequest
                 .mockResolvedValueOnce({
-                    json: { records: [{ QualifiedApiName: 'Test_Event__e' }] }
+                    json: { records: [{ QualifiedApiName: 'Test_Event__e' }] },
                 })
                 .mockResolvedValueOnce({
-                    json: { records: [{ Name: 'TestTopic' }] }
+                    json: { records: [{ Name: 'TestTopic' }] },
                 });
 
             const result = await getAllStreamingChannels();
@@ -654,7 +657,7 @@ describe('salesforce', () => {
         it('SF-U-011: posts event and returns success with id', async () => {
             smartFetch.mockResolvedValue({
                 success: true,
-                data: '{"id":"e01abc","success":true}'
+                data: '{"id":"e01abc","success":true}',
             });
 
             const result = await publishPlatformEvent('My_Event__e', { Field__c: 'value' });
@@ -663,7 +666,7 @@ describe('salesforce', () => {
                 expect.stringContaining('/sobjects/My_Event__e'),
                 expect.objectContaining({
                     method: 'POST',
-                    body: JSON.stringify({ Field__c: 'value' })
+                    body: JSON.stringify({ Field__c: 'value' }),
                 })
             );
             expect(result.success).toBe(true);
@@ -673,7 +676,7 @@ describe('salesforce', () => {
         it('returns error message on failure', async () => {
             smartFetch.mockResolvedValue({
                 success: false,
-                data: 'Invalid event'
+                data: 'Invalid event',
             });
 
             const result = await publishPlatformEvent('Bad_Event__e', {});
@@ -686,7 +689,7 @@ describe('salesforce', () => {
         it('extracts error from array format', async () => {
             smartFetch.mockResolvedValue({
                 success: false,
-                data: '[{"message":"Field required: Name__c","errorCode":"REQUIRED_FIELD_MISSING"}]'
+                data: '[{"message":"Field required: Name__c","errorCode":"REQUIRED_FIELD_MISSING"}]',
             });
 
             const result = await publishPlatformEvent('My_Event__e', {});
@@ -697,7 +700,7 @@ describe('salesforce', () => {
         it('uses default error when parse fails', async () => {
             smartFetch.mockResolvedValue({
                 success: false,
-                data: 'not valid json ['
+                data: 'not valid json [',
             });
 
             const result = await publishPlatformEvent('My_Event__e', {});
@@ -711,8 +714,14 @@ describe('salesforce', () => {
             salesforceRequest
                 .mockResolvedValueOnce({
                     json: {
-                        records: [{ Id: '7tf123', DebugLevelId: 'dbg456', ExpirationDate: '2024-01-01T00:00:00Z' }]
-                    }
+                        records: [
+                            {
+                                Id: '7tf123',
+                                DebugLevelId: 'dbg456',
+                                ExpirationDate: '2024-01-01T00:00:00Z',
+                            },
+                        ],
+                    },
                 })
                 .mockResolvedValueOnce({ json: {} });
 
@@ -737,7 +746,7 @@ describe('salesforce', () => {
                 expect.stringContaining('/tooling/sobjects/TraceFlag'),
                 expect.objectContaining({
                     method: 'POST',
-                    body: expect.stringContaining('005xyz')
+                    body: expect.stringContaining('005xyz'),
                 })
             );
             expect(result).toBe('7tf999');
@@ -762,7 +771,7 @@ describe('salesforce', () => {
         it('returns trace flag ID', async () => {
             salesforceRequest
                 .mockResolvedValueOnce({
-                    json: { records: [{ Id: '7tfExisting', DebugLevelId: 'dbg123' }] }
+                    json: { records: [{ Id: '7tfExisting', DebugLevelId: 'dbg123' }] },
                 })
                 .mockResolvedValueOnce({ json: {} });
 
@@ -785,7 +794,7 @@ describe('salesforce', () => {
         it('deletes all flags in batches', async () => {
             salesforceRequest
                 .mockResolvedValueOnce({
-                    json: { records: Array.from({ length: 30 }, (_, i) => ({ Id: `7tf${i}` })) }
+                    json: { records: Array.from({ length: 30 }, (_, i) => ({ Id: `7tf${i}` })) },
                 })
                 .mockResolvedValue({ json: { compositeResponse: [] } });
 
@@ -811,9 +820,9 @@ describe('salesforce', () => {
                 json: {
                     records: [
                         { Id: '00e123', Name: 'System Administrator' },
-                        { Id: '00e456', Name: 'Standard User' }
-                    ]
-                }
+                        { Id: '00e456', Name: 'Standard User' },
+                    ],
+                },
             });
 
             const result = await searchProfiles('Admin');
@@ -836,7 +845,7 @@ describe('salesforce', () => {
     describe('createBulkQueryJob', () => {
         it('SF-U-018: creates job with query', async () => {
             salesforceRequest.mockResolvedValue({
-                json: { id: '750abc', state: 'UploadComplete' }
+                json: { id: '750abc', state: 'UploadComplete' },
             });
 
             const result = await createBulkQueryJob('SELECT Id FROM Account');
@@ -845,7 +854,7 @@ describe('salesforce', () => {
                 expect.stringContaining('/jobs/query'),
                 expect.objectContaining({
                     method: 'POST',
-                    body: JSON.stringify({ operation: 'query', query: 'SELECT Id FROM Account' })
+                    body: JSON.stringify({ operation: 'query', query: 'SELECT Id FROM Account' }),
                 })
             );
             expect(result.id).toBe('750abc');
@@ -853,7 +862,7 @@ describe('salesforce', () => {
 
         it('returns job response', async () => {
             salesforceRequest.mockResolvedValue({
-                json: { id: '750xyz', state: 'UploadComplete', operation: 'query' }
+                json: { id: '750xyz', state: 'UploadComplete', operation: 'query' },
             });
 
             const result = await createBulkQueryJob('SELECT Name FROM Contact');
@@ -865,7 +874,7 @@ describe('salesforce', () => {
     describe('getBulkQueryJobStatus', () => {
         it('SF-U-019: returns job status', async () => {
             salesforceRequest.mockResolvedValue({
-                json: { id: '750abc', state: 'JobComplete', numberRecordsProcessed: 1000 }
+                json: { id: '750abc', state: 'JobComplete', numberRecordsProcessed: 1000 },
             });
 
             const result = await getBulkQueryJobStatus('750abc');
@@ -882,7 +891,7 @@ describe('salesforce', () => {
         it('fetches CSV with correct Accept header', async () => {
             smartFetch.mockResolvedValue({
                 success: true,
-                data: 'Id,Name\n001abc,Test'
+                data: 'Id,Name\n001abc,Test',
             });
 
             await getBulkQueryResults('750abc');
@@ -891,8 +900,8 @@ describe('salesforce', () => {
                 expect.stringContaining('/jobs/query/750abc/results'),
                 expect.objectContaining({
                     headers: expect.objectContaining({
-                        'Accept': 'text/csv'
-                    })
+                        Accept: 'text/csv',
+                    }),
                 })
             );
         });
@@ -901,7 +910,7 @@ describe('salesforce', () => {
             const csvData = 'Id,Name\n001abc,Account 1\n001def,Account 2';
             smartFetch.mockResolvedValue({
                 success: true,
-                data: csvData
+                data: csvData,
             });
 
             const result = await getBulkQueryResults('750abc');
@@ -912,7 +921,7 @@ describe('salesforce', () => {
         it('throws on failure', async () => {
             smartFetch.mockResolvedValue({
                 success: false,
-                error: 'Job not found'
+                error: 'Job not found',
             });
 
             await expect(getBulkQueryResults('bad123')).rejects.toThrow('Job not found');
@@ -929,7 +938,7 @@ describe('salesforce', () => {
                 expect.stringContaining('/jobs/query/750abc'),
                 expect.objectContaining({
                     method: 'PATCH',
-                    body: JSON.stringify({ state: 'Aborted' })
+                    body: JSON.stringify({ state: 'Aborted' }),
                 })
             );
         });
@@ -947,8 +956,12 @@ describe('salesforce', () => {
         it('SF-U-020: creates job and polls until complete', async () => {
             salesforceRequest
                 .mockResolvedValueOnce({ json: { id: '750poll', state: 'UploadComplete' } }) // createBulkQueryJob
-                .mockResolvedValueOnce({ json: { id: '750poll', state: 'InProgress', numberRecordsProcessed: 500 } }) // poll 1
-                .mockResolvedValueOnce({ json: { id: '750poll', state: 'JobComplete', numberRecordsProcessed: 1000 } }); // poll 2
+                .mockResolvedValueOnce({
+                    json: { id: '750poll', state: 'InProgress', numberRecordsProcessed: 500 },
+                }) // poll 1
+                .mockResolvedValueOnce({
+                    json: { id: '750poll', state: 'JobComplete', numberRecordsProcessed: 1000 },
+                }); // poll 2
 
             smartFetch.mockResolvedValue({ success: true, data: 'Id\n001abc' });
 
@@ -982,8 +995,12 @@ describe('salesforce', () => {
         it('calls onProgress callback', async () => {
             salesforceRequest
                 .mockResolvedValueOnce({ json: { id: '750prog', state: 'UploadComplete' } })
-                .mockResolvedValueOnce({ json: { id: '750prog', state: 'InProgress', numberRecordsProcessed: 100 } })
-                .mockResolvedValueOnce({ json: { id: '750prog', state: 'JobComplete', numberRecordsProcessed: 200 } });
+                .mockResolvedValueOnce({
+                    json: { id: '750prog', state: 'InProgress', numberRecordsProcessed: 100 },
+                })
+                .mockResolvedValueOnce({
+                    json: { id: '750prog', state: 'JobComplete', numberRecordsProcessed: 200 },
+                });
 
             smartFetch.mockResolvedValue({ success: true, data: 'data' });
 
@@ -1005,10 +1022,13 @@ describe('salesforce', () => {
 
             salesforceRequest
                 .mockResolvedValueOnce({ json: { id: '750fail', state: 'UploadComplete' } })
-                .mockResolvedValueOnce({ json: { id: '750fail', state: 'Failed', errorMessage: 'Invalid query' } });
+                .mockResolvedValueOnce({
+                    json: { id: '750fail', state: 'Failed', errorMessage: 'Invalid query' },
+                });
 
-            await expect(executeBulkQueryExport('SELECT BadField FROM Account', vi.fn()))
-                .rejects.toThrow('Bulk query failed: Invalid query');
+            await expect(
+                executeBulkQueryExport('SELECT BadField FROM Account', vi.fn())
+            ).rejects.toThrow('Bulk query failed: Invalid query');
         });
 
         it('throws on Aborted state', async () => {
@@ -1018,8 +1038,9 @@ describe('salesforce', () => {
                 .mockResolvedValueOnce({ json: { id: '750abort', state: 'UploadComplete' } })
                 .mockResolvedValueOnce({ json: { id: '750abort', state: 'Aborted' } });
 
-            await expect(executeBulkQueryExport('SELECT Id FROM Account', vi.fn()))
-                .rejects.toThrow('Bulk query aborted');
+            await expect(executeBulkQueryExport('SELECT Id FROM Account', vi.fn())).rejects.toThrow(
+                'Bulk query aborted'
+            );
         });
     });
 
@@ -1027,12 +1048,14 @@ describe('salesforce', () => {
         it('SF-U-021: queries CustomField via Tooling API', async () => {
             salesforceRequest.mockResolvedValue({
                 json: {
-                    records: [{
-                        Id: '00N123',
-                        FullName: 'Account.Formula__c',
-                        Metadata: { formula: 'Name & " - " & Industry' }
-                    }]
-                }
+                    records: [
+                        {
+                            Id: '00N123',
+                            FullName: 'Account.Formula__c',
+                            Metadata: { formula: 'Name & " - " & Industry' },
+                        },
+                    ],
+                },
             });
 
             await getFormulaFieldMetadata('Account', 'Formula__c');
@@ -1049,12 +1072,17 @@ describe('salesforce', () => {
         it('returns formula and metadata', async () => {
             salesforceRequest.mockResolvedValue({
                 json: {
-                    records: [{
-                        Id: '00N456',
-                        FullName: 'Contact.FullAddress__c',
-                        Metadata: { formula: 'MailingStreet & ", " & MailingCity', type: 'Text' }
-                    }]
-                }
+                    records: [
+                        {
+                            Id: '00N456',
+                            FullName: 'Contact.FullAddress__c',
+                            Metadata: {
+                                formula: 'MailingStreet & ", " & MailingCity',
+                                type: 'Text',
+                            },
+                        },
+                    ],
+                },
             });
 
             const result = await getFormulaFieldMetadata('Contact', 'FullAddress__c');
@@ -1067,7 +1095,9 @@ describe('salesforce', () => {
         it('throws when field not found', async () => {
             salesforceRequest.mockResolvedValue({ json: { records: [] } });
 
-            await expect(getFormulaFieldMetadata('Account', 'NonExistent__c')).rejects.toThrow('Formula field not found');
+            await expect(getFormulaFieldMetadata('Account', 'NonExistent__c')).rejects.toThrow(
+                'Formula field not found'
+            );
         });
     });
 
@@ -1081,7 +1111,7 @@ describe('salesforce', () => {
                 expect.stringContaining('/tooling/sobjects/CustomField/00N789'),
                 expect.objectContaining({
                     method: 'PATCH',
-                    body: expect.stringContaining('NEW_FORMULA()')
+                    body: expect.stringContaining('NEW_FORMULA()'),
                 })
             );
         });
@@ -1097,7 +1127,7 @@ describe('salesforce', () => {
                 type: 'Number',
                 scale: 2,
                 precision: 18,
-                formula: 'Amount * 1.1'
+                formula: 'Amount * 1.1',
             });
         });
     });
@@ -1106,8 +1136,18 @@ describe('salesforce', () => {
         it('collects referenced object types', async () => {
             const fields = [
                 { name: 'Id', type: 'id' },
-                { name: 'OwnerId', type: 'reference', referenceTo: ['User'], relationshipName: 'Owner' },
-                { name: 'AccountId', type: 'reference', referenceTo: ['Account'], relationshipName: 'Account' }
+                {
+                    name: 'OwnerId',
+                    type: 'reference',
+                    referenceTo: ['User'],
+                    relationshipName: 'Owner',
+                },
+                {
+                    name: 'AccountId',
+                    type: 'reference',
+                    referenceTo: ['Account'],
+                    relationshipName: 'Account',
+                },
             ];
 
             salesforceRequest
@@ -1128,8 +1168,18 @@ describe('salesforce', () => {
         it('fetches describes for references in parallel', async () => {
             const fields = [
                 { name: 'Id', type: 'id' },
-                { name: 'OwnerId', type: 'reference', referenceTo: ['User'], relationshipName: 'Owner' },
-                { name: 'CreatedById', type: 'reference', referenceTo: ['User'], relationshipName: 'CreatedBy' }
+                {
+                    name: 'OwnerId',
+                    type: 'reference',
+                    referenceTo: ['User'],
+                    relationshipName: 'Owner',
+                },
+                {
+                    name: 'CreatedById',
+                    type: 'reference',
+                    referenceTo: ['User'],
+                    relationshipName: 'CreatedBy',
+                },
             ];
 
             salesforceRequest
@@ -1146,12 +1196,19 @@ describe('salesforce', () => {
             const fields = [
                 { name: 'Id', type: 'id' },
                 { name: 'Name', type: 'string' },
-                { name: 'AccountId', type: 'reference', referenceTo: ['Account'], relationshipName: 'Account' }
+                {
+                    name: 'AccountId',
+                    type: 'reference',
+                    referenceTo: ['Account'],
+                    relationshipName: 'Account',
+                },
             ];
 
             salesforceRequest
                 .mockResolvedValueOnce({ json: { fields: [{ name: 'Name', nameField: true }] } })
-                .mockResolvedValueOnce({ json: { records: [{ Id: '003abc', Name: 'Test', Account: { Name: 'Acme' } }] } });
+                .mockResolvedValueOnce({
+                    json: { records: [{ Id: '003abc', Name: 'Test', Account: { Name: 'Acme' } }] },
+                });
 
             await getRecordWithRelationships('Contact', '003abc', fields);
 
@@ -1163,12 +1220,19 @@ describe('salesforce', () => {
         it('returns record and nameFieldMap', async () => {
             const fields = [
                 { name: 'Id', type: 'id' },
-                { name: 'OwnerId', type: 'reference', referenceTo: ['User'], relationshipName: 'Owner' }
+                {
+                    name: 'OwnerId',
+                    type: 'reference',
+                    referenceTo: ['User'],
+                    relationshipName: 'Owner',
+                },
             ];
 
             salesforceRequest
                 .mockResolvedValueOnce({ json: { fields: [{ name: 'Name', nameField: true }] } })
-                .mockResolvedValueOnce({ json: { records: [{ Id: '001abc', Owner: { Name: 'John' } }] } });
+                .mockResolvedValueOnce({
+                    json: { records: [{ Id: '001abc', Owner: { Name: 'John' } }] },
+                });
 
             const result = await getRecordWithRelationships('Account', '001abc', fields);
 
@@ -1181,7 +1245,9 @@ describe('salesforce', () => {
 
             salesforceRequest.mockResolvedValueOnce({ json: { records: [] } });
 
-            await expect(getRecordWithRelationships('Account', 'badId', fields)).rejects.toThrow('Record not found');
+            await expect(getRecordWithRelationships('Account', 'badId', fields)).rejects.toThrow(
+                'Record not found'
+            );
         });
     });
 });

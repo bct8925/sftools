@@ -70,7 +70,10 @@ describe('fetch', () => {
             const result = await fetchModule.checkProxyStatus();
 
             expect(result).toBe(false);
-            expect(consoleSpy).toHaveBeenCalledWith('Error checking proxy status:', expect.any(Error));
+            expect(consoleSpy).toHaveBeenCalledWith(
+                'Error checking proxy status:',
+                expect.any(Error)
+            );
             consoleSpy.mockRestore();
         });
 
@@ -79,7 +82,9 @@ describe('fetch', () => {
 
             await fetchModule.checkProxyStatus();
 
-            expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'checkProxyConnection' });
+            expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+                type: 'checkProxyConnection',
+            });
         });
     });
 
@@ -97,7 +102,7 @@ describe('fetch', () => {
                 type: 'fetch',
                 url: 'https://api.salesforce.com/test',
                 options: { method: 'GET' },
-                connectionId: 'active-conn'
+                connectionId: 'active-conn',
             });
         });
 
@@ -136,7 +141,7 @@ describe('fetch', () => {
             await fetchModule.proxyFetch('https://api.salesforce.com/test', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: '{"test": true}'
+                body: '{"test": true}',
             });
 
             expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
@@ -145,7 +150,7 @@ describe('fetch', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: '{"test": true}',
-                connectionId: 'active-conn'
+                connectionId: 'active-conn',
             });
         });
 
@@ -201,7 +206,7 @@ describe('fetch', () => {
             chrome.runtime.sendMessage.mockResolvedValueOnce({
                 ok: false,
                 authExpired: true,
-                error: 'Session expired'
+                error: 'Session expired',
             });
 
             await fetchModule.extensionFetch('https://api.salesforce.com/test');

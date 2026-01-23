@@ -1,14 +1,25 @@
 // Record Viewer - Custom Element
-import template from './record.html?raw';
-import './record.css';
 import DOMPurify from 'dompurify';
 import { setActiveConnection } from '../../lib/utils.js';
-import { getObjectDescribe, getRecordWithRelationships, updateRecord } from '../../lib/salesforce.js';
+import {
+    getObjectDescribe,
+    getRecordWithRelationships,
+    updateRecord,
+} from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { escapeHtml, escapeAttr } from '../../lib/text-utils.js';
 import { replaceIcons } from '../../lib/icons.js';
-import { sortFields, filterFields, formatValue, formatPreviewHtml, parseValue, getChangedFields } from '../../lib/record-utils.js';
+import {
+    sortFields,
+    filterFields,
+    formatValue,
+    formatPreviewHtml,
+    parseValue,
+    getChangedFields,
+} from '../../lib/record-utils.js';
 import '../modal-popup/modal-popup.js';
+import template from './record.html?raw';
+import './record.css';
 
 class RecordPage extends HTMLElement {
     // State
@@ -69,14 +80,14 @@ class RecordPage extends HTMLElement {
 
         // Modal event listeners
         this.modalCloseBtnEl.addEventListener('click', () => this.closeRichTextModal());
-        this.richTextModalEl.addEventListener('click', (e) => {
+        this.richTextModalEl.addEventListener('click', e => {
             if (e.target === this.richTextModalEl) {
                 this.closeRichTextModal();
             }
         });
 
         // Close modal on Escape key (store bound handler for cleanup)
-        this.boundKeydownHandler = (e) => {
+        this.boundKeydownHandler = e => {
             if (e.key === 'Escape' && this.richTextModalEl.classList.contains('show')) {
                 this.closeRichTextModal();
             }
@@ -149,11 +160,16 @@ class RecordPage extends HTMLElement {
 
     async loadRecord() {
         this.setStatus('Loading...', 'loading');
-        this.fieldsContainer.innerHTML = '<div class="loading-container">Loading record data...</div>';
+        this.fieldsContainer.innerHTML =
+            '<div class="loading-container">Loading record data...</div>';
 
         try {
             const describe = await getObjectDescribe(this.objectType);
-            const { record, nameFieldMap } = await getRecordWithRelationships(this.objectType, this.recordId, describe.fields);
+            const { record, nameFieldMap } = await getRecordWithRelationships(
+                this.objectType,
+                this.recordId,
+                describe.fields
+            );
 
             this.fieldDescribe = {};
             for (const field of describe.fields) {
@@ -171,7 +187,6 @@ class RecordPage extends HTMLElement {
 
             this.setStatus('Loaded', 'success');
             this.updateChangeCount();
-
         } catch (error) {
             this.showError(error.message);
         }
@@ -191,7 +206,13 @@ class RecordPage extends HTMLElement {
     createFieldRowHtml(field, record) {
         const value = record[field.name];
         const displayValue = formatValue(value, field);
-        const previewHtmlRaw = formatPreviewHtml(value, field, record, this.nameFieldMap, this.connectionId);
+        const previewHtmlRaw = formatPreviewHtml(
+            value,
+            field,
+            record,
+            this.nameFieldMap,
+            this.connectionId
+        );
         const previewHtml = this.convertPreviewPlaceholders(previewHtmlRaw, field, value);
         const previewText = this.formatPreviewText(value, field, record);
         const isEditable = field.updateable && !field.calculated;
@@ -210,7 +231,7 @@ class RecordPage extends HTMLElement {
         `;
     }
 
-    convertPreviewPlaceholders(previewHtmlRaw, field, value) {
+    convertPreviewPlaceholders(previewHtmlRaw, field, _value) {
         if (previewHtmlRaw === '__PREVIEW_BUTTON__') {
             return `<button class="field-preview-btn" data-field="${field.name}" data-field-label="${escapeAttr(field.label)}">Preview</button>`;
         }
@@ -235,9 +256,7 @@ class RecordPage extends HTMLElement {
 
     getTypeDisplay(field) {
         if (field.calculated) {
-            return field.calculatedFormula
-                ? `${field.type} (formula)`
-                : `${field.type} (rollup)`;
+            return field.calculatedFormula ? `${field.type} (formula)` : `${field.type} (rollup)`;
         }
         return field.type;
     }
@@ -246,7 +265,10 @@ class RecordPage extends HTMLElement {
         if (field.type === 'picklist' && isEditable) {
             const options = (field.picklistValues || [])
                 .filter(pv => pv.active)
-                .map(pv => `<option value="${escapeAttr(pv.value)}" ${pv.value === value ? 'selected' : ''}>${escapeHtml(pv.label)}</option>`)
+                .map(
+                    pv =>
+                        `<option value="${escapeAttr(pv.value)}" ${pv.value === value ? 'selected' : ''}>${escapeHtml(pv.label)}</option>`
+                )
                 .join('');
 
             return `
@@ -266,19 +288,20 @@ class RecordPage extends HTMLElement {
     }
 
     attachFieldEventListeners() {
-        this.fieldsContainer.querySelectorAll('input.field-input:not([disabled])').forEach(input => {
-            input.addEventListener('input', (e) => this.handleFieldChange(e.target));
-        });
+        this.fieldsContainer
+            .querySelectorAll('input.field-input:not([disabled])')
+            .forEach(input => {
+                input.addEventListener('input', e => this.handleFieldChange(e.target));
+            });
 
         this.fieldsContainer.querySelectorAll('select.field-input').forEach(select => {
-            select.addEventListener('change', (e) => this.handleFieldChange(e.target));
+            select.addEventListener('change', e => this.handleFieldChange(e.target));
         });
 
         this.fieldsContainer.querySelectorAll('.field-preview-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.handlePreviewClick(e.target));
+            btn.addEventListener('click', e => this.handlePreviewClick(e.target));
         });
     }
-
 
     formatPreviewText(value, field, record) {
         if (value === null || value === undefined) return '';
@@ -289,7 +312,7 @@ class RecordPage extends HTMLElement {
             case 'datetime':
                 return new Date(value).toLocaleString();
             case 'date':
-                return new Date(value + 'T00:00:00').toLocaleDateString();
+                return new Date(`${value}T00:00:00`).toLocaleDateString();
             case 'reference':
                 if (field.relationshipName && field.referenceTo?.length > 0) {
                     const related = record[field.relationshipName];
@@ -316,9 +339,10 @@ class RecordPage extends HTMLElement {
         const row = input.closest('.field-row');
         const originalValue = this.originalValues[fieldName];
 
-        const isChanged = (originalValue === null || originalValue === undefined)
-            ? (newValue !== null && newValue !== undefined && newValue !== '')
-            : String(originalValue) !== String(newValue ?? '');
+        const isChanged =
+            originalValue === null || originalValue === undefined
+                ? newValue !== null && newValue !== undefined && newValue !== ''
+                : String(originalValue) !== String(newValue ?? '');
 
         if (isChanged) {
             row.classList.add('modified');
@@ -330,7 +354,11 @@ class RecordPage extends HTMLElement {
     }
 
     updateChangeCount() {
-        const changes = getChangedFields(this.originalValues, this.currentValues, this.fieldDescribe);
+        const changes = getChangedFields(
+            this.originalValues,
+            this.currentValues,
+            this.fieldDescribe
+        );
         const count = Object.keys(changes).length;
 
         if (count > 0) {
@@ -343,7 +371,11 @@ class RecordPage extends HTMLElement {
     }
 
     async saveChanges() {
-        const changes = getChangedFields(this.originalValues, this.currentValues, this.fieldDescribe);
+        const changes = getChangedFields(
+            this.originalValues,
+            this.currentValues,
+            this.fieldDescribe
+        );
 
         if (Object.keys(changes).length === 0) {
             return;
@@ -365,7 +397,6 @@ class RecordPage extends HTMLElement {
 
             this.setStatus('Saved', 'success');
             this.updateChangeCount();
-
         } catch (error) {
             this.setStatus('Save Failed', 'error');
             this.showSaveError(error.message);
@@ -393,7 +424,7 @@ class RecordPage extends HTMLElement {
 
     handlePreviewClick(button) {
         const fieldName = button.dataset.field;
-        const fieldLabel = button.dataset.fieldLabel;
+        const { fieldLabel } = button.dataset;
         const field = this.fieldDescribe[fieldName];
         const value = this.currentValues[fieldName];
 

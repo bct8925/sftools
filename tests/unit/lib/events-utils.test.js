@@ -15,7 +15,7 @@ import {
     buildChannelOptions,
     parseStreamMessage,
     formatEventEntry,
-    formatSystemMessage
+    formatSystemMessage,
 } from '../../../src/lib/events-utils.js';
 
 describe('events-utils', () => {
@@ -23,20 +23,18 @@ describe('events-utils', () => {
         it('E-U-001: creates grouped optgroups for all channel types', () => {
             const platformEvents = [
                 { QualifiedApiName: 'Order_Event__e', Label: 'Order Event' },
-                { QualifiedApiName: 'Shipping_Event__e', DeveloperName: 'Shipping_Event' }
+                { QualifiedApiName: 'Shipping_Event__e', DeveloperName: 'Shipping_Event' },
             ];
-            const standardEvents = [
-                { name: 'AccountChangeEvent', label: 'Account Change Event' }
-            ];
-            const pushTopics = [
-                { Name: 'InvoiceUpdates' },
-                { Name: 'OrderChanges' }
-            ];
-            const systemTopics = [
-                { channel: '/systemTopic/Logging', label: 'Logging' }
-            ];
+            const standardEvents = [{ name: 'AccountChangeEvent', label: 'Account Change Event' }];
+            const pushTopics = [{ Name: 'InvoiceUpdates' }, { Name: 'OrderChanges' }];
+            const systemTopics = [{ channel: '/systemTopic/Logging', label: 'Logging' }];
 
-            const groups = buildChannelOptions(platformEvents, standardEvents, pushTopics, systemTopics);
+            const groups = buildChannelOptions(
+                platformEvents,
+                standardEvents,
+                pushTopics,
+                systemTopics
+            );
 
             expect(groups).toHaveLength(4);
 
@@ -45,11 +43,11 @@ describe('events-utils', () => {
             expect(groups[0].options).toHaveLength(2);
             expect(groups[0].options[0]).toEqual({
                 value: '/event/Order_Event__e',
-                label: 'Order Event'
+                label: 'Order Event',
             });
             expect(groups[0].options[1]).toEqual({
                 value: '/event/Shipping_Event__e',
-                label: 'Shipping_Event'
+                label: 'Shipping_Event',
             });
 
             // Platform Events - Standard
@@ -57,7 +55,7 @@ describe('events-utils', () => {
             expect(groups[1].options).toHaveLength(1);
             expect(groups[1].options[0]).toEqual({
                 value: '/event/AccountChangeEvent',
-                label: 'Account Change Event'
+                label: 'Account Change Event',
             });
 
             // PushTopics
@@ -65,7 +63,7 @@ describe('events-utils', () => {
             expect(groups[2].options).toHaveLength(2);
             expect(groups[2].options[0]).toEqual({
                 value: '/topic/InvoiceUpdates',
-                label: 'InvoiceUpdates'
+                label: 'InvoiceUpdates',
             });
 
             // System Topics
@@ -73,7 +71,7 @@ describe('events-utils', () => {
             expect(groups[3].options).toHaveLength(1);
             expect(groups[3].options[0]).toEqual({
                 value: '/systemTopic/Logging',
-                label: 'Logging'
+                label: 'Logging',
             });
         });
 
@@ -84,9 +82,7 @@ describe('events-utils', () => {
         });
 
         it('E-U-001: omits groups with no channels', () => {
-            const platformEvents = [
-                { QualifiedApiName: 'Order_Event__e', Label: 'Order Event' }
-            ];
+            const platformEvents = [{ QualifiedApiName: 'Order_Event__e', Label: 'Order Event' }];
 
             const groups = buildChannelOptions(platformEvents, [], [], []);
 
@@ -96,7 +92,7 @@ describe('events-utils', () => {
 
         it('E-U-001: uses DeveloperName when Label is missing', () => {
             const platformEvents = [
-                { QualifiedApiName: 'Test_Event__e', DeveloperName: 'Test_Event' }
+                { QualifiedApiName: 'Test_Event__e', DeveloperName: 'Test_Event' },
             ];
 
             const groups = buildChannelOptions(platformEvents, [], [], []);
@@ -120,8 +116,8 @@ describe('events-utils', () => {
                     channel: '/event/Order_Event__e',
                     protocol: 'grpc',
                     replayId: 12345,
-                    payload: { OrderId: '001', Status: 'Completed' }
-                }
+                    payload: { OrderId: '001', Status: 'Completed' },
+                },
             };
 
             const parsed = parseStreamMessage(message);
@@ -133,7 +129,7 @@ describe('events-utils', () => {
                 protocol: 'grpc',
                 replayId: 12345,
                 payload: { OrderId: '001', Status: 'Completed' },
-                error: undefined
+                error: undefined,
             });
         });
 
@@ -141,7 +137,7 @@ describe('events-utils', () => {
             const message = {
                 type: 'streamError',
                 subscriptionId: 'sub-456',
-                error: 'Connection timeout'
+                error: 'Connection timeout',
             };
 
             const parsed = parseStreamMessage(message);
@@ -149,14 +145,14 @@ describe('events-utils', () => {
             expect(parsed.type).toBe('error');
             expect(parsed.subscriptionId).toBe('sub-456');
             expect(parsed.data).toEqual({
-                error: 'Connection timeout'
+                error: 'Connection timeout',
             });
         });
 
         it('E-U-004: handles end messages', () => {
             const message = {
                 type: 'streamEnd',
-                subscriptionId: 'sub-789'
+                subscriptionId: 'sub-789',
             };
 
             const parsed = parseStreamMessage(message);
@@ -169,7 +165,7 @@ describe('events-utils', () => {
         it('E-U-004: handles unknown message types', () => {
             const message = {
                 type: 'unknownType',
-                subscriptionId: 'sub-000'
+                subscriptionId: 'sub-000',
             };
 
             const parsed = parseStreamMessage(message);
@@ -183,7 +179,7 @@ describe('events-utils', () => {
             const message = {
                 type: 'streamEvent',
                 subscriptionId: 'sub-999',
-                event: null
+                event: null,
             };
 
             const parsed = parseStreamMessage(message);
@@ -194,7 +190,7 @@ describe('events-utils', () => {
                 protocol: undefined,
                 replayId: undefined,
                 payload: undefined,
-                error: undefined
+                error: undefined,
             });
         });
     });
@@ -205,7 +201,7 @@ describe('events-utils', () => {
                 channel: '/event/Order_Event__e',
                 protocol: 'grpc',
                 replayId: 54321,
-                payload: { Status: 'Shipped' }
+                payload: { Status: 'Shipped' },
             };
             const eventNumber = 42;
             const timestamp = '2025-01-19T12:00:00.000Z';
@@ -219,7 +215,7 @@ describe('events-utils', () => {
                 _protocol: 'grpc',
                 replayId: 54321,
                 payload: { Status: 'Shipped' },
-                error: undefined
+                error: undefined,
             });
         });
 
@@ -229,7 +225,7 @@ describe('events-utils', () => {
                 protocol: 'grpc',
                 replayId: 1,
                 payload: null,
-                error: 'Payload validation failed'
+                error: 'Payload validation failed',
             };
 
             const formatted = formatEventEntry(event, 1, '2025-01-19T12:00:00.000Z');
@@ -244,7 +240,9 @@ describe('events-utils', () => {
 
             const formatted = formatSystemMessage(message);
 
-            expect(formatted).toMatch(/^\/\/ \[\d{1,2}:\d{2}:\d{2}( (AM|PM))?\] Subscribed to \/event\/Order_Event__e$/);
+            expect(formatted).toMatch(
+                /^\/\/ \[\d{1,2}:\d{2}:\d{2}( (AM|PM))?\] Subscribed to \/event\/Order_Event__e$/
+            );
         });
 
         it('E-U-006: formats error messages correctly', () => {
@@ -252,7 +250,9 @@ describe('events-utils', () => {
 
             const formatted = formatSystemMessage(message);
 
-            expect(formatted).toMatch(/^\/\/ \[\d{1,2}:\d{2}:\d{2}( (AM|PM))?\] Error: Connection timeout$/);
+            expect(formatted).toMatch(
+                /^\/\/ \[\d{1,2}:\d{2}:\d{2}( (AM|PM))?\] Error: Connection timeout$/
+            );
         });
 
         it('E-U-006: formats unsubscribe messages correctly', () => {

@@ -14,9 +14,8 @@ export function filterObjects(objects, searchTerm) {
         return [...objects];
     }
 
-    return objects.filter(obj =>
-        obj.name.toLowerCase().includes(term) ||
-        obj.label.toLowerCase().includes(term)
+    return objects.filter(
+        obj => obj.name.toLowerCase().includes(term) || obj.label.toLowerCase().includes(term)
     );
 }
 
@@ -33,9 +32,8 @@ export function filterFields(fields, searchTerm) {
         return [...fields];
     }
 
-    return fields.filter(field =>
-        field.name.toLowerCase().includes(term) ||
-        field.label.toLowerCase().includes(term)
+    return fields.filter(
+        field => field.name.toLowerCase().includes(term) || field.label.toLowerCase().includes(term)
     );
 }
 
@@ -59,15 +57,14 @@ export function getFieldTypeDisplay(field) {
             return {
                 text: `reference (${field.referenceTo[0]})`,
                 isReference: !isOwnerId,
-                referenceTo: field.referenceTo
-            };
-        } else {
-            return {
-                text: `reference (${field.referenceTo.join(', ')})`,
-                isReference: !isOwnerId,
-                referenceTo: field.referenceTo
+                referenceTo: field.referenceTo,
             };
         }
+        return {
+            text: `reference (${field.referenceTo.join(', ')})`,
+            isReference: !isOwnerId,
+            referenceTo: field.referenceTo,
+        };
     }
 
     return { text: field.type, isReference: false };

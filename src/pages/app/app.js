@@ -20,7 +20,7 @@ import {
     generateOAuthState,
     migrateCustomConnectedApp,
     // Cache
-    migrateDescribeCache
+    migrateDescribeCache,
 } from '../../lib/utils.js';
 import { replaceIcons } from '../../lib/icons.js';
 import { initTheme } from '../../lib/theme.js';
@@ -38,6 +38,9 @@ const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
 // Cached login domain for authorization
 let detectedLoginDomain = 'https://login.salesforce.com';
+
+// Auth expiration modal state
+let authExpiredModalOpen = false;
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -59,9 +62,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateFeatureGating();
 
     // Listen for proxy status changes
-    document.addEventListener('proxy-status-changed', async (e) => {
+    document.addEventListener('proxy-status-changed', async _e => {
         await checkProxyStatus(); // Update PROXY_CONNECTED state
-        updateFeatureGating();     // Re-apply feature gating
+        updateFeatureGating(); // Re-apply feature gating
     });
 
     // Notify components that auth is ready
@@ -124,9 +127,7 @@ async function refreshConnectionList(autoSelect = false) {
 
         if (autoSelect) {
             // Auto-select most recently used connection
-            const mostRecent = connections.reduce((a, b) =>
-                a.lastUsedAt > b.lastUsedAt ? a : b
-            );
+            const mostRecent = connections.reduce((a, b) => (a.lastUsedAt > b.lastUsedAt ? a : b));
             await selectConnection(mostRecent);
         }
     }
@@ -197,9 +198,15 @@ async function detectLoginDomain() {
             if (urlObj.hostname.includes('.my.salesforce.com')) {
                 detectedLoginDomain = urlObj.origin;
             } else if (urlObj.hostname.includes('.lightning.force.com')) {
-                detectedLoginDomain = urlObj.origin.replace('.lightning.force.com', '.my.salesforce.com');
+                detectedLoginDomain = urlObj.origin.replace(
+                    '.lightning.force.com',
+                    '.my.salesforce.com'
+                );
             } else if (urlObj.hostname.includes('.salesforce-setup.com')) {
-                detectedLoginDomain = urlObj.origin.replace('.salesforce-setup.com', '.salesforce.com');
+                detectedLoginDomain = urlObj.origin.replace(
+                    '.salesforce-setup.com',
+                    '.salesforce.com'
+                );
             }
         }
     } catch (e) {
@@ -213,7 +220,11 @@ async function detectLoginDomain() {
  * @param {string|null} overrideClientId - Custom client ID to use (or use default)
  * @param {string|null} connectionId - Connection ID if re-authorizing an existing connection
  */
-async function startAuthorization(overrideLoginDomain = null, overrideClientId = null, connectionId = null) {
+async function startAuthorization(
+    overrideLoginDomain = null,
+    overrideClientId = null,
+    connectionId = null
+) {
     // Use provided domain or detect from current tab
     let loginDomain;
     if (overrideLoginDomain) {
@@ -228,18 +239,12 @@ async function startAuthorization(overrideLoginDomain = null, overrideClientId =
     try {
         const proxyStatus = await chrome.runtime.sendMessage({ type: 'checkProxyConnection' });
         useCodeFlow = proxyStatus.connected;
-    } catch (e) {
+    } catch {
         debugInfo('Proxy not available, using implicit flow');
     }
 
     // Get client ID - use override, or fall back to default
-    let clientId;
-    if (overrideClientId) {
-        clientId = overrideClientId;
-    } else {
-        const credentials = await getOAuthCredentials();
-        clientId = credentials.clientId;
-    }
+    const clientId = overrideClientId ?? (await getOAuthCredentials()).clientId;
 
     // Generate state parameter for CSRF protection
     const state = generateOAuthState();
@@ -249,11 +254,12 @@ async function startAuthorization(overrideLoginDomain = null, overrideClientId =
         loginDomain,
         clientId: overrideClientId, // Store only if custom (null means use default)
         connectionId, // Set if re-authorizing existing connection
-        state // For CSRF validation
+        state, // For CSRF validation
     });
 
     const responseType = useCodeFlow ? 'code' : 'token';
-    const authUrl = `${loginDomain}/services/oauth2/authorize` +
+    const authUrl =
+        `${loginDomain}/services/oauth2/authorize` +
         `?client_id=${clientId}` +
         `&response_type=${responseType}` +
         `&redirect_uri=${encodeURIComponent(CALLBACK_URL)}` +
@@ -266,10 +272,8 @@ async function startAuthorization(overrideLoginDomain = null, overrideClientId =
 window.startAuthorization = startAuthorization;
 
 // --- Auth Expiration Handler ---
-let authExpiredModalOpen = false;
-
 function initAuthExpirationHandler() {
-    onAuthExpired(async (expiredConnectionId) => {
+    onAuthExpired(async expiredConnectionId => {
         // Prevent duplicate modals (synchronous check to avoid race condition)
         if (authExpiredModalOpen) return;
         authExpiredModalOpen = true;
@@ -455,7 +459,9 @@ function initMobileMenu() {
             if (targetContent) {
                 targetContent.classList.add('active');
                 // Notify components that tab changed (for lazy loading)
-                document.dispatchEvent(new CustomEvent('tab-changed', { detail: { tabId: targetId } }));
+                document.dispatchEvent(
+                    new CustomEvent('tab-changed', { detail: { tabId: targetId } })
+                );
             }
 
             closeMenu();
@@ -493,7 +499,7 @@ function initMobileMenu() {
     });
 
     // Delegate clicks on mobile connection list
-    mobileConnectionList.addEventListener('click', async (e) => {
+    mobileConnectionList.addEventListener('click', async e => {
         const item = e.target.closest('.mobile-connection-item');
         if (!item) return;
 
@@ -531,12 +537,16 @@ function updateMobileConnections(connections) {
         mobileConnectionList.innerHTML = '';
         mobileAddConnection.classList.add('hidden');
     } else {
-        mobileConnectionList.innerHTML = connections.map(conn => `
+        mobileConnectionList.innerHTML = connections
+            .map(
+                conn => `
             <div class="mobile-connection-item ${conn.id === activeId ? 'active' : ''}" data-id="${conn.id}">
                 <span class="mobile-connection-name">${escapeHtml(conn.label)}</span>
                 <button class="mobile-connection-remove" title="Remove">&times;</button>
             </div>
-        `).join('');
+        `
+            )
+            .join('');
         mobileAddConnection.classList.remove('hidden');
     }
 

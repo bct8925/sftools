@@ -41,9 +41,13 @@ class ButtonDropdown extends HTMLElement {
     }
 
     renderOptions() {
-        this.menu.innerHTML = this.options.map((opt, i) => `
+        this.menu.innerHTML = this.options
+            .map(
+                (opt, i) => `
             <button class="btn-dropdown-option" data-index="${i}"${opt.disabled ? ' disabled' : ''}>${opt.label}</button>
-        `).join('');
+        `
+            )
+            .join('');
     }
 
     attachEventListeners() {
@@ -53,26 +57,28 @@ class ButtonDropdown extends HTMLElement {
             }
         });
 
-        this.triggerBtn.addEventListener('click', (e) => {
+        this.triggerBtn.addEventListener('click', e => {
             e.stopPropagation();
             if (!this.hasAttribute('disabled')) {
                 this.classList.toggle('open');
             }
         });
 
-        this.menu.addEventListener('click', (e) => {
+        this.menu.addEventListener('click', e => {
             const option = e.target.closest('.btn-dropdown-option');
             if (option && !option.disabled) {
                 const index = parseInt(option.dataset.index);
-                this.dispatchEvent(new CustomEvent('click-option', {
-                    bubbles: true,
-                    detail: { index, option: this.options[index] }
-                }));
+                this.dispatchEvent(
+                    new CustomEvent('click-option', {
+                        bubbles: true,
+                        detail: { index, option: this.options[index] },
+                    })
+                );
                 this.classList.remove('open');
             }
         });
 
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', e => {
             if (!this.contains(e.target)) {
                 this.classList.remove('open');
             }

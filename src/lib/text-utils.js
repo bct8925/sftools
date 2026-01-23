@@ -38,5 +38,5 @@ export function escapeAttr(str) {
  */
 export function truncate(str, length) {
     if (!str || str.length <= length) return str || '';
-    return str.substring(0, length) + '...';
+    return `${str.substring(0, length)}...`;
 }

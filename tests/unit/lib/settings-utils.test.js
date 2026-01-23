@@ -19,7 +19,7 @@ describe('settings-utils', () => {
                 id: 'conn-123',
                 label: 'Production Org',
                 refreshToken: 'refresh_token_abc',
-                clientId: 'custom_client_id'
+                clientId: 'custom_client_id',
             };
 
             const result = createConnectionCardData(connection, 'conn-123');
@@ -36,7 +36,7 @@ describe('settings-utils', () => {
                 id: 'conn-456',
                 label: 'Sandbox Org',
                 refreshToken: null,
-                clientId: null
+                clientId: null,
             };
 
             const result = createConnectionCardData(connection, 'conn-123');
@@ -52,7 +52,7 @@ describe('settings-utils', () => {
                 id: 'conn-789',
                 label: '<script>alert("XSS")</script>',
                 refreshToken: null,
-                clientId: null
+                clientId: null,
             };
 
             const result = createConnectionCardData(connection);
@@ -67,7 +67,7 @@ describe('settings-utils', () => {
                 id: 'conn-101',
                 label: 'Test Org',
                 refreshToken: 'refresh_abc',
-                clientId: null
+                clientId: null,
             };
 
             const result = createConnectionCardData(connection);
@@ -81,7 +81,7 @@ describe('settings-utils', () => {
                 id: 'conn-102',
                 label: 'Test Org',
                 refreshToken: null,
-                clientId: 'custom_id'
+                clientId: 'custom_id',
             };
 
             const result = createConnectionCardData(connection);
@@ -95,7 +95,7 @@ describe('settings-utils', () => {
                 id: 'conn-103',
                 label: 'Test Org',
                 refreshToken: null,
-                clientId: null
+                clientId: null,
             };
 
             const result = createConnectionCardData(connection);

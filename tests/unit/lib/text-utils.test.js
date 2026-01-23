@@ -43,8 +43,9 @@ describe('text-utils', () => {
 
         it('UT-U-017: handles combined special characters', () => {
             // Note: quotes are not escaped by this method
-            expect(escapeHtml('<div class="test">a & b</div>'))
-                .toBe('&lt;div class="test"&gt;a &amp; b&lt;/div&gt;');
+            expect(escapeHtml('<div class="test">a & b</div>')).toBe(
+                '&lt;div class="test"&gt;a &amp; b&lt;/div&gt;'
+            );
         });
 
         it('UT-U-018: returns empty string for null', () => {

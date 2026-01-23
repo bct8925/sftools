@@ -12,7 +12,7 @@ const state = {
     fromObject: null,
     fromObjectLoadId: 0,
     fields: [],
-    relationships: new Map() // relationshipName -> { targetObject, fields }
+    relationships: new Map(), // relationshipName -> { targetObject, fields }
 };
 
 // SOQL Keywords
@@ -39,18 +39,22 @@ const SOQL_KEYWORDS = [
     { name: 'FALSE', description: 'Boolean false' },
     { name: 'null', description: 'Null value' },
     { name: 'INCLUDES', description: 'Multi-select picklist contains value' },
-    { name: 'EXCLUDES', description: 'Multi-select picklist excludes value' }
+    { name: 'EXCLUDES', description: 'Multi-select picklist excludes value' },
 ];
 
 // Aggregate functions
 const AGGREGATE_FUNCTIONS = [
     { name: 'COUNT', signature: 'COUNT()', description: 'Count of records' },
     { name: 'COUNT', signature: 'COUNT(field)', description: 'Count of non-null values' },
-    { name: 'COUNT_DISTINCT', signature: 'COUNT_DISTINCT(field)', description: 'Count of unique values' },
+    {
+        name: 'COUNT_DISTINCT',
+        signature: 'COUNT_DISTINCT(field)',
+        description: 'Count of unique values',
+    },
     { name: 'SUM', signature: 'SUM(field)', description: 'Sum of numeric values' },
     { name: 'AVG', signature: 'AVG(field)', description: 'Average of numeric values' },
     { name: 'MIN', signature: 'MIN(field)', description: 'Minimum value' },
-    { name: 'MAX', signature: 'MAX(field)', description: 'Maximum value' }
+    { name: 'MAX', signature: 'MAX(field)', description: 'Maximum value' },
 ];
 
 // Date literals
@@ -75,7 +79,7 @@ const DATE_LITERALS = [
     { name: 'LAST_N_WEEKS:n', description: 'Last n weeks' },
     { name: 'NEXT_N_WEEKS:n', description: 'Next n weeks' },
     { name: 'LAST_N_MONTHS:n', description: 'Last n months' },
-    { name: 'NEXT_N_MONTHS:n', description: 'Next n months' }
+    { name: 'NEXT_N_MONTHS:n', description: 'Next n months' },
 ];
 
 // Parse SOQL query with error handling
@@ -109,7 +113,7 @@ function detectClause(text, offset) {
         { name: 'GROUP BY', index: textBeforeCursor.lastIndexOf(' GROUP BY ') },
         { name: 'HAVING', index: textBeforeCursor.lastIndexOf(' HAVING ') },
         { name: 'LIMIT', index: textBeforeCursor.lastIndexOf(' LIMIT ') },
-        { name: 'OFFSET', index: textBeforeCursor.lastIndexOf(' OFFSET ') }
+        { name: 'OFFSET', index: textBeforeCursor.lastIndexOf(' OFFSET ') },
     ];
 
     // Find the clause with the highest index (most recent)
@@ -142,8 +146,8 @@ function extractDotChain(text, offset) {
     return null;
 }
 
-// Get the current word being typed
-function getCurrentWord(text, offset) {
+// Get the current word being typed (reserved for future use)
+function _getCurrentWord(text, offset) {
     const textBeforeCursor = text.substring(0, offset);
     const match = textBeforeCursor.match(/(\w+)$/);
     return match ? match[1] : '';
@@ -247,7 +251,7 @@ async function loadFromObject(objectName) {
             state.relationships.set(refField.relationshipName.toLowerCase(), {
                 targetObject: targetObj,
                 fields: targetDescribe?.fields || [],
-                relationshipName: refField.relationshipName
+                relationshipName: refField.relationshipName,
             });
         }
     } catch (error) {
@@ -264,7 +268,7 @@ function buildFieldSuggestions(fields, range, sortPrefix = '1') {
         documentation: field.label,
         insertText: field.name,
         range,
-        sortText: sortPrefix + '_' + field.name
+        sortText: `${sortPrefix}_${field.name}`,
     }));
 }
 
@@ -272,7 +276,7 @@ function buildFieldSuggestions(fields, range, sortPrefix = '1') {
 function buildRelationshipSuggestions(range) {
     const suggestions = [];
 
-    for (const [key, rel] of state.relationships) {
+    for (const [_key, rel] of state.relationships) {
         suggestions.push({
             label: rel.relationshipName,
             kind: monaco.languages.CompletionItemKind.Module,
@@ -280,7 +284,7 @@ function buildRelationshipSuggestions(range) {
             documentation: `Access fields from related ${rel.targetObject} record`,
             insertText: rel.relationshipName,
             range,
-            sortText: '2_' + rel.relationshipName
+            sortText: `2_${rel.relationshipName}`,
         });
     }
 
@@ -311,7 +315,7 @@ async function buildObjectSuggestions(range) {
             detail: obj.label,
             insertText: obj.name,
             range,
-            sortText: obj.name
+            sortText: obj.name,
         }));
 }
 
@@ -335,7 +339,7 @@ function buildKeywordSuggestions(range, clause) {
             documentation: kw.description,
             insertText: kw.name,
             range,
-            sortText: '5_' + kw.name
+            sortText: `5_${kw.name}`,
         });
     }
 
@@ -349,10 +353,10 @@ function buildAggregateSuggestions(range) {
         kind: monaco.languages.CompletionItemKind.Function,
         detail: fn.signature,
         documentation: fn.description,
-        insertText: fn.name + '($0)',
+        insertText: `${fn.name}($0)`,
         insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
         range,
-        sortText: '3_' + fn.name
+        sortText: `3_${fn.name}`,
     }));
 }
 
@@ -365,7 +369,7 @@ function buildDateLiteralSuggestions(range) {
         documentation: dl.description,
         insertText: dl.name,
         range,
-        sortText: '4_' + dl.name
+        sortText: `4_${dl.name}`,
     }));
 }
 
@@ -402,7 +406,7 @@ export function registerSOQLCompletionProvider() {
                 startLineNumber: position.lineNumber,
                 endLineNumber: position.lineNumber,
                 startColumn: word.startColumn,
-                endColumn: word.endColumn
+                endColumn: word.endColumn,
             };
 
             let suggestions = [];
@@ -432,7 +436,7 @@ export function registerSOQLCompletionProvider() {
                                 documentation: `Access fields from related ${ref.referenceTo?.[0]} record`,
                                 insertText: ref.relationshipName,
                                 range,
-                                sortText: '2_' + ref.relationshipName
+                                sortText: `2_${ref.relationshipName}`,
                             });
                         }
                     }
@@ -451,7 +455,7 @@ export function registerSOQLCompletionProvider() {
                         suggestions = [
                             ...buildFieldSuggestions(state.fields, range),
                             ...buildRelationshipSuggestions(range),
-                            ...buildAggregateSuggestions(range)
+                            ...buildAggregateSuggestions(range),
                         ];
                     } else {
                         // No FROM object yet, just show aggregates and hint
@@ -466,7 +470,7 @@ export function registerSOQLCompletionProvider() {
                         suggestions = [
                             ...buildFieldSuggestions(state.fields, range),
                             ...buildRelationshipSuggestions(range),
-                            ...buildDateLiteralSuggestions(range)
+                            ...buildDateLiteralSuggestions(range),
                         ];
                     }
                     suggestions.push(...buildKeywordSuggestions(range, clause));
@@ -477,7 +481,7 @@ export function registerSOQLCompletionProvider() {
                     if (state.fields.length > 0) {
                         suggestions = [
                             ...buildFieldSuggestions(state.fields, range),
-                            ...buildRelationshipSuggestions(range)
+                            ...buildRelationshipSuggestions(range),
                         ];
                     }
                     if (clause === 'ORDER BY') {
@@ -490,7 +494,7 @@ export function registerSOQLCompletionProvider() {
             }
 
             return { suggestions };
-        }
+        },
     });
 }
 

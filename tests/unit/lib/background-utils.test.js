@@ -25,7 +25,7 @@ import { describe, it, expect } from 'vitest';
 import {
     parseLightningUrl,
     extractOrgIdentifier,
-    findConnectionByDomain
+    findConnectionByDomain,
 } from '../../../src/lib/background-utils.js';
 
 describe('parseLightningUrl', () => {
@@ -35,7 +35,7 @@ describe('parseLightningUrl', () => {
 
         expect(result).toEqual({
             objectType: 'Account',
-            recordId: '001abc000012345678'
+            recordId: '001abc000012345678',
         });
     });
 
@@ -45,7 +45,7 @@ describe('parseLightningUrl', () => {
 
         expect(result).toEqual({
             objectType: 'Contact',
-            recordId: '003abc000012345'
+            recordId: '003abc000012345',
         });
     });
 
@@ -55,7 +55,7 @@ describe('parseLightningUrl', () => {
 
         expect(result).toEqual({
             objectType: 'Custom_Object__c',
-            recordId: 'a00abc000012345678'
+            recordId: 'a00abc000012345678',
         });
     });
 
@@ -65,7 +65,7 @@ describe('parseLightningUrl', () => {
 
         expect(result).toEqual({
             objectType: 'ns__Custom_Object__c',
-            recordId: 'a00abc000012345678'
+            recordId: 'a00abc000012345678',
         });
     });
 
@@ -217,18 +217,18 @@ describe('findConnectionByDomain', () => {
         {
             id: 'conn-1',
             label: 'Production',
-            instanceUrl: 'https://myorg.my.salesforce.com'
+            instanceUrl: 'https://myorg.my.salesforce.com',
         },
         {
             id: 'conn-2',
             label: 'Sandbox',
-            instanceUrl: 'https://mysandbox.sandbox.lightning.force.com'
+            instanceUrl: 'https://mysandbox.sandbox.lightning.force.com',
         },
         {
             id: 'conn-3',
             label: 'Scratch',
-            instanceUrl: 'https://scratch123.scratch.my.salesforce.com'
-        }
+            instanceUrl: 'https://scratch123.scratch.my.salesforce.com',
+        },
     ];
 
     it('BG-U-006: matches by exact hostname', () => {
@@ -314,9 +314,9 @@ describe('findConnectionByDomain', () => {
             {
                 id: 'conn-bad',
                 label: 'Bad Connection',
-                instanceUrl: 'not-a-valid-url'
+                instanceUrl: 'not-a-valid-url',
             },
-            ...mockConnections
+            ...mockConnections,
         ];
 
         const domain = 'myorg.my.salesforce.com';
@@ -330,13 +330,13 @@ describe('findConnectionByDomain', () => {
             {
                 id: 'conn-first',
                 label: 'First Match',
-                instanceUrl: 'https://myorg.my.salesforce.com'
+                instanceUrl: 'https://myorg.my.salesforce.com',
             },
             {
                 id: 'conn-second',
                 label: 'Second Match',
-                instanceUrl: 'https://myorg.lightning.force.com'
-            }
+                instanceUrl: 'https://myorg.lightning.force.com',
+            },
         ];
 
         const domain = 'myorg.my.salesforce.com';

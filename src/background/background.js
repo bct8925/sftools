@@ -1,31 +1,24 @@
 // Service Worker for sftools Chrome Extension
 
 import {
+    parseLightningUrl,
+    findConnectionByDomain as findConnectionByDomainUtil,
+} from '../lib/background-utils.js';
+import {
     connectNative,
     disconnectNative,
     sendProxyRequest,
     isProxyConnected,
-    getProxyInfo
+    getProxyInfo,
 } from './native-messaging.js';
-
-import {
-    exchangeCodeForTokens,
-    refreshAccessToken,
-    updateConnectionToken
-} from './auth.js';
-
+import { exchangeCodeForTokens, refreshAccessToken, updateConnectionToken } from './auth.js';
 import { debugInfo } from './debug.js';
-
-import {
-    parseLightningUrl,
-    findConnectionByDomain as findConnectionByDomainUtil
-} from '../lib/background-utils.js';
 
 // ============================================================================
 // Extension Action Handler
 // ============================================================================
 
-chrome.action.onClicked.addListener(async (tab) => {
+chrome.action.onClicked.addListener(async tab => {
     await chrome.sidePanel.open({ tabId: tab.id });
 });
 
@@ -42,10 +35,7 @@ chrome.runtime.onInstalled.addListener(() => {
         id: SFTOOLS_MENU_ID,
         title: 'sftools',
         contexts: ['page'],
-        documentUrlPatterns: [
-            '*://*.my.salesforce.com/*',
-            '*://*.lightning.force.com/*'
-        ]
+        documentUrlPatterns: ['*://*.my.salesforce.com/*', '*://*.lightning.force.com/*'],
     });
 
     // Child menu item
@@ -54,10 +44,7 @@ chrome.runtime.onInstalled.addListener(() => {
         parentId: SFTOOLS_MENU_ID,
         title: 'View/Edit Record',
         contexts: ['page'],
-        documentUrlPatterns: [
-            '*://*.my.salesforce.com/*',
-            '*://*.lightning.force.com/*'
-        ]
+        documentUrlPatterns: ['*://*.my.salesforce.com/*', '*://*.lightning.force.com/*'],
     });
 });
 
@@ -81,7 +68,7 @@ async function handleViewEditRecord(tab) {
             type: 'basic',
             iconUrl,
             title: 'sftools',
-            message: 'Navigate to a Salesforce record page to use this feature.'
+            message: 'Navigate to a Salesforce record page to use this feature.',
         });
         return;
     }
@@ -92,13 +79,15 @@ async function handleViewEditRecord(tab) {
             type: 'basic',
             iconUrl,
             title: 'sftools',
-            message: 'No saved connection for this Salesforce org. Please authorize first.'
+            message: 'No saved connection for this Salesforce org. Please authorize first.',
         });
         return;
     }
 
-    const viewerUrl = chrome.runtime.getURL('dist/pages/record/record.html') +
-        `?objectType=${encodeURIComponent(parsed.objectType)}` +
+    const viewerUrl =
+        `${chrome.runtime.getURL(
+            'dist/pages/record/record.html'
+        )}?objectType=${encodeURIComponent(parsed.objectType)}` +
         `&recordId=${encodeURIComponent(parsed.recordId)}` +
         `&connectionId=${encodeURIComponent(connection.id)}`;
 
@@ -110,7 +99,7 @@ async function handleViewEditRecord(tab) {
 // ============================================================================
 
 function proxyRequired(handler) {
-    return async (request) => {
+    return async request => {
         if (!isProxyConnected()) {
             return { success: false, error: 'Proxy not connected' };
         }
@@ -141,12 +130,12 @@ async function fetchWithRetry(fetchFn, convertFn, headers, connectionId) {
             converted,
             connectionId,
             hasAuth,
-            async (newAccessToken) => {
+            async newAccessToken => {
                 const retryResponse = await fetchFn({
                     ...headers,
-                    Authorization: `Bearer ${newAccessToken}`
+                    Authorization: `Bearer ${newAccessToken}`,
                 });
-                return await convertFn(retryResponse);
+                return convertFn(retryResponse);
             }
         );
     } catch (error) {
@@ -180,29 +169,32 @@ async function handle401WithRefresh(response, connectionId, hasAuth, retryFn) {
         if (refreshResult.success) {
             debugInfo('Token refresh succeeded, retrying request');
             await updateConnectionToken(connectionId, refreshResult.accessToken);
-            return await retryFn(refreshResult.accessToken);
-        } else {
-            debugInfo('Token refresh failed:', refreshResult.error);
-            return {
-                success: false,
-                status: 401,
-                statusText: 'Unauthorized',
-                authExpired: true,
-                connectionId: connectionId,
-                error: refreshResult.error
-            };
+            return retryFn(refreshResult.accessToken);
         }
-    } else {
-        debugInfo('Cannot refresh - refreshToken:', !!connection?.refreshToken, 'proxy:', isProxyConnected());
+        debugInfo('Token refresh failed:', refreshResult.error);
         return {
             success: false,
             status: 401,
             statusText: 'Unauthorized',
             authExpired: true,
             connectionId: connectionId,
-            error: 'Session expired'
+            error: refreshResult.error,
         };
     }
+    debugInfo(
+        'Cannot refresh - refreshToken:',
+        !!connection?.refreshToken,
+        'proxy:',
+        isProxyConnected()
+    );
+    return {
+        success: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        authExpired: true,
+        connectionId: connectionId,
+        error: 'Session expired',
+    };
 }
 
 // ============================================================================
@@ -210,54 +202,61 @@ async function handle401WithRefresh(response, connectionId, hasAuth, retryFn) {
 // ============================================================================
 
 const handlers = {
-    fetch: async (request) => {
-        return await fetchWithRetry(
-            (headers) => fetch(request.url, {
-                ...request.options,
-                headers
-            }),
-            async (response) => {
+    fetch: request =>
+        fetchWithRetry(
+            headers =>
+                fetch(request.url, {
+                    ...request.options,
+                    headers,
+                }),
+            async response => {
                 const headers = {};
-                response.headers.forEach((value, key) => { headers[key.toLowerCase()] = value; });
+                response.headers.forEach((value, key) => {
+                    headers[key.toLowerCase()] = value;
+                });
                 return {
                     success: response.ok,
                     status: response.status,
                     statusText: response.statusText,
                     headers,
-                    data: await response.text()
+                    data: await response.text(),
                 };
             },
             request.options.headers,
             request.connectionId
-        );
-    },
+        ),
 
     connectProxy: () => connectNative(),
 
-    disconnectProxy: () => { disconnectNative(); return { success: true }; },
+    disconnectProxy: () => {
+        disconnectNative();
+        return { success: true };
+    },
 
     checkProxyConnection: () => ({ connected: isProxyConnected(), ...getProxyInfo() }),
 
     getProxyInfo: () => getProxyInfo(),
 
-    tokenExchange: (req) => exchangeCodeForTokens(req.code, req.redirectUri, req.loginDomain, req.clientId),
+    tokenExchange: req =>
+        exchangeCodeForTokens(req.code, req.redirectUri, req.loginDomain, req.clientId),
 
-    proxyFetch: proxyRequired(async (req) => {
-        return await fetchWithRetry(
-            (headers) => sendProxyRequest({
-                type: 'rest',
-                url: req.url,
-                method: req.method,
-                headers,
-                body: req.body
-            }),
-            (response) => response,
+    proxyFetch: proxyRequired(req =>
+        fetchWithRetry(
+            headers =>
+                sendProxyRequest({
+                    type: 'rest',
+                    url: req.url,
+                    method: req.method,
+                    headers,
+                    body: req.body,
+                }),
+            response => response,
             req.headers,
             req.connectionId
-        );
-    }),
+        )
+    ),
 
-    subscribe: proxyRequired(async (req) => {
+    subscribe: proxyRequired(async req => {
         const subscriptionId = crypto.randomUUID();
         const response = await sendProxyRequest({
             type: 'subscribe',
@@ -266,34 +265,34 @@ const handlers = {
             instanceUrl: req.instanceUrl,
             channel: req.channel,
             replayPreset: req.replayPreset,
-            replayId: req.replayId
+            replayId: req.replayId,
         });
         return { ...response, subscriptionId };
     }),
 
-    unsubscribe: proxyRequired((req) =>
+    unsubscribe: proxyRequired(req =>
         sendProxyRequest({ type: 'unsubscribe', subscriptionId: req.subscriptionId })
     ),
 
-    getTopic: proxyRequired((req) =>
+    getTopic: proxyRequired(req =>
         sendProxyRequest({
             type: 'getTopic',
             accessToken: req.accessToken,
             instanceUrl: req.instanceUrl,
             topicName: req.topicName,
-            tenantId: req.tenantId
+            tenantId: req.tenantId,
         })
     ),
 
-    getSchema: proxyRequired((req) =>
+    getSchema: proxyRequired(req =>
         sendProxyRequest({
             type: 'getSchema',
             accessToken: req.accessToken,
             instanceUrl: req.instanceUrl,
             schemaId: req.schemaId,
-            tenantId: req.tenantId
+            tenantId: req.tenantId,
         })
-    )
+    ),
 };
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -313,7 +312,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.storage.local.get(['proxyEnabled']).then(({ proxyEnabled }) => {
     if (proxyEnabled) {
         connectNative()
-            .then(result => { if (result.success) debugInfo('Auto-connected to proxy'); })
-            .catch(() => {});
+            .then(result => {
+                if (result.success) debugInfo('Auto-connected to proxy');
+            })
+            .catch(() => {
+                /* ignore */
+            });
     }
 });

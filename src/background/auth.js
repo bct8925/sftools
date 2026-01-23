@@ -1,8 +1,8 @@
 // Backend Auth Module for sftools Chrome Extension
 // Handles OAuth token exchange and refresh in the service worker
 
-import { isProxyConnected, sendProxyRequest } from './native-messaging.js';
 import { getOAuthCredentials } from '../lib/oauth-credentials.js';
+import { isProxyConnected, sendProxyRequest } from './native-messaging.js';
 import { debugInfo } from './debug.js';
 
 /**
@@ -27,7 +27,7 @@ export async function exchangeCodeForTokens(code, redirectUri, loginDomain, clie
             grant_type: 'authorization_code',
             client_id: clientId,
             code: code,
-            redirect_uri: redirectUri
+            redirect_uri: redirectUri,
         }).toString();
 
         const response = await sendProxyRequest({
@@ -35,7 +35,7 @@ export async function exchangeCodeForTokens(code, redirectUri, loginDomain, clie
             url: tokenUrl,
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body
+            body: body,
         });
 
         if (!response.success) {
@@ -44,7 +44,7 @@ export async function exchangeCodeForTokens(code, redirectUri, loginDomain, clie
                 try {
                     const errData = JSON.parse(response.data);
                     errorMsg = errData.error_description || errData.error || errorMsg;
-                } catch (e) {
+                } catch {
                     errorMsg = response.data.substring(0, 200) || errorMsg;
                 }
             }
@@ -60,14 +60,13 @@ export async function exchangeCodeForTokens(code, redirectUri, loginDomain, clie
                 accessToken: tokenData.access_token,
                 refreshToken: tokenData.refresh_token,
                 instanceUrl: tokenData.instance_url,
-                loginDomain: loginDomain
-            };
-        } else {
-            return {
-                success: false,
-                error: tokenData.error_description || tokenData.error || 'Token exchange failed'
+                loginDomain: loginDomain,
             };
         }
+        return {
+            success: false,
+            error: tokenData.error_description || tokenData.error || 'Token exchange failed',
+        };
     } catch (error) {
         return { success: false, error: error.message };
     }
@@ -83,7 +82,7 @@ const refreshPromises = new Map();
  * @param {object} connection - Connection object with refreshToken and loginDomain
  * @returns {Promise<{success: boolean, accessToken?: string, error?: string}>}
  */
-export async function refreshAccessToken(connection) {
+export function refreshAccessToken(connection) {
     if (!connection || !connection.id) {
         return { success: false, error: 'No connection provided' };
     }
@@ -111,7 +110,7 @@ export async function refreshAccessToken(connection) {
             const body = new URLSearchParams({
                 grant_type: 'refresh_token',
                 client_id: clientId,
-                refresh_token: connection.refreshToken
+                refresh_token: connection.refreshToken,
             }).toString();
 
             const response = await sendProxyRequest({
@@ -119,7 +118,7 @@ export async function refreshAccessToken(connection) {
                 url: tokenUrl,
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: body
+                body: body,
             });
 
             if (!response.success) {
@@ -132,9 +131,8 @@ export async function refreshAccessToken(connection) {
             if (tokenData.access_token) {
                 debugInfo('Token refreshed successfully for connection:', connection.id);
                 return { success: true, accessToken: tokenData.access_token };
-            } else {
-                return { success: false, error: tokenData.error_description || 'Refresh failed' };
             }
+            return { success: false, error: tokenData.error_description || 'Refresh failed' };
         } catch (error) {
             console.error('Token refresh error:', error);
             return { success: false, error: error.message };
@@ -168,6 +166,13 @@ export async function updateConnectionToken(connectionId, accessToken) {
  * Clear all auth tokens from storage and broadcast expiration
  */
 export async function clearAuthTokens() {
-    await chrome.storage.local.remove(['accessToken', 'refreshToken', 'instanceUrl', 'loginDomain']);
-    chrome.runtime.sendMessage({ type: 'authExpired' }).catch(() => {});
+    await chrome.storage.local.remove([
+        'accessToken',
+        'refreshToken',
+        'instanceUrl',
+        'loginDomain',
+    ]);
+    chrome.runtime.sendMessage({ type: 'authExpired' }).catch(() => {
+        /* ignore */
+    });
 }

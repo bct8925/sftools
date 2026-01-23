@@ -49,7 +49,7 @@ import {
     formatValue,
     formatPreviewHtml,
     parseValue,
-    getChangedFields
+    getChangedFields,
 } from '../../../src/lib/record-utils.js';
 
 describe('sortFields', () => {
@@ -57,7 +57,7 @@ describe('sortFields', () => {
         const fields = [
             { name: 'Name', nameField: false },
             { name: 'Id', nameField: false },
-            { name: 'Email', nameField: false }
+            { name: 'Email', nameField: false },
         ];
 
         const sorted = sortFields(fields);
@@ -68,7 +68,7 @@ describe('sortFields', () => {
         const fields = [
             { name: 'Email', nameField: false },
             { name: 'Name', nameField: true },
-            { name: 'Id', nameField: false }
+            { name: 'Id', nameField: false },
         ];
 
         const sorted = sortFields(fields);
@@ -82,7 +82,7 @@ describe('sortFields', () => {
             { name: 'Name', nameField: true },
             { name: 'Id', nameField: false },
             { name: 'Apple__c', nameField: false },
-            { name: 'Banana__c', nameField: false }
+            { name: 'Banana__c', nameField: false },
         ];
 
         const sorted = sortFields(fields);
@@ -96,7 +96,7 @@ describe('sortFields', () => {
     it('RV-U-014: should not mutate original array', () => {
         const fields = [
             { name: 'Name', nameField: false },
-            { name: 'Id', nameField: false }
+            { name: 'Id', nameField: false },
         ];
         const original = [...fields];
 
@@ -110,7 +110,7 @@ describe('filterFields', () => {
         const fields = [
             { name: 'Id', type: 'id' },
             { name: 'BillingAddress', type: 'address' },
-            { name: 'Name', type: 'string' }
+            { name: 'Name', type: 'string' },
         ];
 
         const filtered = filterFields(fields);
@@ -122,7 +122,7 @@ describe('filterFields', () => {
         const fields = [
             { name: 'Id', type: 'id' },
             { name: 'Geolocation__c', type: 'location' },
-            { name: 'Name', type: 'string' }
+            { name: 'Name', type: 'string' },
         ];
 
         const filtered = filterFields(fields);
@@ -134,7 +134,7 @@ describe('filterFields', () => {
         const fields = [
             { name: 'Id', type: 'id' },
             { name: 'attributes', type: 'object' },
-            { name: 'Name', type: 'string' }
+            { name: 'Name', type: 'string' },
         ];
 
         const filtered = filterFields(fields);
@@ -167,7 +167,7 @@ describe('formatValue', () => {
     it('RV-U-016: should format numeric types as strings', () => {
         expect(formatValue(42, { type: 'int' })).toBe('42');
         expect(formatValue(99.99, { type: 'double' })).toBe('99.99');
-        expect(formatValue(1000.50, { type: 'currency' })).toBe('1000.5');
+        expect(formatValue(1000.5, { type: 'currency' })).toBe('1000.5');
         expect(formatValue(25.5, { type: 'percent' })).toBe('25.5');
     });
 
@@ -184,16 +184,22 @@ describe('formatPreviewHtml', () => {
             name: 'AccountId',
             type: 'reference',
             relationshipName: 'Account',
-            referenceTo: ['Account']
+            referenceTo: ['Account'],
         };
         const record = {
             AccountId: '001xxxxxxxxxxxx',
-            Account: { Name: 'Acme Corp' }
+            Account: { Name: 'Acme Corp' },
         };
         const nameFieldMap = { Account: 'Name' };
         const connectionId = 'conn-123';
 
-        const result = formatPreviewHtml(record.AccountId, field, record, nameFieldMap, connectionId);
+        const result = formatPreviewHtml(
+            record.AccountId,
+            field,
+            record,
+            nameFieldMap,
+            connectionId
+        );
         expect(result).toContain('__LINK__');
         expect(result).toContain('Acme Corp');
         expect(result).toContain('Account');
@@ -250,11 +256,11 @@ describe('formatPreviewHtml', () => {
             name: 'OwnerId',
             type: 'reference',
             relationshipName: 'Owner',
-            referenceTo: ['User']
+            referenceTo: ['User'],
         };
         const record = {
             OwnerId: '005xxxxxxxxxxxx',
-            Owner: { Name: 'John Doe' }
+            Owner: { Name: 'John Doe' },
         };
         const nameFieldMap = { User: 'Name' };
         const connectionId = 'conn-123';
@@ -268,13 +274,19 @@ describe('formatPreviewHtml', () => {
             name: 'AccountId',
             type: 'reference',
             relationshipName: 'Account',
-            referenceTo: ['Account']
+            referenceTo: ['Account'],
         };
         const record = { AccountId: '001xxxxxxxxxxxx' };
         const nameFieldMap = {};
         const connectionId = 'conn-123';
 
-        const result = formatPreviewHtml(record.AccountId, field, record, nameFieldMap, connectionId);
+        const result = formatPreviewHtml(
+            record.AccountId,
+            field,
+            record,
+            nameFieldMap,
+            connectionId
+        );
         expect(result).toBe('001xxxxxxxxxxxx');
     });
 
@@ -311,7 +323,7 @@ describe('parseValue', () => {
         expect(parseValue('42', intField)).toBe(42);
         expect(parseValue('-10', intField)).toBe(-10);
         expect(parseValue('99.99', doubleField)).toBe(99.99);
-        expect(parseValue('1000.50', currencyField)).toBe(1000.50);
+        expect(parseValue('1000.50', currencyField)).toBe(1000.5);
         expect(parseValue('25.5', percentField)).toBe(25.5);
     });
 
@@ -343,21 +355,21 @@ describe('getChangedFields', () => {
             Id: '001xxxxxxxxxxxx',
             Name: 'Original Name',
             Email: 'original@example.com',
-            Active__c: true
+            Active__c: true,
         };
 
         const currentValues = {
             Id: '001xxxxxxxxxxxx',
             Name: 'Updated Name',
             Email: 'original@example.com',
-            Active__c: false
+            Active__c: false,
         };
 
         const fieldDescribe = {
             Id: { updateable: false, calculated: false },
             Name: { updateable: true, calculated: false },
             Email: { updateable: true, calculated: false },
-            Active__c: { updateable: true, calculated: false }
+            Active__c: { updateable: true, calculated: false },
         };
 
         const changes = getChangedFields(originalValues, currentValues, fieldDescribe);
@@ -374,7 +386,7 @@ describe('getChangedFields', () => {
         const currentValues = { Id: '002', CreatedDate: '2024-01-02' };
         const fieldDescribe = {
             Id: { updateable: false, calculated: false },
-            CreatedDate: { updateable: false, calculated: false }
+            CreatedDate: { updateable: false, calculated: false },
         };
 
         const changes = getChangedFields(originalValues, currentValues, fieldDescribe);
@@ -385,7 +397,7 @@ describe('getChangedFields', () => {
         const originalValues = { Formula__c: 'value1' };
         const currentValues = { Formula__c: 'value2' };
         const fieldDescribe = {
-            Formula__c: { updateable: true, calculated: true }
+            Formula__c: { updateable: true, calculated: true },
         };
 
         const changes = getChangedFields(originalValues, currentValues, fieldDescribe);
@@ -396,7 +408,7 @@ describe('getChangedFields', () => {
         const originalValues = { Email: null };
         const currentValues = { Email: 'new@example.com' };
         const fieldDescribe = {
-            Email: { updateable: true, calculated: false }
+            Email: { updateable: true, calculated: false },
         };
 
         const changes = getChangedFields(originalValues, currentValues, fieldDescribe);
@@ -407,7 +419,7 @@ describe('getChangedFields', () => {
         const originalValues = { Email: 'old@example.com' };
         const currentValues = { Email: null };
         const fieldDescribe = {
-            Email: { updateable: true, calculated: false }
+            Email: { updateable: true, calculated: false },
         };
 
         const changes = getChangedFields(originalValues, currentValues, fieldDescribe);
@@ -418,7 +430,7 @@ describe('getChangedFields', () => {
         const originalValues = { Email: undefined };
         const currentValues = { Email: '' };
         const fieldDescribe = {
-            Email: { updateable: true, calculated: false }
+            Email: { updateable: true, calculated: false },
         };
 
         const changes = getChangedFields(originalValues, currentValues, fieldDescribe);
@@ -429,7 +441,7 @@ describe('getChangedFields', () => {
         const originalValues = { Amount: 100 };
         const currentValues = { Amount: 200 };
         const fieldDescribe = {
-            Amount: { updateable: true, calculated: false }
+            Amount: { updateable: true, calculated: false },
         };
 
         const changes = getChangedFields(originalValues, currentValues, fieldDescribe);
@@ -441,7 +453,7 @@ describe('getChangedFields', () => {
         const currentValues = { Name: 'Original', Amount: 100 };
         const fieldDescribe = {
             Name: { updateable: true, calculated: false },
-            Amount: { updateable: true, calculated: false }
+            Amount: { updateable: true, calculated: false },
         };
 
         const changes = getChangedFields(originalValues, currentValues, fieldDescribe);
@@ -454,7 +466,7 @@ describe('getChangedFields', () => {
         const currentValues = { Name: 'Test', Email: 'test@example.com' };
         const fieldDescribe = {
             Name: { updateable: true, calculated: false },
-            Email: { updateable: true, calculated: false }
+            Email: { updateable: true, calculated: false },
         };
 
         const changes = getChangedFields(originalValues, currentValues, fieldDescribe);

@@ -1,19 +1,25 @@
 <header class="standalone-header">
-    <div class="nav-brand"><img src="../../icon.png" alt="">sftools</div>
+    <div class="nav-brand"><img src="../../icon.png" alt="" />sftools</div>
     <span class="tool-name">Record Viewer</span>
 </header>
 
 <main class="content-area">
     <div class="card">
         <div class="card-header">
-            <div class="card-header-icon" style="background-color: #0070d2;">R</div>
+            <div class="card-header-icon" style="background-color: #0070d2">R</div>
             <h2>Record Details</h2>
         </div>
         <div class="card-body">
             <div class="record-info">
                 <span class="object-name" id="objectName">Loading...</span>
                 <span class="record-id" id="recordId"></span>
-                <button id="openInOrgBtn" class="button-neutral" style="margin-left: auto; padding: 4px 12px; font-size: 12px;">Open in Org</button>
+                <button
+                    id="openInOrgBtn"
+                    class="button-neutral"
+                    style="margin-left: auto; padding: 4px 12px; font-size: 12px"
+                >
+                    Open in Org
+                </button>
                 <span id="status" class="status-badge"></span>
             </div>
 
@@ -46,9 +52,7 @@
                 <h3>Rich Text Preview</h3>
                 <div class="modal-field-info" id="modalFieldInfo"></div>
             </div>
-            <button class="close-btn" id="modalCloseBtn" title="Close">
-                {{icon:close}}
-            </button>
+            <button class="close-btn" id="modalCloseBtn" title="Close">{{icon:close}}</button>
         </div>
         <div class="modal-body">
             <div class="modal-content-area" id="modalContent"></div>

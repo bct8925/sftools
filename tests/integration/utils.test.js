@@ -64,7 +64,7 @@ describe('Utils Tab Integration', () => {
 
             it('can query DebugLevel records', async () => {
                 const result = await salesforce.toolingQuery(
-                    "SELECT Id, DeveloperName FROM DebugLevel LIMIT 10"
+                    'SELECT Id, DeveloperName FROM DebugLevel LIMIT 10'
                 );
                 expect(Array.isArray(result)).toBe(true);
             });
@@ -80,9 +80,7 @@ describe('Utils Tab Integration', () => {
             });
 
             it('can query all trace flags', async () => {
-                const result = await salesforce.toolingQuery(
-                    'SELECT Id FROM TraceFlag LIMIT 100'
-                );
+                const result = await salesforce.toolingQuery('SELECT Id FROM TraceFlag LIMIT 100');
                 expect(Array.isArray(result)).toBe(true);
             });
         });

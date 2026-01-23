@@ -1,10 +1,19 @@
 // Events Tab - Unified Streaming (gRPC Pub/Sub + CometD)
-import template from './events.html?raw';
-import '../monaco-editor/monaco-editor.js';
-import { isAuthenticated, isProxyConnected, getInstanceUrl, getAccessToken } from '../../lib/utils.js';
+import {
+    isAuthenticated,
+    isProxyConnected,
+    getInstanceUrl,
+    getAccessToken,
+} from '../../lib/utils.js';
 import { getAllStreamingChannels, publishPlatformEvent } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
-import { buildChannelOptions, formatEventEntry, formatSystemMessage } from '../../lib/events-utils.js';
+import {
+    buildChannelOptions,
+    formatEventEntry,
+    formatSystemMessage,
+} from '../../lib/events-utils.js';
+import '../monaco-editor/monaco-editor.js';
+import template from './events.html?raw';
 
 class EventsTab extends HTMLElement {
     // DOM references
@@ -78,9 +87,9 @@ class EventsTab extends HTMLElement {
             try {
                 await chrome.runtime.sendMessage({
                     type: 'unsubscribe',
-                    subscriptionId: this.currentSubscriptionId
+                    subscriptionId: this.currentSubscriptionId,
                 });
-            } catch (e) {
+            } catch {
                 // Ignore errors during cleanup
             }
             this.handleDisconnect();
@@ -125,10 +134,11 @@ class EventsTab extends HTMLElement {
         this.publishBtn.addEventListener('click', () => this.handlePublish());
 
         this.replaySelect.addEventListener('change', () => {
-            this.replayCustomContainer.style.display = this.replaySelect.value === 'CUSTOM' ? 'block' : 'none';
+            this.replayCustomContainer.style.display =
+                this.replaySelect.value === 'CUSTOM' ? 'block' : 'none';
         });
 
-        this.boundMessageHandler = (message) => this.handleStreamMessage(message);
+        this.boundMessageHandler = message => this.handleStreamMessage(message);
         chrome.runtime.onMessage.addListener(this.boundMessageHandler);
     }
 
@@ -152,7 +162,8 @@ class EventsTab extends HTMLElement {
         } catch (err) {
             console.error('Error loading streaming channels:', err);
             this.channelSelect.innerHTML = '<option value="">Error loading channels</option>';
-            this.publishChannelSelect.innerHTML = '<option value="">Error loading channels</option>';
+            this.publishChannelSelect.innerHTML =
+                '<option value="">Error loading channels</option>';
         }
     }
 
@@ -166,7 +177,12 @@ class EventsTab extends HTMLElement {
         defaultOpt.textContent = 'Select a channel...';
         this.channelSelect.appendChild(defaultOpt);
 
-        const groups = buildChannelOptions(platformEvents, standardEvents, pushTopics, systemTopics);
+        const groups = buildChannelOptions(
+            platformEvents,
+            standardEvents,
+            pushTopics,
+            systemTopics
+        );
         groups.forEach(group => {
             const optgroup = document.createElement('optgroup');
             optgroup.label = group.label;
@@ -225,7 +241,9 @@ class EventsTab extends HTMLElement {
 
         if (!isProxyConnected()) {
             this.updateStreamStatus('Proxy required', 'error');
-            this.appendSystemMessage('Streaming requires the local proxy. Open Settings to connect.');
+            this.appendSystemMessage(
+                'Streaming requires the local proxy. Open Settings to connect.'
+            );
             return;
         }
 
@@ -242,7 +260,7 @@ class EventsTab extends HTMLElement {
                 accessToken: getAccessToken(),
                 channel,
                 replayPreset,
-                replayId
+                replayId,
             });
 
             if (response.success) {
@@ -272,7 +290,7 @@ class EventsTab extends HTMLElement {
         try {
             await chrome.runtime.sendMessage({
                 type: 'unsubscribe',
-                subscriptionId: this.currentSubscriptionId
+                subscriptionId: this.currentSubscriptionId,
             });
             this.appendSystemMessage('Unsubscribed');
         } catch (err) {
@@ -324,7 +342,7 @@ class EventsTab extends HTMLElement {
         if (currentValue.startsWith('//')) {
             this.streamEditor.setValue(newEntry);
         } else {
-            this.streamEditor.setValue(currentValue + '\n\n' + newEntry);
+            this.streamEditor.setValue(`${currentValue}\n\n${newEntry}`);
         }
 
         this.scrollStreamToBottom();
@@ -332,14 +350,14 @@ class EventsTab extends HTMLElement {
 
     appendSystemMessage(msg) {
         const current = this.streamEditor.getValue();
-        const newContent = current + formatSystemMessage(msg) + '\n';
+        const newContent = `${current + formatSystemMessage(msg)}\n`;
         this.streamEditor.setValue(newContent);
 
         this.scrollStreamToBottom();
     }
 
     scrollStreamToBottom() {
-        const editor = this.streamEditor.editor;
+        const { editor } = this.streamEditor;
         if (editor) {
             const lineCount = editor.getModel().getLineCount();
             editor.revealLine(lineCount);
@@ -370,7 +388,7 @@ class EventsTab extends HTMLElement {
         let payload;
         try {
             payload = JSON.parse(this.publishEditor.getValue());
-        } catch (err) {
+        } catch {
             this.updatePublishStatus('Invalid JSON', 'error');
             return;
         }

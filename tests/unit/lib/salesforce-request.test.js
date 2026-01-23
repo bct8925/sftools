@@ -28,25 +28,30 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock dependencies before importing the module under test
 vi.mock('../../../src/lib/fetch.js', () => ({
-    smartFetch: vi.fn()
+    smartFetch: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/auth.js', () => ({
     getAccessToken: vi.fn(),
     getInstanceUrl: vi.fn(),
     getActiveConnectionId: vi.fn(),
-    triggerAuthExpired: vi.fn()
+    triggerAuthExpired: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/cors-detection.js', () => ({
     isCorsError: vi.fn(),
-    showCorsErrorModal: vi.fn()
+    showCorsErrorModal: vi.fn(),
 }));
 
 // Import after mocking
 import { salesforceRequest } from '../../../src/lib/salesforce-request.js';
 import { smartFetch } from '../../../src/lib/fetch.js';
-import { getAccessToken, getInstanceUrl, getActiveConnectionId, triggerAuthExpired } from '../../../src/lib/auth.js';
+import {
+    getAccessToken,
+    getInstanceUrl,
+    getActiveConnectionId,
+    triggerAuthExpired,
+} from '../../../src/lib/auth.js';
 import { isCorsError, showCorsErrorModal } from '../../../src/lib/cors-detection.js';
 
 describe('salesforce-request', () => {
@@ -63,7 +68,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,
-                data: '{"result":"ok"}'
+                data: '{"result":"ok"}',
             });
 
             await salesforceRequest('/services/data/v59.0/sobjects');
@@ -78,7 +83,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,
-                data: '{"result":"ok"}'
+                data: '{"result":"ok"}',
             });
 
             await salesforceRequest('/services/data/v59.0/sobjects');
@@ -93,7 +98,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,
-                data: '{"result":"ok"}'
+                data: '{"result":"ok"}',
             });
 
             await salesforceRequest('/test');
@@ -102,8 +107,8 @@ describe('salesforce-request', () => {
                 expect.any(String),
                 expect.objectContaining({
                     headers: expect.objectContaining({
-                        'Authorization': 'Bearer test-token'
-                    })
+                        Authorization: 'Bearer test-token',
+                    }),
                 })
             );
         });
@@ -112,7 +117,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,
-                data: '{"result":"ok"}'
+                data: '{"result":"ok"}',
             });
 
             await salesforceRequest('/test');
@@ -122,8 +127,8 @@ describe('salesforce-request', () => {
                 expect.objectContaining({
                     headers: expect.objectContaining({
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    })
+                        Accept: 'application/json',
+                    }),
                 })
             );
         });
@@ -132,20 +137,20 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,
-                data: '{"result":"ok"}'
+                data: '{"result":"ok"}',
             });
 
             await salesforceRequest('/test', {
-                headers: { 'X-Custom-Header': 'custom-value' }
+                headers: { 'X-Custom-Header': 'custom-value' },
             });
 
             expect(smartFetch).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
                     headers: expect.objectContaining({
-                        'Authorization': 'Bearer test-token',
-                        'X-Custom-Header': 'custom-value'
-                    })
+                        Authorization: 'Bearer test-token',
+                        'X-Custom-Header': 'custom-value',
+                    }),
                 })
             );
         });
@@ -154,7 +159,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,
-                data: '{"result":"ok"}'
+                data: '{"result":"ok"}',
             });
 
             await salesforceRequest('/test');
@@ -162,7 +167,7 @@ describe('salesforce-request', () => {
             expect(smartFetch).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
-                    method: 'GET'
+                    method: 'GET',
                 })
             );
         });
@@ -171,19 +176,19 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,
-                data: '{"id":"001abc"}'
+                data: '{"id":"001abc"}',
             });
 
             await salesforceRequest('/test', {
                 method: 'POST',
-                body: '{"Name":"Test"}'
+                body: '{"Name":"Test"}',
             });
 
             expect(smartFetch).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
                     method: 'POST',
-                    body: '{"Name":"Test"}'
+                    body: '{"Name":"Test"}',
                 })
             );
         });
@@ -192,14 +197,14 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,
-                data: '{"records":[{"Id":"001"}],"totalSize":1}'
+                data: '{"records":[{"Id":"001"}],"totalSize":1}',
             });
 
             const result = await salesforceRequest('/test');
 
             expect(result.json).toEqual({
                 records: [{ Id: '001' }],
-                totalSize: 1
+                totalSize: 1,
             });
         });
 
@@ -207,7 +212,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 200,
-                data: '{"success":true}'
+                data: '{"success":true}',
             });
 
             const result = await salesforceRequest('/test');
@@ -221,7 +226,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: false,
                 status: 404,
-                data: null
+                data: null,
             });
 
             const result = await salesforceRequest('/test');
@@ -234,7 +239,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 status: 204,
-                data: ''
+                data: '',
             });
 
             const result = await salesforceRequest('/test');
@@ -249,7 +254,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: false,
                 status: 0,
-                error: 'Failed to fetch'
+                error: 'Failed to fetch',
             });
 
             await expect(salesforceRequest('/test')).rejects.toThrow(
@@ -262,7 +267,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: false,
                 status: 401,
-                error: 'Unauthorized'
+                error: 'Unauthorized',
             });
 
             await expect(salesforceRequest('/test')).rejects.toThrow();
@@ -274,7 +279,7 @@ describe('salesforce-request', () => {
                 success: false,
                 status: 401,
                 authExpired: true,
-                error: 'Session expired'
+                error: 'Session expired',
             });
 
             await expect(salesforceRequest('/test')).rejects.toThrow();
@@ -285,7 +290,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: false,
                 status: 500,
-                error: 'Server error occurred'
+                error: 'Server error occurred',
             });
 
             await expect(salesforceRequest('/test')).rejects.toThrow('Server error occurred');
@@ -295,7 +300,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: false,
                 status: 400,
-                data: '[{"message":"Invalid field Id","errorCode":"INVALID_FIELD"}]'
+                data: '[{"message":"Invalid field Id","errorCode":"INVALID_FIELD"}]',
             });
 
             await expect(salesforceRequest('/test')).rejects.toThrow('Invalid field Id');
@@ -305,7 +310,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: false,
                 status: 400,
-                data: '{"message":"Something went wrong"}'
+                data: '{"message":"Something went wrong"}',
             });
 
             await expect(salesforceRequest('/test')).rejects.toThrow('Something went wrong');
@@ -316,7 +321,7 @@ describe('salesforce-request', () => {
                 success: false,
                 status: 500,
                 statusText: 'Internal Server Error',
-                data: null
+                data: null,
             });
 
             await expect(salesforceRequest('/test')).rejects.toThrow('Internal Server Error');
@@ -326,7 +331,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: false,
                 status: 500,
-                data: '{}'
+                data: '{}',
             });
 
             await expect(salesforceRequest('/test')).rejects.toThrow('Request failed');
@@ -336,7 +341,7 @@ describe('salesforce-request', () => {
             smartFetch.mockResolvedValue({
                 success: false,
                 status: 500,
-                data: '{}'
+                data: '{}',
             });
 
             await expect(salesforceRequest('/test')).rejects.toThrow('Request failed');
@@ -347,7 +352,7 @@ describe('salesforce-request', () => {
                 success: false,
                 status: 503,
                 statusText: 'Service Unavailable',
-                data: null
+                data: null,
             });
 
             await expect(salesforceRequest('/test')).rejects.toThrow('Service Unavailable');

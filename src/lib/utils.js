@@ -34,7 +34,7 @@ export {
     migrateCustomConnectedApp,
     loadCustomConnectedApp,
     saveCustomConnectedApp,
-    clearCustomConnectedApp
+    clearCustomConnectedApp,
 } from './auth.js';
 
 // --- Fetch Utilities ---
@@ -44,17 +44,13 @@ export {
     proxyFetch,
     smartFetch,
     isProxyConnected,
-    checkProxyStatus
+    checkProxyStatus,
 } from './fetch.js';
 
 // --- Salesforce API Request ---
 // Re-exported from salesforce-request.js for convenient access
-export {
-    salesforceRequest
-} from './salesforce-request.js';
+export { salesforceRequest } from './salesforce-request.js';
 
 // --- Cache Utilities ---
 // Re-exported from salesforce.js for convenient access
-export {
-    migrateDescribeCache
-} from './salesforce.js';
+export { migrateDescribeCache } from './salesforce.js';

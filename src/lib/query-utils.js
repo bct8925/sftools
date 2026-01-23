@@ -17,7 +17,7 @@ export function flattenColumnMetadata(columnMetadata, prefix = '') {
     const columns = [];
 
     for (const col of columnMetadata) {
-        const columnName = col.columnName;
+        const { columnName } = col;
         const path = prefix ? `${prefix}.${columnName}` : columnName;
 
         // Check if this is a subquery (has aggregate=true and joinColumns)
@@ -32,7 +32,7 @@ export function flattenColumnMetadata(columnMetadata, prefix = '') {
                 path: path,
                 aggregate: false,
                 isSubquery: true,
-                subqueryColumns: col.joinColumns // Store subquery columns for later rendering
+                subqueryColumns: col.joinColumns, // Store subquery columns for later rendering
             });
         } else if (col.joinColumns && col.joinColumns.length > 0) {
             // Regular parent relationship - flatten it
@@ -44,7 +44,7 @@ export function flattenColumnMetadata(columnMetadata, prefix = '') {
                 title: title,
                 path: path,
                 aggregate: col.aggregate || false,
-                isSubquery: false
+                isSubquery: false,
             });
         }
     }
@@ -63,7 +63,7 @@ export function extractColumnsFromRecord(record) {
             title: key,
             path: key,
             aggregate: false,
-            isSubquery: false
+            isSubquery: false,
         }));
 }
 
@@ -111,7 +111,7 @@ export function escapeCsvField(value) {
     if (value === null || value === undefined) return '';
     const str = String(value);
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return '"' + str.replace(/"/g, '""') + '"';
+        return `"${str.replace(/"/g, '""')}"`;
     }
     return str;
 }

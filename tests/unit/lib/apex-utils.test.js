@@ -42,7 +42,8 @@ System.debug('Hello World');`;
         });
 
         it('A-U-006: truncates long lines to 50 chars', () => {
-            const code = 'System.debug("This is a very long debug statement that should be truncated");';
+            const code =
+                'System.debug("This is a very long debug statement that should be truncated");';
 
             const result = getPreview(code);
 
@@ -85,7 +86,8 @@ List<Account> accounts = [SELECT Id FROM Account];`;
         });
 
         it('A-U-013: truncates first line fallback if over 50 chars', () => {
-            const code = '// This is a very long comment that should be truncated when used as fallback';
+            const code =
+                '// This is a very long comment that should be truncated when used as fallback';
 
             const result = getPreview(code);
 
@@ -105,7 +107,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
         it('A-U-009: formats successful execution', () => {
             const result = {
                 compiled: true,
-                success: true
+                success: true,
             };
             const debugLog = 'DEBUG|Test debug message';
 
@@ -122,7 +124,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
                 success: false,
                 line: 5,
                 column: 12,
-                compileProblem: 'Unexpected token'
+                compileProblem: 'Unexpected token',
             };
             const debugLog = null;
 
@@ -140,7 +142,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
                 success: false,
                 line: 3,
                 exceptionMessage: 'System.NullPointerException',
-                exceptionStackTrace: 'at line 3, column 1'
+                exceptionStackTrace: 'at line 3, column 1',
             };
             const debugLog = 'DEBUG|Before error';
 
@@ -159,7 +161,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             const result = {
                 compiled: true,
                 success: false,
-                exceptionMessage: 'Unknown error'
+                exceptionMessage: 'Unknown error',
             };
 
             const output = formatOutput(result, null);
@@ -174,7 +176,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
                 compiled: true,
                 success: false,
                 line: 2,
-                exceptionMessage: 'Error message only'
+                exceptionMessage: 'Error message only',
             };
 
             const output = formatOutput(result, null);
@@ -186,7 +188,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
         it('A-U-017: uses default message for runtime error without exception message', () => {
             const result = {
                 compiled: true,
-                success: false
+                success: false,
             };
 
             const output = formatOutput(result, null);
@@ -198,7 +200,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             const result = {
                 compiled: false,
                 line: 10,
-                compileProblem: 'Syntax error'
+                compileProblem: 'Syntax error',
             };
 
             const output = formatOutput(result, null);
@@ -209,9 +211,10 @@ List<Account> accounts = [SELECT Id FROM Account];`;
         it('A-U-019: includes debug log with successful execution', () => {
             const result = {
                 compiled: true,
-                success: true
+                success: true,
             };
-            const debugLog = 'USER_DEBUG|[1]|DEBUG|Test message\nUSER_DEBUG|[2]|DEBUG|Another message';
+            const debugLog =
+                'USER_DEBUG|[1]|DEBUG|Test message\nUSER_DEBUG|[2]|DEBUG|Another message';
 
             const output = formatOutput(result, debugLog);
 
@@ -227,7 +230,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             'USER_DEBUG|Test message',
             'ERROR|Something went wrong',
             'DEBUG|Another test',
-            'INFO|System information'
+            'INFO|System information',
         ];
 
         it('A-U-002: filters to matching lines', () => {

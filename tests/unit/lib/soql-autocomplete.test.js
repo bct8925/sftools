@@ -35,27 +35,27 @@ vi.mock('../../../src/components/monaco-editor/monaco-editor.js', () => ({
                 Value: 8,
                 Enum: 9,
                 Unit: 10,
-                Event: 11
+                Event: 11,
             },
             CompletionItemInsertTextRule: {
-                InsertAsSnippet: 1
+                InsertAsSnippet: 1,
             },
-            registerCompletionItemProvider: vi.fn()
-        }
-    }
+            registerCompletionItemProvider: vi.fn(),
+        },
+    },
 }));
 
 // Mock salesforce.js
 vi.mock('../../../src/lib/salesforce.js', () => ({
     getGlobalDescribe: vi.fn(),
-    getObjectDescribe: vi.fn()
+    getObjectDescribe: vi.fn(),
 }));
 
 import {
     activateSOQLAutocomplete,
     deactivateSOQLAutocomplete,
     clearState,
-    registerSOQLCompletionProvider
+    registerSOQLCompletionProvider,
 } from '../../../src/lib/soql-autocomplete.js';
 import { getGlobalDescribe, getObjectDescribe } from '../../../src/lib/salesforce.js';
 import { monaco } from '../../../src/components/monaco-editor/monaco-editor.js';
@@ -203,23 +203,24 @@ describe('soql-autocomplete', () => {
                             Value: 8,
                             Enum: 9,
                             Unit: 10,
-                            Event: 11
+                            Event: 11,
                         },
                         CompletionItemInsertTextRule: {
-                            InsertAsSnippet: 1
+                            InsertAsSnippet: 1,
                         },
-                        registerCompletionItemProvider: vi.fn()
-                    }
-                }
+                        registerCompletionItemProvider: vi.fn(),
+                    },
+                },
             }));
 
             vi.doMock('../../../src/lib/salesforce.js', () => ({
                 getGlobalDescribe: vi.fn(),
-                getObjectDescribe: vi.fn()
+                getObjectDescribe: vi.fn(),
             }));
 
             const autocomplete = await import('../../../src/lib/soql-autocomplete.js');
-            const monacoMock = await import('../../../src/components/monaco-editor/monaco-editor.js');
+            const monacoMock =
+                await import('../../../src/components/monaco-editor/monaco-editor.js');
 
             autocomplete.registerSOQLCompletionProvider();
 
@@ -241,7 +242,7 @@ describe('soql-autocomplete', () => {
             const model = {
                 getValue: () => 'SELECT Id FROM Account',
                 getOffsetAt: () => 10,
-                getWordUntilPosition: () => ({ startColumn: 1, endColumn: 1 })
+                getWordUntilPosition: () => ({ startColumn: 1, endColumn: 1 }),
             };
             const position = { lineNumber: 1, column: 10 };
 
@@ -261,7 +262,7 @@ describe('soql-autocomplete', () => {
             const model = {
                 getValue: () => 'SELECT ',
                 getOffsetAt: () => 7,
-                getWordUntilPosition: () => ({ startColumn: 8, endColumn: 8 })
+                getWordUntilPosition: () => ({ startColumn: 8, endColumn: 8 }),
             };
             const position = { lineNumber: 1, column: 8 };
 
@@ -283,7 +284,7 @@ describe('soql-autocomplete', () => {
             const model = {
                 getValue: () => 'SELECT ',
                 getOffsetAt: () => 7,
-                getWordUntilPosition: () => ({ startColumn: 8, endColumn: 8 })
+                getWordUntilPosition: () => ({ startColumn: 8, endColumn: 8 }),
             };
             const position = { lineNumber: 1, column: 8 };
 
@@ -305,7 +306,7 @@ describe('soql-autocomplete', () => {
             const model = {
                 getValue: () => 'SELECT ',
                 getOffsetAt: () => 7,
-                getWordUntilPosition: () => ({ startColumn: 8, endColumn: 8 })
+                getWordUntilPosition: () => ({ startColumn: 8, endColumn: 8 }),
             };
             const position = { lineNumber: 1, column: 8 };
 

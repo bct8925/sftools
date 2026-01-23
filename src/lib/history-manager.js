@@ -33,7 +33,9 @@ export class HistoryManager {
         const contentProp = this.contentProperty;
 
         // If already in favorites, just update the timestamp
-        const favoriteIndex = this.favorites.findIndex(item => item[contentProp].trim() === trimmed);
+        const favoriteIndex = this.favorites.findIndex(
+            item => item[contentProp].trim() === trimmed
+        );
         if (favoriteIndex !== -1) {
             this.favorites[favoriteIndex].timestamp = Date.now();
             await this.saveFavorites();
@@ -50,7 +52,7 @@ export class HistoryManager {
         this.history.unshift({
             id: Date.now().toString(),
             [contentProp]: trimmed,
-            timestamp: Date.now()
+            timestamp: Date.now(),
         });
 
         // Trim to max size
@@ -76,7 +78,7 @@ export class HistoryManager {
             id: Date.now().toString(),
             [contentProp]: trimmedContent,
             label: trimmedLabel,
-            timestamp: Date.now()
+            timestamp: Date.now(),
         });
 
         await this.saveFavorites();
@@ -103,7 +105,7 @@ export class HistoryManager {
      */
     getPreview(content, maxLength = 60) {
         const cleaned = content.replace(/\s+/g, ' ').trim();
-        return cleaned.length > maxLength ? cleaned.substring(0, maxLength) + '...' : cleaned;
+        return cleaned.length > maxLength ? `${cleaned.substring(0, maxLength)}...` : cleaned;
     }
 
     /**

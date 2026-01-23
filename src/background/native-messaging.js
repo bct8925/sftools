@@ -6,7 +6,7 @@ import { debugInfo } from './debug.js';
 const NATIVE_HOST_NAME = 'com.sftools.proxy';
 
 let nativePort = null;
-let pendingRequests = new Map();
+const pendingRequests = new Map();
 let requestId = 0;
 
 // HTTP server info for large payloads (received during init)
@@ -17,19 +17,25 @@ let proxySecret = null;
  * Connect to native host and perform init handshake
  * @returns {Promise<{success: boolean, version?: string, error?: string}>}
  */
-export async function connectNative() {
+export function connectNative() {
     if (nativePort) {
         return { success: true, version: 'connected' };
     }
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
         try {
             nativePort = chrome.runtime.connectNative(NATIVE_HOST_NAME);
 
-            nativePort.onMessage.addListener((message) => {
+            nativePort.onMessage.addListener(message => {
                 // Check if this is a streaming event (no request ID)
-                if (message.type === 'streamEvent' || message.type === 'streamError' || message.type === 'streamEnd') {
-                    chrome.runtime.sendMessage(message).catch(() => {});
+                if (
+                    message.type === 'streamEvent' ||
+                    message.type === 'streamError' ||
+                    message.type === 'streamEnd'
+                ) {
+                    chrome.runtime.sendMessage(message).catch(() => {
+                        /* ignore */
+                    });
                     return;
                 }
 
@@ -49,7 +55,7 @@ export async function connectNative() {
                 proxyHttpPort = null;
                 proxySecret = null;
 
-                for (const [id, pending] of pendingRequests) {
+                for (const [_id, pending] of pendingRequests) {
                     pending.reject(new Error('Native host disconnected'));
                 }
                 pendingRequests.clear();
@@ -57,7 +63,7 @@ export async function connectNative() {
 
             // Perform init handshake to get HTTP server info
             sendNativeMessage({ type: 'init' })
-                .then((initResponse) => {
+                .then(initResponse => {
                     if (initResponse.success) {
                         proxyHttpPort = initResponse.httpPort;
                         proxySecret = initResponse.secret;
@@ -69,12 +75,11 @@ export async function connectNative() {
                         throw new Error(initResponse.error || 'Init failed');
                     }
                 })
-                .catch((err) => {
+                .catch(err => {
                     console.error('Native init failed:', err);
                     disconnectNative();
                     resolve({ success: false, error: err.message });
                 });
-
         } catch (err) {
             console.error('Failed to connect to native host:', err);
             resolve({ success: false, error: err.message });
@@ -114,14 +119,14 @@ function sendNativeMessage(message) {
         }, 30000);
 
         pendingRequests.set(id, {
-            resolve: (response) => {
+            resolve: response => {
                 clearTimeout(timeoutId);
                 resolve(response);
             },
-            reject: (error) => {
+            reject: error => {
                 clearTimeout(timeoutId);
                 reject(error);
-            }
+            },
         });
 
         nativePort.postMessage({ id, ...message });
@@ -138,16 +143,15 @@ async function fetchLargePayload(payloadId) {
         throw new Error('Proxy HTTP server not available');
     }
 
-    const response = await fetch(
-        `http://127.0.0.1:${proxyHttpPort}/payload/${payloadId}`,
-        { headers: { 'X-Proxy-Secret': proxySecret } }
-    );
+    const response = await fetch(`http://127.0.0.1:${proxyHttpPort}/payload/${payloadId}`, {
+        headers: { 'X-Proxy-Secret': proxySecret },
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to fetch payload: ${response.status}`);
     }
 
-    return await response.text();
+    return response.text();
 }
 
 /**
@@ -183,6 +187,6 @@ export function getProxyInfo() {
     return {
         connected: isProxyConnected(),
         httpPort: proxyHttpPort,
-        hasSecret: !!proxySecret
+        hasSecret: !!proxySecret,
     };
 }

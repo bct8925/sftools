@@ -1,6 +1,6 @@
 // Reusable Search Box Component
-import template from './search-box.html?raw';
 import { escapeHtml } from '../../lib/text-utils.js';
+import template from './search-box.html?raw';
 
 class SearchBox extends HTMLElement {
     input = null;
@@ -52,10 +52,10 @@ class SearchBox extends HTMLElement {
     attachEventListeners() {
         this.input.addEventListener('input', () => this.handleInput());
         this.input.addEventListener('focus', () => this.handleFocus());
-        this.results.addEventListener('click', (e) => this.handleResultClick(e));
+        this.results.addEventListener('click', e => this.handleResultClick(e));
 
         // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', e => {
             if (!this.contains(e.target)) {
                 this.hideDropdown();
             }
@@ -113,15 +113,17 @@ class SearchBox extends HTMLElement {
         if (items.length === 0) {
             this.results.innerHTML = '<div class="search-box-no-results">No results found</div>';
         } else {
-            this.results.innerHTML = items.map(item => {
-                const data = this.renderFn ? this.renderFn(item) : this.defaultRender(item);
-                return `
-                    <div class="search-box-item" data-id="${data.id}" data-value='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
+            this.results.innerHTML = items
+                .map(item => {
+                    const data = this.renderFn ? this.renderFn(item) : this.defaultRender(item);
+                    return `
+                    <div class="search-box-item" data-id="${data.id}" data-value='${JSON.stringify(item).replace(/'/g, '&#39;')}'>
                         <span class="search-box-item-name">${escapeHtml(data.name)}</span>
                         ${data.detail ? `<span class="search-box-item-detail">${escapeHtml(data.detail)}</span>` : ''}
                     </div>
                 `;
-            }).join('');
+                })
+                .join('');
         }
         this.showDropdown();
     }
@@ -130,7 +132,7 @@ class SearchBox extends HTMLElement {
         return {
             id: item.Id || item.id,
             name: item.Name || item.name || item.Label || item.label,
-            detail: item.detail || null
+            detail: item.detail || null,
         };
     }
 
@@ -146,10 +148,12 @@ class SearchBox extends HTMLElement {
         this.hideDropdown();
 
         // Emit select event
-        this.dispatchEvent(new CustomEvent('select', {
-            detail: value,
-            bubbles: true
-        }));
+        this.dispatchEvent(
+            new CustomEvent('select', {
+                detail: value,
+                bubbles: true,
+            })
+        );
     }
 
     showDropdown() {
@@ -183,7 +187,6 @@ class SearchBox extends HTMLElement {
     setValue(text) {
         this.input.value = text;
     }
-
 }
 
 customElements.define('search-box', SearchBox);

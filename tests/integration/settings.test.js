@@ -23,7 +23,6 @@ describe('Settings Tab Integration', () => {
             expect(user).toHaveProperty('id');
             expect(user).toHaveProperty('name');
         });
-
     });
 
     describe('S-I-002: Retrieve org identity info', () => {
@@ -35,15 +34,11 @@ describe('Settings Tab Integration', () => {
             expect(result.ok).toBe(true);
             expect(result.body).toHaveProperty('id');
         });
-
     });
 
     describe('S-I-003: Get API limits', () => {
         it('returns API limits information', async () => {
-            const result = await salesforce.restRequest(
-                '/services/data/v62.0/limits',
-                'GET'
-            );
+            const result = await salesforce.restRequest('/services/data/v62.0/limits', 'GET');
             expect(result.ok).toBe(true);
             expect(result.body).toHaveProperty('DailyApiRequests');
         });
@@ -59,7 +54,6 @@ describe('Settings Tab Integration', () => {
             const describe2 = await salesforce.describeGlobal();
             expect(describe2).toHaveProperty('sobjects');
         });
-
     });
 
     describe('S-I-005: Describe specific object', () => {
@@ -69,14 +63,13 @@ describe('Settings Tab Integration', () => {
             expect(describe.fields).toBeInstanceOf(Array);
             expect(describe.fields.length).toBeGreaterThan(0);
         });
-
     });
 
     describe('S-I-006: Describe multiple objects', () => {
         it('can describe multiple objects independently', async () => {
             const [account, contact] = await Promise.all([
                 salesforce.describeObject('Account'),
-                salesforce.describeObject('Contact')
+                salesforce.describeObject('Contact'),
             ]);
 
             expect(account.name).toBe('Account');
@@ -94,7 +87,6 @@ describe('Settings Tab Integration', () => {
             const v62 = result.body.find(v => v.version === '62.0');
             expect(v62).toBeDefined();
         });
-
     });
 
     describe('S-I-008: Access REST resources', () => {

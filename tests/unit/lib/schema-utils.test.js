@@ -150,7 +150,7 @@ describe('getFieldTypeDisplay', () => {
         const field = {
             type: 'string',
             calculated: true,
-            calculatedFormula: 'FirstName & " " & LastName'
+            calculatedFormula: 'FirstName & " " & LastName',
         };
         const result = getFieldTypeDisplay(field);
         expect(result.text).toBe('string (formula)');
@@ -160,7 +160,7 @@ describe('getFieldTypeDisplay', () => {
     it('SB-U-006: returns "rollup" for calculated fields without formula', () => {
         const field = {
             type: 'currency',
-            calculated: true
+            calculated: true,
         };
         const result = getFieldTypeDisplay(field);
         expect(result.text).toBe('currency (rollup)');
@@ -170,7 +170,7 @@ describe('getFieldTypeDisplay', () => {
     it('SB-U-007: returns type name for regular fields', () => {
         const field = {
             type: 'string',
-            calculated: false
+            calculated: false,
         };
         const result = getFieldTypeDisplay(field);
         expect(result.text).toBe('string');
@@ -181,7 +181,7 @@ describe('getFieldTypeDisplay', () => {
         const field = {
             name: 'AccountId',
             type: 'reference',
-            referenceTo: ['Account']
+            referenceTo: ['Account'],
         };
         const result = getFieldTypeDisplay(field);
         expect(result.text).toBe('reference (Account)');
@@ -193,7 +193,7 @@ describe('getFieldTypeDisplay', () => {
         const field = {
             name: 'WhoId',
             type: 'reference',
-            referenceTo: ['Lead', 'Contact']
+            referenceTo: ['Lead', 'Contact'],
         };
         const result = getFieldTypeDisplay(field);
         expect(result.text).toBe('reference (Lead, Contact)');
@@ -205,7 +205,7 @@ describe('getFieldTypeDisplay', () => {
         const field = {
             name: 'OwnerId',
             type: 'reference',
-            referenceTo: ['User']
+            referenceTo: ['User'],
         };
         const result = getFieldTypeDisplay(field);
         expect(result.text).toBe('reference (User)');
@@ -216,7 +216,7 @@ describe('getFieldTypeDisplay', () => {
     it('SB-U-019: handles reference fields without referenceTo', () => {
         const field = {
             name: 'SomeId',
-            type: 'reference'
+            type: 'reference',
         };
         const result = getFieldTypeDisplay(field);
         expect(result.text).toBe('reference');
@@ -227,7 +227,7 @@ describe('getFieldTypeDisplay', () => {
         const field = {
             name: 'SomeId',
             type: 'reference',
-            referenceTo: []
+            referenceTo: [],
         };
         const result = getFieldTypeDisplay(field);
         expect(result.text).toBe('reference');

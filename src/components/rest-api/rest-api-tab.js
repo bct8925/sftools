@@ -1,10 +1,10 @@
 // REST API Tab - Salesforce REST API Explorer
-import template from './rest-api.html?raw';
-import '../monaco-editor/monaco-editor.js';
 import { isAuthenticated } from '../../lib/utils.js';
 import { executeRestRequest } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { shouldShowBody } from '../../lib/rest-api-utils.js';
+import '../monaco-editor/monaco-editor.js';
+import template from './rest-api.html?raw';
 
 class RestApiTab extends HTMLElement {
     // DOM references
@@ -80,7 +80,7 @@ class RestApiTab extends HTMLElement {
             try {
                 JSON.parse(bodyValue);
                 body = bodyValue;
-            } catch (e) {
+            } catch {
                 alert('Invalid JSON in Request Body.');
                 this.updateStatus('Invalid JSON', 'error');
                 return;
@@ -104,7 +104,6 @@ class RestApiTab extends HTMLElement {
             } else {
                 this.responseEditor.setValue(response.statusText || 'No response');
             }
-
         } catch (error) {
             this.updateStatus('Client Error', 'error');
             this.responseEditor.setValue(`Error: ${error.message}`);

@@ -1,9 +1,9 @@
 // Flow Version Cleanup Tool
-import template from './flow-cleanup.html?raw';
-import './utils-tools.css';
-import './search-box.js';
 import { searchFlows, getFlowVersions, deleteInactiveFlowVersions } from '../../lib/salesforce.js';
 import { escapeHtml } from '../../lib/text-utils.js';
+import './search-box.js';
+import template from './flow-cleanup.html?raw';
+import './utils-tools.css';
 
 class FlowCleanup extends HTMLElement {
     flowSearch = null;
@@ -33,12 +33,12 @@ class FlowCleanup extends HTMLElement {
         this.flowSearch.setSearchFn(searchFlows);
         this.flowSearch.setRenderFn(flow => ({
             id: flow.Id,
-            name: flow.DeveloperName
+            name: flow.DeveloperName,
         }));
     }
 
     attachEventListeners() {
-        this.flowSearch.addEventListener('select', (e) => this.handleFlowSelect(e.detail));
+        this.flowSearch.addEventListener('select', e => this.handleFlowSelect(e.detail));
         this.deleteVersionsBtn.addEventListener('click', () => this.handleDeleteVersions());
     }
 
@@ -70,9 +70,10 @@ class FlowCleanup extends HTMLElement {
         `;
 
         this.deleteVersionsBtn.disabled = inactiveCount === 0;
-        this.deleteVersionsBtn.textContent = inactiveCount === 0
-            ? 'No Inactive Versions'
-            : `Delete ${inactiveCount} Inactive Version${inactiveCount !== 1 ? 's' : ''}`;
+        this.deleteVersionsBtn.textContent =
+            inactiveCount === 0
+                ? 'No Inactive Versions'
+                : `Delete ${inactiveCount} Inactive Version${inactiveCount !== 1 ? 's' : ''}`;
 
         this.flowVersionsSection.classList.remove('hidden');
     }
@@ -105,7 +106,6 @@ class FlowCleanup extends HTMLElement {
         indicator.className = `status-indicator status-${type}`;
         text.textContent = message;
     }
-
 }
 
 customElements.define('flow-cleanup', FlowCleanup);

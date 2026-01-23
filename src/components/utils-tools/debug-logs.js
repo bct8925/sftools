@@ -1,9 +1,15 @@
 // Debug Logs Tool - Trace flags and log management
+import { isAuthenticated } from '../../lib/utils.js';
+import {
+    getCurrentUserId,
+    searchUsers,
+    enableTraceFlagForUser,
+    deleteAllDebugLogs,
+    deleteAllTraceFlags,
+} from '../../lib/salesforce.js';
+import { escapeHtml } from '../../lib/text-utils.js';
 import template from './debug-logs.html?raw';
 import './utils-tools.css';
-import { isAuthenticated } from '../../lib/utils.js';
-import { getCurrentUserId, searchUsers, enableTraceFlagForUser, deleteAllDebugLogs, deleteAllTraceFlags } from '../../lib/salesforce.js';
-import { escapeHtml } from '../../lib/text-utils.js';
 
 class DebugLogs extends HTMLElement {
     // Trace flag elements
@@ -42,7 +48,7 @@ class DebugLogs extends HTMLElement {
         // Trace flag
         this.enableForMeBtn.addEventListener('click', () => this.handleEnableForMe());
         this.userSearchInput.addEventListener('input', () => this.handleSearchInput());
-        this.userResults.addEventListener('click', (e) => this.handleUserSelect(e));
+        this.userResults.addEventListener('click', e => this.handleUserSelect(e));
 
         // Cleanup
         this.deleteFlagsBtn.addEventListener('click', () => this.handleDeleteFlags());
@@ -100,14 +106,18 @@ class DebugLogs extends HTMLElement {
         if (users.length === 0) {
             this.userResults.innerHTML = '<div class="tool-no-results">No users found</div>';
         } else {
-            this.userResults.innerHTML = users.map(u => `
+            this.userResults.innerHTML = users
+                .map(
+                    u => `
                 <div class="tool-result-item" data-id="${u.Id}">
                     <div>
                         <span class="tool-result-name">${escapeHtml(u.Name)}</span>
                         <span class="tool-result-detail">${escapeHtml(u.Username)}</span>
                     </div>
                 </div>
-            `).join('');
+            `
+                )
+                .join('');
         }
         this.userResults.classList.remove('hidden');
     }
@@ -152,7 +162,11 @@ class DebugLogs extends HTMLElement {
         try {
             const result = await deleteAllTraceFlags();
             const count = result.deletedCount;
-            this.setStatus(this.deleteStatus, 'success', `Deleted ${count} trace flag${count !== 1 ? 's' : ''}`);
+            this.setStatus(
+                this.deleteStatus,
+                'success',
+                `Deleted ${count} trace flag${count !== 1 ? 's' : ''}`
+            );
         } catch (error) {
             this.setStatus(this.deleteStatus, 'error', error.message);
         } finally {
@@ -176,7 +190,11 @@ class DebugLogs extends HTMLElement {
         try {
             const result = await deleteAllDebugLogs();
             const count = result.deletedCount;
-            this.setStatus(this.deleteStatus, 'success', `Deleted ${count} log${count !== 1 ? 's' : ''}`);
+            this.setStatus(
+                this.deleteStatus,
+                'success',
+                `Deleted ${count} log${count !== 1 ? 's' : ''}`
+            );
         } catch (error) {
             this.setStatus(this.deleteStatus, 'error', error.message);
         } finally {
@@ -195,7 +213,6 @@ class DebugLogs extends HTMLElement {
         indicator.className = `status-indicator status-${type}`;
         text.textContent = message;
     }
-
 }
 
 customElements.define('debug-logs', DebugLogs);

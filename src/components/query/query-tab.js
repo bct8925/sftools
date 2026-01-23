@@ -1,20 +1,25 @@
 // Query Tab - SOQL Query Editor with tabbed results
-import template from './query.html?raw';
-import './query.css';
 import { isAuthenticated, getActiveConnectionId } from '../../lib/utils.js';
-import '../monaco-editor/monaco-editor.js';
-import '../button-icon/button-icon.js';
-import '../modal-popup/modal-popup.js';
-import { executeQueryWithColumns, executeBulkQueryExport, getObjectDescribe, updateRecord } from '../../lib/salesforce.js';
+import {
+    executeQueryWithColumns,
+    executeBulkQueryExport,
+    getObjectDescribe,
+    updateRecord,
+} from '../../lib/salesforce.js';
 import {
     registerSOQLCompletionProvider,
     activateSOQLAutocomplete,
-    clearState as clearAutocompleteState
+    clearState as clearAutocompleteState,
 } from '../../lib/soql-autocomplete.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { HistoryManager } from '../../lib/history-manager.js';
 import { escapeHtml } from '../../lib/text-utils.js';
 import { icons } from '../../lib/icons.js';
+import '../monaco-editor/monaco-editor.js';
+import '../button-icon/button-icon.js';
+import '../modal-popup/modal-popup.js';
+import template from './query.html?raw';
+import './query.css';
 
 class QueryTab extends HTMLElement {
     // State
@@ -144,13 +149,13 @@ LIMIT 10`);
         });
 
         // List click delegation
-        this.historyList.addEventListener('click', (e) => this.handleListClick(e, 'history'));
-        this.favoritesList.addEventListener('click', (e) => this.handleListClick(e, 'favorites'));
+        this.historyList.addEventListener('click', e => this.handleListClick(e, 'history'));
+        this.favoritesList.addEventListener('click', e => this.handleListClick(e, 'favorites'));
 
         // Favorite modal
         this.favoriteCancelBtn.addEventListener('click', () => this.favoriteModal.close());
         this.favoriteSaveBtn.addEventListener('click', () => this.handleFavoriteSave());
-        this.favoriteInput.addEventListener('keydown', (e) => {
+        this.favoriteInput.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
                 this.handleFavoriteSave();
             } else if (e.key === 'Escape') {
@@ -255,7 +260,7 @@ LIMIT 10`);
     }
 
     renderHistoryList() {
-        const history = this.historyManager.history;
+        const { history } = this.historyManager;
 
         if (history.length === 0) {
             this.historyList.innerHTML = `
@@ -266,7 +271,9 @@ LIMIT 10`);
             return;
         }
 
-        this.historyList.innerHTML = history.map(item => `
+        this.historyList.innerHTML = history
+            .map(
+                item => `
             <div class="script-item" data-id="${item.id}">
                 <div class="script-preview">${escapeHtml(this.historyManager.getPreview(item.query))}</div>
                 <div class="script-meta">
@@ -278,11 +285,13 @@ LIMIT 10`);
                     </div>
                 </div>
             </div>
-        `).join('');
+        `
+            )
+            .join('');
     }
 
     renderFavoritesList() {
-        const favorites = this.historyManager.favorites;
+        const { favorites } = this.historyManager;
 
         if (favorites.length === 0) {
             this.favoritesList.innerHTML = `
@@ -293,7 +302,9 @@ LIMIT 10`);
             return;
         }
 
-        this.favoritesList.innerHTML = favorites.map(item => `
+        this.favoritesList.innerHTML = favorites
+            .map(
+                item => `
             <div class="script-item" data-id="${item.id}">
                 <div class="script-label">${escapeHtml(item.label)}</div>
                 <div class="script-meta">
@@ -304,15 +315,18 @@ LIMIT 10`);
                     </div>
                 </div>
             </div>
-        `).join('');
+        `
+            )
+            .join('');
     }
 
     handleListClick(event, listType) {
         const item = event.target.closest('.script-item');
         if (!item) return;
 
-        const id = item.dataset.id;
-        const list = listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
+        const { id } = item.dataset;
+        const list =
+            listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
         const scriptData = list.find(s => s.id === id);
         if (!scriptData) return;
 
@@ -383,7 +397,6 @@ LIMIT 10`);
         rows.forEach(row => row.classList.remove('hidden'));
     }
 
-
     // ============================================================
     // Data Transformations
     // ============================================================
@@ -396,7 +409,7 @@ LIMIT 10`);
         const columns = [];
 
         for (const col of columnMetadata) {
-            const columnName = col.columnName;
+            const { columnName } = col;
             const path = prefix ? `${prefix}.${columnName}` : columnName;
 
             // Check if this is a subquery (has aggregate=true and joinColumns)
@@ -411,7 +424,7 @@ LIMIT 10`);
                     path: path,
                     aggregate: false,
                     isSubquery: true,
-                    subqueryColumns: col.joinColumns // Store subquery columns for later rendering
+                    subqueryColumns: col.joinColumns, // Store subquery columns for later rendering
                 });
             } else if (col.joinColumns && col.joinColumns.length > 0) {
                 // Regular parent relationship - flatten it
@@ -423,7 +436,7 @@ LIMIT 10`);
                     title: title,
                     path: path,
                     aggregate: col.aggregate || false,
-                    isSubquery: false
+                    isSubquery: false,
                 });
             }
         }
@@ -438,7 +451,7 @@ LIMIT 10`);
                 title: key,
                 path: key,
                 aggregate: false,
-                isSubquery: false
+                isSubquery: false,
             }));
     }
 
@@ -515,9 +528,11 @@ LIMIT 10`);
 
             await this.fetchFieldMetadataIfEditable(tabData);
 
-            this.updateStatus(`${tabData.totalSize} record${tabData.totalSize !== 1 ? 's' : ''}`, 'success');
+            this.updateStatus(
+                `${tabData.totalSize} record${tabData.totalSize !== 1 ? 's' : ''}`,
+                'success'
+            );
             this.renderTabs();
-
         } catch (error) {
             tabData.records = [];
             tabData.columns = [];
@@ -593,7 +608,7 @@ LIMIT 10`);
             fieldDescribe: null,
             modifiedRecords: new Map(), // recordId -> { fieldName: newValue }
             isEditable: false,
-            loading: false
+            loading: false,
         };
 
         this.queryTabs.set(normalizedQuery, tabData);
@@ -668,7 +683,7 @@ LIMIT 10`);
 
         const maxLength = 30;
         if (tab.query.length <= maxLength) return tab.query;
-        return tab.query.substring(0, maxLength) + '...';
+        return `${tab.query.substring(0, maxLength)}...`;
     }
 
     // ============================================================
@@ -683,7 +698,8 @@ LIMIT 10`);
         this.tabsContainer.innerHTML = '';
 
         if (this.queryTabs.size === 0) {
-            this.tabsContainer.innerHTML = '<div class="query-tabs-empty">Run a query to see results</div>';
+            this.tabsContainer.innerHTML =
+                '<div class="query-tabs-empty">Run a query to see results</div>';
             return;
         }
 
@@ -702,7 +718,7 @@ LIMIT 10`);
             refreshBtn.className = 'query-tab-refresh';
             refreshBtn.innerHTML = icons.refreshTab;
             refreshBtn.title = 'Refresh';
-            refreshBtn.addEventListener('click', (e) => {
+            refreshBtn.addEventListener('click', e => {
                 e.stopPropagation();
                 this.refreshTab(tab.id);
             });
@@ -711,7 +727,7 @@ LIMIT 10`);
             closeBtn.className = 'query-tab-close';
             closeBtn.innerHTML = icons.closeTab;
             closeBtn.title = 'Close';
-            closeBtn.addEventListener('click', (e) => {
+            closeBtn.addEventListener('click', e => {
                 e.stopPropagation();
                 this.closeTab(tab.id);
             });
@@ -725,18 +741,21 @@ LIMIT 10`);
 
     renderResults() {
         if (!this.activeTabId) {
-            this.resultsContainer.innerHTML = '<div class="query-results-empty">No query results to display</div>';
+            this.resultsContainer.innerHTML =
+                '<div class="query-results-empty">No query results to display</div>';
             return;
         }
 
         const tabData = this.getTabDataById(this.activeTabId);
         if (!tabData) {
-            this.resultsContainer.innerHTML = '<div class="query-results-empty">No query results to display</div>';
+            this.resultsContainer.innerHTML =
+                '<div class="query-results-empty">No query results to display</div>';
             return;
         }
 
         if (tabData.loading) {
-            this.resultsContainer.innerHTML = '<div class="query-results-loading"><div class="query-spinner"></div><div>Loading query results...</div></div>';
+            this.resultsContainer.innerHTML =
+                '<div class="query-results-loading"><div class="query-spinner"></div><div>Loading query results...</div></div>';
             return;
         }
 
@@ -746,7 +765,8 @@ LIMIT 10`);
         }
 
         if (tabData.records.length === 0) {
-            this.resultsContainer.innerHTML = '<div class="query-results-empty">No records found</div>';
+            this.resultsContainer.innerHTML =
+                '<div class="query-results-empty">No records found</div>';
             return;
         }
 
@@ -877,7 +897,7 @@ LIMIT 10`);
         button.textContent = `▶ ${count} record${count !== 1 ? 's' : ''}`;
         button.dataset.expanded = 'false';
 
-        button.addEventListener('click', (e) => {
+        button.addEventListener('click', e => {
             e.stopPropagation();
             const isExpanded = button.dataset.expanded === 'true';
 
@@ -922,9 +942,10 @@ LIMIT 10`);
         const flattenedSubCols = this.flattenColumnMetadata(subqueryColumns);
 
         // If no metadata, infer from first record
-        const columns = flattenedSubCols.length > 0
-            ? flattenedSubCols
-            : this.extractColumnsFromRecord(subqueryData.records[0]);
+        const columns =
+            flattenedSubCols.length > 0
+                ? flattenedSubCols
+                : this.extractColumnsFromRecord(subqueryData.records[0]);
 
         // Build header
         const thead = document.createElement('thead');
@@ -1015,7 +1036,7 @@ LIMIT 10`);
         if (value === null || value === undefined) return '';
         const str = String(value);
         if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-            return '"' + str.replace(/"/g, '""') + '"';
+            return `"${str.replace(/"/g, '""')}"`;
         }
         return str;
     }
@@ -1082,7 +1103,6 @@ LIMIT 10`);
 
             this.downloadCsv(csv, filename);
             this.updateStatus('Export complete', 'success');
-
         } catch (error) {
             console.error('Bulk export error:', error);
             this.updateStatus('Export failed', 'error');
@@ -1095,7 +1115,8 @@ LIMIT 10`);
 
     updateExportButtonState() {
         const tabData = this.getTabDataById(this.activeTabId);
-        const hasResults = tabData && tabData.records && tabData.records.length > 0 && !tabData.error;
+        const hasResults =
+            tabData && tabData.records && tabData.records.length > 0 && !tabData.error;
         this.exportBtn.disabled = !hasResults;
         this.bulkExportBtn.disabled = !hasResults;
     }
@@ -1148,7 +1169,7 @@ LIMIT 10`);
             noneOption.textContent = '--None--';
             select.appendChild(noneOption);
 
-            for (const pv of (field.picklistValues || [])) {
+            for (const pv of field.picklistValues || []) {
                 if (pv.active) {
                     const option = document.createElement('option');
                     option.value = pv.value;
@@ -1215,10 +1236,10 @@ LIMIT 10`);
         const inputs = this.resultsContainer.querySelectorAll('.query-field-input');
 
         inputs.forEach(input => {
-            const handler = (e) => {
-                const recordId = e.target.dataset.recordId;
-                const fieldName = e.target.dataset.fieldName;
-                const fieldType = e.target.dataset.fieldType;
+            const handler = e => {
+                const { recordId } = e.target.dataset;
+                const { fieldName } = e.target.dataset;
+                const { fieldType } = e.target.dataset;
                 const field = tabData.fieldDescribe[fieldName];
 
                 let newValue;
@@ -1233,9 +1254,10 @@ LIMIT 10`);
                 const originalValue = this.getValueByPath(record, fieldName);
 
                 // Compare values
-                const isChanged = (originalValue === null || originalValue === undefined)
-                    ? (newValue !== null && newValue !== undefined && newValue !== '')
-                    : String(originalValue) !== String(newValue ?? '');
+                const isChanged =
+                    originalValue === null || originalValue === undefined
+                        ? newValue !== null && newValue !== undefined && newValue !== ''
+                        : String(originalValue) !== String(newValue ?? '');
 
                 if (isChanged) {
                     // Mark as modified
@@ -1283,7 +1305,9 @@ LIMIT 10`);
                 updateRecord(tabData.objectName, recordId, fields)
                     .then(() => {
                         // Update the original record data
-                        const record = tabData.records.find(r => this.getValueByPath(r, 'Id') === recordId);
+                        const record = tabData.records.find(
+                            r => this.getValueByPath(r, 'Id') === recordId
+                        );
                         if (record) {
                             for (const [fieldName, value] of Object.entries(fields)) {
                                 record[fieldName] = value;

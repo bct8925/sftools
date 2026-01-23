@@ -16,7 +16,7 @@ describe('Apex Tab Integration', () => {
 
     describe('A-I-001: Execute System.debug()', () => {
         it('executes anonymous apex with debug statements successfully', async () => {
-            const code = 'System.debug(\'Test message from integration test\');';
+            const code = "System.debug('Test message from integration test');";
             const result = await salesforce.executeAnonymousApex(code);
 
             expect(result.compiled).toBe(true);
@@ -153,7 +153,7 @@ describe('Apex Tab Integration', () => {
         });
 
         it('returns error for missing semicolon', async () => {
-            const code = 'System.debug(\'test\')';
+            const code = "System.debug('test')";
 
             const result = await salesforce.executeAnonymousApex(code);
 

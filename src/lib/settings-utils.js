@@ -31,7 +31,7 @@ export function createConnectionCardData(connection, activeId = null) {
         isActive,
         refreshBadge,
         customAppBadge,
-        escapedLabel: escapeHtml(connection.label)
+        escapedLabel: escapeHtml(connection.label),
     };
 }
 
@@ -44,12 +44,11 @@ export function getProxyStatusText(isConnected) {
     if (isConnected) {
         return {
             label: 'Connected',
-            detail: 'HTTP server on port'
-        };
-    } else {
-        return {
-            label: 'Not Connected',
-            detail: ''
+            detail: 'HTTP server on port',
         };
     }
+    return {
+        label: 'Not Connected',
+        detail: '',
+    };
 }

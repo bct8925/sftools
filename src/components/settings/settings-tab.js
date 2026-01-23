@@ -1,6 +1,4 @@
 // Settings Tab - Connection Management & Proxy Connection
-import template from './settings.html?raw';
-import './settings.css';
 import {
     loadConnections,
     updateConnection,
@@ -8,11 +6,13 @@ import {
     getActiveConnectionId,
     setActiveConnection,
     setPendingAuth,
-    isAuthenticated
+    isAuthenticated,
 } from '../../lib/utils.js';
 import { clearDescribeCache } from '../../lib/salesforce.js';
 import { escapeHtml } from '../../lib/text-utils.js';
 import { icons } from '../../lib/icons.js';
+import template from './settings.html?raw';
+import './settings.css';
 
 class SettingsTab extends HTMLElement {
     // Theme DOM references
@@ -117,7 +117,7 @@ class SettingsTab extends HTMLElement {
     attachEventListeners() {
         // Theme listeners
         this.themeRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => this.handleThemeChange(e.target.value));
+            radio.addEventListener('change', e => this.handleThemeChange(e.target.value));
         });
 
         // Proxy listeners
@@ -130,12 +130,12 @@ class SettingsTab extends HTMLElement {
         this.loginDomainSelect.addEventListener('change', () => this.handleLoginDomainChange());
 
         // Connection list item actions (delegated)
-        this.connectionList.addEventListener('click', (e) => this.handleConnectionAction(e));
+        this.connectionList.addEventListener('click', e => this.handleConnectionAction(e));
 
         // Edit modal listeners
         this.editSaveBtn.addEventListener('click', () => this.handleSaveEdit());
         this.editCancelBtn.addEventListener('click', () => this.hideEditModal());
-        this.editModal.addEventListener('click', (e) => {
+        this.editModal.addEventListener('click', e => {
             if (e.target === this.editModal) this.hideEditModal();
         });
 
@@ -204,7 +204,8 @@ class SettingsTab extends HTMLElement {
         const activeId = getActiveConnectionId();
 
         if (connections.length === 0) {
-            this.connectionList.innerHTML = '<div class="settings-no-connections">No connections saved</div>';
+            this.connectionList.innerHTML =
+                '<div class="settings-no-connections">No connections saved</div>';
             return;
         }
 
@@ -298,7 +299,7 @@ class SettingsTab extends HTMLElement {
             }
             // Ensure it starts with https://
             if (!loginDomain.startsWith('https://')) {
-                loginDomain = 'https://' + loginDomain;
+                loginDomain = `https://${loginDomain}`;
             }
         }
 
@@ -308,7 +309,7 @@ class SettingsTab extends HTMLElement {
         await setPendingAuth({
             loginDomain,
             clientId,
-            connectionId: null
+            connectionId: null,
         });
 
         // Call startAuthorization from app.js (available on window)
@@ -353,7 +354,7 @@ class SettingsTab extends HTMLElement {
 
         await updateConnection(connectionId, {
             label,
-            clientId: newClientId
+            clientId: newClientId,
         });
 
         this.hideEditModal();
@@ -382,16 +383,12 @@ class SettingsTab extends HTMLElement {
         await setPendingAuth({
             loginDomain: connection.instanceUrl,
             clientId: connection.clientId,
-            connectionId: connectionId
+            connectionId: connectionId,
         });
 
         // Call startAuthorization from app.js
         if (window.startAuthorization) {
-            window.startAuthorization(
-                connection.instanceUrl,
-                connection.clientId,
-                connectionId
-            );
+            window.startAuthorization(connection.instanceUrl, connection.clientId, connectionId);
         }
     }
 
@@ -407,11 +404,12 @@ class SettingsTab extends HTMLElement {
         this.renderConnectionList();
 
         // Notify other components
-        document.dispatchEvent(new CustomEvent('connection-removed', {
-            detail: { connectionId }
-        }));
+        document.dispatchEvent(
+            new CustomEvent('connection-removed', {
+                detail: { connectionId },
+            })
+        );
     }
-
 
     // ============================================================
     // Proxy Management
@@ -443,7 +441,7 @@ class SettingsTab extends HTMLElement {
     updateProxyUI(status) {
         const { connected, httpPort, version, error } = status;
 
-        this.proxyIndicator.className = 'status-indicator ' + (connected ? 'connected' : 'disconnected');
+        this.proxyIndicator.className = `status-indicator ${connected ? 'connected' : 'disconnected'}`;
 
         if (connected) {
             this.proxyLabel.textContent = 'Connected';
@@ -485,31 +483,37 @@ class SettingsTab extends HTMLElement {
                 this.updateProxyUI({
                     connected: true,
                     httpPort: response.httpPort,
-                    version: response.version
+                    version: response.version,
                 });
 
                 // Notify the app that proxy status changed
-                document.dispatchEvent(new CustomEvent('proxy-status-changed', {
-                    detail: { connected: true }
-                }));
+                document.dispatchEvent(
+                    new CustomEvent('proxy-status-changed', {
+                        detail: { connected: true },
+                    })
+                );
             } else {
                 this.updateProxyUI({
                     connected: false,
-                    error: response.error || 'Connection failed'
+                    error: response.error || 'Connection failed',
                 });
 
                 // Notify the app that proxy status changed
-                document.dispatchEvent(new CustomEvent('proxy-status-changed', {
-                    detail: { connected: false }
-                }));
+                document.dispatchEvent(
+                    new CustomEvent('proxy-status-changed', {
+                        detail: { connected: false },
+                    })
+                );
             }
         } catch (err) {
             this.updateProxyUI({ connected: false, error: err.message });
 
             // Notify the app that proxy status changed
-            document.dispatchEvent(new CustomEvent('proxy-status-changed', {
-                detail: { connected: false }
-            }));
+            document.dispatchEvent(
+                new CustomEvent('proxy-status-changed', {
+                    detail: { connected: false },
+                })
+            );
         }
     }
 
@@ -519,9 +523,11 @@ class SettingsTab extends HTMLElement {
             this.updateProxyUI({ connected: false });
 
             // Notify the app that proxy status changed
-            document.dispatchEvent(new CustomEvent('proxy-status-changed', {
-                detail: { connected: false }
-            }));
+            document.dispatchEvent(
+                new CustomEvent('proxy-status-changed', {
+                    detail: { connected: false },
+                })
+            );
         } catch (err) {
             console.error('Disconnect error:', err);
         }

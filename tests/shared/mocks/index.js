@@ -9,14 +9,11 @@ export {
     createMockResponse,
     createErrorResponse,
     createSalesforceMocks,
-    createMockConnection
+    createMockConnection,
 } from './mock-data.js';
 
 // Playwright-specific adapter (used by frontend tests only)
-export {
-    MockRouter,
-    createTestConnection
-} from './playwright-adapter.js';
+export { MockRouter, createTestConnection } from './playwright-adapter.js';
 
 // Pre-built scenarios (used by frontend tests)
 export {
@@ -35,5 +32,5 @@ export {
     GlobalDescribeScenario,
     RestApiGetScenario,
     RestApiPostScenario,
-    RestApiEmptyScenario
+    RestApiEmptyScenario,
 } from './mock-scenarios.js';

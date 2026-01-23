@@ -36,7 +36,7 @@ describe('Record Viewer Integration', () => {
 
         it('returns error for invalid object type', async () => {
             const accountId = await testData.create('Account', {
-                Name: uniqueName('Integration')
+                Name: uniqueName('Integration'),
             });
 
             try {
@@ -62,13 +62,13 @@ describe('Record Viewer Integration', () => {
     describe('RV-I-004: Save failure - Error message displayed', () => {
         it('returns validation error for invalid data type', async () => {
             const accountId = await testData.create('Account', {
-                Name: uniqueName('Validation Test')
+                Name: uniqueName('Validation Test'),
             });
 
             // Attempt to set AnnualRevenue to invalid string
             try {
                 await salesforce.updateRecord('Account', accountId, {
-                    AnnualRevenue: 'not-a-number'
+                    AnnualRevenue: 'not-a-number',
                 });
                 expect.fail('Should have thrown');
             } catch (e) {
@@ -78,13 +78,13 @@ describe('Record Viewer Integration', () => {
 
         it('returns error when required field is cleared', async () => {
             const accountId = await testData.create('Account', {
-                Name: uniqueName('Required Field Test')
+                Name: uniqueName('Required Field Test'),
             });
 
             // Attempt to clear required Name field
             try {
                 await salesforce.updateRecord('Account', accountId, {
-                    Name: ''
+                    Name: '',
                 });
                 expect.fail('Should have thrown');
             } catch (e) {
@@ -95,13 +95,13 @@ describe('Record Viewer Integration', () => {
 
         it('returns error for read-only field update', async () => {
             const accountId = await testData.create('Account', {
-                Name: uniqueName('Read-Only Test')
+                Name: uniqueName('Read-Only Test'),
             });
 
             // Attempt to update CreatedDate (read-only)
             try {
                 await salesforce.updateRecord('Account', accountId, {
-                    CreatedDate: new Date().toISOString()
+                    CreatedDate: new Date().toISOString(),
                 });
                 expect.fail('Should have thrown');
             } catch (e) {
@@ -112,14 +112,14 @@ describe('Record Viewer Integration', () => {
 
         it('returns error for field length exceeded', async () => {
             const accountId = await testData.create('Account', {
-                Name: uniqueName('Length Test')
+                Name: uniqueName('Length Test'),
             });
 
             // Attempt to set Name longer than max length (255)
             const longName = 'A'.repeat(300);
             try {
                 await salesforce.updateRecord('Account', accountId, {
-                    Name: longName
+                    Name: longName,
                 });
                 expect.fail('Should have thrown');
             } catch (e) {
@@ -131,7 +131,7 @@ describe('Record Viewer Integration', () => {
         it('returns error for non-existent record update', async () => {
             try {
                 await salesforce.updateRecord('Account', '001000000000000AAA', {
-                    Name: 'Test'
+                    Name: 'Test',
                 });
                 expect.fail('Should have thrown');
             } catch (e) {
@@ -146,7 +146,7 @@ describe('Record Viewer Integration', () => {
             const accountId = await testData.create('Account', {
                 Name: uniqueName('Complete Record'),
                 Industry: 'Technology',
-                AnnualRevenue: 1000000
+                AnnualRevenue: 1000000,
             });
 
             const record = await salesforce.getRecord('Account', accountId);
@@ -156,7 +156,6 @@ describe('Record Viewer Integration', () => {
             expect(record.Industry).toBe('Technology');
             expect(record.AnnualRevenue).toBe(1000000);
         });
-
     });
 
     describe('RV-I-006: Fetch record with specific fields', () => {
@@ -164,10 +163,14 @@ describe('Record Viewer Integration', () => {
             const accountId = await testData.create('Account', {
                 Name: uniqueName('Specific Fields'),
                 Industry: 'Technology',
-                Description: 'Test description'
+                Description: 'Test description',
             });
 
-            const record = await salesforce.getRecord('Account', accountId, ['Id', 'Name', 'Industry']);
+            const record = await salesforce.getRecord('Account', accountId, [
+                'Id',
+                'Name',
+                'Industry',
+            ]);
 
             expect(record.Id).toBe(accountId);
             expect(record.Name).toContain('Specific Fields');
@@ -175,7 +178,6 @@ describe('Record Viewer Integration', () => {
             // Description should not be returned when not requested
             expect(record.Description).toBeUndefined();
         });
-
     });
 
     describe('RV-I-007: Fetch object describe', () => {
@@ -197,35 +199,33 @@ describe('Record Viewer Integration', () => {
             expect(idField.type).toBe('id');
             expect(idField.updateable).toBe(false);
         });
-
     });
 
     describe('RV-I-008: Update single field', () => {
         it('updates single field successfully', async () => {
             const accountId = await testData.create('Account', {
-                Name: uniqueName('Update Test')
+                Name: uniqueName('Update Test'),
             });
 
             await salesforce.updateRecord('Account', accountId, {
-                Industry: 'Healthcare'
+                Industry: 'Healthcare',
             });
 
             const updated = await salesforce.getRecord('Account', accountId);
             expect(updated.Industry).toBe('Healthcare');
         });
-
     });
 
     describe('RV-I-009: Update multiple fields', () => {
         it('updates multiple fields successfully', async () => {
             const accountId = await testData.create('Account', {
-                Name: uniqueName('Multi Update')
+                Name: uniqueName('Multi Update'),
             });
 
             await salesforce.updateRecord('Account', accountId, {
                 Industry: 'Finance',
                 AnnualRevenue: 5000000,
-                Description: 'Updated description'
+                Description: 'Updated description',
             });
 
             const updated = await salesforce.getRecord('Account', accountId);
@@ -233,25 +233,23 @@ describe('Record Viewer Integration', () => {
             expect(updated.AnnualRevenue).toBe(5000000);
             expect(updated.Description).toBe('Updated description');
         });
-
     });
 
     describe('RV-I-010: Handle null field values', () => {
         it('handles null field values', async () => {
             const accountId = await testData.create('Account', {
                 Name: uniqueName('Null Test'),
-                Industry: 'Technology'
+                Industry: 'Technology',
             });
 
             // Clear optional field
             await salesforce.updateRecord('Account', accountId, {
-                Industry: null
+                Industry: null,
             });
 
             const updated = await salesforce.getRecord('Account', accountId);
             expect(updated.Industry).toBeNull();
         });
-
     });
 
     describe('RV-I-011: Handle boolean field values', () => {
@@ -268,12 +266,12 @@ describe('Record Viewer Integration', () => {
             }
 
             const accountId = await testData.create('Account', {
-                Name: uniqueName('BoolTest')
+                Name: uniqueName('BoolTest'),
             });
 
             // Update the boolean field to true
             await salesforce.updateRecord('Account', accountId, {
-                [boolField.name]: true
+                [boolField.name]: true,
             });
 
             const updated = await salesforce.getRecord('Account', accountId);

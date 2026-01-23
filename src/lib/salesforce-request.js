@@ -1,7 +1,12 @@
 // Salesforce REST API request wrapper
 
 import { smartFetch } from './fetch.js';
-import { getAccessToken, getInstanceUrl, getActiveConnectionId, triggerAuthExpired } from './auth.js';
+import {
+    getAccessToken,
+    getInstanceUrl,
+    getActiveConnectionId,
+    triggerAuthExpired,
+} from './auth.js';
 import { isCorsError, showCorsErrorModal } from './cors-detection.js';
 
 /**
@@ -14,19 +19,21 @@ export async function salesforceRequest(endpoint, options = {}) {
     const response = await smartFetch(url, {
         method: options.method || 'GET',
         headers: {
-            'Authorization': `Bearer ${getAccessToken()}`,
+            Authorization: `Bearer ${getAccessToken()}`,
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            ...options.headers
+            Accept: 'application/json',
+            ...options.headers,
         },
-        body: options.body
+        body: options.body,
     });
 
     if (!response.success && response.status !== 404) {
         // Check for CORS errors first
         if (isCorsError(response)) {
             showCorsErrorModal();
-            throw new Error('CORS error - please configure CORS settings or enable the local proxy');
+            throw new Error(
+                'CORS error - please configure CORS settings or enable the local proxy'
+            );
         }
 
         // Check for 401 Unauthorized (session expired)
@@ -54,6 +61,6 @@ export async function salesforceRequest(endpoint, options = {}) {
 
     return {
         ...response,
-        json: response.data ? JSON.parse(response.data) : null
+        json: response.data ? JSON.parse(response.data) : null,
     };
 }

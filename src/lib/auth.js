@@ -8,7 +8,7 @@ export const STORAGE_KEYS = {
     ACCESS_TOKEN: 'accessToken',
     REFRESH_TOKEN: 'refreshToken',
     INSTANCE_URL: 'instanceUrl',
-    LOGIN_DOMAIN: 'loginDomain'
+    LOGIN_DOMAIN: 'loginDomain',
 };
 
 export const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
@@ -61,19 +61,22 @@ export function triggerAuthExpired(connectionId, error) {
  * @deprecated Use loadConnections() and setActiveConnection() instead
  */
 export function loadAuthTokens() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
         if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.get([STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.INSTANCE_URL], function(data) {
-                if (data[STORAGE_KEYS.ACCESS_TOKEN] && data[STORAGE_KEYS.INSTANCE_URL]) {
-                    ACCESS_TOKEN = data[STORAGE_KEYS.ACCESS_TOKEN];
-                    INSTANCE_URL = data[STORAGE_KEYS.INSTANCE_URL];
-                    debugInfo('Loaded auth for instance:', INSTANCE_URL);
-                    resolve(true);
-                } else {
-                    debugInfo('No auth tokens found');
-                    resolve(false);
+            chrome.storage.local.get(
+                [STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.INSTANCE_URL],
+                data => {
+                    if (data[STORAGE_KEYS.ACCESS_TOKEN] && data[STORAGE_KEYS.INSTANCE_URL]) {
+                        ACCESS_TOKEN = data[STORAGE_KEYS.ACCESS_TOKEN];
+                        INSTANCE_URL = data[STORAGE_KEYS.INSTANCE_URL];
+                        debugInfo('Loaded auth for instance:', INSTANCE_URL);
+                        resolve(true);
+                    } else {
+                        debugInfo('No auth tokens found');
+                        resolve(false);
+                    }
                 }
-            });
+            );
         } else {
             resolve(false);
         }
@@ -109,10 +112,10 @@ export function setActiveConnection(connection) {
  * Load all saved connections from storage
  * @returns {Promise<Array>} - Array of connection objects
  */
-export async function loadConnections() {
-    return new Promise((resolve) => {
+export function loadConnections() {
+    return new Promise(resolve => {
         if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.get(['connections'], (data) => {
+            chrome.storage.local.get(['connections'], data => {
                 resolve(data.connections || []);
             });
         } else {
@@ -145,7 +148,7 @@ export async function addConnection(connectionData) {
         refreshToken: connectionData.refreshToken || null,
         clientId: connectionData.clientId || null,
         createdAt: Date.now(),
-        lastUsedAt: Date.now()
+        lastUsedAt: Date.now(),
     };
     connections.push(newConnection);
     await saveConnections(connections);
@@ -191,54 +194,58 @@ export async function findConnectionByInstance(instanceUrl) {
  * Migrate from single-connection storage to multi-connection format
  * Should be called once on app initialization
  */
-export async function migrateFromSingleConnection() {
-    return new Promise((resolve) => {
+export function migrateFromSingleConnection() {
+    return new Promise(resolve => {
         if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.get([
-                'connections',
-                STORAGE_KEYS.ACCESS_TOKEN,
-                STORAGE_KEYS.INSTANCE_URL,
-                STORAGE_KEYS.REFRESH_TOKEN,
-                STORAGE_KEYS.LOGIN_DOMAIN
-            ], async (data) => {
-                // Already migrated or fresh install
-                if (data.connections !== undefined) {
-                    resolve(false);
-                    return;
-                }
-
-                // No existing auth to migrate
-                if (!data[STORAGE_KEYS.ACCESS_TOKEN] || !data[STORAGE_KEYS.INSTANCE_URL]) {
-                    await chrome.storage.local.set({ connections: [] });
-                    resolve(false);
-                    return;
-                }
-
-                // Migrate single connection to array
-                const connection = {
-                    id: crypto.randomUUID(),
-                    label: new URL(data[STORAGE_KEYS.INSTANCE_URL]).hostname,
-                    instanceUrl: data[STORAGE_KEYS.INSTANCE_URL],
-                    loginDomain: data[STORAGE_KEYS.LOGIN_DOMAIN] || 'https://login.salesforce.com',
-                    accessToken: data[STORAGE_KEYS.ACCESS_TOKEN],
-                    refreshToken: data[STORAGE_KEYS.REFRESH_TOKEN] || null,
-                    createdAt: Date.now(),
-                    lastUsedAt: Date.now()
-                };
-
-                await chrome.storage.local.set({ connections: [connection] });
-
-                // Clean up old keys
-                await chrome.storage.local.remove([
+            chrome.storage.local.get(
+                [
+                    'connections',
                     STORAGE_KEYS.ACCESS_TOKEN,
-                    STORAGE_KEYS.REFRESH_TOKEN,
                     STORAGE_KEYS.INSTANCE_URL,
-                    STORAGE_KEYS.LOGIN_DOMAIN
-                ]);
+                    STORAGE_KEYS.REFRESH_TOKEN,
+                    STORAGE_KEYS.LOGIN_DOMAIN,
+                ],
+                async data => {
+                    // Already migrated or fresh install
+                    if (data.connections !== undefined) {
+                        resolve(false);
+                        return;
+                    }
 
-                debugInfo('Migrated single connection to multi-connection format');
-                resolve(true);
-            });
+                    // No existing auth to migrate
+                    if (!data[STORAGE_KEYS.ACCESS_TOKEN] || !data[STORAGE_KEYS.INSTANCE_URL]) {
+                        await chrome.storage.local.set({ connections: [] });
+                        resolve(false);
+                        return;
+                    }
+
+                    // Migrate single connection to array
+                    const connection = {
+                        id: crypto.randomUUID(),
+                        label: new URL(data[STORAGE_KEYS.INSTANCE_URL]).hostname,
+                        instanceUrl: data[STORAGE_KEYS.INSTANCE_URL],
+                        loginDomain:
+                            data[STORAGE_KEYS.LOGIN_DOMAIN] || 'https://login.salesforce.com',
+                        accessToken: data[STORAGE_KEYS.ACCESS_TOKEN],
+                        refreshToken: data[STORAGE_KEYS.REFRESH_TOKEN] || null,
+                        createdAt: Date.now(),
+                        lastUsedAt: Date.now(),
+                    };
+
+                    await chrome.storage.local.set({ connections: [connection] });
+
+                    // Clean up old keys
+                    await chrome.storage.local.remove([
+                        STORAGE_KEYS.ACCESS_TOKEN,
+                        STORAGE_KEYS.REFRESH_TOKEN,
+                        STORAGE_KEYS.INSTANCE_URL,
+                        STORAGE_KEYS.LOGIN_DOMAIN,
+                    ]);
+
+                    debugInfo('Migrated single connection to multi-connection format');
+                    resolve(true);
+                }
+            );
         } else {
             resolve(false);
         }
@@ -262,7 +269,7 @@ export function generateOAuthState() {
 export async function setPendingAuth(params) {
     // Add timestamp for expiration checking
     await chrome.storage.local.set({
-        pendingAuth: { ...params, createdAt: Date.now() }
+        pendingAuth: { ...params, createdAt: Date.now() },
     });
 }
 
@@ -279,7 +286,7 @@ export async function consumePendingAuth() {
 
     // Expire after 5 minutes
     const EXPIRATION_MS = 5 * 60 * 1000;
-    if (pendingAuth.createdAt && (Date.now() - pendingAuth.createdAt) > EXPIRATION_MS) {
+    if (pendingAuth.createdAt && Date.now() - pendingAuth.createdAt > EXPIRATION_MS) {
         debugInfo('OAuth pending auth expired');
         return null;
     }
@@ -301,7 +308,7 @@ export async function validateOAuthState(receivedState) {
 
     // Check expiration
     const EXPIRATION_MS = 5 * 60 * 1000;
-    if (pendingAuth.createdAt && (Date.now() - pendingAuth.createdAt) > EXPIRATION_MS) {
+    if (pendingAuth.createdAt && Date.now() - pendingAuth.createdAt > EXPIRATION_MS) {
         await chrome.storage.local.remove(['pendingAuth']);
         return { valid: false, pendingAuth: null };
     }
@@ -351,11 +358,12 @@ export async function clearCustomConnectedApp() {
  * Migrate from global customConnectedApp to per-connection clientId
  * Should be called once during app initialization (after migrateFromSingleConnection)
  */
-export async function migrateCustomConnectedApp() {
-    return new Promise((resolve) => {
+export function migrateCustomConnectedApp() {
+    return new Promise(resolve => {
         if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.get(['customConnectedApp', 'connections', 'customAppMigrated'],
-                async (data) => {
+            chrome.storage.local.get(
+                ['customConnectedApp', 'connections', 'customAppMigrated'],
+                async data => {
                     // Already migrated or no custom app to migrate
                     if (data.customAppMigrated || !data.customConnectedApp?.enabled) {
                         resolve(false);
@@ -369,12 +377,12 @@ export async function migrateCustomConnectedApp() {
                         // Apply custom clientId to all existing connections that don't have one
                         const updatedConnections = connections.map(conn => ({
                             ...conn,
-                            clientId: conn.clientId || customClientId
+                            clientId: conn.clientId || customClientId,
                         }));
 
                         await chrome.storage.local.set({
                             connections: updatedConnections,
-                            customAppMigrated: true
+                            customAppMigrated: true,
                         });
 
                         debugInfo('Migrated global customConnectedApp to per-connection clientIds');
@@ -394,7 +402,7 @@ export async function migrateCustomConnectedApp() {
 
 // Listen for auth expiration broadcasts from background
 if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
-    chrome.runtime.onMessage.addListener((message) => {
+    chrome.runtime.onMessage.addListener(message => {
         if (message.type === 'authExpired') {
             triggerAuthExpired();
         }

@@ -101,7 +101,9 @@ describe('app-utils', () => {
             const customDomain = 'https://mycompany.my.salesforce.com';
             const result = buildOAuthUrl(customDomain, clientId, redirectUri, state);
 
-            expect(result).toContain('https://mycompany.my.salesforce.com/services/oauth2/authorize');
+            expect(result).toContain(
+                'https://mycompany.my.salesforce.com/services/oauth2/authorize'
+            );
         });
 
         it('AS-U-001.6: defaults to implicit flow when useCodeFlow not provided', () => {

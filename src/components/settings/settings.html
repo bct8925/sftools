@@ -1,21 +1,20 @@
 <div class="settings-content">
     <div class="card">
         <div class="card-header">
-            <div class="card-header-icon" style="background-color: #4bca81;">C</div>
+            <div class="card-header-icon" style="background-color: #4bca81">C</div>
             <h2>Connections</h2>
         </div>
         <div class="card-body">
             <p class="settings-description">
-                Manage your Salesforce org connections. Each connection can use its own Connected App.
+                Manage your Salesforce org connections. Each connection can use its own Connected
+                App.
             </p>
 
             <!-- Connection List -->
             <div class="settings-connection-list"></div>
 
             <!-- Add Connection Button -->
-            <button class="settings-add-connection-btn button-brand">
-                + Add Connection
-            </button>
+            <button class="settings-add-connection-btn button-brand">+ Add Connection</button>
 
             <!-- Add Connection Form (hidden by default) -->
             <div class="settings-add-connection-form hidden">
@@ -23,20 +22,30 @@
                     <label>LOGIN DOMAIN</label>
                     <select class="select settings-login-domain">
                         <option value="auto">Auto-detect (Current Tab)</option>
-                        <option value="https://login.salesforce.com">Production (login.salesforce.com)</option>
-                        <option value="https://test.salesforce.com">Sandbox (test.salesforce.com)</option>
+                        <option value="https://login.salesforce.com">
+                            Production (login.salesforce.com)
+                        </option>
+                        <option value="https://test.salesforce.com">
+                            Sandbox (test.salesforce.com)
+                        </option>
                         <option value="custom">Custom Domain...</option>
                     </select>
                 </div>
                 <div class="form-element settings-custom-domain-field hidden">
                     <label>CUSTOM DOMAIN</label>
-                    <input type="text" class="input settings-custom-domain"
-                           placeholder="https://mycompany.my.salesforce.com">
+                    <input
+                        type="text"
+                        class="input settings-custom-domain"
+                        placeholder="https://mycompany.my.salesforce.com"
+                    />
                 </div>
                 <div class="form-element">
                     <label>CLIENT ID (OPTIONAL)</label>
-                    <input type="text" class="input settings-new-client-id"
-                           placeholder="Leave blank to use default">
+                    <input
+                        type="text"
+                        class="input settings-new-client-id"
+                        placeholder="Leave blank to use default"
+                    />
                     <span class="settings-field-hint">
                         External Client App or Connected App client ID for this org
                     </span>
@@ -53,7 +62,13 @@
                     <li>In Salesforce Setup, create an External Client App or Connected App</li>
                     <li>Callback URL: <code>https://sftools.dev/sftools-callback</code></li>
                     <li>OAuth Scopes: <code>api, web, refresh_token</code></li>
-                    <li>Disable <code>PKCE, Require secret for Web Server, Require secret for Refresh Token</code></li>
+                    <li>
+                        Disable
+                        <code
+                            >PKCE, Require secret for Web Server, Require secret for Refresh
+                            Token</code
+                        >
+                    </li>
                 </ol>
             </details>
         </div>
@@ -61,29 +76,42 @@
 
     <div class="card">
         <div class="card-header">
-            <div class="card-header-icon" style="background-color: #6366f1;">A</div>
+            <div class="card-header-icon" style="background-color: #6366f1">A</div>
             <h2>Appearance</h2>
         </div>
         <div class="card-body">
-            <p class="settings-description">
-                Customize the look and feel of sftools.
-            </p>
+            <p class="settings-description">Customize the look and feel of sftools.</p>
 
             <div class="settings-theme-section">
                 <label class="settings-theme-label">Theme</label>
                 <div class="settings-theme-options">
                     <label class="settings-theme-option">
-                        <input type="radio" name="theme" value="system" class="settings-theme-radio">
+                        <input
+                            type="radio"
+                            name="theme"
+                            value="system"
+                            class="settings-theme-radio"
+                        />
                         <span class="settings-theme-option-label">System</span>
                         <span class="settings-theme-option-desc">Follow system preference</span>
                     </label>
                     <label class="settings-theme-option">
-                        <input type="radio" name="theme" value="light" class="settings-theme-radio">
+                        <input
+                            type="radio"
+                            name="theme"
+                            value="light"
+                            class="settings-theme-radio"
+                        />
                         <span class="settings-theme-option-label">Light</span>
                         <span class="settings-theme-option-desc">Always use light mode</span>
                     </label>
                     <label class="settings-theme-option">
-                        <input type="radio" name="theme" value="dark" class="settings-theme-radio">
+                        <input
+                            type="radio"
+                            name="theme"
+                            value="dark"
+                            class="settings-theme-radio"
+                        />
                         <span class="settings-theme-option-label">Dark</span>
                         <span class="settings-theme-option-desc">Always use dark mode</span>
                     </label>
@@ -94,16 +122,17 @@
 
     <div class="card">
         <div class="card-header">
-            <div class="card-header-icon" style="background-color: #0070d2;">P</div>
+            <div class="card-header-icon" style="background-color: #0070d2">P</div>
             <h2>Local Proxy</h2>
         </div>
         <div class="card-body">
             <p class="settings-description">
-                The local proxy enables advanced features like Platform Event streaming via gRPC and automatic token refresh.
+                The local proxy enables advanced features like Platform Event streaming via gRPC and
+                automatic token refresh.
             </p>
 
             <label class="settings-toggle-label">
-                <input type="checkbox" class="settings-proxy-toggle">
+                <input type="checkbox" class="settings-proxy-toggle" />
                 <span>Enable Local Proxy</span>
             </label>
 
@@ -116,13 +145,16 @@
                     </div>
                 </div>
 
-                <div class="settings-version-info" style="display: none;"></div>
+                <div class="settings-version-info" style="display: none"></div>
             </div>
 
             <details class="settings-install-instructions">
                 <summary>Installation Instructions</summary>
                 <ol>
-                    <li>Install <a href="https://nodejs.org/" target="_blank">Node.js 18</a> or later</li>
+                    <li>
+                        Install <a href="https://nodejs.org/" target="_blank">Node.js 18</a> or
+                        later
+                    </li>
                     <li>Open a terminal in the <code>sftools-proxy</code> folder</li>
                     <li>Run: <code>npm run install-host</code></li>
                     <li>Restart Chrome completely</li>
@@ -132,7 +164,10 @@
 
             <details class="settings-install-instructions">
                 <summary>CORS Configuration (Salesforce)</summary>
-                <p>To allow the Chrome extension to make requests to your Salesforce org, add a CORS entry:</p>
+                <p>
+                    To allow the Chrome extension to make requests to your Salesforce org, add a
+                    CORS entry:
+                </p>
                 <ol>
                     <li>In Salesforce Setup, search for "CORS"</li>
                     <li>Click "CORS" under Security</li>
@@ -140,19 +175,23 @@
                     <li>Enter: <code>chrome-extension://mckblnkfhlgocgmehmnihmagmhbnjioj</code></li>
                     <li>Save the CORS entry</li>
                 </ol>
-                <p><strong>Note:</strong> When the local proxy is enabled, CORS restrictions are bypassed automatically and this configuration is not required.</p>
+                <p>
+                    <strong>Note:</strong> When the local proxy is enabled, CORS restrictions are
+                    bypassed automatically and this configuration is not required.
+                </p>
             </details>
         </div>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <div class="card-header-icon" style="background-color: #ff9a3c;">D</div>
+            <div class="card-header-icon" style="background-color: #ff9a3c">D</div>
             <h2>Data</h2>
         </div>
         <div class="card-body">
             <p class="settings-description">
-                SObject definitions are cached locally for faster performance. Refresh if schema changes aren't appearing.
+                SObject definitions are cached locally for faster performance. Refresh if schema
+                changes aren't appearing.
             </p>
 
             <div class="settings-cache-row">
@@ -170,12 +209,15 @@
             <h3>Edit Connection</h3>
             <div class="form-element">
                 <label>LABEL</label>
-                <input type="text" class="input settings-edit-label">
+                <input type="text" class="input settings-edit-label" />
             </div>
             <div class="form-element">
                 <label>CLIENT ID</label>
-                <input type="text" class="input settings-edit-client-id"
-                       placeholder="Leave blank for default">
+                <input
+                    type="text"
+                    class="input settings-edit-client-id"
+                    placeholder="Leave blank for default"
+                />
                 <span class="settings-field-hint">
                     Changing Client ID requires re-authorization
                 </span>

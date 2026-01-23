@@ -18,10 +18,10 @@ export const QuerySuccessScenario = {
             response: {
                 columnMetadata: [
                     { columnName: 'Id', displayName: 'Id', aggregate: false },
-                    { columnName: 'Name', displayName: 'Name', aggregate: false }
+                    { columnName: 'Name', displayName: 'Name', aggregate: false },
                 ],
-                entityName: 'Account'
-            }
+                entityName: 'Account',
+            },
         },
         {
             pattern: /\/query/,
@@ -29,12 +29,10 @@ export const QuerySuccessScenario = {
             response: {
                 done: true,
                 totalSize: 1,
-                records: [
-                    { Id: '001MOCKACCOUNT01', Name: 'Test Account' }
-                ]
-            }
-        }
-    ]
+                records: [{ Id: '001MOCKACCOUNT01', Name: 'Test Account' }],
+            },
+        },
+    ],
 };
 
 /**
@@ -47,11 +45,9 @@ export const QueryEmptyScenario = {
             pattern: /\/query\/?\?.*columns=true/,
             method: 'GET',
             response: {
-                columnMetadata: [
-                    { columnName: 'Id', displayName: 'Id', aggregate: false }
-                ],
-                entityName: 'Account'
-            }
+                columnMetadata: [{ columnName: 'Id', displayName: 'Id', aggregate: false }],
+                entityName: 'Account',
+            },
         },
         {
             pattern: /\/query/,
@@ -59,10 +55,10 @@ export const QueryEmptyScenario = {
             response: {
                 done: true,
                 totalSize: 0,
-                records: []
-            }
-        }
-    ]
+                records: [],
+            },
+        },
+    ],
 };
 
 /**
@@ -78,13 +74,13 @@ export const QueryErrorScenario = {
                 status: 400,
                 data: [
                     {
-                        message: 'No such column \'InvalidField\' on entity \'Account\'',
-                        errorCode: 'INVALID_FIELD'
-                    }
-                ]
-            }
-        }
-    ]
+                        message: "No such column 'InvalidField' on entity 'Account'",
+                        errorCode: 'INVALID_FIELD',
+                    },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -104,10 +100,10 @@ export const ApexSuccessScenario = {
                 exceptionStackTrace: null,
                 line: -1,
                 column: -1,
-                log: 'USER_DEBUG|Hello from Apex\nUSER_DEBUG|Execution complete'
-            }
-        }
-    ]
+                log: 'USER_DEBUG|Hello from Apex\nUSER_DEBUG|Execution complete',
+            },
+        },
+    ],
 };
 
 /**
@@ -122,15 +118,15 @@ export const ApexCompileErrorScenario = {
             response: {
                 compiled: false,
                 success: false,
-                compileProblem: 'Unexpected token \'}\'',
+                compileProblem: "Unexpected token '}'",
                 exceptionMessage: null,
                 exceptionStackTrace: null,
                 line: 3,
                 column: 5,
-                log: ''
-            }
-        }
-    ]
+                log: '',
+            },
+        },
+    ],
 };
 
 /**
@@ -146,14 +142,15 @@ export const ApexRuntimeErrorScenario = {
                 compiled: true,
                 success: false,
                 compileProblem: null,
-                exceptionMessage: 'System.NullPointerException: Attempt to de-reference a null object',
+                exceptionMessage:
+                    'System.NullPointerException: Attempt to de-reference a null object',
                 exceptionStackTrace: 'AnonymousBlock: line 3, column 1',
                 line: -1,
                 column: -1,
-                log: 'USER_DEBUG|Starting execution\nERROR|Exception occurred'
-            }
-        }
-    ]
+                log: 'USER_DEBUG|Starting execution\nERROR|Exception occurred',
+            },
+        },
+    ],
 };
 
 /**
@@ -173,13 +170,31 @@ export const AccountDescribeScenario = {
                 updateable: true,
                 fields: [
                     { name: 'Id', label: 'Id', type: 'id', updateable: false, nillable: false },
-                    { name: 'Name', label: 'Name', type: 'string', updateable: true, nillable: false },
-                    { name: 'Type', label: 'Type', type: 'picklist', updateable: true, nillable: true },
-                    { name: 'Industry', label: 'Industry', type: 'picklist', updateable: true, nillable: true }
-                ]
-            }
-        }
-    ]
+                    {
+                        name: 'Name',
+                        label: 'Name',
+                        type: 'string',
+                        updateable: true,
+                        nillable: false,
+                    },
+                    {
+                        name: 'Type',
+                        label: 'Type',
+                        type: 'picklist',
+                        updateable: true,
+                        nillable: true,
+                    },
+                    {
+                        name: 'Industry',
+                        label: 'Industry',
+                        type: 'picklist',
+                        updateable: true,
+                        nillable: true,
+                    },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -198,9 +213,9 @@ export const RecordViewerScenario = {
                 fields: [
                     { name: 'Id', label: 'Id', type: 'id', updateable: false },
                     { name: 'Name', label: 'Name', type: 'string', updateable: true },
-                    { name: 'Phone', label: 'Phone', type: 'phone', updateable: true }
-                ]
-            }
+                    { name: 'Phone', label: 'Phone', type: 'phone', updateable: true },
+                ],
+            },
         },
         {
             pattern: /\/sobjects\/Account\/001MOCKACCOUNT01/,
@@ -211,11 +226,11 @@ export const RecordViewerScenario = {
                 Phone: '555-1234',
                 attributes: {
                     type: 'Account',
-                    url: '/services/data/v62.0/sobjects/Account/001MOCKACCOUNT01'
-                }
-            }
-        }
-    ]
+                    url: '/services/data/v62.0/sobjects/Account/001MOCKACCOUNT01',
+                },
+            },
+        },
+    ],
 };
 
 /**
@@ -231,13 +246,18 @@ export const GlobalDescribeScenario = {
                 sobjects: [
                     { name: 'Account', label: 'Account', keyPrefix: '001', queryable: true },
                     { name: 'Contact', label: 'Contact', keyPrefix: '003', queryable: true },
-                    { name: 'Opportunity', label: 'Opportunity', keyPrefix: '006', queryable: true },
+                    {
+                        name: 'Opportunity',
+                        label: 'Opportunity',
+                        keyPrefix: '006',
+                        queryable: true,
+                    },
                     { name: 'Lead', label: 'Lead', keyPrefix: '00Q', queryable: true },
-                    { name: 'Case', label: 'Case', keyPrefix: '500', queryable: true }
-                ]
-            }
-        }
-    ]
+                    { name: 'Case', label: 'Case', keyPrefix: '500', queryable: true },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -252,11 +272,11 @@ export const RestApiGetScenario = {
             response: {
                 sobjects: [
                     { name: 'Account', label: 'Account' },
-                    { name: 'Contact', label: 'Contact' }
-                ]
-            }
-        }
-    ]
+                    { name: 'Contact', label: 'Contact' },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -273,11 +293,11 @@ export const RestApiPostScenario = {
                 data: {
                     id: '001NEWRECORD0001',
                     success: true,
-                    errors: []
-                }
-            }
-        }
-    ]
+                    errors: [],
+                },
+            },
+        },
+    ],
 };
 
 /**
@@ -295,11 +315,15 @@ export const QueryEditableResultsScenario = {
                     { columnName: 'Id', displayName: 'Id', aggregate: false },
                     { columnName: 'Name', displayName: 'Name', aggregate: false },
                     { columnName: 'Phone', displayName: 'Phone', aggregate: false },
-                    { columnName: 'AnnualRevenue', displayName: 'Annual Revenue', aggregate: false },
-                    { columnName: 'Type', displayName: 'Type', aggregate: false }
+                    {
+                        columnName: 'AnnualRevenue',
+                        displayName: 'Annual Revenue',
+                        aggregate: false,
+                    },
+                    { columnName: 'Type', displayName: 'Type', aggregate: false },
                 ],
-                entityName: 'Account'
-            }
+                entityName: 'Account',
+            },
         },
         {
             pattern: /\/query/,
@@ -313,19 +337,19 @@ export const QueryEditableResultsScenario = {
                         Name: 'Acme Corporation',
                         Phone: '555-1234',
                         AnnualRevenue: 1000000,
-                        Type: 'Customer - Direct'
+                        Type: 'Customer - Direct',
                     },
                     {
                         Id: '001MOCKACCOUNT02',
                         Name: 'Global Industries',
                         Phone: '555-5678',
                         AnnualRevenue: 5000000,
-                        Type: 'Partner'
-                    }
-                ]
-            }
-        }
-    ]
+                        Type: 'Partner',
+                    },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -348,14 +372,18 @@ export const QuerySubqueryScenario = {
                         aggregate: true,
                         joinColumns: [
                             { columnName: 'Id', displayName: 'Id', aggregate: false },
-                            { columnName: 'FirstName', displayName: 'First Name', aggregate: false },
+                            {
+                                columnName: 'FirstName',
+                                displayName: 'First Name',
+                                aggregate: false,
+                            },
                             { columnName: 'LastName', displayName: 'Last Name', aggregate: false },
-                            { columnName: 'Email', displayName: 'Email', aggregate: false }
-                        ]
-                    }
+                            { columnName: 'Email', displayName: 'Email', aggregate: false },
+                        ],
+                    },
                 ],
-                entityName: 'Account'
-            }
+                entityName: 'Account',
+            },
         },
         {
             pattern: /\/query/,
@@ -375,16 +403,16 @@ export const QuerySubqueryScenario = {
                                     Id: '003MOCKCONTACT01',
                                     FirstName: 'John',
                                     LastName: 'Doe',
-                                    Email: 'john.doe@acme.com'
+                                    Email: 'john.doe@acme.com',
                                 },
                                 {
                                     Id: '003MOCKCONTACT02',
                                     FirstName: 'Jane',
                                     LastName: 'Smith',
-                                    Email: 'jane.smith@acme.com'
-                                }
-                            ]
-                        }
+                                    Email: 'jane.smith@acme.com',
+                                },
+                            ],
+                        },
                     },
                     {
                         Id: '001MOCKACCOUNT02',
@@ -397,15 +425,15 @@ export const QuerySubqueryScenario = {
                                     Id: '003MOCKCONTACT03',
                                     FirstName: 'Bob',
                                     LastName: 'Johnson',
-                                    Email: 'bob.johnson@global.com'
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        }
-    ]
+                                    Email: 'bob.johnson@global.com',
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -426,10 +454,10 @@ export const ApexCompileErrorDetailedScenario = {
                 exceptionStackTrace: null,
                 line: 5,
                 column: 15,
-                log: ''
-            }
-        }
-    ]
+                log: '',
+            },
+        },
+    ],
 };
 
 /**
@@ -449,21 +477,99 @@ export const RecordDescribeVariousFieldsScenario = {
                 queryable: true,
                 updateable: true,
                 fields: [
-                    { name: 'Id', label: 'Record ID', type: 'id', updateable: false, nillable: false },
-                    { name: 'Name', label: 'Account Name', type: 'string', updateable: true, nillable: false },
-                    { name: 'Phone', label: 'Phone', type: 'phone', updateable: true, nillable: true },
-                    { name: 'AnnualRevenue', label: 'Annual Revenue', type: 'currency', updateable: true, nillable: true },
-                    { name: 'NumberOfEmployees', label: 'Employees', type: 'int', updateable: true, nillable: true },
-                    { name: 'Active__c', label: 'Active', type: 'boolean', updateable: true, nillable: false },
-                    { name: 'CreatedDate', label: 'Created Date', type: 'datetime', updateable: false, nillable: false },
-                    { name: 'LastModifiedDate', label: 'Last Modified', type: 'datetime', updateable: false, nillable: false },
-                    { name: 'Type', label: 'Account Type', type: 'picklist', updateable: true, nillable: true },
-                    { name: 'Industry', label: 'Industry', type: 'picklist', updateable: true, nillable: true },
-                    { name: 'Description', label: 'Description', type: 'textarea', updateable: true, nillable: true },
-                    { name: 'Website', label: 'Website', type: 'url', updateable: true, nillable: true },
-                    { name: 'BillingAddress', label: 'Billing Address', type: 'address', updateable: true, nillable: true }
-                ]
-            }
+                    {
+                        name: 'Id',
+                        label: 'Record ID',
+                        type: 'id',
+                        updateable: false,
+                        nillable: false,
+                    },
+                    {
+                        name: 'Name',
+                        label: 'Account Name',
+                        type: 'string',
+                        updateable: true,
+                        nillable: false,
+                    },
+                    {
+                        name: 'Phone',
+                        label: 'Phone',
+                        type: 'phone',
+                        updateable: true,
+                        nillable: true,
+                    },
+                    {
+                        name: 'AnnualRevenue',
+                        label: 'Annual Revenue',
+                        type: 'currency',
+                        updateable: true,
+                        nillable: true,
+                    },
+                    {
+                        name: 'NumberOfEmployees',
+                        label: 'Employees',
+                        type: 'int',
+                        updateable: true,
+                        nillable: true,
+                    },
+                    {
+                        name: 'Active__c',
+                        label: 'Active',
+                        type: 'boolean',
+                        updateable: true,
+                        nillable: false,
+                    },
+                    {
+                        name: 'CreatedDate',
+                        label: 'Created Date',
+                        type: 'datetime',
+                        updateable: false,
+                        nillable: false,
+                    },
+                    {
+                        name: 'LastModifiedDate',
+                        label: 'Last Modified',
+                        type: 'datetime',
+                        updateable: false,
+                        nillable: false,
+                    },
+                    {
+                        name: 'Type',
+                        label: 'Account Type',
+                        type: 'picklist',
+                        updateable: true,
+                        nillable: true,
+                    },
+                    {
+                        name: 'Industry',
+                        label: 'Industry',
+                        type: 'picklist',
+                        updateable: true,
+                        nillable: true,
+                    },
+                    {
+                        name: 'Description',
+                        label: 'Description',
+                        type: 'textarea',
+                        updateable: true,
+                        nillable: true,
+                    },
+                    {
+                        name: 'Website',
+                        label: 'Website',
+                        type: 'url',
+                        updateable: true,
+                        nillable: true,
+                    },
+                    {
+                        name: 'BillingAddress',
+                        label: 'Billing Address',
+                        type: 'address',
+                        updateable: true,
+                        nillable: true,
+                    },
+                ],
+            },
         },
         {
             pattern: /\/sobjects\/Account\/001MOCKACCOUNT01/,
@@ -486,15 +592,15 @@ export const RecordDescribeVariousFieldsScenario = {
                     city: 'San Francisco',
                     state: 'CA',
                     postalCode: '94105',
-                    country: 'USA'
+                    country: 'USA',
                 },
                 attributes: {
                     type: 'Account',
-                    url: '/services/data/v62.0/sobjects/Account/001MOCKACCOUNT01'
-                }
-            }
-        }
-    ]
+                    url: '/services/data/v62.0/sobjects/Account/001MOCKACCOUNT01',
+                },
+            },
+        },
+    ],
 };
 
 /**
@@ -508,8 +614,8 @@ export const RestApiEmptyScenario = {
             pattern: /\/sobjects$/,
             method: 'GET',
             response: {
-                sobjects: []
-            }
+                sobjects: [],
+            },
         },
         {
             pattern: /\/query/,
@@ -517,8 +623,8 @@ export const RestApiEmptyScenario = {
             response: {
                 done: true,
                 totalSize: 0,
-                records: []
-            }
+                records: [],
+            },
         },
         {
             pattern: /\/sobjects\/Account\/001MOCKACCOUNT01/,
@@ -528,12 +634,12 @@ export const RestApiEmptyScenario = {
                 data: [
                     {
                         message: 'The requested resource does not exist',
-                        errorCode: 'NOT_FOUND'
-                    }
-                ]
-            }
-        }
-    ]
+                        errorCode: 'NOT_FOUND',
+                    },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -555,15 +661,15 @@ export const EventsChannelsScenario = {
                     {
                         DeveloperName: 'Order_Event',
                         QualifiedApiName: 'Order_Event__e',
-                        Label: 'Order Event'
+                        Label: 'Order Event',
                     },
                     {
                         DeveloperName: 'Notification_Event',
                         QualifiedApiName: 'Notification_Event__e',
-                        Label: 'Notification Event'
-                    }
-                ]
-            }
+                        Label: 'Notification Event',
+                    },
+                ],
+            },
         },
         {
             // Match regular query for PushTopics
@@ -578,12 +684,12 @@ export const EventsChannelsScenario = {
                         Name: 'AccountUpdates',
                         Query: 'SELECT Id, Name FROM Account',
                         ApiVersion: 62.0,
-                        IsActive: true
-                    }
-                ]
-            }
-        }
-    ]
+                        IsActive: true,
+                    },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -598,10 +704,10 @@ export const EventsPublishSuccessScenario = {
             response: {
                 id: 'e00MOCKPUBLISH001',
                 success: true,
-                errors: []
-            }
-        }
-    ]
+                errors: [],
+            },
+        },
+    ],
 };
 
 /**
@@ -619,12 +725,12 @@ export const EventsPublishErrorScenario = {
                     {
                         message: 'Required field missing: Message__c',
                         errorCode: 'REQUIRED_FIELD_MISSING',
-                        fields: ['Message__c']
-                    }
-                ]
-            }
-        }
-    ]
+                        fields: ['Message__c'],
+                    },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -644,17 +750,17 @@ export const DebugLogsUserSearchScenario = {
                     {
                         Id: '005MOCKUSER00001',
                         Name: 'John Developer',
-                        Username: 'john.dev@example.com'
+                        Username: 'john.dev@example.com',
                     },
                     {
                         Id: '005MOCKUSER00002',
                         Name: 'Jane Admin',
-                        Username: 'jane.admin@example.com'
-                    }
-                ]
-            }
-        }
-    ]
+                        Username: 'jane.admin@example.com',
+                    },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -671,8 +777,8 @@ export const DebugLogsTraceSuccessScenario = {
             response: {
                 totalSize: 0,
                 done: true,
-                records: []
-            }
+                records: [],
+            },
         },
         {
             // Query for DebugLevel - returns empty (needs to create one)
@@ -681,8 +787,8 @@ export const DebugLogsTraceSuccessScenario = {
             response: {
                 totalSize: 0,
                 done: true,
-                records: []
-            }
+                records: [],
+            },
         },
         {
             // Create DebugLevel
@@ -691,8 +797,8 @@ export const DebugLogsTraceSuccessScenario = {
             response: {
                 id: '7dlMOCKDEBUGLVL1',
                 success: true,
-                errors: []
-            }
+                errors: [],
+            },
         },
         {
             // Create TraceFlag
@@ -701,10 +807,10 @@ export const DebugLogsTraceSuccessScenario = {
             response: {
                 id: '7tfMOCKTRACE0001',
                 success: true,
-                errors: []
-            }
-        }
-    ]
+                errors: [],
+            },
+        },
+    ],
 };
 
 /**
@@ -724,17 +830,17 @@ export const FlowSearchScenario = {
                     {
                         Id: '300MOCKFLOW00001',
                         DeveloperName: 'Order_Approval_Flow',
-                        Label: 'Order Approval Flow'
+                        Label: 'Order Approval Flow',
                     },
                     {
                         Id: '300MOCKFLOW00002',
                         DeveloperName: 'Case_Auto_Response',
-                        Label: 'Case Auto Response'
-                    }
-                ]
-            }
-        }
-    ]
+                        Label: 'Case Auto Response',
+                    },
+                ],
+            },
+        },
+    ],
 };
 
 /**
@@ -754,20 +860,20 @@ export const FlowVersionsScenario = {
                     {
                         Id: '301MOCKFLOWVER01',
                         VersionNumber: 3,
-                        Status: 'Active'
+                        Status: 'Active',
                     },
                     {
                         Id: '301MOCKFLOWVER02',
                         VersionNumber: 2,
-                        Status: 'Inactive'
+                        Status: 'Inactive',
                     },
                     {
                         Id: '301MOCKFLOWVER03',
                         VersionNumber: 1,
-                        Status: 'Inactive'
-                    }
-                ]
-            }
-        }
-    ]
+                        Status: 'Inactive',
+                    },
+                ],
+            },
+        },
+    ],
 };

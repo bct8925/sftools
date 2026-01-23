@@ -12,7 +12,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mockMatchMedia = vi.fn();
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: mockMatchMedia
+    value: mockMatchMedia,
 });
 
 // Import after mocking
@@ -27,13 +27,13 @@ describe('theme', () => {
 
         // Reset matchMedia mock
         mediaQueryListeners = [];
-        mockMatchMedia.mockImplementation((query) => ({
+        mockMatchMedia.mockImplementation(query => ({
             matches: false, // Default to light mode
             media: query,
             addEventListener: vi.fn((_event, callback) => {
                 mediaQueryListeners.push(callback);
             }),
-            removeEventListener: vi.fn()
+            removeEventListener: vi.fn(),
         }));
     });
 
@@ -42,7 +42,7 @@ describe('theme', () => {
             mockMatchMedia.mockImplementation(() => ({
                 matches: true,
                 media: '(prefers-color-scheme: dark)',
-                addEventListener: vi.fn()
+                addEventListener: vi.fn(),
             }));
 
             expect(getSystemTheme()).toBe('dark');
@@ -52,7 +52,7 @@ describe('theme', () => {
             mockMatchMedia.mockImplementation(() => ({
                 matches: false,
                 media: '(prefers-color-scheme: dark)',
-                addEventListener: vi.fn()
+                addEventListener: vi.fn(),
             }));
 
             expect(getSystemTheme()).toBe('light');
@@ -79,7 +79,7 @@ describe('theme', () => {
             mockMatchMedia.mockImplementation(() => ({
                 matches: true,
                 media: '(prefers-color-scheme: dark)',
-                addEventListener: vi.fn()
+                addEventListener: vi.fn(),
             }));
 
             applyTheme('system');
@@ -92,7 +92,7 @@ describe('theme', () => {
             mockMatchMedia.mockImplementation(() => ({
                 matches: false,
                 media: '(prefers-color-scheme: dark)',
-                addEventListener: vi.fn()
+                addEventListener: vi.fn(),
             }));
 
             applyTheme('system');
@@ -117,7 +117,7 @@ describe('theme', () => {
             mockMatchMedia.mockImplementation(() => ({
                 matches: true,
                 media: '(prefers-color-scheme: dark)',
-                addEventListener: vi.fn()
+                addEventListener: vi.fn(),
             }));
 
             await initTheme();
@@ -141,9 +141,12 @@ describe('theme', () => {
 
             // Simulate storage change from another tab
             document.documentElement.removeAttribute('data-theme');
-            chrome._triggerStorageChange({
-                theme: { oldValue: 'light', newValue: 'dark' }
-            }, 'local');
+            chrome._triggerStorageChange(
+                {
+                    theme: { oldValue: 'light', newValue: 'dark' },
+                },
+                'local'
+            );
 
             expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
         });
@@ -154,9 +157,12 @@ describe('theme', () => {
             expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
 
             // Simulate storage change to light
-            chrome._triggerStorageChange({
-                theme: { oldValue: 'dark', newValue: 'light' }
-            }, 'local');
+            chrome._triggerStorageChange(
+                {
+                    theme: { oldValue: 'dark', newValue: 'light' },
+                },
+                'local'
+            );
 
             expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
         });
@@ -169,13 +175,16 @@ describe('theme', () => {
             mockMatchMedia.mockImplementation(() => ({
                 matches: false,
                 media: '(prefers-color-scheme: dark)',
-                addEventListener: vi.fn()
+                addEventListener: vi.fn(),
             }));
 
             // Simulate storage change with undefined newValue
-            chrome._triggerStorageChange({
-                theme: { oldValue: 'dark', newValue: undefined }
-            }, 'local');
+            chrome._triggerStorageChange(
+                {
+                    theme: { oldValue: 'dark', newValue: undefined },
+                },
+                'local'
+            );
 
             expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
         });

@@ -1,12 +1,12 @@
 <div class="card">
     <div class="card-header">
-        <div class="card-header-icon" style="background-color: #0070d2;">R</div>
+        <div class="card-header-icon" style="background-color: #0070d2">R</div>
         <h2>Request</h2>
     </div>
     <div class="card-body">
         <div class="form-element">
             <label for="rest-api-url">API URL (Relative to Instance)</label>
-            <input type="text" class="rest-api-url input" value="/services/data/v62.0/limits">
+            <input type="text" class="rest-api-url input" value="/services/data/v62.0/limits" />
         </div>
 
         <div class="form-element">
@@ -19,9 +19,12 @@
             </select>
         </div>
 
-        <div class="form-element rest-body-container" style="display: none;">
+        <div class="form-element rest-body-container" style="display: none">
             <label>Body (JSON)</label>
-            <monaco-editor class="rest-request-editor monaco-container" language="json"></monaco-editor>
+            <monaco-editor
+                class="rest-request-editor monaco-container"
+                language="json"
+            ></monaco-editor>
         </div>
 
         <div class="m-top_small">
@@ -33,10 +36,14 @@
 
 <div class="card">
     <div class="card-header">
-        <div class="card-header-icon" style="background-color: #4bca81;">✓</div>
+        <div class="card-header-icon" style="background-color: #4bca81">✓</div>
         <h2>Response</h2>
     </div>
     <div class="card-body">
-        <monaco-editor class="rest-response-editor monaco-container monaco-container-lg" language="json" readonly></monaco-editor>
+        <monaco-editor
+            class="rest-response-editor monaco-container monaco-container-lg"
+            language="json"
+            readonly
+        ></monaco-editor>
     </div>
 </div>

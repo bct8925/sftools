@@ -9,18 +9,23 @@
  * @param {Array} systemTopics - System topic channels
  * @returns {Object} Grouped channel data with optgroup labels and options
  */
-export function buildChannelOptions(platformEvents = [], standardEvents = [], pushTopics = [], systemTopics = []) {
+export function buildChannelOptions(
+    platformEvents = [],
+    standardEvents = [],
+    pushTopics = [],
+    systemTopics = []
+) {
     const groups = [];
 
     // Platform Events (gRPC) - Custom
     if (platformEvents.length > 0) {
         const options = platformEvents.map(evt => ({
             value: `/event/${evt.QualifiedApiName}`,
-            label: evt.Label || evt.DeveloperName
+            label: evt.Label || evt.DeveloperName,
         }));
         groups.push({
             label: 'Platform Events - Custom',
-            options
+            options,
         });
     }
 
@@ -28,11 +33,11 @@ export function buildChannelOptions(platformEvents = [], standardEvents = [], pu
     if (standardEvents.length > 0) {
         const options = standardEvents.map(evt => ({
             value: `/event/${evt.name}`,
-            label: evt.label
+            label: evt.label,
         }));
         groups.push({
             label: 'Platform Events - Standard',
-            options
+            options,
         });
     }
 
@@ -40,11 +45,11 @@ export function buildChannelOptions(platformEvents = [], standardEvents = [], pu
     if (pushTopics.length > 0) {
         const options = pushTopics.map(topic => ({
             value: `/topic/${topic.Name}`,
-            label: topic.Name
+            label: topic.Name,
         }));
         groups.push({
             label: 'PushTopics',
-            options
+            options,
         });
     }
 
@@ -52,11 +57,11 @@ export function buildChannelOptions(platformEvents = [], standardEvents = [], pu
     if (systemTopics.length > 0) {
         const options = systemTopics.map(topic => ({
             value: topic.channel,
-            label: topic.label
+            label: topic.label,
         }));
         groups.push({
             label: 'System Topics',
-            options
+            options,
         });
     }
 
@@ -81,8 +86,8 @@ export function parseStreamMessage(message) {
                     protocol: event?.protocol,
                     replayId: event?.replayId,
                     payload: event?.payload,
-                    error: event?.error
-                }
+                    error: event?.error,
+                },
             };
 
         case 'streamError':
@@ -90,22 +95,22 @@ export function parseStreamMessage(message) {
                 type: 'error',
                 subscriptionId,
                 data: {
-                    error
-                }
+                    error,
+                },
             };
 
         case 'streamEnd':
             return {
                 type: 'end',
                 subscriptionId,
-                data: null
+                data: null,
             };
 
         default:
             return {
                 type: 'unknown',
                 subscriptionId,
-                data: null
+                data: null,
             };
     }
 }
@@ -125,7 +130,7 @@ export function formatEventEntry(event, eventNumber, timestamp) {
         _protocol: event.protocol,
         replayId: event.replayId,
         payload: event.payload,
-        error: event.error
+        error: event.error,
     };
 }
 

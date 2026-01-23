@@ -5,5 +5,5 @@ export {
     createMockResponse,
     createErrorResponse,
     createSalesforceMocks,
-    createMockConnection
+    createMockConnection,
 } from '../../shared/mocks/mock-data.js';

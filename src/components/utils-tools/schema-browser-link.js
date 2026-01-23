@@ -1,6 +1,6 @@
+import { getActiveConnectionId } from '../../lib/utils.js';
 import template from './schema-browser-link.html?raw';
 import './utils-tools.css';
-import { getActiveConnectionId } from '../../lib/utils.js';
 
 class SchemaBrowserLink extends HTMLElement {
     connectedCallback() {
@@ -13,7 +13,7 @@ class SchemaBrowserLink extends HTMLElement {
         openBtn.addEventListener('click', () => this.openSchemaBrowser());
     }
 
-    async openSchemaBrowser() {
+    openSchemaBrowser() {
         const connectionId = getActiveConnectionId();
 
         if (!connectionId) {

@@ -27,7 +27,7 @@ describe('cors-detection', () => {
             const response = {
                 success: false,
                 status: 0,
-                error: 'Failed to fetch'
+                error: 'Failed to fetch',
             };
 
             expect(isCorsError(response)).toBe(true);
@@ -37,7 +37,7 @@ describe('cors-detection', () => {
             const response = {
                 success: false,
                 status: 0,
-                error: 'Failed to fetch'
+                error: 'Failed to fetch',
             };
 
             expect(isCorsError(response)).toBe(true);
@@ -47,7 +47,7 @@ describe('cors-detection', () => {
             const response = {
                 success: false,
                 status: 500,
-                error: 'CORS policy blocked the request'
+                error: 'CORS policy blocked the request',
             };
 
             expect(isCorsError(response)).toBe(true);
@@ -57,7 +57,7 @@ describe('cors-detection', () => {
             const response = {
                 success: false,
                 status: 403,
-                error: 'Cross-origin request blocked'
+                error: 'Cross-origin request blocked',
             };
 
             expect(isCorsError(response)).toBe(true);
@@ -67,7 +67,7 @@ describe('cors-detection', () => {
             const response = {
                 success: false,
                 status: 0,
-                error: 'Access-Control-Allow-Origin header missing'
+                error: 'Access-Control-Allow-Origin header missing',
             };
 
             expect(isCorsError(response)).toBe(true);
@@ -77,7 +77,7 @@ describe('cors-detection', () => {
             const responses = [
                 { success: false, status: 500, error: 'CORS error' },
                 { success: false, status: 500, error: 'cors error' },
-                { success: false, status: 500, error: 'Cors Error' }
+                { success: false, status: 500, error: 'Cors Error' },
             ];
 
             for (const response of responses) {
@@ -89,7 +89,7 @@ describe('cors-detection', () => {
             const response = {
                 success: true,
                 status: 200,
-                error: ''
+                error: '',
             };
 
             expect(isCorsError(response)).toBe(false);
@@ -99,7 +99,7 @@ describe('cors-detection', () => {
             const response = {
                 success: false,
                 status: 401,
-                error: 'Session expired or invalid'
+                error: 'Session expired or invalid',
             };
 
             expect(isCorsError(response)).toBe(false);
@@ -109,7 +109,7 @@ describe('cors-detection', () => {
             const response = {
                 success: false,
                 status: 500,
-                error: 'Internal server error'
+                error: 'Internal server error',
             };
 
             expect(isCorsError(response)).toBe(false);
@@ -119,7 +119,7 @@ describe('cors-detection', () => {
             const response = {
                 success: false,
                 status: 404,
-                error: 'Resource not found'
+                error: 'Resource not found',
             };
 
             expect(isCorsError(response)).toBe(false);
@@ -128,7 +128,7 @@ describe('cors-detection', () => {
         it('UT-U-065: handles missing error property gracefully', () => {
             const response = {
                 success: false,
-                status: 500
+                status: 500,
             };
 
             expect(isCorsError(response)).toBe(false);
@@ -138,7 +138,7 @@ describe('cors-detection', () => {
             const response = {
                 success: false,
                 status: 0,
-                error: null
+                error: null,
             };
 
             expect(isCorsError(response)).toBe(false);
@@ -149,7 +149,7 @@ describe('cors-detection', () => {
             const response1 = {
                 success: false,
                 status: 0,
-                error: 'Network timeout'
+                error: 'Network timeout',
             };
             expect(isCorsError(response1)).toBe(false);
 
@@ -157,7 +157,7 @@ describe('cors-detection', () => {
             const response2 = {
                 success: false,
                 status: 500,
-                error: 'Failed to fetch data from server'
+                error: 'Failed to fetch data from server',
             };
             expect(isCorsError(response2)).toBe(false);
         });

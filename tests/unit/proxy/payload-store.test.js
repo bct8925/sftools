@@ -44,7 +44,7 @@ const {
     shouldUseLargePayload,
     getPayloadCount,
     MAX_NATIVE_MESSAGE_SIZE,
-    PAYLOAD_TTL_MS
+    PAYLOAD_TTL_MS,
 } = payloadStore;
 
 describe('payload-store', () => {

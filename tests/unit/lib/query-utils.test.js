@@ -69,7 +69,7 @@ import {
     formatCellValue,
     parseValueFromInput,
     isFieldEditable,
-    checkIfEditable
+    checkIfEditable,
 } from '../../../src/lib/query-utils.js';
 
 describe('query-utils', () => {
@@ -103,10 +103,8 @@ describe('query-utils', () => {
                     columnName: 'Account',
                     displayName: 'Account',
                     aggregate: false,
-                    joinColumns: [
-                        { columnName: 'Name', displayName: 'Name', aggregate: false }
-                    ]
-                }
+                    joinColumns: [{ columnName: 'Name', displayName: 'Name', aggregate: false }],
+                },
             ];
 
             const result = flattenColumnMetadata(metadata);
@@ -129,11 +127,11 @@ describe('query-utils', () => {
                             displayName: 'Owner',
                             aggregate: false,
                             joinColumns: [
-                                { columnName: 'Name', displayName: 'Name', aggregate: false }
-                            ]
-                        }
-                    ]
-                }
+                                { columnName: 'Name', displayName: 'Name', aggregate: false },
+                            ],
+                        },
+                    ],
+                },
             ];
 
             const result = flattenColumnMetadata(metadata);
@@ -151,9 +149,9 @@ describe('query-utils', () => {
                     aggregate: true,
                     joinColumns: [
                         { columnName: 'Id', displayName: 'Id', aggregate: false },
-                        { columnName: 'Name', displayName: 'Name', aggregate: false }
-                    ]
-                }
+                        { columnName: 'Name', displayName: 'Name', aggregate: false },
+                    ],
+                },
             ];
 
             const result = flattenColumnMetadata(metadata);
@@ -173,7 +171,7 @@ describe('query-utils', () => {
             const record = {
                 Id: '001xxx',
                 Name: 'Test',
-                attributes: { type: 'Account' }
+                attributes: { type: 'Account' },
             };
 
             const result = extractColumnsFromRecord(record);
@@ -186,7 +184,7 @@ describe('query-utils', () => {
         it('Q-U-027: excludes attributes key', () => {
             const record = {
                 Id: '001xxx',
-                attributes: { type: 'Account' }
+                attributes: { type: 'Account' },
             };
 
             const result = extractColumnsFromRecord(record);
@@ -202,7 +200,7 @@ describe('query-utils', () => {
                 title: 'Id',
                 path: 'Id',
                 aggregate: false,
-                isSubquery: false
+                isSubquery: false,
             });
         });
     });
@@ -212,9 +210,9 @@ describe('query-utils', () => {
             const record = {
                 Account: {
                     Owner: {
-                        Name: 'John Doe'
-                    }
-                }
+                        Name: 'John Doe',
+                    },
+                },
             };
 
             expect(getValueByPath(record, 'Account.Owner.Name')).toBe('John Doe');
@@ -255,11 +253,11 @@ describe('query-utils', () => {
         it('Q-U-008: generates valid CSV', () => {
             const records = [
                 { Id: '001xxx', Name: 'Account 1' },
-                { Id: '002xxx', Name: 'Account 2' }
+                { Id: '002xxx', Name: 'Account 2' },
             ];
             const columns = [
                 { title: 'Id', path: 'Id' },
-                { title: 'Name', path: 'Name' }
+                { title: 'Name', path: 'Name' },
             ];
 
             const csv = recordsToCsv(records, columns);
@@ -275,7 +273,7 @@ describe('query-utils', () => {
             const records = [{ Id: '001xxx', Name: null }];
             const columns = [
                 { title: 'Id', path: 'Id' },
-                { title: 'Name', path: 'Name' }
+                { title: 'Name', path: 'Name' },
             ];
 
             const csv = recordsToCsv(records, columns);
@@ -284,12 +282,10 @@ describe('query-utils', () => {
         });
 
         it('Q-U-033: handles nested paths', () => {
-            const records = [
-                { Id: '001xxx', Account: { Name: 'Parent Account' } }
-            ];
+            const records = [{ Id: '001xxx', Account: { Name: 'Parent Account' } }];
             const columns = [
                 { title: 'Id', path: 'Id' },
-                { title: 'Account.Name', path: 'Account.Name' }
+                { title: 'Account.Name', path: 'Account.Name' },
             ];
 
             const csv = recordsToCsv(records, columns);
@@ -432,7 +428,7 @@ describe('query-utils', () => {
     describe('isFieldEditable', () => {
         it('Q-U-019: returns false for formula fields', () => {
             const fieldDescribe = {
-                FormulaField__c: { updateable: true, calculated: true }
+                FormulaField__c: { updateable: true, calculated: true },
             };
 
             expect(isFieldEditable('FormulaField__c', fieldDescribe)).toBe(false);
@@ -440,7 +436,7 @@ describe('query-utils', () => {
 
         it('Q-U-057: returns false for formula/calculated fields', () => {
             const fieldDescribe = {
-                FormulaField__c: { updateable: true, calculated: true }
+                FormulaField__c: { updateable: true, calculated: true },
             };
 
             expect(isFieldEditable('FormulaField__c', fieldDescribe)).toBe(false);
@@ -448,7 +444,7 @@ describe('query-utils', () => {
 
         it('Q-U-020: returns true for updateable fields', () => {
             const fieldDescribe = {
-                Name: { updateable: true, calculated: false }
+                Name: { updateable: true, calculated: false },
             };
 
             expect(isFieldEditable('Name', fieldDescribe)).toBe(true);
@@ -456,7 +452,7 @@ describe('query-utils', () => {
 
         it('Q-U-049: returns false for relationship paths', () => {
             const fieldDescribe = {
-                'Account.Name': { updateable: true, calculated: false }
+                'Account.Name': { updateable: true, calculated: false },
             };
 
             expect(isFieldEditable('Account.Name', fieldDescribe)).toBe(false);
@@ -464,7 +460,7 @@ describe('query-utils', () => {
 
         it('Q-U-050: returns false for non-updateable fields', () => {
             const fieldDescribe = {
-                CreatedDate: { updateable: false, calculated: false }
+                CreatedDate: { updateable: false, calculated: false },
             };
 
             expect(isFieldEditable('CreatedDate', fieldDescribe)).toBe(false);
@@ -481,9 +477,7 @@ describe('query-utils', () => {
 
     describe('checkIfEditable', () => {
         it('Q-U-021: returns false without Id', () => {
-            const columns = [
-                { path: 'Name', aggregate: false }
-            ];
+            const columns = [{ path: 'Name', aggregate: false }];
 
             expect(checkIfEditable(columns, 'Account')).toBe(false);
         });
@@ -491,16 +485,14 @@ describe('query-utils', () => {
         it('Q-U-022: returns false for aggregate queries', () => {
             const columns = [
                 { path: 'Id', aggregate: false },
-                { path: 'expr0', aggregate: true }
+                { path: 'expr0', aggregate: true },
             ];
 
             expect(checkIfEditable(columns, 'Account')).toBe(false);
         });
 
         it('Q-U-053: returns false without object name', () => {
-            const columns = [
-                { path: 'Id', aggregate: false }
-            ];
+            const columns = [{ path: 'Id', aggregate: false }];
 
             expect(checkIfEditable(columns, null)).toBe(false);
             expect(checkIfEditable(columns, '')).toBe(false);
@@ -509,7 +501,7 @@ describe('query-utils', () => {
         it('Q-U-054: returns true for valid editable query', () => {
             const columns = [
                 { path: 'Id', aggregate: false },
-                { path: 'Name', aggregate: false }
+                { path: 'Name', aggregate: false },
             ];
 
             expect(checkIfEditable(columns, 'Account')).toBe(true);

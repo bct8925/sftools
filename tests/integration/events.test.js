@@ -26,13 +26,12 @@ describe('Events Tab Integration', () => {
             expect(Array.isArray(result)).toBe(true);
             // May be empty if no custom platform events defined
         });
-
     });
 
     describe('E-I-008: Query CustomNotificationType', () => {
         it('can query CustomNotificationType for notifications', async () => {
             const result = await salesforce.toolingQuery(
-                "SELECT DeveloperName FROM CustomNotificationType LIMIT 10"
+                'SELECT DeveloperName FROM CustomNotificationType LIMIT 10'
             );
             expect(Array.isArray(result)).toBe(true);
         });
@@ -41,18 +40,17 @@ describe('Events Tab Integration', () => {
     describe('E-I-009: Query active PushTopics', () => {
         it('can query active PushTopics', async () => {
             const result = await salesforce.query(
-                "SELECT Id, Name, Query, IsActive FROM PushTopic WHERE IsActive = true LIMIT 10"
+                'SELECT Id, Name, Query, IsActive FROM PushTopic WHERE IsActive = true LIMIT 10'
             );
             expect(Array.isArray(result)).toBe(true);
             // May be empty if no active push topics
         });
-
     });
 
     describe('E-I-010: Query all PushTopics', () => {
         it('can query all PushTopics', async () => {
             const result = await salesforce.query(
-                "SELECT Id, Name, Query, IsActive FROM PushTopic LIMIT 10"
+                'SELECT Id, Name, Query, IsActive FROM PushTopic LIMIT 10'
             );
             expect(Array.isArray(result)).toBe(true);
         });
@@ -63,7 +61,7 @@ describe('Events Tab Integration', () => {
         it('returns error when publishing to non-existent event', async () => {
             try {
                 await salesforce.request('POST', '/sobjects/NonExistent_Event__e', {
-                    SomeField__c: 'value'
+                    SomeField__c: 'value',
                 });
                 expect.fail('Should have thrown');
             } catch (e) {
@@ -87,7 +85,6 @@ describe('Events Tab Integration', () => {
             expect(result.ok).toBe(true);
             expect(Array.isArray(result.body)).toBe(true);
         });
-
     });
 
     describe('E-I-012: Verify streaming API support', () => {

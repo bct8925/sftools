@@ -11,12 +11,12 @@ export function getPreview(code) {
     for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed && !trimmed.startsWith('//')) {
-            return trimmed.length > 50 ? trimmed.substring(0, 50) + '...' : trimmed;
+            return trimmed.length > 50 ? `${trimmed.substring(0, 50)}...` : trimmed;
         }
     }
     // Fallback to first line
     const firstLine = lines[0]?.trim() || 'Empty script';
-    return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
+    return firstLine.length > 50 ? `${firstLine.substring(0, 50)}...` : firstLine;
 }
 
 /**

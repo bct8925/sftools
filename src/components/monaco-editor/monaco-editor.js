@@ -3,7 +3,7 @@
 import { monaco } from '../../lib/monaco-custom.js';
 
 // Suppress Monaco's internal "Canceled" promise rejections (benign cleanup noise)
-window.addEventListener('unhandledrejection', (event) => {
+window.addEventListener('unhandledrejection', event => {
     if (event.reason?.name === 'Canceled') {
         event.preventDefault();
     }
@@ -22,8 +22,8 @@ function defineCustomThemes() {
         rules: [],
         colors: {
             'editor.background': navBg,
-            'editorGutter.background': navBg
-        }
+            'editorGutter.background': navBg,
+        },
     });
 
     // Define custom dark theme
@@ -33,8 +33,8 @@ function defineCustomThemes() {
         rules: [],
         colors: {
             'editor.background': navBg,
-            'editorGutter.background': navBg
-        }
+            'editorGutter.background': navBg,
+        },
     });
 }
 
@@ -42,7 +42,9 @@ function defineCustomThemes() {
 defineCustomThemes();
 
 function getMonacoTheme() {
-    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'sftools-dark' : 'sftools-light';
+    return document.documentElement.getAttribute('data-theme') === 'dark'
+        ? 'sftools-dark'
+        : 'sftools-light';
 }
 
 const defaultOptions = {
@@ -50,7 +52,7 @@ const defaultOptions = {
     automaticLayout: true,
     scrollBeyondLastLine: false,
     lineNumbers: 'on',
-    fontSize: 13
+    fontSize: 13,
 };
 
 class MonacoEditor extends HTMLElement {
@@ -94,7 +96,7 @@ class MonacoEditor extends HTMLElement {
             theme: getMonacoTheme(),
             language,
             readOnly: readonly,
-            value
+            value,
         });
 
         // Dispatch execute event on Ctrl/Cmd+Enter
@@ -104,13 +106,13 @@ class MonacoEditor extends HTMLElement {
             keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
             run: () => {
                 this.dispatchEvent(new CustomEvent('execute', { bubbles: true }));
-            }
+            },
         });
     }
 
     initThemeListener() {
         // Watch for data-theme attribute changes on documentElement
-        this.themeObserver = new MutationObserver((mutations) => {
+        this.themeObserver = new MutationObserver(mutations => {
             for (const mutation of mutations) {
                 if (mutation.attributeName === 'data-theme') {
                     this.updateEditorTheme();
@@ -221,10 +223,12 @@ class MonacoEditor extends HTMLElement {
         const model = this.editor.getModel();
         const lastLine = model.getLineCount();
         const lastCol = model.getLineMaxColumn(lastLine);
-        this.editor.executeEdits('append', [{
-            range: new monaco.Range(lastLine, lastCol, lastLine, lastCol),
-            text: text
-        }]);
+        this.editor.executeEdits('append', [
+            {
+                range: new monaco.Range(lastLine, lastCol, lastLine, lastCol),
+                text: text,
+            },
+        ]);
         this.editor.revealLine(model.getLineCount());
     }
 

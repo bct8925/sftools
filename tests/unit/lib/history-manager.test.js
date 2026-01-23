@@ -78,7 +78,7 @@ describe('HistoryManager', () => {
         it('HM-U-001: loads history from storage', async () => {
             chrome._setStorageData({
                 testHistory: [{ id: '1', content: 'test' }],
-                testFavorites: []
+                testFavorites: [],
             });
 
             await manager.load();
@@ -90,7 +90,7 @@ describe('HistoryManager', () => {
         it('HM-U-015: loads favorites from storage', async () => {
             chrome._setStorageData({
                 testHistory: [],
-                testFavorites: [{ id: '1', content: 'fav', label: 'My Fav' }]
+                testFavorites: [{ id: '1', content: 'fav', label: 'My Fav' }],
             });
 
             await manager.load();
@@ -233,7 +233,7 @@ describe('HistoryManager', () => {
         it('HM-U-006: removes by ID', async () => {
             manager.history = [
                 { id: '1', content: 'first' },
-                { id: '2', content: 'second' }
+                { id: '2', content: 'second' },
             ];
 
             await manager.removeFromHistory('1');
@@ -245,7 +245,7 @@ describe('HistoryManager', () => {
         it('HM-U-021: removes item by ID', async () => {
             manager.history = [
                 { id: '1', content: 'first' },
-                { id: '2', content: 'second' }
+                { id: '2', content: 'second' },
             ];
 
             await manager.removeFromHistory('1');
@@ -267,7 +267,7 @@ describe('HistoryManager', () => {
         it('HM-U-007: removes by ID', async () => {
             manager.favorites = [
                 { id: '1', content: 'first', label: 'Fav 1' },
-                { id: '2', content: 'second', label: 'Fav 2' }
+                { id: '2', content: 'second', label: 'Fav 2' },
             ];
 
             await manager.removeFromFavorites('1');
@@ -279,7 +279,7 @@ describe('HistoryManager', () => {
         it('HM-U-024: removes item by ID and persists after removal', async () => {
             manager.favorites = [
                 { id: '1', content: 'first', label: 'Fav 1' },
-                { id: '2', content: 'second', label: 'Fav 2' }
+                { id: '2', content: 'second', label: 'Fav 2' },
             ];
 
             await manager.removeFromFavorites('1');

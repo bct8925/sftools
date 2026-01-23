@@ -54,7 +54,7 @@ describe('subscription-manager', () => {
             const info = {
                 protocol: 'grpc',
                 channel: '/event/MyEvent__e',
-                cleanup
+                cleanup,
             };
 
             add('sub-001', info);
@@ -385,7 +385,11 @@ describe('subscription-manager', () => {
         it('SM-U-032: handles mixed protocol subscriptions', () => {
             add('grpc-001', { protocol: 'grpc', channel: '/event/Event1__e', cleanup: vi.fn() });
             add('cometd-001', { protocol: 'cometd', channel: '/topic/Topic1', cleanup: vi.fn() });
-            add('cometd-002', { protocol: 'cometd', channel: '/systemTopic/Logging', cleanup: vi.fn() });
+            add('cometd-002', {
+                protocol: 'cometd',
+                channel: '/systemTopic/Logging',
+                cleanup: vi.fn(),
+            });
 
             expect(count()).toBe(3);
 

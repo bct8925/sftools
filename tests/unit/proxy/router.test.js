@@ -34,7 +34,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { getProtocolForChannel, isGrpcChannel, isCometdChannel } from '../../../sftools-proxy/src/protocols/router.js';
+import {
+    getProtocolForChannel,
+    isGrpcChannel,
+    isCometdChannel,
+} from '../../../sftools-proxy/src/protocols/router.js';
 
 describe('Protocol Router', () => {
     describe('getProtocolForChannel', () => {

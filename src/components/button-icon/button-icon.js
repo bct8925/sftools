@@ -64,7 +64,7 @@ class ButtonIcon extends HTMLElement {
     attachEventListeners() {
         // Delegate clicks on the button-icon element to the trigger
         // But skip CustomEvents to avoid infinite loops
-        this.addEventListener('click', (e) => {
+        this.addEventListener('click', e => {
             // Skip if this is a CustomEvent we dispatched (to avoid infinite loop)
             if (e instanceof CustomEvent) {
                 return;
@@ -93,20 +93,20 @@ class ButtonIcon extends HTMLElement {
 
         if (this.hasMenu) {
             // Dropdown behavior
-            this.trigger.addEventListener('click', (e) => {
+            this.trigger.addEventListener('click', e => {
                 e.stopPropagation();
                 this.classList.toggle('open');
                 this.dispatchEvent(new CustomEvent('toggle', { bubbles: true }));
             });
 
-            document.addEventListener('click', (e) => {
+            document.addEventListener('click', e => {
                 if (!this.contains(e.target)) {
                     this.classList.remove('open');
                 }
             });
         } else {
             // Simple button - dispatch click event
-            this.trigger.addEventListener('click', (e) => {
+            this.trigger.addEventListener('click', e => {
                 e.stopPropagation();
                 this.dispatchEvent(new CustomEvent('click', { bubbles: true }));
             });

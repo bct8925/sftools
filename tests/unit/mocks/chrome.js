@@ -14,7 +14,11 @@ export function createChromeMock() {
             local: {
                 get(keys, callback) {
                     const result = {};
-                    const keyList = Array.isArray(keys) ? keys : (keys ? [keys] : Object.keys(storage));
+                    const keyList = Array.isArray(keys)
+                        ? keys
+                        : keys
+                          ? [keys]
+                          : Object.keys(storage);
                     for (const key of keyList) {
                         if (storage[key] !== undefined) {
                             result[key] = storage[key];
@@ -72,7 +76,7 @@ export function createChromeMock() {
                         return;
                     }
                     return Promise.resolve();
-                }
+                },
             },
 
             onChanged: {
@@ -84,8 +88,8 @@ export function createChromeMock() {
                     if (index !== -1) {
                         storageListeners.splice(index, 1);
                     }
-                }
-            }
+                },
+            },
         },
 
         runtime: {
@@ -100,7 +104,7 @@ export function createChromeMock() {
                     if (index !== -1) {
                         messageListeners.splice(index, 1);
                     }
-                }
+                },
             },
 
             getURL(path) {
@@ -110,24 +114,24 @@ export function createChromeMock() {
             getManifest() {
                 return {
                     oauth2: {
-                        client_id: 'test-client-id'
-                    }
+                        client_id: 'test-client-id',
+                    },
                 };
             },
 
-            id: 'test-extension-id'
+            id: 'test-extension-id',
         },
 
         tabs: {
             create: vi.fn().mockResolvedValue({ id: 1 }),
             query: vi.fn().mockResolvedValue([]),
-            update: vi.fn().mockResolvedValue({})
+            update: vi.fn().mockResolvedValue({}),
         },
 
         contextMenus: {
             create: vi.fn(),
             update: vi.fn(),
-            remove: vi.fn()
+            remove: vi.fn(),
         },
 
         // Test helpers (not part of real Chrome API)
@@ -158,7 +162,7 @@ export function createChromeMock() {
             for (const listener of storageListeners) {
                 listener(changes, areaName);
             }
-        }
+        },
     };
 
     return chrome;

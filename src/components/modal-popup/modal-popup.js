@@ -32,7 +32,7 @@ class ModalPopup extends HTMLElement {
         });
 
         // Close on Escape key
-        this.keyHandler = (e) => {
+        this.keyHandler = e => {
             if (e.key === 'Escape' && this.classList.contains('open')) {
                 this.close();
             }

@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "@lwc/rollup-plugin": "^8.28.0",
     "@vitest/coverage-v8": "^2.0.0",
     "dotenv": "^16.4.7",
     "eslint": "^9.39.2",
@@ -16,8 +17,10 @@
   },
   "dependencies": {
     "@jetstreamapp/soql-parser-js": "^6.3.1",
+    "@lwc/engine-dom": "^8.28.0",
     "@salesforce-ux/icons": "^10.5.4",
     "dompurify": "^3.3.1",
+    "lwc": "^8.28.0",
     "monaco-editor": "^0.55.1"
   },
   "scripts": {

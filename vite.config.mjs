@@ -1,5 +1,10 @@
 import { defineConfig } from 'vite';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import lwcMinimal from './plugins/lwc-minimal.mjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const isProduction = process.env.SFTOOLS_PRODUCTION === 'true';
 
@@ -10,7 +15,15 @@ export default defineConfig({
   // Crucial for Chrome Extensions: ensures assets load from relative paths
   base: './',
 
-  plugins: [],
+  plugins: [
+    lwcMinimal({
+      rootDir: resolve(__dirname, 'src'),
+      modules: [
+        { dir: 'modules' }
+      ],
+      modulesDir: '**/modules/**'
+    })
+  ],
 
   define: {
     __SFTOOLS_DEBUG__: !isProduction
@@ -24,10 +37,12 @@ export default defineConfig({
     rollupOptions: {
       input: {
         // Main pages
-        app: resolve(__dirname, 'src/pages/app/app.html'),
-        callback: resolve(__dirname, 'src/pages/callback/callback.html'),
-        record: resolve(__dirname, 'src/pages/record/record.html'),
-        schema: resolve(__dirname, 'src/pages/schema/schema.html'),
+        app: resolve(__dirname, 'src/pages/app/index.html'),
+        callback: resolve(__dirname, 'src/pages/callback/index.html'),
+        record: resolve(__dirname, 'src/pages/record/index.html'),
+        schema: resolve(__dirname, 'src/pages/schema/index.html'),
+        // LWC test page
+        'lwc-test': resolve(__dirname, 'src/pages/lwc-test/index.html'),
         // Background service worker
         background: resolve(__dirname, 'src/background/background.js')
       },

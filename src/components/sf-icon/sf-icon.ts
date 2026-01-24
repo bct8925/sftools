@@ -3,23 +3,25 @@ import './sf-icon.css';
 import { icons } from '../../lib/icons.js';
 
 class SfIcon extends HTMLElement {
-    static get observedAttributes() {
+    static get observedAttributes(): string[] {
         return ['name'];
     }
 
-    connectedCallback() {
+    connectedCallback(): void {
         this.render();
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
+    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
         if (this.isConnected && oldValue !== newValue) {
             this.render();
         }
     }
 
-    render() {
+    private render(): void {
         const iconName = this.getAttribute('name');
-        this.innerHTML = iconName && icons[iconName] ? icons[iconName] : '';
+        this.innerHTML = iconName && (icons as Record<string, string>)[iconName]
+            ? (icons as Record<string, string>)[iconName]
+            : '';
     }
 }
 

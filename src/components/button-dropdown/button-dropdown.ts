@@ -1,29 +1,34 @@
 // Button Dropdown - Split button with main action and dropdown options
 import './button-dropdown.css';
 
+interface DropdownOption {
+    label: string;
+    disabled?: boolean;
+}
+
 class ButtonDropdown extends HTMLElement {
-    static get observedAttributes() {
+    static get observedAttributes(): string[] {
         return ['label', 'disabled'];
     }
 
-    constructor() {
-        super();
-        this.options = [];
-    }
+    private options: DropdownOption[] = [];
+    private mainBtn!: HTMLButtonElement;
+    private triggerBtn!: HTMLButtonElement;
+    private menu!: HTMLDivElement;
 
-    connectedCallback() {
+    connectedCallback(): void {
         this.render();
         this.attachEventListeners();
     }
 
-    attributeChangedCallback() {
+    attributeChangedCallback(): void {
         if (this.isConnected) {
             this.updateLabel();
             this.updateDisabled();
         }
     }
 
-    render() {
+    private render(): void {
         const label = this.getAttribute('label') || 'Action';
         const disabled = this.hasAttribute('disabled');
 
@@ -33,14 +38,14 @@ class ButtonDropdown extends HTMLElement {
             <div class="btn-dropdown-menu"></div>
         `;
 
-        this.mainBtn = this.querySelector('.btn-dropdown-main');
-        this.triggerBtn = this.querySelector('.btn-dropdown-trigger');
-        this.menu = this.querySelector('.btn-dropdown-menu');
+        this.mainBtn = this.querySelector<HTMLButtonElement>('.btn-dropdown-main')!;
+        this.triggerBtn = this.querySelector<HTMLButtonElement>('.btn-dropdown-trigger')!;
+        this.menu = this.querySelector<HTMLDivElement>('.btn-dropdown-menu')!;
 
         this.renderOptions();
     }
 
-    renderOptions() {
+    private renderOptions(): void {
         this.menu.innerHTML = this.options
             .map(
                 (opt, i) => `
@@ -50,24 +55,24 @@ class ButtonDropdown extends HTMLElement {
             .join('');
     }
 
-    attachEventListeners() {
+    private attachEventListeners(): void {
         this.mainBtn.addEventListener('click', () => {
             if (!this.hasAttribute('disabled')) {
                 this.dispatchEvent(new CustomEvent('click-main', { bubbles: true }));
             }
         });
 
-        this.triggerBtn.addEventListener('click', e => {
+        this.triggerBtn.addEventListener('click', (e: Event) => {
             e.stopPropagation();
             if (!this.hasAttribute('disabled')) {
                 this.classList.toggle('open');
             }
         });
 
-        this.menu.addEventListener('click', e => {
-            const option = e.target.closest('.btn-dropdown-option');
+        this.menu.addEventListener('click', (e: Event) => {
+            const option = (e.target as HTMLElement).closest<HTMLButtonElement>('.btn-dropdown-option');
             if (option && !option.disabled) {
-                const index = parseInt(option.dataset.index);
+                const index = parseInt(option.dataset.index || '0', 10);
                 this.dispatchEvent(
                     new CustomEvent('click-option', {
                         bubbles: true,
@@ -78,36 +83,36 @@ class ButtonDropdown extends HTMLElement {
             }
         });
 
-        document.addEventListener('click', e => {
-            if (!this.contains(e.target)) {
+        document.addEventListener('click', (e: Event) => {
+            if (!this.contains(e.target as Node)) {
                 this.classList.remove('open');
             }
         });
     }
 
-    updateLabel() {
+    private updateLabel(): void {
         if (this.mainBtn) {
             this.mainBtn.textContent = this.getAttribute('label') || 'Action';
         }
     }
 
-    updateDisabled() {
+    private updateDisabled(): void {
         const disabled = this.hasAttribute('disabled');
         if (this.mainBtn) this.mainBtn.disabled = disabled;
         if (this.triggerBtn) this.triggerBtn.disabled = disabled;
     }
 
-    setOptions(options) {
+    public setOptions(options: DropdownOption[]): void {
         this.options = options;
         if (this.menu) {
             this.renderOptions();
         }
     }
 
-    setOptionDisabled(index, disabled) {
+    public setOptionDisabled(index: number, disabled: boolean): void {
         if (this.options[index]) {
             this.options[index].disabled = disabled;
-            const optionEl = this.menu?.querySelector(`[data-index="${index}"]`);
+            const optionEl = this.menu?.querySelector<HTMLButtonElement>(`[data-index="${index}"]`);
             if (optionEl) optionEl.disabled = disabled;
         }
     }

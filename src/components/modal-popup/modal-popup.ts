@@ -2,12 +2,20 @@
 import './modal-popup.css';
 
 class ModalPopup extends HTMLElement {
-    connectedCallback() {
+    private backdrop!: HTMLDivElement;
+    private content!: HTMLDivElement;
+    private keyHandler!: (e: KeyboardEvent) => void;
+
+    connectedCallback(): void {
         this.render();
         this.attachEventListeners();
     }
 
-    render() {
+    disconnectedCallback(): void {
+        document.removeEventListener('keydown', this.keyHandler);
+    }
+
+    private render(): void {
         // Move existing children (content) to a temp container
         const content = document.createDocumentFragment();
         while (this.firstChild) {
@@ -19,20 +27,20 @@ class ModalPopup extends HTMLElement {
             <div class="modal-content"></div>
         `;
 
-        this.backdrop = this.querySelector('.modal-backdrop');
-        this.content = this.querySelector('.modal-content');
+        this.backdrop = this.querySelector<HTMLDivElement>('.modal-backdrop')!;
+        this.content = this.querySelector<HTMLDivElement>('.modal-content')!;
 
         // Restore content
         this.content.appendChild(content);
     }
 
-    attachEventListeners() {
+    private attachEventListeners(): void {
         this.backdrop.addEventListener('click', () => {
             this.close();
         });
 
         // Close on Escape key
-        this.keyHandler = e => {
+        this.keyHandler = (e: KeyboardEvent): void => {
             if (e.key === 'Escape' && this.classList.contains('open')) {
                 this.close();
             }
@@ -40,21 +48,17 @@ class ModalPopup extends HTMLElement {
         document.addEventListener('keydown', this.keyHandler);
     }
 
-    disconnectedCallback() {
-        document.removeEventListener('keydown', this.keyHandler);
-    }
-
-    open() {
+    public open(): void {
         this.classList.add('open');
         this.dispatchEvent(new CustomEvent('open', { bubbles: true }));
     }
 
-    close() {
+    public close(): void {
         this.classList.remove('open');
         this.dispatchEvent(new CustomEvent('close', { bubbles: true }));
     }
 
-    toggle() {
+    public toggle(): void {
         if (this.classList.contains('open')) {
             this.close();
         } else {
@@ -62,7 +66,7 @@ class ModalPopup extends HTMLElement {
         }
     }
 
-    get isOpen() {
+    get isOpen(): boolean {
         return this.classList.contains('open');
     }
 }

@@ -65,12 +65,12 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 6 - Reusable Components
-- [ ] `src/components/sf-icon/sf-icon.js` → `.ts`
-- [ ] `src/components/button-icon/button-icon.js` → `.ts`
-- [ ] `src/components/button-dropdown/button-dropdown.js` → `.ts`
-- [ ] `src/components/modal-popup/modal-popup.js` → `.ts`
-- [ ] `src/components/monaco-editor/monaco-editor.js` → `.ts`
-- [ ] Verify: typecheck + build + tests
+- [x] `src/components/sf-icon/sf-icon.js` → `.ts`
+- [x] `src/components/button-icon/button-icon.js` → `.ts`
+- [x] `src/components/button-dropdown/button-dropdown.js` → `.ts`
+- [x] `src/components/modal-popup/modal-popup.js` → `.ts`
+- [x] `src/components/monaco-editor/monaco-editor.js` → `.ts`
+- [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 7 - Tab Components
 - [ ] `src/components/settings/settings-tab.js` → `.ts`
@@ -526,6 +526,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Wave 3 | 4 | Fetch/Request layer: fetch, salesforce-request, background-utils, cors-detection |
 | 2026-01-23 | Wave 4 | 6 | Salesforce API operations: salesforce, query-utils, record-utils, schema-utils, apex-utils, rest-api-utils |
 | 2026-01-23 | Wave 5 | 4 | Feature utilities: history-manager, settings-utils, events-utils, soql-autocomplete |
+| 2026-01-23 | Wave 6 | 5 | Reusable components: sf-icon, button-icon, button-dropdown, modal-popup, monaco-editor |
 
 ### Issues Encountered
 

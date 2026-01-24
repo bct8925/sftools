@@ -1,16 +1,17 @@
 // Monaco Editor Web Component
 // Custom import with only the languages we need (sql, apex, json, xml, javascript)
 import { monaco } from '../../lib/monaco-custom.js';
+import type { editor } from 'monaco-editor';
 
 // Suppress Monaco's internal "Canceled" promise rejections (benign cleanup noise)
-window.addEventListener('unhandledrejection', event => {
-    if (event.reason?.name === 'Canceled') {
+window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+    if ((event.reason as Error | undefined)?.name === 'Canceled') {
         event.preventDefault();
     }
 });
 
 // Define custom themes that read from CSS variables
-function defineCustomThemes() {
+function defineCustomThemes(): void {
     // Get computed styles to read CSS variable values
     const styles = getComputedStyle(document.documentElement);
     const navBg = styles.getPropertyValue('--nav-bg').trim();
@@ -41,13 +42,13 @@ function defineCustomThemes() {
 // Initialize custom themes on first load
 defineCustomThemes();
 
-function getMonacoTheme() {
+function getMonacoTheme(): string {
     return document.documentElement.getAttribute('data-theme') === 'dark'
         ? 'sftools-dark'
         : 'sftools-light';
 }
 
-const defaultOptions = {
+const defaultOptions: editor.IStandaloneEditorConstructionOptions = {
     minimap: { enabled: false },
     automaticLayout: true,
     scrollBeyondLastLine: false,
@@ -58,11 +59,15 @@ const defaultOptions = {
 class MonacoEditor extends HTMLElement {
     static observedAttributes = ['language', 'readonly', 'value', 'resizable'];
 
-    editor = null;
-    resizeHandle = null;
-    isResizing = false;
-    startY = 0;
-    startHeight = 0;
+    public editor: editor.IStandaloneCodeEditor | null = null;
+    private resizeHandle: HTMLDivElement | null = null;
+    private isResizing = false;
+    private startY = 0;
+    private startHeight = 0;
+    private themeObserver: MutationObserver | null = null;
+    private handleMouseDown!: (e: MouseEvent) => void;
+    private handleMouseMove!: (e: MouseEvent) => void;
+    private handleMouseUp!: () => void;
 
     constructor() {
         super();
@@ -71,13 +76,13 @@ class MonacoEditor extends HTMLElement {
         this.style.position = 'relative';
     }
 
-    connectedCallback() {
+    connectedCallback(): void {
         this.initEditor();
         this.initResize();
         this.initThemeListener();
     }
 
-    disconnectedCallback() {
+    disconnectedCallback(): void {
         this.cleanupResize();
         this.cleanupThemeListener();
         if (this.editor) {
@@ -86,7 +91,7 @@ class MonacoEditor extends HTMLElement {
         }
     }
 
-    initEditor() {
+    private initEditor(): void {
         const language = this.getAttribute('language') || 'text';
         const readonly = this.hasAttribute('readonly');
         const value = this.getAttribute('value') || '';
@@ -110,9 +115,9 @@ class MonacoEditor extends HTMLElement {
         });
     }
 
-    initThemeListener() {
+    private initThemeListener(): void {
         // Watch for data-theme attribute changes on documentElement
-        this.themeObserver = new MutationObserver(mutations => {
+        this.themeObserver = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
                 if (mutation.attributeName === 'data-theme') {
                     this.updateEditorTheme();
@@ -122,14 +127,14 @@ class MonacoEditor extends HTMLElement {
         this.themeObserver.observe(document.documentElement, { attributes: true });
     }
 
-    cleanupThemeListener() {
+    private cleanupThemeListener(): void {
         if (this.themeObserver) {
             this.themeObserver.disconnect();
             this.themeObserver = null;
         }
     }
 
-    updateEditorTheme() {
+    private updateEditorTheme(): void {
         if (this.editor) {
             // Redefine themes with current CSS variable values
             defineCustomThemes();
@@ -137,7 +142,7 @@ class MonacoEditor extends HTMLElement {
         }
     }
 
-    initResize() {
+    private initResize(): void {
         // Check if resizable attribute is present and set to false
         const resizable = this.getAttribute('resizable');
         if (resizable === 'false') {
@@ -157,7 +162,7 @@ class MonacoEditor extends HTMLElement {
         this.resizeHandle.addEventListener('mousedown', this.handleMouseDown);
     }
 
-    cleanupResize() {
+    private cleanupResize(): void {
         if (this.resizeHandle) {
             this.resizeHandle.removeEventListener('mousedown', this.handleMouseDown);
             this.resizeHandle.remove();
@@ -167,7 +172,7 @@ class MonacoEditor extends HTMLElement {
         document.removeEventListener('mouseup', this.handleMouseUp);
     }
 
-    onResizeStart(e) {
+    private onResizeStart(e: MouseEvent): void {
         e.preventDefault();
         this.isResizing = true;
         this.startY = e.clientY;
@@ -179,7 +184,7 @@ class MonacoEditor extends HTMLElement {
         document.body.style.userSelect = 'none';
     }
 
-    onResizeMove(e) {
+    private onResizeMove(e: MouseEvent): void {
         if (!this.isResizing) return;
 
         const deltaY = e.clientY - this.startY;
@@ -187,7 +192,7 @@ class MonacoEditor extends HTMLElement {
         this.style.height = `${newHeight}px`;
     }
 
-    onResizeEnd() {
+    private onResizeEnd(): void {
         if (!this.isResizing) return;
 
         this.isResizing = false;
@@ -197,11 +202,11 @@ class MonacoEditor extends HTMLElement {
         document.body.style.userSelect = '';
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
+    attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void {
         if (!this.editor) return;
 
         if (name === 'language') {
-            monaco.editor.setModelLanguage(this.editor.getModel(), newValue);
+            monaco.editor.setModelLanguage(this.editor.getModel()!, newValue || 'text');
         } else if (name === 'readonly') {
             this.editor.updateOptions({ readOnly: this.hasAttribute('readonly') });
         } else if (name === 'value' && newValue !== this.editor.getValue()) {
@@ -209,18 +214,18 @@ class MonacoEditor extends HTMLElement {
         }
     }
 
-    getValue() {
+    public getValue(): string {
         return this.editor?.getValue() || '';
     }
 
-    setValue(value) {
+    public setValue(value: string): void {
         this.editor?.setValue(value);
     }
 
     // Convenience method to append text (useful for streaming output)
-    appendValue(text) {
+    public appendValue(text: string): void {
         if (!this.editor) return;
-        const model = this.editor.getModel();
+        const model = this.editor.getModel()!;
         const lastLine = model.getLineCount();
         const lastCol = model.getLineMaxColumn(lastLine);
         this.editor.executeEdits('append', [
@@ -233,18 +238,18 @@ class MonacoEditor extends HTMLElement {
     }
 
     // Clear all editor content
-    clear() {
+    public clear(): void {
         this.editor?.setValue('');
     }
 
     // Set error markers on the editor
-    setMarkers(markers) {
+    public setMarkers(markers: editor.IMarkerData[]): void {
         if (!this.editor) return;
-        monaco.editor.setModelMarkers(this.editor.getModel(), 'owner', markers);
+        monaco.editor.setModelMarkers(this.editor.getModel()!, 'owner', markers);
     }
 
     // Clear all markers
-    clearMarkers() {
+    public clearMarkers(): void {
         this.setMarkers([]);
     }
 }

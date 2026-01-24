@@ -3,18 +3,20 @@ import './button-icon.css';
 import { icons } from '../../lib/icons.js';
 
 class ButtonIcon extends HTMLElement {
-    static get observedAttributes() {
+    static get observedAttributes(): string[] {
         return ['icon', 'data-icon', 'title', 'disabled'];
     }
 
-    hasMenu = false;
+    private hasMenu = false;
+    private trigger!: HTMLButtonElement;
+    private menu!: HTMLDivElement;
 
-    connectedCallback() {
+    connectedCallback(): void {
         this.render();
         this.attachEventListeners();
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
+    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
         if (this.isConnected && oldValue !== newValue) {
             if (name === 'icon' || name === 'data-icon') this.updateIcon();
             if (name === 'title') this.updateTitle();
@@ -22,16 +24,16 @@ class ButtonIcon extends HTMLElement {
         }
     }
 
-    getIconContent() {
+    private getIconContent(): string {
         // Check data-icon (SLDS) first, fall back to icon (HTML entity)
         const dataIcon = this.getAttribute('data-icon');
-        if (dataIcon && icons[dataIcon]) {
-            return icons[dataIcon];
+        if (dataIcon && (icons as Record<string, string>)[dataIcon]) {
+            return (icons as Record<string, string>)[dataIcon];
         }
         return this.getAttribute('icon') || '&#8942;';
     }
 
-    render() {
+    private render(): void {
         const icon = this.getIconContent();
         const title = this.getAttribute('title') || '';
         const disabled = this.hasAttribute('disabled');
@@ -50,7 +52,7 @@ class ButtonIcon extends HTMLElement {
                 <button class="btn-icon-trigger"${title ? ` title="${title}"` : ''}${disabled ? ' disabled' : ''}>${icon}</button>
                 <div class="btn-icon-menu"></div>
             `;
-            this.menu = this.querySelector('.btn-icon-menu');
+            this.menu = this.querySelector<HTMLDivElement>('.btn-icon-menu')!;
             this.menu.appendChild(menuContent);
         } else {
             this.innerHTML = `
@@ -58,13 +60,13 @@ class ButtonIcon extends HTMLElement {
             `;
         }
 
-        this.trigger = this.querySelector('.btn-icon-trigger');
+        this.trigger = this.querySelector<HTMLButtonElement>('.btn-icon-trigger')!;
     }
 
-    attachEventListeners() {
+    private attachEventListeners(): void {
         // Delegate clicks on the button-icon element to the trigger
         // But skip CustomEvents to avoid infinite loops
-        this.addEventListener('click', e => {
+        this.addEventListener('click', (e: Event) => {
             // Skip if this is a CustomEvent we dispatched (to avoid infinite loop)
             if (e instanceof CustomEvent) {
                 return;
@@ -81,7 +83,7 @@ class ButtonIcon extends HTMLElement {
             // But allow clicks inside the menu to work normally
             if (e.target !== this.trigger) {
                 // If we have a menu and the click is inside it, allow normal behavior
-                if (this.hasMenu && this.menu.contains(e.target)) {
+                if (this.hasMenu && this.menu.contains(e.target as Node)) {
                     return;
                 }
                 // Otherwise delegate to trigger
@@ -93,33 +95,33 @@ class ButtonIcon extends HTMLElement {
 
         if (this.hasMenu) {
             // Dropdown behavior
-            this.trigger.addEventListener('click', e => {
+            this.trigger.addEventListener('click', (e: Event) => {
                 e.stopPropagation();
                 this.classList.toggle('open');
                 this.dispatchEvent(new CustomEvent('toggle', { bubbles: true }));
             });
 
-            document.addEventListener('click', e => {
-                if (!this.contains(e.target)) {
+            document.addEventListener('click', (e: Event) => {
+                if (!this.contains(e.target as Node)) {
                     this.classList.remove('open');
                 }
             });
         } else {
             // Simple button - dispatch click event
-            this.trigger.addEventListener('click', e => {
+            this.trigger.addEventListener('click', (e: Event) => {
                 e.stopPropagation();
                 this.dispatchEvent(new CustomEvent('click', { bubbles: true }));
             });
         }
     }
 
-    updateIcon() {
+    private updateIcon(): void {
         if (this.trigger) {
             this.trigger.innerHTML = this.getIconContent();
         }
     }
 
-    updateTitle() {
+    private updateTitle(): void {
         if (this.trigger) {
             const title = this.getAttribute('title');
             if (title) {
@@ -130,7 +132,7 @@ class ButtonIcon extends HTMLElement {
         }
     }
 
-    updateDisabled() {
+    private updateDisabled(): void {
         if (this.trigger) {
             if (this.hasAttribute('disabled')) {
                 this.trigger.setAttribute('disabled', '');
@@ -140,15 +142,15 @@ class ButtonIcon extends HTMLElement {
         }
     }
 
-    close() {
+    public close(): void {
         this.classList.remove('open');
     }
 
-    open() {
+    public open(): void {
         this.classList.add('open');
     }
 
-    toggle() {
+    public toggle(): void {
         this.classList.toggle('open');
     }
 }

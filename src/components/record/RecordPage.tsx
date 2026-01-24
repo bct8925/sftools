@@ -9,9 +9,8 @@ import { setActiveConnection } from '../../lib/auth.js';
 import { sortFields, filterFields, getChangedFields } from '../../lib/record-utils.js';
 import { FieldRow } from './FieldRow';
 import { RichTextModal } from './RichTextModal';
+import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import styles from './RecordPage.module.css';
-
-type StatusType = '' | 'loading' | 'success' | 'error';
 
 interface StatusState {
   text: string;
@@ -249,7 +248,7 @@ export function RecordPage() {
               >
                 Open in Org
               </button>
-              <span className={`status-badge status-${status.type}`}>{status.text}</span>
+              <StatusBadge type={status.type}>{status.text}</StatusBadge>
             </div>
 
             <div className={styles.fieldHeader}>

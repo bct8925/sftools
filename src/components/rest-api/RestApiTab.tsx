@@ -4,13 +4,14 @@ import { useConnection } from '../../contexts/ConnectionContext';
 import { executeRestRequest } from '../../lib/salesforce';
 import { shouldShowBody } from '../../lib/rest-api-utils';
 import type { RestApiResponse } from '../../types/salesforce';
+import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import styles from './RestApiTab.module.css';
 
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 interface StatusState {
   message: string;
-  type: 'loading' | 'success' | 'error' | '';
+  type: StatusType;
 }
 
 /**
@@ -137,9 +138,7 @@ export function RestApiTab() {
               Send Request
             </button>
             {status.message && (
-              <span className={`status-badge${status.type ? ` status-${status.type}` : ''}`}>
-                {status.message}
-              </span>
+              <StatusBadge type={status.type}>{status.message}</StatusBadge>
             )}
           </div>
         </div>

@@ -14,7 +14,7 @@ import {
   getObjectDescribe,
   updateRecord,
 } from '../../lib/salesforce.js';
-import type { StatusType } from '../../lib/ui-helpers.js';
+import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import type { HistoryManager } from '../../lib/history-manager.js';
 import type { FieldDescribe, SObject } from '../../types/salesforce';
 import styles from './QueryTab.module.css';
@@ -418,12 +418,7 @@ export function QueryTab() {
             <button className="button-brand" onClick={executeQuery}>
               Query
             </button>
-            <span
-              className="status-badge"
-              data-status={statusType}
-            >
-              {statusText}
-            </span>
+            <StatusBadge type={statusType}>{statusText}</StatusBadge>
           </div>
         </div>
       </div>

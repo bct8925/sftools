@@ -2,12 +2,11 @@ import { useState, useRef, useCallback } from 'react';
 import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/MonacoEditor';
 import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
 import { ApexOutput } from './ApexOutput';
+import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { executeAnonymousApex } from '../../lib/salesforce';
 import { formatOutput } from '../../lib/apex-utils';
-import { updateStatusBadge } from '../../lib/ui-helpers';
 import type { ApexExecutionResult } from '../../types/salesforce';
-import type { StatusType } from '../../lib/ui-helpers';
 import styles from './ApexTab.module.css';
 
 const DEFAULT_CODE = `// Enter your Apex code here
@@ -25,17 +24,17 @@ for (Account acc : accounts) {
 export function ApexTab() {
   const { isAuthenticated } = useConnection();
   const codeEditorRef = useRef<MonacoEditorRef>(null);
-  const statusRef = useRef<HTMLSpanElement>(null);
   const historyRef = useRef<ApexHistoryRef>(null);
 
   const [isExecuting, setIsExecuting] = useState(false);
   const [output, setOutput] = useState('// Output will appear here after execution');
+  const [statusText, setStatusText] = useState('');
+  const [statusType, setStatusType] = useState<StatusType>('');
 
   // Update status badge
   const updateStatus = useCallback((text: string, type: StatusType = '') => {
-    if (statusRef.current) {
-      updateStatusBadge(statusRef.current, text, type);
-    }
+    setStatusText(text);
+    setStatusType(type);
   }, []);
 
   // Set editor markers for compile/runtime errors
@@ -158,7 +157,7 @@ export function ApexTab() {
             >
               Execute
             </button>
-            <span ref={statusRef} className="status-badge" />
+            <StatusBadge type={statusType}>{statusText}</StatusBadge>
           </div>
         </div>
       </div>

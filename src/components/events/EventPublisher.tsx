@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { ChannelSelector } from './ChannelSelector';
+import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import { publishPlatformEvent } from '../../lib/salesforce';
 
 interface EventPublisherProps {
@@ -23,10 +24,10 @@ export function EventPublisher({
   const editorRef = useRef<MonacoEditorRef>(null);
   const [selectedChannel, setSelectedChannel] = useState('');
   const [status, setStatus] = useState('');
-  const [statusType, setStatusType] = useState<'' | 'loading' | 'success' | 'error'>('');
+  const [statusType, setStatusType] = useState<StatusType>('');
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const updateStatus = (text: string, type: '' | 'loading' | 'success' | 'error' = '') => {
+  const updateStatus = (text: string, type: StatusType = '') => {
     setStatus(text);
     setStatusType(type);
   };
@@ -112,11 +113,7 @@ export function EventPublisher({
           >
             Publish Event
           </button>
-          {status && (
-            <span className={`status-badge${statusType ? ` status-${statusType}` : ''}`}>
-              {status}
-            </span>
-          )}
+          {status && <StatusBadge type={statusType}>{status}</StatusBadge>}
         </div>
       </div>
     </div>

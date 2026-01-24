@@ -7,6 +7,7 @@ import { useProxy } from '../../contexts/ProxyContext';
 import { getAllStreamingChannels } from '../../lib/salesforce';
 import { formatEventEntry, formatSystemMessage } from '../../lib/events-utils';
 import { getInstanceUrl, getAccessToken } from '../../lib/auth';
+import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import styles from './EventsTab.module.css';
 
 interface StreamMessage {
@@ -54,9 +55,7 @@ export function EventsTab() {
   const [currentSubscriptionId, setCurrentSubscriptionId] = useState<string | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [streamStatus, setStreamStatus] = useState('');
-  const [streamStatusType, setStreamStatusType] = useState<'' | 'loading' | 'success' | 'error'>(
-    ''
-  );
+  const [streamStatusType, setStreamStatusType] = useState<StatusType>('');
 
   // Event counting
   const eventCountRef = useRef(0);
@@ -359,11 +358,7 @@ export function EventsTab() {
             <label>
               Event Stream{' '}
               {streamStatus && (
-                <span
-                  className={`status-badge${streamStatusType ? ` status-${streamStatusType}` : ''}`}
-                >
-                  {streamStatus}
-                </span>
+                <StatusBadge type={streamStatusType}>{streamStatus}</StatusBadge>
               )}
             </label>
             <MonacoEditor

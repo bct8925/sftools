@@ -78,28 +78,3 @@
     min-height: 0;
 }
 
-/* ============================================================
-   Favorite Modal
-   ============================================================ */
-
-.favoriteDialog {
-    width: 320px;
-}
-
-.favoriteInput {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    font-size: 14px;
-    box-sizing: border-box;
-    margin-bottom: 15px;
-    background: var(--bg-color);
-    color: var(--text-main);
-}
-
-.favoriteInput:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 1px var(--primary-color) inset;
-}

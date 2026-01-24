@@ -1,7 +1,8 @@
-// Query History - History and favorites dropdown with modal support
-import { useState, useEffect, useCallback, useRef } from 'react';
+// Query History - History and favorites modal with shared components
+import { useState, useEffect, useCallback } from 'react';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { Modal } from '../modal/Modal';
+import { HistoryList, FavoritesList, FavoriteModal } from '../script-list';
 import { HistoryManager, type HistoryEntry, type FavoriteEntry } from '../../lib/history-manager.js';
 import styles from './QueryTab.module.css';
 
@@ -22,20 +23,18 @@ interface QueryFavoriteEntry extends FavoriteEntry {
 }
 
 /**
- * History and favorites dropdown for query tab.
+ * History and favorites modal for query tab.
  * Includes a modal for adding favorites with custom labels.
  */
 export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeDropdownTab, setActiveDropdownTab] = useState<'history' | 'favorites'>('history');
+  const [activeTab, setActiveTab] = useState<'history' | 'favorites'>('history');
   const [history, setHistory] = useState<QueryHistoryEntry[]>([]);
   const [favorites, setFavorites] = useState<QueryFavoriteEntry[]>([]);
 
   // Favorite modal state
   const [favoriteModalOpen, setFavoriteModalOpen] = useState(false);
-  const [pendingFavoriteQuery, setPendingFavoriteQuery] = useState<string | null>(null);
-  const [favoriteLabel, setFavoriteLabel] = useState('');
-  const favoriteInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFavorite, setPendingFavorite] = useState<{ query: string; label: string } | null>(null);
 
   // Initialize history manager
   useEffect(() => {
@@ -61,18 +60,15 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
     }
   }, [historyManagerRef]);
 
-  // Handle dropdown toggle
-  const handleToggle = useCallback((open: boolean) => {
-    setIsOpen(open);
-    if (open) {
-      refreshLists();
+  // Load data when modal opens
+  const handleOpen = useCallback(async () => {
+    const manager = historyManagerRef.current;
+    if (manager) {
+      await manager.load();
+      setHistory([...(manager.history as QueryHistoryEntry[])]);
+      setFavorites([...(manager.favorites as QueryFavoriteEntry[])]);
     }
-  }, [refreshLists]);
-
-  // Handle tab switch
-  const handleTabSwitch = useCallback((tab: 'history' | 'favorites') => {
-    setActiveDropdownTab(tab);
-  }, []);
+  }, [historyManagerRef]);
 
   // Handle selecting a query
   const handleSelectQuery = useCallback(
@@ -89,28 +85,31 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
     if (!manager) return;
 
     const defaultLabel = manager.getPreview(query);
-    setFavoriteLabel(defaultLabel);
-    setPendingFavoriteQuery(query);
+    setPendingFavorite({ query, label: defaultLabel });
     setFavoriteModalOpen(true);
     setIsOpen(false);
   }, [historyManagerRef]);
 
   // Handle saving favorite
-  const handleSaveFavorite = useCallback(async () => {
+  const handleSaveFavorite = useCallback(async (label: string) => {
     const manager = historyManagerRef.current;
-    if (!manager || !pendingFavoriteQuery || !favoriteLabel.trim()) return;
+    if (!manager || !pendingFavorite) return;
 
-    await manager.addToFavorites(pendingFavoriteQuery, favoriteLabel.trim());
+    await manager.addToFavorites(pendingFavorite.query, label);
     refreshLists();
     setFavoriteModalOpen(false);
-    setPendingFavoriteQuery(null);
-    setFavoriteLabel('');
-  }, [historyManagerRef, pendingFavoriteQuery, favoriteLabel, refreshLists]);
+    setPendingFavorite(null);
+  }, [historyManagerRef, pendingFavorite, refreshLists]);
+
+  // Handle closing favorite modal
+  const handleCloseFavoriteModal = useCallback(() => {
+    setFavoriteModalOpen(false);
+    setPendingFavorite(null);
+  }, []);
 
   // Handle deleting from history
   const handleDeleteFromHistory = useCallback(
-    async (id: string, e: React.MouseEvent) => {
-      e.stopPropagation();
+    async (id: string) => {
       const manager = historyManagerRef.current;
       if (!manager) return;
 
@@ -122,8 +121,7 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
 
   // Handle deleting from favorites
   const handleDeleteFromFavorites = useCallback(
-    async (id: string, e: React.MouseEvent) => {
-      e.stopPropagation();
+    async (id: string) => {
       const manager = historyManagerRef.current;
       if (!manager) return;
 
@@ -133,27 +131,22 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
     [historyManagerRef, refreshLists]
   );
 
-  // Handle favorite modal open (focus input)
-  const handleFavoriteModalOpen = useCallback(() => {
-    setTimeout(() => {
-      favoriteInputRef.current?.focus();
-      favoriteInputRef.current?.select();
-    }, 50);
-  }, []);
+  const manager = historyManagerRef.current;
 
-  // Handle Enter key in favorite input
-  const handleFavoriteKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        handleSaveFavorite();
-      } else if (e.key === 'Escape') {
-        setFavoriteModalOpen(false);
-      }
-    },
-    [handleSaveFavorite]
+  // Content accessor for history entries
+  const getQueryContent = useCallback((item: QueryHistoryEntry) => item.query, []);
+
+  // Preview generator
+  const getPreview = useCallback(
+    (query: string) => manager?.getPreview(query) || query,
+    [manager]
   );
 
-  const manager = historyManagerRef.current;
+  // Time formatter
+  const formatTime = useCallback(
+    (timestamp: number) => manager?.formatRelativeTime(timestamp) || '',
+    [manager]
+  );
 
   return (
     <>
@@ -161,161 +154,62 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
         icon="clock"
         title="History & Favorites"
         className={styles.historyBtn}
-        onToggle={handleToggle}
-      >
-        {/* Dropdown content */}
-        <div className={styles.historyDropdown}>
+        onClick={() => setIsOpen(true)}
+      />
+
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} onOpen={handleOpen}>
+        <div className={styles.historyModal}>
           <div className={styles.dropdownTabs}>
             <button
-              className={`${styles.dropdownTab}${activeDropdownTab === 'history' ? ` ${styles.dropdownTabActive}` : ''}`}
-              onClick={() => handleTabSwitch('history')}
+              className={`${styles.dropdownTab}${activeTab === 'history' ? ` ${styles.dropdownTabActive}` : ''}`}
+              onClick={() => setActiveTab('history')}
             >
               History
             </button>
             <button
-              className={`${styles.dropdownTab}${activeDropdownTab === 'favorites' ? ` ${styles.dropdownTabActive}` : ''}`}
-              onClick={() => handleTabSwitch('favorites')}
+              className={`${styles.dropdownTab}${activeTab === 'favorites' ? ` ${styles.dropdownTabActive}` : ''}`}
+              onClick={() => setActiveTab('favorites')}
             >
               Favorites
             </button>
           </div>
 
           <div className={styles.dropdownContent}>
-            {/* History list */}
-            {activeDropdownTab === 'history' && (
-              <div className={styles.scriptList}>
-                {history.length === 0 ? (
-                  <div className={styles.scriptEmpty}>
-                    No queries yet.<br />Execute some SOQL to see history here.
-                  </div>
-                ) : (
-                  history.map((item) => (
-                    <div
-                      key={item.id}
-                      className={styles.scriptItem}
-                      onClick={() => handleSelectQuery(item.query)}
-                    >
-                      <div className={styles.scriptPreview}>
-                        {manager?.getPreview(item.query) || item.query}
-                      </div>
-                      <div className={styles.scriptMeta}>
-                        <span>{manager?.formatRelativeTime(item.timestamp)}</span>
-                        <div className={styles.scriptActions}>
-                          <button
-                            className={styles.scriptAction}
-                            title="Load query"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectQuery(item.query);
-                            }}
-                          >
-                            &#8629;
-                          </button>
-                          <button
-                            className={styles.scriptAction}
-                            title="Add to favorites"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAddToFavorites(item.query);
-                            }}
-                          >
-                            &#9733;
-                          </button>
-                          <button
-                            className={styles.scriptAction}
-                            title="Delete"
-                            onClick={(e) => handleDeleteFromHistory(item.id, e)}
-                          >
-                            &times;
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+            {activeTab === 'history' && (
+              <HistoryList
+                items={history}
+                emptyMessage={<>No queries yet.<br />Execute some SOQL to see history here.</>}
+                getContent={getQueryContent}
+                getPreview={getPreview}
+                formatTime={formatTime}
+                onLoad={handleSelectQuery}
+                onAddToFavorites={handleAddToFavorites}
+                onDelete={handleDeleteFromHistory}
+              />
             )}
 
-            {/* Favorites list */}
-            {activeDropdownTab === 'favorites' && (
-              <div className={styles.scriptList}>
-                {favorites.length === 0 ? (
-                  <div className={styles.scriptEmpty}>
-                    No favorites yet.<br />Click &#9733; on a query to save it.
-                  </div>
-                ) : (
-                  favorites.map((item) => (
-                    <div
-                      key={item.id}
-                      className={styles.scriptItem}
-                      onClick={() => handleSelectQuery(item.query)}
-                    >
-                      <div className={styles.scriptLabel}>{item.label}</div>
-                      <div className={styles.scriptMeta}>
-                        <span>{manager?.formatRelativeTime(item.timestamp)}</span>
-                        <div className={styles.scriptActions}>
-                          <button
-                            className={styles.scriptAction}
-                            title="Load query"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectQuery(item.query);
-                            }}
-                          >
-                            &#8629;
-                          </button>
-                          <button
-                            className={styles.scriptAction}
-                            title="Delete"
-                            onClick={(e) => handleDeleteFromFavorites(item.id, e)}
-                          >
-                            &times;
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+            {activeTab === 'favorites' && (
+              <FavoritesList
+                items={favorites}
+                emptyMessage={<>No favorites yet.<br />Click &#9733; on a query to save it.</>}
+                getContent={getQueryContent}
+                formatTime={formatTime}
+                onLoad={handleSelectQuery}
+                onDelete={handleDeleteFromFavorites}
+              />
             )}
-          </div>
-        </div>
-      </ButtonIcon>
-
-      {/* Favorite Modal */}
-      <Modal
-        isOpen={favoriteModalOpen}
-        onClose={() => setFavoriteModalOpen(false)}
-        onOpen={handleFavoriteModalOpen}
-      >
-        <div className={styles.favoriteDialog}>
-          <h3>Add to Favorites</h3>
-          <input
-            ref={favoriteInputRef}
-            type="text"
-            className={styles.favoriteInput}
-            placeholder="Enter a label for this query"
-            value={favoriteLabel}
-            onChange={(e) => setFavoriteLabel(e.target.value)}
-            onKeyDown={handleFavoriteKeyDown}
-          />
-          <div className={styles.favoriteButtons}>
-            <button
-              className="button-neutral"
-              onClick={() => setFavoriteModalOpen(false)}
-            >
-              Cancel
-            </button>
-            <button
-              className="button-brand"
-              onClick={handleSaveFavorite}
-              disabled={!favoriteLabel.trim()}
-            >
-              Save
-            </button>
           </div>
         </div>
       </Modal>
+
+      {/* Favorite Modal */}
+      <FavoriteModal
+        isOpen={favoriteModalOpen}
+        defaultLabel={pendingFavorite?.label || ''}
+        placeholder="Enter a label for this query"
+        onSave={handleSaveFavorite}
+        onClose={handleCloseFavoriteModal}
+      />
     </>
   );
 }

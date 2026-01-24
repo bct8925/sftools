@@ -1,6 +1,8 @@
+// Apex History - History and favorites modal with shared components
 import { useState, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { Modal } from '../modal/Modal';
+import { HistoryList, FavoritesList, FavoriteModal } from '../script-list';
 import { HistoryManager, type HistoryEntry, type FavoriteEntry } from '../../lib/history-manager';
 import { getPreview } from '../../lib/apex-utils';
 import styles from './ApexTab.module.css';
@@ -13,6 +15,15 @@ interface ApexHistoryProps {
   onLoadScript: (code: string) => void;
 }
 
+// Extended history entry with code property
+interface ApexHistoryEntry extends HistoryEntry {
+  code: string;
+}
+
+interface ApexFavoriteEntry extends FavoriteEntry {
+  code: string;
+}
+
 /**
  * History & Favorites modal for Apex Tab
  * Manages history and favorites lists with HistoryManager
@@ -20,10 +31,10 @@ interface ApexHistoryProps {
 export const ApexHistory = forwardRef<ApexHistoryRef, ApexHistoryProps>(({ onLoadScript }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'history' | 'favorites'>('history');
-  const [favoriteModalData, setFavoriteModalData] = useState<{
-    code: string;
-    defaultLabel: string;
-  } | null>(null);
+
+  // Favorite modal state
+  const [favoriteModalOpen, setFavoriteModalOpen] = useState(false);
+  const [pendingFavorite, setPendingFavorite] = useState<{ code: string; label: string } | null>(null);
 
   // Create history manager instance (persists across re-renders)
   const historyManager = useMemo(
@@ -35,19 +46,19 @@ export const ApexHistory = forwardRef<ApexHistoryRef, ApexHistoryProps>(({ onLoa
     []
   );
 
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [favorites, setFavorites] = useState<FavoriteEntry[]>([]);
+  const [history, setHistory] = useState<ApexHistoryEntry[]>([]);
+  const [favorites, setFavorites] = useState<ApexFavoriteEntry[]>([]);
 
   // Load history and favorites when modal opens
   const handleOpen = useCallback(async () => {
     await historyManager.load();
-    setHistory([...historyManager.history]);
-    setFavorites([...historyManager.favorites]);
+    setHistory([...(historyManager.history as ApexHistoryEntry[])]);
+    setFavorites([...(historyManager.favorites as ApexFavoriteEntry[])]);
   }, [historyManager]);
 
   const refreshLists = useCallback(() => {
-    setHistory([...historyManager.history]);
-    setFavorites([...historyManager.favorites]);
+    setHistory([...(historyManager.history as ApexHistoryEntry[])]);
+    setFavorites([...(historyManager.favorites as ApexFavoriteEntry[])]);
   }, [historyManager]);
 
   const handleLoadScript = useCallback(
@@ -58,25 +69,29 @@ export const ApexHistory = forwardRef<ApexHistoryRef, ApexHistoryProps>(({ onLoa
     [onLoadScript]
   );
 
-  const handleAddToFavorites = useCallback(
-    (code: string) => {
-      const defaultLabel = getPreview(code);
-      setFavoriteModalData({ code, defaultLabel });
-      setIsOpen(false);
-    },
-    []
-  );
+  const handleAddToFavorites = useCallback((code: string) => {
+    const defaultLabel = getPreview(code);
+    setPendingFavorite({ code, label: defaultLabel });
+    setFavoriteModalOpen(true);
+    setIsOpen(false);
+  }, []);
 
   const handleSaveFavorite = useCallback(
     async (label: string) => {
-      if (favoriteModalData) {
-        await historyManager.addToFavorites(favoriteModalData.code, label);
+      if (pendingFavorite) {
+        await historyManager.addToFavorites(pendingFavorite.code, label);
         refreshLists();
-        setFavoriteModalData(null);
+        setFavoriteModalOpen(false);
+        setPendingFavorite(null);
       }
     },
-    [favoriteModalData, historyManager, refreshLists]
+    [pendingFavorite, historyManager, refreshLists]
   );
+
+  const handleCloseFavoriteModal = useCallback(() => {
+    setFavoriteModalOpen(false);
+    setPendingFavorite(null);
+  }, []);
 
   const handleDeleteHistory = useCallback(
     async (id: string) => {
@@ -108,6 +123,15 @@ export const ApexHistory = forwardRef<ApexHistoryRef, ApexHistoryProps>(({ onLoa
     saveToHistory,
   }));
 
+  // Content accessor for history entries
+  const getCodeContent = useCallback((item: ApexHistoryEntry) => item.code, []);
+
+  // Time formatter
+  const formatTime = useCallback(
+    (timestamp: number) => historyManager.formatRelativeTime(timestamp),
+    [historyManager]
+  );
+
   return (
     <>
       <ButtonIcon
@@ -138,214 +162,39 @@ export const ApexHistory = forwardRef<ApexHistoryRef, ApexHistoryProps>(({ onLoa
             {activeTab === 'history' && (
               <HistoryList
                 items={history}
+                emptyMessage={<>No scripts yet.<br />Execute some Apex to see history here.</>}
+                getContent={getCodeContent}
+                getPreview={getPreview}
+                formatTime={formatTime}
                 onLoad={handleLoadScript}
                 onAddToFavorites={handleAddToFavorites}
                 onDelete={handleDeleteHistory}
-                historyManager={historyManager}
               />
             )}
             {activeTab === 'favorites' && (
               <FavoritesList
                 items={favorites}
+                emptyMessage={<>No favorites yet.<br />Click &#9733; on a script to save it.</>}
+                getContent={getCodeContent}
+                formatTime={formatTime}
                 onLoad={handleLoadScript}
                 onDelete={handleDeleteFavorite}
-                historyManager={historyManager}
               />
             )}
           </div>
         </div>
       </Modal>
 
-      {favoriteModalData && (
-        <FavoriteModal
-          defaultLabel={favoriteModalData.defaultLabel}
-          onSave={handleSaveFavorite}
-          onCancel={() => setFavoriteModalData(null)}
-        />
-      )}
+      {/* Favorite Modal */}
+      <FavoriteModal
+        isOpen={favoriteModalOpen}
+        defaultLabel={pendingFavorite?.label || ''}
+        placeholder="Enter a label for this script"
+        onSave={handleSaveFavorite}
+        onClose={handleCloseFavoriteModal}
+      />
     </>
   );
 });
 
 ApexHistory.displayName = 'ApexHistory';
-
-interface HistoryListProps {
-  items: HistoryEntry[];
-  onLoad: (code: string) => void;
-  onAddToFavorites: (code: string) => void;
-  onDelete: (id: string) => void;
-  historyManager: HistoryManager;
-}
-
-function HistoryList({ items, onLoad, onAddToFavorites, onDelete, historyManager }: HistoryListProps) {
-  if (items.length === 0) {
-    return (
-      <div className="script-empty">
-        No scripts yet.
-        <br />
-        Execute some Apex to see history here.
-      </div>
-    );
-  }
-
-  return (
-    <div className="script-list">
-      {items.map((item) => {
-        const code = (item as any).code as string;
-        return (
-          <div key={item.id} className="script-item" onClick={() => onLoad(code)}>
-            <div className="script-preview">{getPreview(code)}</div>
-            <div className="script-meta">
-              <span>{historyManager.formatRelativeTime(item.timestamp)}</span>
-              <div className="script-actions">
-                <button
-                  className="script-action load"
-                  title="Load script"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onLoad(code);
-                  }}
-                >
-                  &#8629;
-                </button>
-                <button
-                  className="script-action favorite"
-                  title="Add to favorites"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddToFavorites(code);
-                  }}
-                >
-                  &#9733;
-                </button>
-                <button
-                  className="script-action delete"
-                  title="Delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(item.id);
-                  }}
-                >
-                  &times;
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-interface FavoritesListProps {
-  items: FavoriteEntry[];
-  onLoad: (code: string) => void;
-  onDelete: (id: string) => void;
-  historyManager: HistoryManager;
-}
-
-function FavoritesList({ items, onLoad, onDelete, historyManager }: FavoritesListProps) {
-  if (items.length === 0) {
-    return (
-      <div className="script-empty">
-        No favorites yet.
-        <br />
-        Click &#9733; on a script to save it.
-      </div>
-    );
-  }
-
-  return (
-    <div className="script-list">
-      {items.map((item) => {
-        const code = (item as any).code as string;
-        return (
-          <div key={item.id} className="script-item" onClick={() => onLoad(code)}>
-            <div className="script-label">{item.label}</div>
-            <div className="script-meta">
-              <span>{historyManager.formatRelativeTime(item.timestamp)}</span>
-              <div className="script-actions">
-                <button
-                  className="script-action load"
-                  title="Load script"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onLoad(code);
-                  }}
-                >
-                  &#8629;
-                </button>
-                <button
-                  className="script-action delete"
-                  title="Delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(item.id);
-                  }}
-                >
-                  &times;
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-interface FavoriteModalProps {
-  defaultLabel: string;
-  onSave: (label: string) => void;
-  onCancel: () => void;
-}
-
-function FavoriteModal({ defaultLabel, onSave, onCancel }: FavoriteModalProps) {
-  const [label, setLabel] = useState(defaultLabel);
-
-  const handleSave = useCallback(() => {
-    const trimmed = label.trim();
-    if (trimmed) {
-      onSave(trimmed);
-    }
-  }, [label, onSave]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        handleSave();
-      } else if (e.key === 'Escape') {
-        onCancel();
-      }
-    },
-    [handleSave, onCancel]
-  );
-
-  return (
-    <div className="modal-overlay show" onClick={onCancel}>
-      <div
-        className={`modal-dialog ${styles.favoriteDialog}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3>Add to Favorites</h3>
-        <input
-          type="text"
-          className={styles.favoriteInput}
-          placeholder="Enter a label for this script"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          onKeyDown={handleKeyDown}
-          autoFocus
-        />
-        <div className="modal-buttons">
-          <button className="button-neutral" onClick={onCancel}>
-            Cancel
-          </button>
-          <button className="button-brand" onClick={handleSave}>
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}

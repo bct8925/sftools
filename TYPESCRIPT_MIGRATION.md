@@ -73,18 +73,18 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 7 - Tab Components
-- [ ] `src/components/settings/settings-tab.js` → `.ts`
-- [ ] `src/components/utils/utils-tab.js` → `.ts`
-- [ ] `src/components/utils-tools/debug-logs.js` → `.ts`
-- [ ] `src/components/utils-tools/flow-cleanup.js` → `.ts`
-- [ ] `src/components/utils-tools/limits.js` → `.ts`
-- [ ] `src/components/utils-tools/deploy-status.js` → `.ts`
-- [ ] `src/components/utils-tools/field-usage.js` → `.ts`
-- [ ] `src/components/query/query-tab.js` → `.ts`
-- [ ] `src/components/apex/apex-tab.js` → `.ts`
-- [ ] `src/components/rest-api/rest-api-tab.js` → `.ts`
-- [ ] `src/components/events/events-tab.js` → `.ts`
-- [ ] Verify: typecheck + build + tests
+- [x] `src/components/settings/settings-tab.js` → `.ts`
+- [x] `src/components/utils/utils-tab.js` → `.ts`
+- [x] `src/components/utils-tools/debug-logs.js` → `.ts`
+- [x] `src/components/utils-tools/flow-cleanup.js` → `.ts`
+- [x] `src/components/utils-tools/limits.js` → `.ts` (did not exist)
+- [x] `src/components/utils-tools/deploy-status.js` → `.ts` (did not exist)
+- [x] `src/components/utils-tools/field-usage.js` → `.ts` (did not exist)
+- [x] `src/components/query/query-tab.js` → `.ts`
+- [x] `src/components/apex/apex-tab.js` → `.ts`
+- [x] `src/components/rest-api/rest-api-tab.js` → `.ts`
+- [x] `src/components/events/events-tab.js` → `.ts`
+- [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 8 - Standalone Pages
 - [ ] `src/components/record/record-page.js` → `.ts`
@@ -527,6 +527,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Wave 4 | 6 | Salesforce API operations: salesforce, query-utils, record-utils, schema-utils, apex-utils, rest-api-utils |
 | 2026-01-23 | Wave 5 | 4 | Feature utilities: history-manager, settings-utils, events-utils, soql-autocomplete |
 | 2026-01-23 | Wave 6 | 5 | Reusable components: sf-icon, button-icon, button-dropdown, modal-popup, monaco-editor |
+| 2026-01-23 | Wave 7 | 8 | Tab components: settings-tab, utils-tab, debug-logs, flow-cleanup, query-tab, apex-tab, rest-api-tab, events-tab |
 
 ### Issues Encountered
 

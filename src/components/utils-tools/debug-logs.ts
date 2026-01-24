@@ -8,58 +8,74 @@ import {
     deleteAllTraceFlags,
 } from '../../lib/salesforce.js';
 import { escapeHtml } from '../../lib/text-utils.js';
+import type { SObject } from '../../types/salesforce';
 import template from './debug-logs.html?raw';
 import './utils-tools.css';
 
+interface User extends SObject {
+    Name: string;
+    Username: string;
+}
+
+interface DeleteResult {
+    deletedCount: number;
+}
+
 class DebugLogs extends HTMLElement {
     // Trace flag elements
-    enableForMeBtn = null;
-    userSearchInput = null;
-    userResults = null;
-    traceStatus = null;
+    private enableForMeBtn!: HTMLButtonElement;
+    private userSearchInput!: HTMLInputElement;
+    private userResults!: HTMLElement;
+    private traceStatus!: HTMLElement;
 
     // Cleanup elements
-    deleteFlagsBtn = null;
-    deleteLogsBtn = null;
-    deleteStatus = null;
+    private deleteFlagsBtn!: HTMLButtonElement;
+    private deleteLogsBtn!: HTMLButtonElement;
+    private deleteStatus!: HTMLElement;
 
-    searchTimeout = null;
+    private searchTimeout: number | null = null;
 
-    connectedCallback() {
+    connectedCallback(): void {
         this.innerHTML = template;
         this.initElements();
         this.attachEventListeners();
     }
 
-    initElements() {
-        // Trace flag
-        this.enableForMeBtn = this.querySelector('.enable-for-me-btn');
-        this.userSearchInput = this.querySelector('.user-search');
-        this.userResults = this.querySelector('.user-results');
-        this.traceStatus = this.querySelector('.trace-status');
-
-        // Cleanup
-        this.deleteFlagsBtn = this.querySelector('.delete-flags-btn');
-        this.deleteLogsBtn = this.querySelector('.delete-logs-btn');
-        this.deleteStatus = this.querySelector('.delete-status');
+    disconnectedCallback(): void {
+        if (this.searchTimeout !== null) {
+            clearTimeout(this.searchTimeout);
+        }
     }
 
-    attachEventListeners() {
+    private initElements(): void {
         // Trace flag
-        this.enableForMeBtn.addEventListener('click', () => this.handleEnableForMe());
-        this.userSearchInput.addEventListener('input', () => this.handleSearchInput());
-        this.userResults.addEventListener('click', e => this.handleUserSelect(e));
+        this.enableForMeBtn = this.querySelector<HTMLButtonElement>('.enable-for-me-btn')!;
+        this.userSearchInput = this.querySelector<HTMLInputElement>('.user-search')!;
+        this.userResults = this.querySelector<HTMLElement>('.user-results')!;
+        this.traceStatus = this.querySelector<HTMLElement>('.trace-status')!;
 
         // Cleanup
-        this.deleteFlagsBtn.addEventListener('click', () => this.handleDeleteFlags());
-        this.deleteLogsBtn.addEventListener('click', () => this.handleDeleteLogs());
+        this.deleteFlagsBtn = this.querySelector<HTMLButtonElement>('.delete-flags-btn')!;
+        this.deleteLogsBtn = this.querySelector<HTMLButtonElement>('.delete-logs-btn')!;
+        this.deleteStatus = this.querySelector<HTMLElement>('.delete-status')!;
+    }
+
+    private attachEventListeners(): void {
+        // Trace flag
+        this.enableForMeBtn.addEventListener('click', this.handleEnableForMe);
+        this.userSearchInput.addEventListener('input', this.handleSearchInput);
+        this.userResults.addEventListener('click', this.handleUserSelect);
+
+        // Cleanup
+        this.deleteFlagsBtn.addEventListener('click', this.handleDeleteFlags);
+        this.deleteLogsBtn.addEventListener('click', this.handleDeleteLogs);
     }
 
     // ============================================================
     // Trace Flag Methods
     // ============================================================
 
-    async handleEnableForMe() {
+    private handleEnableForMe = async (): Promise<void> => {
         if (!isAuthenticated()) {
             alert('Not authenticated. Please authorize via the connection selector.');
             return;
@@ -73,14 +89,16 @@ class DebugLogs extends HTMLElement {
             await enableTraceFlagForUser(userId);
             this.setStatus(this.traceStatus, 'success', 'Trace flag enabled for 30 minutes');
         } catch (error) {
-            this.setStatus(this.traceStatus, 'error', error.message);
+            this.setStatus(this.traceStatus, 'error', (error as Error).message);
         } finally {
             this.enableForMeBtn.disabled = false;
         }
-    }
+    };
 
-    handleSearchInput() {
-        clearTimeout(this.searchTimeout);
+    private handleSearchInput = (): void => {
+        if (this.searchTimeout !== null) {
+            clearTimeout(this.searchTimeout);
+        }
         const searchTerm = this.userSearchInput.value.trim();
 
         if (searchTerm.length < 2) {
@@ -88,21 +106,21 @@ class DebugLogs extends HTMLElement {
             return;
         }
 
-        this.searchTimeout = setTimeout(() => this.doUserSearch(searchTerm), 300);
-    }
+        this.searchTimeout = window.setTimeout(() => this.doUserSearch(searchTerm), 300);
+    };
 
-    async doUserSearch(searchTerm) {
+    private async doUserSearch(searchTerm: string): Promise<void> {
         if (!isAuthenticated()) return;
 
         try {
             const users = await searchUsers(searchTerm);
-            this.renderUserResults(users);
+            this.renderUserResults(users as User[]);
         } catch (error) {
             console.error('User search error:', error);
         }
     }
 
-    renderUserResults(users) {
+    private renderUserResults(users: User[]): void {
         if (users.length === 0) {
             this.userResults.innerHTML = '<div class="tool-no-results">No users found</div>';
         } else {
@@ -122,12 +140,14 @@ class DebugLogs extends HTMLElement {
         this.userResults.classList.remove('hidden');
     }
 
-    async handleUserSelect(e) {
-        const item = e.target.closest('.tool-result-item');
+    private handleUserSelect = async (e: Event): Promise<void> => {
+        const item = (e.target as HTMLElement).closest('.tool-result-item') as HTMLElement | null;
         if (!item) return;
 
         const userId = item.dataset.id;
-        const userName = item.querySelector('.tool-result-name').textContent;
+        if (!userId) return;
+
+        const userName = item.querySelector('.tool-result-name')?.textContent || '';
 
         this.userResults.classList.add('hidden');
         this.userSearchInput.value = userName;
@@ -138,15 +158,15 @@ class DebugLogs extends HTMLElement {
             await enableTraceFlagForUser(userId);
             this.setStatus(this.traceStatus, 'success', 'Trace flag enabled for 30 minutes');
         } catch (error) {
-            this.setStatus(this.traceStatus, 'error', error.message);
+            this.setStatus(this.traceStatus, 'error', (error as Error).message);
         }
-    }
+    };
 
     // ============================================================
     // Cleanup Methods
     // ============================================================
 
-    async handleDeleteFlags() {
+    private handleDeleteFlags = async (): Promise<void> => {
         if (!isAuthenticated()) {
             alert('Not authenticated. Please authorize via the connection selector.');
             return;
@@ -160,7 +180,7 @@ class DebugLogs extends HTMLElement {
         this.deleteFlagsBtn.disabled = true;
 
         try {
-            const result = await deleteAllTraceFlags();
+            const result = (await deleteAllTraceFlags()) as DeleteResult;
             const count = result.deletedCount;
             this.setStatus(
                 this.deleteStatus,
@@ -168,13 +188,13 @@ class DebugLogs extends HTMLElement {
                 `Deleted ${count} trace flag${count !== 1 ? 's' : ''}`
             );
         } catch (error) {
-            this.setStatus(this.deleteStatus, 'error', error.message);
+            this.setStatus(this.deleteStatus, 'error', (error as Error).message);
         } finally {
             this.deleteFlagsBtn.disabled = false;
         }
-    }
+    };
 
-    async handleDeleteLogs() {
+    private handleDeleteLogs = async (): Promise<void> => {
         if (!isAuthenticated()) {
             alert('Not authenticated. Please authorize via the connection selector.');
             return;
@@ -188,7 +208,7 @@ class DebugLogs extends HTMLElement {
         this.deleteLogsBtn.disabled = true;
 
         try {
-            const result = await deleteAllDebugLogs();
+            const result = (await deleteAllDebugLogs()) as DeleteResult;
             const count = result.deletedCount;
             this.setStatus(
                 this.deleteStatus,
@@ -196,20 +216,20 @@ class DebugLogs extends HTMLElement {
                 `Deleted ${count} log${count !== 1 ? 's' : ''}`
             );
         } catch (error) {
-            this.setStatus(this.deleteStatus, 'error', error.message);
+            this.setStatus(this.deleteStatus, 'error', (error as Error).message);
         } finally {
             this.deleteLogsBtn.disabled = false;
         }
-    }
+    };
 
     // ============================================================
     // Utility Methods
     // ============================================================
 
-    setStatus(statusEl, type, message) {
+    private setStatus(statusEl: HTMLElement, type: string, message: string): void {
         statusEl.classList.remove('hidden');
-        const indicator = statusEl.querySelector('.status-indicator');
-        const text = statusEl.querySelector('.tool-status-text');
+        const indicator = statusEl.querySelector('.status-indicator') as HTMLElement;
+        const text = statusEl.querySelector('.tool-status-text') as HTMLElement;
         indicator.className = `status-indicator status-${type}`;
         text.textContent = message;
     }

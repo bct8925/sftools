@@ -11,46 +11,76 @@ import {
 import { clearDescribeCache } from '../../lib/salesforce.js';
 import { escapeHtml } from '../../lib/text-utils.js';
 import { icons } from '../../lib/icons.js';
+import type { SalesforceConnection } from '../../types/salesforce';
 import template from './settings.html?raw';
 import './settings.css';
 
+interface ProxyStatus {
+    connected: boolean;
+    httpPort?: number;
+    version?: string;
+    error?: string;
+}
+
+interface ThemeChangedEvent extends CustomEvent<{ theme: string }> {
+    type: 'theme-changed';
+}
+
+declare global {
+    interface Window {
+        startAuthorization?: (
+            loginDomain: string | null,
+            clientId: string | null,
+            connectionId: string | null
+        ) => void;
+    }
+}
+
 class SettingsTab extends HTMLElement {
     // Theme DOM references
-    themeRadios = null;
-    systemThemeMediaQuery = null;
+    private themeRadios!: NodeListOf<HTMLInputElement>;
+    private systemThemeMediaQuery: MediaQueryList | null = null;
+    private systemThemeChangeHandler?: () => void;
 
     // Proxy DOM references
-    proxyToggle = null;
-    proxyStatus = null;
-    proxyIndicator = null;
-    proxyLabel = null;
-    proxyDetail = null;
-    versionInfo = null;
+    private proxyToggle!: HTMLInputElement;
+    private proxyStatus!: HTMLElement;
+    private proxyIndicator!: HTMLElement;
+    private proxyLabel!: HTMLElement;
+    private proxyDetail!: HTMLElement;
+    private versionInfo!: HTMLElement;
 
     // Connection list DOM references
-    connectionList = null;
-    addConnectionBtn = null;
-    addConnectionForm = null;
-    loginDomainSelect = null;
-    customDomainField = null;
-    customDomainInput = null;
-    newClientIdInput = null;
-    authorizeBtn = null;
-    cancelBtn = null;
+    private connectionList!: HTMLElement;
+    private addConnectionBtn!: HTMLButtonElement;
+    private addConnectionForm!: HTMLElement;
+    private loginDomainSelect!: HTMLSelectElement;
+    private customDomainField!: HTMLElement;
+    private customDomainInput!: HTMLInputElement;
+    private newClientIdInput!: HTMLInputElement;
+    private authorizeBtn!: HTMLButtonElement;
+    private cancelBtn!: HTMLButtonElement;
 
     // Edit modal DOM references
-    editModal = null;
-    editLabelInput = null;
-    editClientIdInput = null;
-    editSaveBtn = null;
-    editCancelBtn = null;
-    editingConnectionId = null;
+    private editModal!: HTMLElement;
+    private editLabelInput!: HTMLInputElement;
+    private editClientIdInput!: HTMLInputElement;
+    private editSaveBtn!: HTMLButtonElement;
+    private editCancelBtn!: HTMLButtonElement;
+    private editingConnectionId: string | null = null;
 
     // Cache management DOM references
-    refreshCacheBtn = null;
-    cacheStatus = null;
+    private refreshCacheBtn!: HTMLButtonElement;
+    private cacheStatus!: HTMLElement;
 
-    connectedCallback() {
+    // Event handlers
+    private connectionChangeHandler?: () => void;
+    private storageChangeHandler?: (
+        changes: { [key: string]: chrome.storage.StorageChange },
+        area: string
+    ) => void;
+
+    connectedCallback(): void {
         this.innerHTML = template;
         this.initElements();
         this.attachEventListeners();
@@ -71,88 +101,96 @@ class SettingsTab extends HTMLElement {
         chrome.storage.onChanged.addListener(this.storageChangeHandler);
     }
 
-    disconnectedCallback() {
-        document.removeEventListener('connection-changed', this.connectionChangeHandler);
-        chrome.storage.onChanged.removeListener(this.storageChangeHandler);
-        if (this.systemThemeMediaQuery) {
+    disconnectedCallback(): void {
+        if (this.connectionChangeHandler) {
+            document.removeEventListener('connection-changed', this.connectionChangeHandler);
+        }
+        if (this.storageChangeHandler) {
+            chrome.storage.onChanged.removeListener(this.storageChangeHandler);
+        }
+        if (this.systemThemeMediaQuery && this.systemThemeChangeHandler) {
             this.systemThemeMediaQuery.removeEventListener('change', this.systemThemeChangeHandler);
         }
     }
 
-    initElements() {
+    private initElements(): void {
         // Theme elements
-        this.themeRadios = this.querySelectorAll('.settings-theme-radio');
+        this.themeRadios = this.querySelectorAll<HTMLInputElement>('.settings-theme-radio');
 
         // Proxy elements
-        this.proxyToggle = this.querySelector('.settings-proxy-toggle');
-        this.proxyStatus = this.querySelector('.settings-proxy-status');
-        this.proxyIndicator = this.querySelector('.settings-proxy-indicator');
-        this.proxyLabel = this.querySelector('.settings-proxy-label');
-        this.proxyDetail = this.querySelector('.settings-proxy-detail');
-        this.versionInfo = this.querySelector('.settings-version-info');
+        this.proxyToggle = this.querySelector<HTMLInputElement>('.settings-proxy-toggle')!;
+        this.proxyStatus = this.querySelector<HTMLElement>('.settings-proxy-status')!;
+        this.proxyIndicator = this.querySelector<HTMLElement>('.settings-proxy-indicator')!;
+        this.proxyLabel = this.querySelector<HTMLElement>('.settings-proxy-label')!;
+        this.proxyDetail = this.querySelector<HTMLElement>('.settings-proxy-detail')!;
+        this.versionInfo = this.querySelector<HTMLElement>('.settings-version-info')!;
 
         // Connection list elements
-        this.connectionList = this.querySelector('.settings-connection-list');
-        this.addConnectionBtn = this.querySelector('.settings-add-connection-btn');
-        this.addConnectionForm = this.querySelector('.settings-add-connection-form');
-        this.loginDomainSelect = this.querySelector('.settings-login-domain');
-        this.customDomainField = this.querySelector('.settings-custom-domain-field');
-        this.customDomainInput = this.querySelector('.settings-custom-domain');
-        this.newClientIdInput = this.querySelector('.settings-new-client-id');
-        this.authorizeBtn = this.querySelector('.settings-authorize-btn');
-        this.cancelBtn = this.querySelector('.settings-cancel-btn');
+        this.connectionList = this.querySelector<HTMLElement>('.settings-connection-list')!;
+        this.addConnectionBtn = this.querySelector<HTMLButtonElement>(
+            '.settings-add-connection-btn'
+        )!;
+        this.addConnectionForm = this.querySelector<HTMLElement>('.settings-add-connection-form')!;
+        this.loginDomainSelect = this.querySelector<HTMLSelectElement>('.settings-login-domain')!;
+        this.customDomainField = this.querySelector<HTMLElement>('.settings-custom-domain-field')!;
+        this.customDomainInput = this.querySelector<HTMLInputElement>('.settings-custom-domain')!;
+        this.newClientIdInput = this.querySelector<HTMLInputElement>('.settings-new-client-id')!;
+        this.authorizeBtn = this.querySelector<HTMLButtonElement>('.settings-authorize-btn')!;
+        this.cancelBtn = this.querySelector<HTMLButtonElement>('.settings-cancel-btn')!;
 
         // Edit modal elements
-        this.editModal = this.querySelector('.settings-edit-modal');
-        this.editLabelInput = this.querySelector('.settings-edit-label');
-        this.editClientIdInput = this.querySelector('.settings-edit-client-id');
-        this.editSaveBtn = this.querySelector('.settings-edit-save-btn');
-        this.editCancelBtn = this.querySelector('.settings-edit-cancel-btn');
+        this.editModal = this.querySelector<HTMLElement>('.settings-edit-modal')!;
+        this.editLabelInput = this.querySelector<HTMLInputElement>('.settings-edit-label')!;
+        this.editClientIdInput = this.querySelector<HTMLInputElement>('.settings-edit-client-id')!;
+        this.editSaveBtn = this.querySelector<HTMLButtonElement>('.settings-edit-save-btn')!;
+        this.editCancelBtn = this.querySelector<HTMLButtonElement>('.settings-edit-cancel-btn')!;
 
         // Cache management elements
-        this.refreshCacheBtn = this.querySelector('.settings-refresh-cache-btn');
-        this.cacheStatus = this.querySelector('.settings-cache-status');
+        this.refreshCacheBtn = this.querySelector<HTMLButtonElement>('.settings-refresh-cache-btn')!;
+        this.cacheStatus = this.querySelector<HTMLElement>('.settings-cache-status')!;
     }
 
-    attachEventListeners() {
+    private attachEventListeners(): void {
         // Theme listeners
         this.themeRadios.forEach(radio => {
-            radio.addEventListener('change', e => this.handleThemeChange(e.target.value));
+            radio.addEventListener('change', () => this.handleThemeChange(radio.value));
         });
 
         // Proxy listeners
-        this.proxyToggle.addEventListener('change', () => this.handleProxyToggle());
+        this.proxyToggle.addEventListener('change', this.handleProxyToggle);
 
         // Connection list listeners
-        this.addConnectionBtn.addEventListener('click', () => this.showAddConnectionForm());
-        this.cancelBtn.addEventListener('click', () => this.hideAddConnectionForm());
-        this.authorizeBtn.addEventListener('click', () => this.handleAddConnection());
-        this.loginDomainSelect.addEventListener('change', () => this.handleLoginDomainChange());
+        this.addConnectionBtn.addEventListener('click', this.showAddConnectionForm);
+        this.cancelBtn.addEventListener('click', this.hideAddConnectionForm);
+        this.authorizeBtn.addEventListener('click', this.handleAddConnection);
+        this.loginDomainSelect.addEventListener('change', this.handleLoginDomainChange);
 
         // Connection list item actions (delegated)
-        this.connectionList.addEventListener('click', e => this.handleConnectionAction(e));
+        this.connectionList.addEventListener('click', this.handleConnectionAction);
 
         // Edit modal listeners
-        this.editSaveBtn.addEventListener('click', () => this.handleSaveEdit());
-        this.editCancelBtn.addEventListener('click', () => this.hideEditModal());
-        this.editModal.addEventListener('click', e => {
+        this.editSaveBtn.addEventListener('click', this.handleSaveEdit);
+        this.editCancelBtn.addEventListener('click', this.hideEditModal);
+        this.editModal.addEventListener('click', (e: Event) => {
             if (e.target === this.editModal) this.hideEditModal();
         });
 
         // Cache management listeners
-        this.refreshCacheBtn.addEventListener('click', () => this.handleRefreshCache());
+        this.refreshCacheBtn.addEventListener('click', this.handleRefreshCache);
     }
 
     // ============================================================
     // Theme Management
     // ============================================================
 
-    async initThemeUI() {
+    private async initThemeUI(): Promise<void> {
         const { theme } = await chrome.storage.local.get(['theme']);
-        const savedTheme = theme || 'system';
+        const savedTheme = (theme as string) || 'system';
 
         // Set the radio button
-        const radio = this.querySelector(`.settings-theme-radio[value="${savedTheme}"]`);
+        const radio = this.querySelector<HTMLInputElement>(
+            `.settings-theme-radio[value="${savedTheme}"]`
+        );
         if (radio) radio.checked = true;
 
         // Set up system theme change listener
@@ -168,20 +206,23 @@ class SettingsTab extends HTMLElement {
         this.applyTheme(savedTheme);
     }
 
-    getCurrentThemeSetting() {
-        const checked = this.querySelector('.settings-theme-radio:checked');
+    private getCurrentThemeSetting(): string {
+        const checked = this.querySelector<HTMLInputElement>('.settings-theme-radio:checked');
         return checked ? checked.value : 'system';
     }
 
-    async handleThemeChange(theme) {
+    private async handleThemeChange(theme: string): Promise<void> {
         await chrome.storage.local.set({ theme });
         this.applyTheme(theme);
 
         // Notify other tabs/windows about the theme change
-        document.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme } }));
+        const event = new CustomEvent('theme-changed', {
+            detail: { theme },
+        }) as ThemeChangedEvent;
+        document.dispatchEvent(event);
     }
 
-    applyTheme(theme) {
+    private applyTheme(theme: string): void {
         let effectiveTheme = theme;
 
         if (theme === 'system') {
@@ -199,7 +240,7 @@ class SettingsTab extends HTMLElement {
     // Connection List Management
     // ============================================================
 
-    async renderConnectionList() {
+    private async renderConnectionList(): Promise<void> {
         const connections = await loadConnections();
         const activeId = getActiveConnectionId();
 
@@ -214,7 +255,10 @@ class SettingsTab extends HTMLElement {
             .join('');
     }
 
-    createConnectionCardHtml(conn, activeId) {
+    private createConnectionCardHtml(
+        conn: SalesforceConnection,
+        activeId: string | null
+    ): string {
         const isActive = conn.id === activeId;
         const refreshBadge = conn.refreshToken
             ? `<span class="settings-connection-badge refresh-enabled" title="Auto-refresh enabled">${icons.refreshSmall} Auto-refresh</span>`
@@ -247,27 +291,28 @@ class SettingsTab extends HTMLElement {
         `;
     }
 
-    handleConnectionAction(e) {
-        const item = e.target.closest('.settings-connection-item');
+    private handleConnectionAction = (e: Event): void => {
+        const item = (e.target as HTMLElement).closest('.settings-connection-item') as HTMLElement;
         if (!item) return;
 
         const connectionId = item.dataset.id;
+        if (!connectionId) return;
 
-        if (e.target.closest('.settings-connection-edit')) {
+        if ((e.target as HTMLElement).closest('.settings-connection-edit')) {
             this.showEditModal(connectionId);
-        } else if (e.target.closest('.settings-connection-reauth')) {
+        } else if ((e.target as HTMLElement).closest('.settings-connection-reauth')) {
             this.handleReauthorize(connectionId);
-        } else if (e.target.closest('.settings-connection-delete')) {
+        } else if ((e.target as HTMLElement).closest('.settings-connection-delete')) {
             this.handleDeleteConnection(connectionId);
         }
-    }
+    };
 
-    showAddConnectionForm() {
+    private showAddConnectionForm = (): void => {
         this.addConnectionBtn.classList.add('hidden');
         this.addConnectionForm.classList.remove('hidden');
-    }
+    };
 
-    hideAddConnectionForm() {
+    private hideAddConnectionForm = (): void => {
         this.addConnectionForm.classList.add('hidden');
         this.addConnectionBtn.classList.remove('hidden');
         // Reset form
@@ -275,18 +320,18 @@ class SettingsTab extends HTMLElement {
         this.customDomainField.classList.add('hidden');
         this.customDomainInput.value = '';
         this.newClientIdInput.value = '';
-    }
+    };
 
-    handleLoginDomainChange() {
+    private handleLoginDomainChange = (): void => {
         if (this.loginDomainSelect.value === 'custom') {
             this.customDomainField.classList.remove('hidden');
         } else {
             this.customDomainField.classList.add('hidden');
         }
-    }
+    };
 
-    async handleAddConnection() {
-        let loginDomain = this.loginDomainSelect.value;
+    private handleAddConnection = async (): Promise<void> => {
+        let loginDomain: string | null = this.loginDomainSelect.value;
 
         if (loginDomain === 'auto') {
             // Auto-detect from current tab - pass null to let startAuthorization detect
@@ -310,7 +355,8 @@ class SettingsTab extends HTMLElement {
             loginDomain,
             clientId,
             connectionId: null,
-        });
+            state: '',
+        } as any);
 
         // Call startAuthorization from app.js (available on window)
         if (window.startAuthorization) {
@@ -318,9 +364,9 @@ class SettingsTab extends HTMLElement {
         }
 
         this.hideAddConnectionForm();
-    }
+    };
 
-    async showEditModal(connectionId) {
+    private async showEditModal(connectionId: string): Promise<void> {
         const connections = await loadConnections();
         const connection = connections.find(c => c.id === connectionId);
         if (!connection) return;
@@ -331,12 +377,12 @@ class SettingsTab extends HTMLElement {
         this.editModal.classList.remove('hidden');
     }
 
-    hideEditModal() {
+    private hideEditModal = (): void => {
         this.editModal.classList.add('hidden');
         this.editingConnectionId = null;
-    }
+    };
 
-    async handleSaveEdit() {
+    private handleSaveEdit = async (): Promise<void> => {
         const label = this.editLabelInput.value.trim();
         if (!label) {
             alert('Label is required');
@@ -345,6 +391,7 @@ class SettingsTab extends HTMLElement {
 
         const newClientId = this.editClientIdInput.value.trim() || null;
         const connectionId = this.editingConnectionId; // Save before hideEditModal clears it
+        if (!connectionId) return;
 
         const connections = await loadConnections();
         const connection = connections.find(c => c.id === connectionId);
@@ -353,9 +400,9 @@ class SettingsTab extends HTMLElement {
         const clientIdChanged = connection.clientId !== newClientId;
 
         await updateConnection(connectionId, {
-            label,
+            label: label,
             clientId: newClientId,
-        });
+        } as any);
 
         this.hideEditModal();
         this.renderConnectionList();
@@ -372,9 +419,9 @@ class SettingsTab extends HTMLElement {
                 this.handleReauthorize(connectionId);
             }
         }
-    }
+    };
 
-    async handleReauthorize(connectionId) {
+    private async handleReauthorize(connectionId: string): Promise<void> {
         const connections = await loadConnections();
         const connection = connections.find(c => c.id === connectionId);
         if (!connection) return;
@@ -384,7 +431,8 @@ class SettingsTab extends HTMLElement {
             loginDomain: connection.instanceUrl,
             clientId: connection.clientId,
             connectionId: connectionId,
-        });
+            state: '',
+        } as any);
 
         // Call startAuthorization from app.js
         if (window.startAuthorization) {
@@ -392,7 +440,7 @@ class SettingsTab extends HTMLElement {
         }
     }
 
-    async handleDeleteConnection(connectionId) {
+    private async handleDeleteConnection(connectionId: string): Promise<void> {
         if (!confirm('Remove this connection?')) return;
 
         const wasActive = getActiveConnectionId() === connectionId;
@@ -415,9 +463,9 @@ class SettingsTab extends HTMLElement {
     // Proxy Management
     // ============================================================
 
-    async initProxyUI() {
+    private async initProxyUI(): Promise<void> {
         const { proxyEnabled } = await chrome.storage.local.get(['proxyEnabled']);
-        this.proxyToggle.checked = proxyEnabled || false;
+        this.proxyToggle.checked = (proxyEnabled as boolean) || false;
 
         if (proxyEnabled) {
             this.proxyStatus.classList.remove('hidden');
@@ -425,7 +473,7 @@ class SettingsTab extends HTMLElement {
         }
     }
 
-    async handleProxyToggle() {
+    private handleProxyToggle = async (): Promise<void> => {
         const enabled = this.proxyToggle.checked;
         await chrome.storage.local.set({ proxyEnabled: enabled });
 
@@ -436,9 +484,9 @@ class SettingsTab extends HTMLElement {
             await this.disconnect();
             this.proxyStatus.classList.add('hidden');
         }
-    }
+    };
 
-    updateProxyUI(status) {
+    private updateProxyUI(status: ProxyStatus): void {
         const { connected, httpPort, version, error } = status;
 
         this.proxyIndicator.className = `status-indicator ${connected ? 'connected' : 'disconnected'}`;
@@ -458,22 +506,22 @@ class SettingsTab extends HTMLElement {
         }
     }
 
-    setConnecting() {
+    private setConnecting(): void {
         this.proxyIndicator.className = 'status-indicator connecting';
         this.proxyLabel.textContent = 'Connecting...';
         this.proxyDetail.textContent = 'Establishing connection to local proxy';
     }
 
-    async checkProxyStatus() {
+    private async checkProxyStatus(): Promise<void> {
         try {
             const response = await chrome.runtime.sendMessage({ type: 'checkProxyConnection' });
             this.updateProxyUI(response);
         } catch (err) {
-            this.updateProxyUI({ connected: false, error: err.message });
+            this.updateProxyUI({ connected: false, error: (err as Error).message });
         }
     }
 
-    async connect() {
+    private async connect(): Promise<void> {
         this.setConnecting();
 
         try {
@@ -506,7 +554,7 @@ class SettingsTab extends HTMLElement {
                 );
             }
         } catch (err) {
-            this.updateProxyUI({ connected: false, error: err.message });
+            this.updateProxyUI({ connected: false, error: (err as Error).message });
 
             // Notify the app that proxy status changed
             document.dispatchEvent(
@@ -517,7 +565,7 @@ class SettingsTab extends HTMLElement {
         }
     }
 
-    async disconnect() {
+    private async disconnect(): Promise<void> {
         try {
             await chrome.runtime.sendMessage({ type: 'disconnectProxy' });
             this.updateProxyUI({ connected: false });
@@ -537,7 +585,7 @@ class SettingsTab extends HTMLElement {
     // Cache Management
     // ============================================================
 
-    async handleRefreshCache() {
+    private handleRefreshCache = async (): Promise<void> => {
         if (!isAuthenticated()) {
             this.cacheStatus.textContent = 'Please connect to an org first';
             this.cacheStatus.className = 'settings-cache-status error';
@@ -559,12 +607,12 @@ class SettingsTab extends HTMLElement {
                 this.cacheStatus.className = 'settings-cache-status';
             }, 3000);
         } catch (err) {
-            this.cacheStatus.textContent = `Error: ${err.message}`;
+            this.cacheStatus.textContent = `Error: ${(err as Error).message}`;
             this.cacheStatus.className = 'settings-cache-status error';
         } finally {
             this.refreshCacheBtn.disabled = false;
         }
-    }
+    };
 }
 
 customElements.define('settings-tab', SettingsTab);

@@ -5,7 +5,7 @@ import '../utils-tools/debug-logs.js';
 import '../utils-tools/flow-cleanup.js';
 
 class UtilsTab extends HTMLElement {
-    connectedCallback() {
+    connectedCallback(): void {
         this.innerHTML = template;
     }
 }

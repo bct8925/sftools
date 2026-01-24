@@ -15,52 +15,92 @@ import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { HistoryManager } from '../../lib/history-manager.js';
 import { escapeHtml } from '../../lib/text-utils.js';
 import { icons } from '../../lib/icons.js';
+import type { SObject, FieldDescribe, ColumnMetadata } from '../../types/salesforce';
+import type { MonacoEditorElement } from '../../types/components';
+import type { StatusType } from '../../lib/ui-helpers';
 import '../monaco-editor/monaco-editor.js';
 import '../button-icon/button-icon.js';
 import '../modal-popup/modal-popup.js';
 import template from './query.html?raw';
 import './query.css';
 
+interface Column {
+    title: string;
+    path: string;
+    aggregate: boolean;
+    isSubquery: boolean;
+    subqueryColumns?: ColumnMetadata[];
+}
+
+interface TabData {
+    id: string;
+    query: string;
+    normalizedQuery: string;
+    objectName: string | null;
+    records: SObject[];
+    columns: Column[];
+    totalSize: number;
+    fieldDescribe: Record<string, FieldDescribe> | null;
+    modifiedRecords: Map<string, Record<string, any>>;
+    isEditable: boolean;
+    loading: boolean;
+    error?: string;
+}
+
+interface QueryResult {
+    records: SObject[];
+    totalSize: number;
+    entityName: string;
+    columnMetadata: ColumnMetadata[];
+}
+
 class QueryTab extends HTMLElement {
     // State
-    queryTabs = new Map(); // normalizedQuery -> tabData
-    activeTabId = null;
-    tabCounter = 0;
-    bulkExportInProgress = false;
-    filterDebounceTimeout = null;
+    private queryTabs = new Map<string, TabData>();
+    private activeTabId: string | null = null;
+    private tabCounter = 0;
+    private bulkExportInProgress = false;
+    private filterDebounceTimeout: number | null = null;
 
     // DOM references
-    editor = null;
-    tabsContainer = null;
-    resultsContainer = null;
-    toolingCheckbox = null;
-    editingCheckbox = null;
-    statusSpan = null;
-    searchInput = null;
-    exportBtn = null;
-    saveBtn = null;
-    clearBtn = null;
+    private editor!: MonacoEditorElement;
+    private tabsContainer!: HTMLElement;
+    private resultsContainer!: HTMLElement;
+    private toolingCheckbox!: HTMLInputElement;
+    private editingCheckbox!: HTMLInputElement;
+    private statusSpan!: HTMLElement;
+    private searchInput!: HTMLInputElement;
+    private exportBtn!: HTMLButtonElement;
+    private saveBtn!: HTMLButtonElement;
+    private clearBtn!: HTMLButtonElement;
 
     // Button components
-    historyBtn = null;
-    historyModal = null;
-    settingsBtn = null;
-    resultsBtn = null;
-    actionBtn = null;
+    private historyBtn!: HTMLElement;
+    private historyModal!: any;
+    private settingsBtn!: HTMLElement;
+    private resultsBtn!: any;
+    private actionBtn!: HTMLElement;
 
     // History dropdown elements
-    historyList = null;
-    favoritesList = null;
-    dropdownTabs = [];
+    private historyList!: HTMLElement;
+    private favoritesList!: HTMLElement;
+    private dropdownTabs!: NodeListOf<HTMLElement>;
+
+    // Favorite modal elements
+    private favoriteModal!: any;
+    private favoriteInput!: HTMLInputElement;
+    private favoriteCancelBtn!: HTMLButtonElement;
+    private favoriteSaveBtn!: HTMLButtonElement;
+    private bulkExportBtn!: HTMLButtonElement;
 
     // History/Favorites manager
-    historyManager = null;
-    pendingFavoriteQuery = null;
+    private historyManager!: HistoryManager;
+    private pendingFavoriteQuery: string | null = null;
 
     // Bound event handlers for cleanup
-    boundConnectionHandler = this.handleConnectionChange.bind(this);
+    private boundConnectionHandler = this.handleConnectionChange.bind(this);
 
-    connectedCallback() {
+    connectedCallback(): void {
         this.innerHTML = template;
         this.historyManager = new HistoryManager(
             { history: 'queryHistory', favorites: 'queryFavorites' },
@@ -79,55 +119,57 @@ class QueryTab extends HTMLElement {
         document.addEventListener('connection-changed', this.boundConnectionHandler);
     }
 
-    disconnectedCallback() {
+    disconnectedCallback(): void {
         // Note: Don't deactivate autocomplete here - the innerHTML replacement in app.js
         // causes disconnect to fire after a new instance connects, which would deactivate it.
         // Since query-tab is always present (just hidden/shown), autocomplete stays active.
         document.removeEventListener('connection-changed', this.boundConnectionHandler);
-        clearTimeout(this.filterDebounceTimeout);
+        if (this.filterDebounceTimeout !== null) {
+            clearTimeout(this.filterDebounceTimeout);
+        }
     }
 
-    handleConnectionChange() {
+    private handleConnectionChange(): void {
         clearAutocompleteState();
     }
 
-    initElements() {
-        this.tabsContainer = this.querySelector('.query-tabs');
-        this.resultsContainer = this.querySelector('.query-results');
-        this.toolingCheckbox = this.querySelector('.query-tooling-checkbox');
-        this.editingCheckbox = this.querySelector('.query-editing-checkbox');
-        this.statusSpan = this.querySelector('.query-status');
+    private initElements(): void {
+        this.tabsContainer = this.querySelector<HTMLElement>('.query-tabs')!;
+        this.resultsContainer = this.querySelector<HTMLElement>('.query-results')!;
+        this.toolingCheckbox = this.querySelector<HTMLInputElement>('.query-tooling-checkbox')!;
+        this.editingCheckbox = this.querySelector<HTMLInputElement>('.query-editing-checkbox')!;
+        this.statusSpan = this.querySelector<HTMLElement>('.query-status')!;
 
         // Button components
-        this.historyBtn = this.querySelector('.query-history-btn');
-        this.historyModal = this.querySelector('.query-history-modal');
-        this.settingsBtn = this.querySelector('.query-settings-btn');
-        this.resultsBtn = this.querySelector('.query-results-btn');
-        this.actionBtn = this.querySelector('.query-action-btn');
+        this.historyBtn = this.querySelector<HTMLElement>('.query-history-btn')!;
+        this.historyModal = this.querySelector('.query-history-modal')!;
+        this.settingsBtn = this.querySelector<HTMLElement>('.query-settings-btn')!;
+        this.resultsBtn = this.querySelector('.query-results-btn')!;
+        this.actionBtn = this.querySelector<HTMLElement>('.query-action-btn')!;
 
         // History dropdown elements
-        this.historyList = this.querySelector('.query-history-list');
-        this.favoritesList = this.querySelector('.query-favorites-list');
-        this.dropdownTabs = this.querySelectorAll('.dropdown-tab');
+        this.historyList = this.querySelector<HTMLElement>('.query-history-list')!;
+        this.favoritesList = this.querySelector<HTMLElement>('.query-favorites-list')!;
+        this.dropdownTabs = this.querySelectorAll<HTMLElement>('.dropdown-tab');
 
         // Favorite modal elements
-        this.favoriteModal = this.querySelector('.query-favorite-modal');
-        this.favoriteInput = this.querySelector('.query-favorite-input');
-        this.favoriteCancelBtn = this.querySelector('.query-favorite-cancel');
-        this.favoriteSaveBtn = this.querySelector('.query-favorite-save');
+        this.favoriteModal = this.querySelector('.query-favorite-modal')!;
+        this.favoriteInput = this.querySelector<HTMLInputElement>('.query-favorite-input')!;
+        this.favoriteCancelBtn = this.querySelector<HTMLButtonElement>('.query-favorite-cancel')!;
+        this.favoriteSaveBtn = this.querySelector<HTMLButtonElement>('.query-favorite-save')!;
 
         // Search elements
-        this.searchInput = this.querySelector('.search-input');
+        this.searchInput = this.querySelector<HTMLInputElement>('.search-input')!;
 
         // Export, Save, and Clear buttons (inside results dropdown)
-        this.exportBtn = this.querySelector('.query-export-btn');
-        this.bulkExportBtn = this.querySelector('.query-bulk-export-btn');
-        this.saveBtn = this.querySelector('.query-save-btn');
-        this.clearBtn = this.querySelector('.query-clear-btn');
+        this.exportBtn = this.querySelector<HTMLButtonElement>('.query-export-btn')!;
+        this.bulkExportBtn = this.querySelector<HTMLButtonElement>('.query-bulk-export-btn')!;
+        this.saveBtn = this.querySelector<HTMLButtonElement>('.query-save-btn')!;
+        this.clearBtn = this.querySelector<HTMLButtonElement>('.query-clear-btn')!;
     }
 
-    initEditor() {
-        this.editor = this.querySelector('.query-editor');
+    private initEditor(): void {
+        this.editor = this.querySelector<MonacoEditorElement>('.query-editor')!;
         this.editor.setValue(`SELECT
     Id,
     Name
@@ -135,7 +177,7 @@ FROM Account
 LIMIT 10`);
     }
 
-    attachEventListeners() {
+    private attachEventListeners(): void {
         // Query execution
         this.actionBtn.addEventListener('click', () => this.executeQuery());
         this.editor.addEventListener('execute', () => this.executeQuery());
@@ -145,17 +187,22 @@ LIMIT 10`);
 
         // History tab switching
         this.dropdownTabs.forEach(tab => {
-            tab.addEventListener('click', () => this.switchDropdownTab(tab.dataset.tab));
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                if (tabName) this.switchDropdownTab(tabName);
+            });
         });
 
         // List click delegation
-        this.historyList.addEventListener('click', e => this.handleListClick(e, 'history'));
-        this.favoritesList.addEventListener('click', e => this.handleListClick(e, 'favorites'));
+        this.historyList.addEventListener('click', (e: Event) => this.handleListClick(e, 'history'));
+        this.favoritesList.addEventListener('click', (e: Event) =>
+            this.handleListClick(e, 'favorites')
+        );
 
         // Favorite modal
         this.favoriteCancelBtn.addEventListener('click', () => this.favoriteModal.close());
         this.favoriteSaveBtn.addEventListener('click', () => this.handleFavoriteSave());
-        this.favoriteInput.addEventListener('keydown', e => {
+        this.favoriteInput.addEventListener('keydown', (e: KeyboardEvent) => {
             if (e.key === 'Enter') {
                 this.handleFavoriteSave();
             } else if (e.key === 'Escape') {
@@ -165,8 +212,10 @@ LIMIT 10`);
 
         // Search filtering with debounce for performance on large result sets
         this.searchInput.addEventListener('input', () => {
-            clearTimeout(this.filterDebounceTimeout);
-            this.filterDebounceTimeout = setTimeout(() => this.applyRowFilter(), 200);
+            if (this.filterDebounceTimeout !== null) {
+                clearTimeout(this.filterDebounceTimeout);
+            }
+            this.filterDebounceTimeout = window.setTimeout(() => this.applyRowFilter(), 200);
         });
 
         // Export CSV handler
@@ -204,7 +253,7 @@ LIMIT 10`);
     // Storage Operations
     // ============================================================
 
-    async loadStoredData() {
+    private async loadStoredData(): Promise<void> {
         await this.historyManager.load();
         this.renderLists();
     }
@@ -213,27 +262,27 @@ LIMIT 10`);
     // History & Favorites Logic
     // ============================================================
 
-    async saveToHistory(query) {
+    private async saveToHistory(query: string): Promise<void> {
         await this.historyManager.saveToHistory(query);
         this.renderLists();
     }
 
-    async addToFavorites(query, label) {
+    private async addToFavorites(query: string, label: string): Promise<void> {
         await this.historyManager.addToFavorites(query, label);
         this.renderLists();
     }
 
-    async removeFromHistory(id) {
+    private async removeFromHistory(id: string): Promise<void> {
         await this.historyManager.removeFromHistory(id);
         this.renderLists();
     }
 
-    async removeFromFavorites(id) {
+    private async removeFromFavorites(id: string): Promise<void> {
         await this.historyManager.removeFromFavorites(id);
         this.renderLists();
     }
 
-    loadQuery(query) {
+    private loadQuery(query: string): void {
         this.editor.setValue(query);
     }
 
@@ -241,7 +290,7 @@ LIMIT 10`);
     // Dropdown UI
     // ============================================================
 
-    switchDropdownTab(tabName) {
+    private switchDropdownTab(tabName: string): void {
         this.dropdownTabs.forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabName);
         });
@@ -254,12 +303,12 @@ LIMIT 10`);
     // List Rendering
     // ============================================================
 
-    renderLists() {
+    private renderLists(): void {
         this.renderHistoryList();
         this.renderFavoritesList();
     }
 
-    renderHistoryList() {
+    private renderHistoryList(): void {
         const { history } = this.historyManager;
 
         if (history.length === 0) {
@@ -273,9 +322,11 @@ LIMIT 10`);
 
         this.historyList.innerHTML = history
             .map(
-                item => `
+                (item: any) => {
+                    const query = (item as any).query as string | undefined;
+                    return `
             <div class="script-item" data-id="${item.id}">
-                <div class="script-preview">${escapeHtml(this.historyManager.getPreview(item.query))}</div>
+                <div class="script-preview">${escapeHtml(this.historyManager.getPreview(query || ''))}</div>
                 <div class="script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="script-actions">
@@ -285,12 +336,13 @@ LIMIT 10`);
                     </div>
                 </div>
             </div>
-        `
+        `;
+                }
             )
             .join('');
     }
 
-    renderFavoritesList() {
+    private renderFavoritesList(): void{
         const { favorites } = this.historyManager;
 
         if (favorites.length === 0) {
@@ -304,9 +356,11 @@ LIMIT 10`);
 
         this.favoritesList.innerHTML = favorites
             .map(
-                item => `
+                (item: any) => {
+                    const label = (item as any).label as string | undefined;
+                    return `
             <div class="script-item" data-id="${item.id}">
-                <div class="script-label">${escapeHtml(item.label)}</div>
+                <div class="script-label">${escapeHtml(label || '')}</div>
                 <div class="script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="script-actions">
@@ -315,30 +369,34 @@ LIMIT 10`);
                     </div>
                 </div>
             </div>
-        `
+        `;
+                }
             )
             .join('');
     }
 
-    handleListClick(event, listType) {
-        const item = event.target.closest('.script-item');
+    private handleListClick(event: Event, listType: 'history' | 'favorites'): void {
+        const item = (event.target as HTMLElement).closest('.script-item') as HTMLElement;
         if (!item) return;
 
         const { id } = item.dataset;
-        const list =
-            listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
-        const scriptData = list.find(s => s.id === id);
+        if (!id) return;
+
+        const list = listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
+        const scriptData = list.find((s: any) => s.id === id);
         if (!scriptData) return;
 
-        const action = event.target.closest('.script-action');
+        const query = (scriptData as any).query as string;
+
+        const action = (event.target as HTMLElement).closest('.script-action') as HTMLElement;
         if (action) {
             event.stopPropagation();
 
             if (action.classList.contains('load')) {
-                this.loadQuery(scriptData.query);
+                this.loadQuery(query);
                 this.historyModal.close();
             } else if (action.classList.contains('favorite')) {
-                this.showFavoriteModal(scriptData.query);
+                this.showFavoriteModal(query);
                 this.historyModal.close();
             } else if (action.classList.contains('delete')) {
                 if (listType === 'history') {
@@ -348,12 +406,12 @@ LIMIT 10`);
                 }
             }
         } else {
-            this.loadQuery(scriptData.query);
+            this.loadQuery(query);
             this.historyModal.close();
         }
     }
 
-    showFavoriteModal(query) {
+    private showFavoriteModal(query: string): void {
         this.pendingFavoriteQuery = query;
         const defaultLabel = this.historyManager.getPreview(query);
 
@@ -363,7 +421,7 @@ LIMIT 10`);
         this.favoriteInput.select();
     }
 
-    handleFavoriteSave() {
+    private handleFavoriteSave(): void {
         const label = this.favoriteInput.value.trim();
         if (label && this.pendingFavoriteQuery) {
             this.addToFavorites(this.pendingFavoriteQuery, label);
@@ -376,9 +434,9 @@ LIMIT 10`);
     // Row Filter (Search)
     // ============================================================
 
-    applyRowFilter() {
+    private applyRowFilter(): void {
         const filter = this.searchInput.value.trim().toLowerCase();
-        const rows = this.resultsContainer.querySelectorAll('.query-results-table tbody tr');
+        const rows = this.resultsContainer.querySelectorAll<HTMLElement>('.query-results-table tbody tr');
 
         if (!filter) {
             rows.forEach(row => row.classList.remove('hidden'));
@@ -386,14 +444,14 @@ LIMIT 10`);
         }
 
         rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
+            const text = row.textContent?.toLowerCase() || '';
             row.classList.toggle('hidden', !text.includes(filter));
         });
     }
 
-    clearRowFilter() {
+    private clearRowFilter(): void {
         this.searchInput.value = '';
-        const rows = this.resultsContainer.querySelectorAll('.query-results-table tbody tr');
+        const rows = this.resultsContainer.querySelectorAll<HTMLElement>('.query-results-table tbody tr');
         rows.forEach(row => row.classList.remove('hidden'));
     }
 
@@ -401,19 +459,18 @@ LIMIT 10`);
     // Data Transformations
     // ============================================================
 
-    normalizeQuery(query) {
+    private normalizeQuery(query: string): string {
         return query.toLowerCase().replace(/\s+/g, ' ').trim();
     }
 
-    flattenColumnMetadata(columnMetadata, prefix = '') {
-        const columns = [];
+    private flattenColumnMetadata(columnMetadata: ColumnMetadata[], prefix = ''): Column[] {
+        const columns: Column[] = [];
 
         for (const col of columnMetadata) {
             const { columnName } = col;
             const path = prefix ? `${prefix}.${columnName}` : columnName;
 
             // Check if this is a subquery (has aggregate=true and joinColumns)
-            // Subqueries in Salesforce are marked as aggregate even though they're not actual aggregates
             const isSubquery = col.aggregate && col.joinColumns && col.joinColumns.length > 0;
 
             if (isSubquery) {
@@ -424,7 +481,7 @@ LIMIT 10`);
                     path: path,
                     aggregate: false,
                     isSubquery: true,
-                    subqueryColumns: col.joinColumns, // Store subquery columns for later rendering
+                    subqueryColumns: col.joinColumns,
                 });
             } else if (col.joinColumns && col.joinColumns.length > 0) {
                 // Regular parent relationship - flatten it
@@ -444,7 +501,7 @@ LIMIT 10`);
         return columns;
     }
 
-    extractColumnsFromRecord(record) {
+    private extractColumnsFromRecord(record: SObject): Column[] {
         return Object.keys(record)
             .filter(key => key !== 'attributes')
             .map(key => ({
@@ -455,11 +512,11 @@ LIMIT 10`);
             }));
     }
 
-    getValueByPath(record, path) {
+    private getValueByPath(record: SObject, path: string): any {
         if (!path) return undefined;
 
         const parts = path.split('.');
-        let value = record;
+        let value: any = record;
 
         for (const part of parts) {
             if (value === null || value === undefined) return undefined;
@@ -473,7 +530,7 @@ LIMIT 10`);
     // Query Execution
     // ============================================================
 
-    async executeQuery() {
+    private async executeQuery(): Promise<void> {
         const query = this.editor.getValue().trim();
 
         if (!query) {
@@ -492,7 +549,6 @@ LIMIT 10`);
         if (existingTab) {
             this.switchToTab(existingTab.id);
             await this.refreshTab(existingTab.id);
-            // Save to history even for refresh
             await this.saveToHistory(query);
             return;
         }
@@ -500,23 +556,21 @@ LIMIT 10`);
         const tabId = this.createTab(query, normalizedQuery);
         this.switchToTab(tabId);
         await this.fetchQueryData(tabId);
-
-        // Save to history after successful execution
         await this.saveToHistory(query);
     }
 
-    async fetchQueryData(tabId) {
+    private async fetchQueryData(tabId: string): Promise<void> {
         const tabData = this.getTabDataById(tabId);
         if (!tabData) return;
 
         this.updateStatus('Loading...', 'loading');
-        tabData.error = null;
+        tabData.error = undefined;
         tabData.loading = true;
-        this.renderResults(); // Show loading state
+        this.renderResults();
 
         try {
             const useToolingApi = this.toolingCheckbox.checked;
-            const result = await executeQueryWithColumns(tabData.query, useToolingApi);
+            const result = (await executeQueryWithColumns(tabData.query, useToolingApi)) as QueryResult;
 
             tabData.records = result.records;
             tabData.totalSize = result.totalSize;
@@ -536,7 +590,7 @@ LIMIT 10`);
         } catch (error) {
             tabData.records = [];
             tabData.columns = [];
-            tabData.error = error.message;
+            tabData.error = (error as Error).message;
             tabData.isEditable = false;
             this.updateStatus('Error', 'error');
         } finally {
@@ -549,7 +603,7 @@ LIMIT 10`);
         this.updateSaveButtonState();
     }
 
-    processColumnMetadata(result, tabData) {
+    private processColumnMetadata(result: QueryResult, tabData: TabData): void {
         if (result.columnMetadata.length > 0) {
             tabData.columns = this.flattenColumnMetadata(result.columnMetadata);
         } else if (tabData.records.length > 0) {
@@ -559,7 +613,7 @@ LIMIT 10`);
         }
     }
 
-    async fetchFieldMetadataIfEditable(tabData) {
+    private async fetchFieldMetadataIfEditable(tabData: TabData): Promise<void> {
         if (!tabData.isEditable || !tabData.objectName) {
             return;
         }
@@ -576,7 +630,7 @@ LIMIT 10`);
         }
     }
 
-    checkIfEditable(tabData) {
+    private checkIfEditable(tabData: TabData): boolean {
         // Must have Id column
         const hasIdColumn = tabData.columns.some(col => col.path === 'Id');
         if (!hasIdColumn) return false;
@@ -595,9 +649,9 @@ LIMIT 10`);
     // Tab Management
     // ============================================================
 
-    createTab(query, normalizedQuery) {
+    private createTab(query: string, normalizedQuery: string): string {
         const tabId = `query-tab-${++this.tabCounter}`;
-        const tabData = {
+        const tabData: TabData = {
             id: tabId,
             query: query,
             normalizedQuery: normalizedQuery,
@@ -606,7 +660,7 @@ LIMIT 10`);
             columns: [],
             totalSize: 0,
             fieldDescribe: null,
-            modifiedRecords: new Map(), // recordId -> { fieldName: newValue }
+            modifiedRecords: new Map(),
             isEditable: false,
             loading: false,
         };
@@ -616,7 +670,7 @@ LIMIT 10`);
         return tabId;
     }
 
-    switchToTab(tabId) {
+    private switchToTab(tabId: string): void {
         this.activeTabId = tabId;
 
         // Restore the query to the editor when switching tabs
@@ -627,19 +681,19 @@ LIMIT 10`);
 
         this.renderTabs();
         this.renderResults();
-        // Clear search when switching tabs
         this.clearRowFilter();
         this.updateExportButtonState();
     }
 
-    async refreshTab(tabId) {
+    private async refreshTab(tabId: string): Promise<void> {
         const tabData = this.getTabDataById(tabId);
         if (tabData) {
             await this.fetchQueryData(tabId);
         }
     }
 
-    getTabDataById(tabId) {
+    private getTabDataById(tabId: string | null): TabData | null {
+        if (!tabId) return null;
         for (const tab of this.queryTabs.values()) {
             if (tab.id === tabId) {
                 return tab;
@@ -648,8 +702,8 @@ LIMIT 10`);
         return null;
     }
 
-    closeTab(tabId) {
-        let keyToRemove = null;
+    private closeTab(tabId: string): void {
+        let keyToRemove: string | null = null;
         for (const [key, tab] of this.queryTabs) {
             if (tab.id === tabId) {
                 keyToRemove = key;
@@ -676,7 +730,7 @@ LIMIT 10`);
         }
     }
 
-    getTabLabel(tab) {
+    private getTabLabel(tab: TabData): string {
         if (tab.objectName) {
             return tab.objectName;
         }
@@ -690,11 +744,11 @@ LIMIT 10`);
     // UI Rendering
     // ============================================================
 
-    updateStatus(status, type = '') {
+    private updateStatus(status: string, type: StatusType = ''): void {
         updateStatusBadge(this.statusSpan, status, type);
     }
 
-    renderTabs() {
+    private renderTabs(): void {
         this.tabsContainer.innerHTML = '';
 
         if (this.queryTabs.size === 0) {
@@ -718,7 +772,7 @@ LIMIT 10`);
             refreshBtn.className = 'query-tab-refresh';
             refreshBtn.innerHTML = icons.refreshTab;
             refreshBtn.title = 'Refresh';
-            refreshBtn.addEventListener('click', e => {
+            refreshBtn.addEventListener('click', (e: Event) => {
                 e.stopPropagation();
                 this.refreshTab(tab.id);
             });
@@ -727,7 +781,7 @@ LIMIT 10`);
             closeBtn.className = 'query-tab-close';
             closeBtn.innerHTML = icons.closeTab;
             closeBtn.title = 'Close';
-            closeBtn.addEventListener('click', e => {
+            closeBtn.addEventListener('click', (e: Event) => {
                 e.stopPropagation();
                 this.closeTab(tab.id);
             });
@@ -739,7 +793,7 @@ LIMIT 10`);
         }
     }
 
-    renderResults() {
+    private renderResults(): void {
         if (!this.activeTabId) {
             this.resultsContainer.innerHTML =
                 '<div class="query-results-empty">No query results to display</div>';
@@ -760,7 +814,7 @@ LIMIT 10`);
         }
 
         if (tabData.error) {
-            this.resultsContainer.innerHTML = `<div class="query-results-error">${escapeHtml(tabData.error)}</div>`;
+            this.resultsContainer.innerHTML = `<div class="query-results-error">${escapeHtml(tabData.error || '')}</div>`;
             return;
         }
 
@@ -781,7 +835,7 @@ LIMIT 10`);
         }
     }
 
-    createResultsTable(tabData, isEditMode) {
+    private createResultsTable(tabData: TabData, isEditMode: boolean): HTMLTableElement {
         const table = document.createElement('table');
         table.className = 'query-results-table';
         if (isEditMode) {
@@ -794,7 +848,7 @@ LIMIT 10`);
         return table;
     }
 
-    createTableHeader(columns) {
+    private createTableHeader(columns: Column[]): HTMLTableSectionElement {
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
 
@@ -808,7 +862,7 @@ LIMIT 10`);
         return thead;
     }
 
-    createTableBody(tabData, isEditMode) {
+    private createTableBody(tabData: TabData, isEditMode: boolean): HTMLTableSectionElement {
         const tbody = document.createElement('tbody');
 
         for (const record of tabData.records) {
@@ -819,7 +873,7 @@ LIMIT 10`);
         return tbody;
     }
 
-    createRecordRow(record, tabData, isEditMode) {
+    private createRecordRow(record: SObject, tabData: TabData, isEditMode: boolean): HTMLTableRowElement {
         const recordId = this.getValueByPath(record, 'Id');
         const row = document.createElement('tr');
         row.dataset.recordId = recordId;
@@ -832,14 +886,21 @@ LIMIT 10`);
         return row;
     }
 
-    createCell(record, col, tabData, isEditMode, recordId, row) {
+    private createCell(
+        record: SObject,
+        col: Column,
+        tabData: TabData,
+        isEditMode: boolean,
+        recordId: string,
+        row: HTMLTableRowElement
+    ): HTMLTableCellElement {
         const td = document.createElement('td');
         const value = this.getValueByPath(record, col.path);
 
         if (col.isSubquery) {
             this.renderSubqueryCell(td, value, col, row);
         } else if (col.path === 'Id' && value && tabData.objectName) {
-            this.renderIdCell(td, value, tabData.objectName);
+            this.renderIdCell(td, value as string, tabData.objectName);
         } else if (isEditMode && this.isFieldEditable(col.path, tabData)) {
             this.renderEditableCell(td, value, col, tabData, recordId);
         } else {
@@ -849,7 +910,7 @@ LIMIT 10`);
         return td;
     }
 
-    renderIdCell(td, value, objectName) {
+    private renderIdCell(td: HTMLTableCellElement, value: string, objectName: string): void {
         const connectionId = getActiveConnectionId();
         if (connectionId) {
             const link = document.createElement('a');
@@ -864,8 +925,10 @@ LIMIT 10`);
         }
     }
 
-    renderEditableCell(td, value, col, tabData, recordId) {
-        const field = tabData.fieldDescribe[col.path];
+    private renderEditableCell2(td: HTMLTableCellElement, value: any, col: Column, tabData: TabData, recordId: string): void {
+        const field = tabData.fieldDescribe?.[col.path];
+        if (!field) return;
+
         const modifiedValue = tabData.modifiedRecords.get(recordId)?.[col.path];
         const displayValue = modifiedValue !== undefined ? modifiedValue : value;
 
@@ -877,12 +940,39 @@ LIMIT 10`);
         }
     }
 
-    renderReadOnlyCell(td, value, col) {
-        td.textContent = this.formatCellValue(value, col);
-        td.title = this.formatCellValue(value, col);
+    private renderEditableCell(
+        td: HTMLTableCellElement,
+        value: any,
+        col: Column,
+        tabData: TabData,
+        recordId: string
+    ): void {
+        const field = tabData.fieldDescribe?.[col.path];
+        if (!field) return;
+
+        const modifiedValue = tabData.modifiedRecords.get(recordId)?.[col.path];
+        const displayValue = modifiedValue !== undefined ? modifiedValue : value;
+
+        const input = this.createEditableInput(field, displayValue, recordId, col.path);
+        td.appendChild(input);
+
+        if (modifiedValue !== undefined) {
+            td.classList.add('modified');
+        }
     }
 
-    renderSubqueryCell(td, value, col, parentRow) {
+    private renderReadOnlyCell(td: HTMLTableCellElement, value: any, col: Column): void {
+        const formatted = this.formatCellValue(value, col);
+        td.textContent = formatted || '';
+        td.title = formatted || '';
+    }
+
+    private renderSubqueryCell(
+        td: HTMLTableCellElement,
+        value: any,
+        col: Column,
+        parentRow: HTMLTableRowElement
+    ): void {
         td.className = 'query-subquery-cell';
 
         if (!value || !value.records || value.records.length === 0) {
@@ -897,12 +987,12 @@ LIMIT 10`);
         button.textContent = `▶ ${count} record${count !== 1 ? 's' : ''}`;
         button.dataset.expanded = 'false';
 
-        button.addEventListener('click', e => {
+        button.addEventListener('click', (e: Event) => {
             e.stopPropagation();
             const isExpanded = button.dataset.expanded === 'true';
 
             if (isExpanded) {
-                // Collapse - remove the detail row
+                // Collapse
                 button.textContent = `▶ ${count} record${count !== 1 ? 's' : ''}`;
                 button.dataset.expanded = 'false';
                 const detailRow = parentRow.nextElementSibling;
@@ -910,7 +1000,7 @@ LIMIT 10`);
                     detailRow.remove();
                 }
             } else {
-                // Expand - insert detail row
+                // Expand
                 button.textContent = `▼ ${count} record${count !== 1 ? 's' : ''}`;
                 button.dataset.expanded = 'true';
                 this.insertSubqueryDetailRow(parentRow, value, col);
@@ -920,7 +1010,16 @@ LIMIT 10`);
         td.appendChild(button);
     }
 
-    insertSubqueryDetailRow(parentRow, subqueryData, col) {
+    // Remove duplicate that I accidentally added
+    private renderEditableCell3(td: HTMLTableCellElement, value: any, col: Column, tabData: TabData, recordId: string): void {
+        this.renderEditableCell2(td, value, col, tabData, recordId);
+    }
+
+    private insertSubqueryDetailRow(
+        parentRow: HTMLTableRowElement,
+        subqueryData: any,
+        col: Column
+    ): void {
         // Remove existing detail row if any
         const existingDetail = parentRow.nextElementSibling;
         if (existingDetail && existingDetail.classList.contains('query-subquery-detail')) {
@@ -965,8 +1064,9 @@ LIMIT 10`);
             for (const subCol of columns) {
                 const td = document.createElement('td');
                 const value = this.getValueByPath(record, subCol.path);
-                td.textContent = this.formatCellValue(value, subCol);
-                td.title = this.formatCellValue(value, subCol);
+                const formatted = this.formatCellValue(value, subCol);
+                td.textContent = formatted || '';
+                td.title = formatted || '';
                 row.appendChild(td);
             }
             tbody.appendChild(row);
@@ -977,10 +1077,10 @@ LIMIT 10`);
         detailRow.appendChild(detailCell);
 
         // Insert after parent row
-        parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
+        parentRow.parentNode!.insertBefore(detailRow, parentRow.nextSibling);
     }
 
-    formatCellValue(value, col) {
+    private formatCellValue(value: any, col: Column): string | null {
         if (value === null || value === undefined) {
             return '';
         }
@@ -1007,7 +1107,7 @@ LIMIT 10`);
     // CSV Export
     // ============================================================
 
-    exportCurrentResults() {
+    private exportCurrentResults(): void {
         const tabData = this.getTabDataById(this.activeTabId);
         if (!tabData || tabData.records.length === 0) return;
 
@@ -1015,8 +1115,8 @@ LIMIT 10`);
         this.downloadCsv(csv, this.getExportFilename(tabData));
     }
 
-    recordsToCsv(records, columns) {
-        const rows = [];
+    private recordsToCsv(records: SObject[], columns: Column[]): string {
+        const rows: string[] = [];
 
         const headers = columns.map(col => this.escapeCsvField(col.title));
         rows.push(headers.join(','));
@@ -1024,7 +1124,8 @@ LIMIT 10`);
         for (const record of records) {
             const row = columns.map(col => {
                 const value = this.getValueByPath(record, col.path);
-                return this.escapeCsvField(this.formatCellValue(value, col));
+                const formatted = this.formatCellValue(value, col);
+                return this.escapeCsvField(formatted);
             });
             rows.push(row.join(','));
         }
@@ -1032,7 +1133,7 @@ LIMIT 10`);
         return rows.join('\n');
     }
 
-    escapeCsvField(value) {
+    private escapeCsvField(value: string | null | undefined): string {
         if (value === null || value === undefined) return '';
         const str = String(value);
         if (str.includes(',') || str.includes('"') || str.includes('\n')) {
@@ -1041,13 +1142,13 @@ LIMIT 10`);
         return str;
     }
 
-    getExportFilename(tabData) {
+    private getExportFilename(tabData: TabData): string {
         const objectName = tabData.objectName || 'query';
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
         return `${objectName}_${timestamp}.csv`;
     }
 
-    downloadCsv(content, filename) {
+    private downloadCsv(content: string, filename: string): void {
         const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
 
@@ -1062,7 +1163,7 @@ LIMIT 10`);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
-    async bulkExport() {
+    private async bulkExport(): Promise<void> {
         const query = this.editor.getValue().trim();
 
         if (!query) {
@@ -1086,9 +1187,9 @@ LIMIT 10`);
         this.bulkExportBtn.disabled = true;
 
         try {
-            const csv = await executeBulkQueryExport(query, (state, recordCount) => {
+            const csv = await executeBulkQueryExport(query, (state: string, recordCount?: number) => {
                 if (state === 'InProgress' || state === 'UploadComplete') {
-                    this.updateStatus(`Processing: ${recordCount} records`, 'loading');
+                    this.updateStatus(`Processing: ${recordCount || 0} records`, 'loading');
                 } else if (state === 'Creating job...') {
                     this.updateStatus('Creating bulk job...', 'loading');
                 } else if (state === 'Downloading...') {
@@ -1106,14 +1207,14 @@ LIMIT 10`);
         } catch (error) {
             console.error('Bulk export error:', error);
             this.updateStatus('Export failed', 'error');
-            alert(`Bulk export failed: ${error.message}`);
+            alert(`Bulk export failed: ${(error as Error).message}`);
         } finally {
             this.bulkExportInProgress = false;
             this.bulkExportBtn.disabled = false;
         }
     }
 
-    updateExportButtonState() {
+    private updateExportButtonState(): void {
         const tabData = this.getTabDataById(this.activeTabId);
         const hasResults =
             tabData && tabData.records && tabData.records.length > 0 && !tabData.error;
@@ -1121,7 +1222,7 @@ LIMIT 10`);
         this.bulkExportBtn.disabled = !hasResults;
     }
 
-    updateSaveButtonState() {
+    private updateSaveButtonState(): void {
         const tabData = this.getTabDataById(this.activeTabId);
         const isEditMode = this.editingCheckbox.checked && tabData?.isEditable;
         const hasModifications = tabData && tabData.modifiedRecords.size > 0;
@@ -1133,7 +1234,7 @@ LIMIT 10`);
     // Field Editing
     // ============================================================
 
-    isFieldEditable(fieldPath, tabData) {
+    private isFieldEditable(fieldPath: string, tabData: TabData): boolean {
         // Only direct fields (not relationships) are editable
         if (fieldPath.includes('.')) return false;
 
@@ -1143,7 +1244,12 @@ LIMIT 10`);
         return field.updateable && !field.calculated;
     }
 
-    createEditableInput(field, value, recordId, fieldName) {
+    private createEditableInput(
+        field: FieldDescribe,
+        value: any,
+        recordId: string,
+        fieldName: string
+    ): HTMLInputElement | HTMLSelectElement {
         const formattedValue = this.formatValueForInput(value, field);
 
         if (field.type === 'boolean') {
@@ -1195,7 +1301,7 @@ LIMIT 10`);
         return input;
     }
 
-    formatValueForInput(value, field) {
+    private formatValueForInput(value: any, field: FieldDescribe): string {
         if (value === null || value === undefined) return '';
 
         switch (field.type) {
@@ -1213,12 +1319,12 @@ LIMIT 10`);
         }
     }
 
-    parseValueFromInput(stringValue, field) {
+    private parseValueFromInput(stringValue: string, field: FieldDescribe): any {
         if (stringValue === '' || stringValue === null) return null;
 
         switch (field.type) {
             case 'boolean':
-                return stringValue === 'true' || stringValue === true;
+                return stringValue === 'true' || stringValue === 'true';
             case 'int':
                 const intVal = parseInt(stringValue, 10);
                 return isNaN(intVal) ? null : intVal;
@@ -1232,25 +1338,29 @@ LIMIT 10`);
         }
     }
 
-    attachEditableListeners(tabData) {
-        const inputs = this.resultsContainer.querySelectorAll('.query-field-input');
+    private attachEditableListeners(tabData: TabData): void {
+        const inputs = this.resultsContainer.querySelectorAll<HTMLInputElement | HTMLSelectElement>('.query-field-input');
 
         inputs.forEach(input => {
-            const handler = e => {
-                const { recordId } = e.target.dataset;
-                const { fieldName } = e.target.dataset;
-                const { fieldType } = e.target.dataset;
-                const field = tabData.fieldDescribe[fieldName];
+            const handler = (e: Event) => {
+                const target = e.target as HTMLInputElement | HTMLSelectElement;
+                const { recordId, fieldName, fieldType } = target.dataset;
+                if (!recordId || !fieldName || !fieldType) return;
 
-                let newValue;
+                const field = tabData.fieldDescribe?.[fieldName];
+                if (!field) return;
+
+                let newValue: any;
                 if (fieldType === 'boolean') {
-                    newValue = e.target.checked;
+                    newValue = (target as HTMLInputElement).checked;
                 } else {
-                    newValue = this.parseValueFromInput(e.target.value, field);
+                    newValue = this.parseValueFromInput(target.value, field);
                 }
 
                 // Get original value from record
                 const record = tabData.records.find(r => this.getValueByPath(r, 'Id') === recordId);
+                if (!record) return;
+
                 const originalValue = this.getValueByPath(record, fieldName);
 
                 // Compare values
@@ -1264,17 +1374,18 @@ LIMIT 10`);
                     if (!tabData.modifiedRecords.has(recordId)) {
                         tabData.modifiedRecords.set(recordId, {});
                     }
-                    tabData.modifiedRecords.get(recordId)[fieldName] = newValue;
-                    e.target.closest('td').classList.add('modified');
+                    tabData.modifiedRecords.get(recordId)![fieldName] = newValue;
+                    target.closest('td')?.classList.add('modified');
                 } else {
                     // Remove modification
                     if (tabData.modifiedRecords.has(recordId)) {
-                        delete tabData.modifiedRecords.get(recordId)[fieldName];
-                        if (Object.keys(tabData.modifiedRecords.get(recordId)).length === 0) {
+                        const mods = tabData.modifiedRecords.get(recordId)!;
+                        delete mods[fieldName];
+                        if (Object.keys(mods).length === 0) {
                             tabData.modifiedRecords.delete(recordId);
                         }
                     }
-                    e.target.closest('td').classList.remove('modified');
+                    target.closest('td')?.classList.remove('modified');
                 }
 
                 this.updateSaveButtonState();
@@ -1288,17 +1399,17 @@ LIMIT 10`);
         });
     }
 
-    async saveChanges() {
+    private async saveChanges(): Promise<void> {
         const tabData = this.getTabDataById(this.activeTabId);
-        if (!tabData || tabData.modifiedRecords.size === 0) {
+        if (!tabData || tabData.modifiedRecords.size === 0 || !tabData.objectName) {
             return;
         }
 
         this.updateStatus('Saving...', 'loading');
         this.saveBtn.disabled = true;
 
-        const updatePromises = [];
-        const errors = [];
+        const updatePromises: Promise<void>[] = [];
+        const errors: Array<{ recordId: string; error: string }> = [];
 
         for (const [recordId, fields] of tabData.modifiedRecords.entries()) {
             updatePromises.push(
@@ -1310,12 +1421,12 @@ LIMIT 10`);
                         );
                         if (record) {
                             for (const [fieldName, value] of Object.entries(fields)) {
-                                record[fieldName] = value;
+                                (record as any)[fieldName] = value;
                             }
                         }
                     })
                     .catch(error => {
-                        errors.push({ recordId, error: error.message });
+                        errors.push({ recordId, error: (error as Error).message });
                     })
             );
         }
@@ -1336,7 +1447,7 @@ LIMIT 10`);
         this.updateSaveButtonState();
     }
 
-    clearChanges() {
+    private clearChanges(): void {
         const tabData = this.getTabDataById(this.activeTabId);
         if (!tabData || tabData.modifiedRecords.size === 0) {
             return;

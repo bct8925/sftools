@@ -12,36 +12,46 @@ import {
     formatEventEntry,
     formatSystemMessage,
 } from '../../lib/events-utils.js';
+import type { SObject } from '../../types/salesforce';
+import type { MonacoEditorElement } from '../../types/components';
+import type { StatusType } from '../../lib/ui-helpers';
 import '../monaco-editor/monaco-editor.js';
 import template from './events.html?raw';
 
+interface StreamMessage {
+    subscriptionId: string;
+    type: 'streamEvent' | 'streamError' | 'streamEnd';
+    event?: any;
+    error?: string;
+}
+
 class EventsTab extends HTMLElement {
     // DOM references
-    channelSelect = null;
-    subscribeBtn = null;
-    streamStatus = null;
-    streamEditor = null;
-    clearBtn = null;
-    publishChannelSelect = null;
-    publishEditor = null;
-    publishBtn = null;
-    publishStatus = null;
-    replaySelect = null;
-    replayCustomContainer = null;
-    replayIdInput = null;
+    private channelSelect!: HTMLSelectElement;
+    private subscribeBtn!: HTMLButtonElement;
+    private streamStatus!: HTMLElement;
+    private streamEditor!: MonacoEditorElement;
+    private clearBtn!: HTMLButtonElement;
+    private publishChannelSelect!: HTMLSelectElement;
+    private publishEditor!: MonacoEditorElement;
+    private publishBtn!: HTMLButtonElement;
+    private publishStatus!: HTMLElement;
+    private replaySelect!: HTMLSelectElement;
+    private replayCustomContainer!: HTMLElement;
+    private replayIdInput!: HTMLInputElement;
 
     // Streaming state
-    currentSubscriptionId = null;
-    isSubscribed = false;
-    eventCount = 0;
-    channelsLoaded = false;
+    private currentSubscriptionId: string | null = null;
+    private isSubscribed = false;
+    private eventCount = 0;
+    private channelsLoaded = false;
 
     // Bound message handler for cleanup
-    boundMessageHandler = null;
-    boundConnectionHandler = null;
-    boundVisibilityHandler = null;
+    private boundMessageHandler?: (message: any) => void;
+    private boundConnectionHandler?: () => void;
+    private boundVisibilityHandler?: () => void;
 
-    connectedCallback() {
+    connectedCallback(): void {
         this.innerHTML = template;
         this.initElements();
         this.initEditors();
@@ -58,7 +68,7 @@ class EventsTab extends HTMLElement {
         document.addEventListener('connection-changed', this.boundConnectionHandler);
     }
 
-    disconnectedCallback() {
+    disconnectedCallback(): void {
         if (this.boundMessageHandler) {
             chrome.runtime.onMessage.removeListener(this.boundMessageHandler);
         }
@@ -70,7 +80,7 @@ class EventsTab extends HTMLElement {
         }
     }
 
-    checkVisibilityAndLoad() {
+    private checkVisibilityAndLoad(): void {
         // Only load once, and only when tab is active and authenticated
         if (this.channelsLoaded || !this.classList.contains('active')) {
             return;
@@ -81,7 +91,7 @@ class EventsTab extends HTMLElement {
         }
     }
 
-    async handleConnectionChange() {
+    private async handleConnectionChange(): Promise<void> {
         // Unsubscribe from current channel if subscribed
         if (this.isSubscribed && this.currentSubscriptionId) {
             try {
@@ -105,40 +115,40 @@ class EventsTab extends HTMLElement {
         }
     }
 
-    initElements() {
-        this.channelSelect = this.querySelector('.event-channel-select');
-        this.subscribeBtn = this.querySelector('.event-subscribe-btn');
-        this.streamStatus = this.querySelector('.event-stream-status');
-        this.clearBtn = this.querySelector('.event-clear-btn');
-        this.publishChannelSelect = this.querySelector('.event-publish-channel');
-        this.publishBtn = this.querySelector('.event-publish-btn');
-        this.publishStatus = this.querySelector('.event-publish-status');
-        this.replaySelect = this.querySelector('.event-replay-select');
-        this.replayCustomContainer = this.querySelector('.event-replay-custom');
-        this.replayIdInput = this.querySelector('.event-replay-id');
+    private initElements(): void {
+        this.channelSelect = this.querySelector<HTMLSelectElement>('.event-channel-select')!;
+        this.subscribeBtn = this.querySelector<HTMLButtonElement>('.event-subscribe-btn')!;
+        this.streamStatus = this.querySelector<HTMLElement>('.event-stream-status')!;
+        this.clearBtn = this.querySelector<HTMLButtonElement>('.event-clear-btn')!;
+        this.publishChannelSelect = this.querySelector<HTMLSelectElement>('.event-publish-channel')!;
+        this.publishBtn = this.querySelector<HTMLButtonElement>('.event-publish-btn')!;
+        this.publishStatus = this.querySelector<HTMLElement>('.event-publish-status')!;
+        this.replaySelect = this.querySelector<HTMLSelectElement>('.event-replay-select')!;
+        this.replayCustomContainer = this.querySelector<HTMLElement>('.event-replay-custom')!;
+        this.replayIdInput = this.querySelector<HTMLInputElement>('.event-replay-id')!;
     }
 
-    initEditors() {
-        this.streamEditor = this.querySelector('.event-stream-editor');
-        this.publishEditor = this.querySelector('.event-publish-editor');
+    private initEditors(): void {
+        this.streamEditor = this.querySelector<MonacoEditorElement>('.event-stream-editor')!;
+        this.publishEditor = this.querySelector<MonacoEditorElement>('.event-publish-editor')!;
 
         this.streamEditor.setValue('// Subscribe to a channel to see events here\n');
         this.publishEditor.setValue('{\n  \n}');
 
-        this.publishEditor.addEventListener('execute', () => this.handlePublish());
+        this.publishEditor.addEventListener('execute', this.handlePublish);
     }
 
-    attachEventListeners() {
-        this.subscribeBtn.addEventListener('click', () => this.toggleSubscription());
+    private attachEventListeners(): void {
+        this.subscribeBtn.addEventListener('click', this.toggleSubscription);
         this.clearBtn.addEventListener('click', () => this.clearStream());
-        this.publishBtn.addEventListener('click', () => this.handlePublish());
+        this.publishBtn.addEventListener('click', this.handlePublish);
 
         this.replaySelect.addEventListener('change', () => {
             this.replayCustomContainer.style.display =
                 this.replaySelect.value === 'CUSTOM' ? 'block' : 'none';
         });
 
-        this.boundMessageHandler = message => this.handleStreamMessage(message);
+        this.boundMessageHandler = (message: StreamMessage) => this.handleStreamMessage(message);
         chrome.runtime.onMessage.addListener(this.boundMessageHandler);
     }
 
@@ -146,7 +156,7 @@ class EventsTab extends HTMLElement {
     // Channel Loading
     // ============================================================
 
-    async loadChannels() {
+    private async loadChannels(): Promise<void> {
         if (!isAuthenticated()) {
             this.channelSelect.innerHTML = '<option value="">Not authenticated</option>';
             this.publishChannelSelect.innerHTML = '<option value="">Not authenticated</option>';
@@ -157,8 +167,8 @@ class EventsTab extends HTMLElement {
         this.publishChannelSelect.innerHTML = '<option value="">Loading...</option>';
 
         try {
-            const channels = await getAllStreamingChannels();
-            this.buildChannelOptions(channels);
+            const channels = await getAllStreamingChannels() as any;
+            this.buildChannelOptionsUI(channels);
         } catch (err) {
             console.error('Error loading streaming channels:', err);
             this.channelSelect.innerHTML = '<option value="">Error loading channels</option>';
@@ -167,7 +177,7 @@ class EventsTab extends HTMLElement {
         }
     }
 
-    buildChannelOptions(channels) {
+    private buildChannelOptionsUI(channels: any): void {
         const { platformEvents, standardEvents, pushTopics, systemTopics } = channels;
 
         // Build subscribe dropdown (all channel types)
@@ -205,7 +215,7 @@ class EventsTab extends HTMLElement {
         if (platformEvents.length > 0) {
             const publishCustomGroup = document.createElement('optgroup');
             publishCustomGroup.label = 'Custom Events';
-            platformEvents.forEach(evt => {
+            platformEvents.forEach((evt: any) => {
                 const opt = document.createElement('option');
                 opt.value = evt.QualifiedApiName;
                 opt.textContent = evt.Label || evt.DeveloperName;
@@ -219,15 +229,15 @@ class EventsTab extends HTMLElement {
     // Subscription (via proxy - gRPC or CometD based on channel)
     // ============================================================
 
-    toggleSubscription() {
+    private toggleSubscription = (): void => {
         if (this.isSubscribed) {
             this.unsubscribe();
         } else {
             this.subscribe();
         }
-    }
+    };
 
-    async subscribe() {
+    private async subscribe(): Promise<void> {
         const channel = this.channelSelect.value;
         if (!channel) {
             this.updateStreamStatus('Select a channel', 'error');
@@ -275,13 +285,13 @@ class EventsTab extends HTMLElement {
         } catch (err) {
             console.error('Subscribe error:', err);
             this.updateStreamStatus('Error', 'error');
-            this.appendSystemMessage(`Error: ${err.message}`);
+            this.appendSystemMessage(`Error: ${(err as Error).message}`);
         } finally {
             this.subscribeBtn.disabled = false;
         }
     }
 
-    async unsubscribe() {
+    private async unsubscribe(): Promise<void> {
         if (!this.currentSubscriptionId) return;
 
         this.subscribeBtn.disabled = true;
@@ -300,7 +310,7 @@ class EventsTab extends HTMLElement {
         this.handleDisconnect();
     }
 
-    handleDisconnect() {
+    private handleDisconnect(): void {
         this.currentSubscriptionId = null;
         this.isSubscribed = false;
         this.subscribeBtn.textContent = 'Subscribe';
@@ -312,7 +322,7 @@ class EventsTab extends HTMLElement {
     // Stream Message Handling
     // ============================================================
 
-    handleStreamMessage(message) {
+    private handleStreamMessage(message: StreamMessage): void {
         if (message.subscriptionId !== this.currentSubscriptionId) return;
 
         switch (message.type) {
@@ -330,7 +340,7 @@ class EventsTab extends HTMLElement {
         }
     }
 
-    appendEvent(event) {
+    private appendEvent(event: any): void {
         this.eventCount++;
         const timestamp = new Date().toISOString();
 
@@ -348,7 +358,7 @@ class EventsTab extends HTMLElement {
         this.scrollStreamToBottom();
     }
 
-    appendSystemMessage(msg) {
+    private appendSystemMessage(msg: string): void {
         const current = this.streamEditor.getValue();
         const newContent = `${current + formatSystemMessage(msg)}\n`;
         this.streamEditor.setValue(newContent);
@@ -356,15 +366,17 @@ class EventsTab extends HTMLElement {
         this.scrollStreamToBottom();
     }
 
-    scrollStreamToBottom() {
+    private scrollStreamToBottom(): void {
         const { editor } = this.streamEditor;
         if (editor) {
-            const lineCount = editor.getModel().getLineCount();
-            editor.revealLine(lineCount);
+            const lineCount = editor.getModel()?.getLineCount();
+            if (lineCount) {
+                editor.revealLine(lineCount);
+            }
         }
     }
 
-    clearStream() {
+    private clearStream(): void {
         this.eventCount = 0;
         this.streamEditor.setValue('// Stream cleared\n');
     }
@@ -373,7 +385,7 @@ class EventsTab extends HTMLElement {
     // Publishing
     // ============================================================
 
-    async handlePublish() {
+    private handlePublish = async (): Promise<void> => {
         const channel = this.publishChannelSelect.value;
         if (!channel) {
             this.updatePublishStatus('Select an event type', 'error');
@@ -385,7 +397,7 @@ class EventsTab extends HTMLElement {
             return;
         }
 
-        let payload;
+        let payload: any;
         try {
             payload = JSON.parse(this.publishEditor.getValue());
         } catch {
@@ -403,7 +415,7 @@ class EventsTab extends HTMLElement {
                 this.updatePublishStatus('Published', 'success');
                 this.appendSystemMessage(`Published event: ${result.id || 'success'}`);
             } else {
-                this.updatePublishStatus(result.error, 'error');
+                this.updatePublishStatus(result.error || 'Publish failed', 'error');
             }
         } catch (err) {
             console.error('Publish error:', err);
@@ -411,17 +423,17 @@ class EventsTab extends HTMLElement {
         } finally {
             this.publishBtn.disabled = false;
         }
-    }
+    };
 
     // ============================================================
     // UI Helpers
     // ============================================================
 
-    updateStreamStatus(text, type = '') {
+    private updateStreamStatus(text: string, type: StatusType = ''): void {
         updateStatusBadge(this.streamStatus, text, type);
     }
 
-    updatePublishStatus(text, type = '') {
+    private updatePublishStatus(text: string, type: StatusType = ''): void {
         this.publishStatus.textContent = text;
         this.publishStatus.className = 'status-badge';
         if (type) this.publishStatus.classList.add(`status-${type}`);

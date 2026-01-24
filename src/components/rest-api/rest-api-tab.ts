@@ -3,20 +3,22 @@ import { isAuthenticated } from '../../lib/utils.js';
 import { executeRestRequest } from '../../lib/salesforce.js';
 import { updateStatusBadge } from '../../lib/ui-helpers.js';
 import { shouldShowBody } from '../../lib/rest-api-utils.js';
+import type { MonacoEditorElement } from '../../types/components';
+import type { StatusType } from '../../lib/ui-helpers';
 import '../monaco-editor/monaco-editor.js';
 import template from './rest-api.html?raw';
 
 class RestApiTab extends HTMLElement {
     // DOM references
-    urlInput = null;
-    methodSelect = null;
-    bodyContainer = null;
-    sendButton = null;
-    statusSpan = null;
-    requestEditor = null;
-    responseEditor = null;
+    private urlInput!: HTMLInputElement;
+    private methodSelect!: HTMLSelectElement;
+    private bodyContainer!: HTMLElement;
+    private sendButton!: HTMLButtonElement;
+    private statusSpan!: HTMLElement;
+    private requestEditor!: MonacoEditorElement;
+    private responseEditor!: MonacoEditorElement;
 
-    connectedCallback() {
+    connectedCallback(): void {
         this.innerHTML = template;
         this.initElements();
         this.initEditors();
@@ -24,42 +26,42 @@ class RestApiTab extends HTMLElement {
         this.toggleBodyInput();
     }
 
-    initElements() {
-        this.urlInput = this.querySelector('.rest-api-url');
-        this.methodSelect = this.querySelector('.rest-method-select');
-        this.bodyContainer = this.querySelector('.rest-body-container');
-        this.sendButton = this.querySelector('.rest-send-btn');
-        this.statusSpan = this.querySelector('.rest-status');
+    private initElements(): void {
+        this.urlInput = this.querySelector<HTMLInputElement>('.rest-api-url')!;
+        this.methodSelect = this.querySelector<HTMLSelectElement>('.rest-method-select')!;
+        this.bodyContainer = this.querySelector<HTMLElement>('.rest-body-container')!;
+        this.sendButton = this.querySelector<HTMLButtonElement>('.rest-send-btn')!;
+        this.statusSpan = this.querySelector<HTMLElement>('.rest-status')!;
     }
 
-    initEditors() {
-        this.requestEditor = this.querySelector('.rest-request-editor');
-        this.responseEditor = this.querySelector('.rest-response-editor');
+    private initEditors(): void {
+        this.requestEditor = this.querySelector<MonacoEditorElement>('.rest-request-editor')!;
+        this.responseEditor = this.querySelector<MonacoEditorElement>('.rest-response-editor')!;
 
         this.requestEditor.setValue('{\n    \n}');
         this.responseEditor.setValue('// Response will appear here');
     }
 
-    attachEventListeners() {
-        this.methodSelect.addEventListener('change', () => this.toggleBodyInput());
-        this.sendButton.addEventListener('click', () => this.executeRequest());
-        this.requestEditor.addEventListener('execute', () => this.executeRequest());
+    private attachEventListeners(): void {
+        this.methodSelect.addEventListener('change', this.toggleBodyInput);
+        this.sendButton.addEventListener('click', this.executeRequest);
+        this.requestEditor.addEventListener('execute', this.executeRequest);
     }
 
-    toggleBodyInput() {
+    private toggleBodyInput = (): void => {
         const method = this.methodSelect.value;
         if (shouldShowBody(method)) {
             this.bodyContainer.style.display = 'block';
         } else {
             this.bodyContainer.style.display = 'none';
         }
-    }
+    };
 
-    updateStatus(status, type = '') {
+    private updateStatus(status: string, type: StatusType = ''): void {
         updateStatusBadge(this.statusSpan, status, type);
     }
 
-    async executeRequest() {
+    private executeRequest = async (): Promise<void> => {
         const url = this.urlInput.value.trim();
         const method = this.methodSelect.value;
 
@@ -74,7 +76,7 @@ class RestApiTab extends HTMLElement {
         }
 
         // Validate JSON for POST/PATCH/PUT
-        let body = null;
+        let body: string | null = null;
         if (shouldShowBody(method)) {
             const bodyValue = this.requestEditor.getValue();
             try {
@@ -106,10 +108,10 @@ class RestApiTab extends HTMLElement {
             }
         } catch (error) {
             this.updateStatus('Client Error', 'error');
-            this.responseEditor.setValue(`Error: ${error.message}`);
+            this.responseEditor.setValue(`Error: ${(error as Error).message}`);
             console.error('REST API Error:', error);
         }
-    }
+    };
 }
 
 customElements.define('rest-api-tab', RestApiTab);

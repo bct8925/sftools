@@ -1,69 +1,94 @@
 // Flow Version Cleanup Tool
-import { searchFlows, getFlowVersions, deleteInactiveFlowVersions } from '../../lib/salesforce.js';
+import {
+    searchFlows,
+    getFlowVersions,
+    deleteInactiveFlowVersions,
+} from '../../lib/salesforce.js';
 import { escapeHtml } from '../../lib/text-utils.js';
+import type { SObject } from '../../types/salesforce';
 import './search-box.js';
 import template from './flow-cleanup.html?raw';
 import './utils-tools.css';
 
+interface Flow extends SObject {
+    DeveloperName: string;
+}
+
+interface FlowVersion extends SObject {
+    Status: string;
+    VersionNumber: number;
+}
+
+interface DeleteResult {
+    deletedCount: number;
+}
+
+interface SearchResult {
+    id: string;
+    name: string;
+}
+
 class FlowCleanup extends HTMLElement {
-    flowSearch = null;
-    flowVersionsSection = null;
-    flowInfo = null;
-    deleteVersionsBtn = null;
-    status = null;
+    private flowSearch!: any; // SearchBox component - no type available
+    private flowVersionsSection!: HTMLElement;
+    private flowInfo!: HTMLElement;
+    private deleteVersionsBtn!: HTMLButtonElement;
+    private status!: HTMLElement;
 
-    selectedFlowId = null;
-    selectedFlowName = null;
-    versions = [];
+    private selectedFlowId: string | null = null;
+    private selectedFlowName: string | null = null;
+    private versions: FlowVersion[] = [];
 
-    connectedCallback() {
+    connectedCallback(): void {
         this.innerHTML = template;
         this.initElements();
         this.attachEventListeners();
     }
 
-    initElements() {
+    private initElements(): void {
         this.flowSearch = this.querySelector('.flow-search');
-        this.flowVersionsSection = this.querySelector('.flow-versions');
-        this.flowInfo = this.querySelector('.flow-info');
-        this.deleteVersionsBtn = this.querySelector('.delete-versions-btn');
-        this.status = this.querySelector('.tool-status');
+        this.flowVersionsSection = this.querySelector<HTMLElement>('.flow-versions')!;
+        this.flowInfo = this.querySelector<HTMLElement>('.flow-info')!;
+        this.deleteVersionsBtn = this.querySelector<HTMLButtonElement>('.delete-versions-btn')!;
+        this.status = this.querySelector<HTMLElement>('.tool-status')!;
 
         // Configure search box
         this.flowSearch.setSearchFn(searchFlows);
-        this.flowSearch.setRenderFn(flow => ({
+        this.flowSearch.setRenderFn((flow: Flow): SearchResult => ({
             id: flow.Id,
             name: flow.DeveloperName,
         }));
     }
 
-    attachEventListeners() {
-        this.flowSearch.addEventListener('select', e => this.handleFlowSelect(e.detail));
-        this.deleteVersionsBtn.addEventListener('click', () => this.handleDeleteVersions());
+    private attachEventListeners(): void {
+        this.flowSearch.addEventListener('select', (e: CustomEvent<Flow>) =>
+            this.handleFlowSelect(e.detail)
+        );
+        this.deleteVersionsBtn.addEventListener('click', this.handleDeleteVersions);
     }
 
-    async handleFlowSelect(flow) {
+    private handleFlowSelect = async (flow: Flow): Promise<void> => {
         this.selectedFlowId = flow.Id;
         this.selectedFlowName = flow.DeveloperName;
 
         this.setStatus('loading', 'Loading versions...');
 
         try {
-            this.versions = await getFlowVersions(this.selectedFlowId);
+            this.versions = (await getFlowVersions(this.selectedFlowId)) as FlowVersion[];
             this.renderVersionInfo();
             this.status.classList.add('hidden');
         } catch (error) {
-            this.setStatus('error', error.message);
+            this.setStatus('error', (error as Error).message);
         }
-    }
+    };
 
-    renderVersionInfo() {
+    private renderVersionInfo(): void {
         const activeVersion = this.versions.find(v => v.Status === 'Active');
         const inactiveVersions = this.versions.filter(v => v.Status !== 'Active');
         const inactiveCount = inactiveVersions.length;
 
         this.flowInfo.innerHTML = `
-            <strong>${escapeHtml(this.selectedFlowName)}</strong><br>
+            <strong>${escapeHtml(this.selectedFlowName || '')}</strong><br>
             Total versions: ${this.versions.length}<br>
             Active version: ${activeVersion?.VersionNumber || 'None'}<br>
             Inactive versions: ${inactiveCount}
@@ -78,7 +103,7 @@ class FlowCleanup extends HTMLElement {
         this.flowVersionsSection.classList.remove('hidden');
     }
 
-    async handleDeleteVersions() {
+    private handleDeleteVersions = async (): Promise<void> => {
         const inactiveVersions = this.versions.filter(v => v.Status !== 'Active');
         if (inactiveVersions.length === 0) return;
 
@@ -89,20 +114,20 @@ class FlowCleanup extends HTMLElement {
 
         try {
             const versionIds = inactiveVersions.map(v => v.Id);
-            const result = await deleteInactiveFlowVersions(versionIds);
+            const result = (await deleteInactiveFlowVersions(versionIds)) as DeleteResult;
             const count = result.deletedCount;
             this.setStatus('success', `Deleted ${count} version${count !== 1 ? 's' : ''}`);
             this.flowVersionsSection.classList.add('hidden');
         } catch (error) {
-            this.setStatus('error', error.message);
+            this.setStatus('error', (error as Error).message);
             this.deleteVersionsBtn.disabled = false;
         }
-    }
+    };
 
-    setStatus(type, message) {
+    private setStatus(type: string, message: string): void {
         this.status.classList.remove('hidden');
-        const indicator = this.status.querySelector('.status-indicator');
-        const text = this.status.querySelector('.tool-status-text');
+        const indicator = this.status.querySelector('.status-indicator') as HTMLElement;
+        const text = this.status.querySelector('.tool-status-text') as HTMLElement;
         indicator.className = `status-indicator status-${type}`;
         text.textContent = message;
     }

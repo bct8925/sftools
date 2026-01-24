@@ -6,6 +6,9 @@ import { HistoryManager } from '../../lib/history-manager.js';
 import { escapeHtml } from '../../lib/text-utils.js';
 import { getPreview, formatOutput, filterLines } from '../../lib/apex-utils.js';
 import { monaco } from '../monaco-editor/monaco-editor.js';
+import type { MonacoEditorElement } from '../../types/components';
+import type { HistoryEntry, FavoriteEntry } from '../../lib/history-manager';
+import type { StatusType } from '../../lib/ui-helpers';
 import '../button-icon/button-icon.js';
 import '../modal-popup/modal-popup.js';
 import template from './apex.html?raw';
@@ -13,27 +16,27 @@ import './apex.css';
 
 class ApexTab extends HTMLElement {
     // DOM references
-    codeEditor = null;
-    outputEditor = null;
-    executeBtn = null;
-    statusSpan = null;
-    searchInput = null;
+    private codeEditor!: MonacoEditorElement;
+    private outputEditor!: MonacoEditorElement;
+    private executeBtn!: HTMLButtonElement;
+    private statusSpan!: HTMLElement;
+    private searchInput!: HTMLInputElement;
 
     // Button components
-    historyBtn = null;
-    historyModal = null;
+    private historyBtn!: HTMLElement;
+    private historyModal!: any; // modal-popup element
 
     // History dropdown elements
-    historyList = null;
-    favoritesList = null;
-    dropdownTabs = [];
+    private historyList!: HTMLElement;
+    private favoritesList!: HTMLElement;
+    private dropdownTabs!: NodeListOf<HTMLElement>;
 
     // History/Favorites manager
-    historyManager = null;
-    fullOutput = ''; // Store unfiltered output for search
-    filterDebounceTimeout = null;
+    private historyManager!: HistoryManager;
+    private fullOutput = ''; // Store unfiltered output for search
+    private filterDebounceTimeout: number | null = null;
 
-    connectedCallback() {
+    connectedCallback(): void {
         this.innerHTML = template;
         this.historyManager = new HistoryManager(
             { history: 'apexHistory', favorites: 'apexFavorites' },
@@ -45,28 +48,30 @@ class ApexTab extends HTMLElement {
         this.loadStoredData();
     }
 
-    disconnectedCallback() {
-        clearTimeout(this.filterDebounceTimeout);
+    disconnectedCallback(): void {
+        if (this.filterDebounceTimeout !== null) {
+            clearTimeout(this.filterDebounceTimeout);
+        }
     }
 
-    initElements() {
-        this.executeBtn = this.querySelector('.apex-execute-btn');
-        this.statusSpan = this.querySelector('.apex-status');
-        this.searchInput = this.querySelector('.search-input');
+    private initElements(): void {
+        this.executeBtn = this.querySelector<HTMLButtonElement>('.apex-execute-btn')!;
+        this.statusSpan = this.querySelector<HTMLElement>('.apex-status')!;
+        this.searchInput = this.querySelector<HTMLInputElement>('.search-input')!;
 
         // Button components
-        this.historyBtn = this.querySelector('.apex-history-btn');
-        this.historyModal = this.querySelector('.apex-history-modal');
+        this.historyBtn = this.querySelector<HTMLElement>('.apex-history-btn')!;
+        this.historyModal = this.querySelector('.apex-history-modal')!;
 
         // History dropdown elements
-        this.historyList = this.querySelector('.apex-history-list');
-        this.favoritesList = this.querySelector('.apex-favorites-list');
-        this.dropdownTabs = this.querySelectorAll('.dropdown-tab');
+        this.historyList = this.querySelector<HTMLElement>('.apex-history-list')!;
+        this.favoritesList = this.querySelector<HTMLElement>('.apex-favorites-list')!;
+        this.dropdownTabs = this.querySelectorAll<HTMLElement>('.dropdown-tab');
     }
 
-    initEditors() {
-        this.codeEditor = this.querySelector('.apex-editor');
-        this.outputEditor = this.querySelector('.apex-output-editor');
+    private initEditors(): void {
+        this.codeEditor = this.querySelector<MonacoEditorElement>('.apex-editor')!;
+        this.outputEditor = this.querySelector<MonacoEditorElement>('.apex-output-editor')!;
 
         this.codeEditor.setValue(`// Enter your Apex code here
 System.debug('Hello from Anonymous Apex!');
@@ -80,26 +85,33 @@ for (Account acc : accounts) {
         this.setOutput('// Output will appear here after execution');
     }
 
-    attachEventListeners() {
-        this.executeBtn.addEventListener('click', () => this.executeApex());
-        this.codeEditor.addEventListener('execute', () => this.executeApex());
+    private attachEventListeners(): void {
+        this.executeBtn.addEventListener('click', this.executeApex);
+        this.codeEditor.addEventListener('execute', this.executeApex);
 
         // History modal
         this.historyBtn.addEventListener('click', () => this.historyModal.toggle());
 
         // History dropdown tab switching
         this.dropdownTabs.forEach(tab => {
-            tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                if (tabName) this.switchTab(tabName);
+            });
         });
 
         // List click delegation
-        this.historyList.addEventListener('click', e => this.handleListClick(e, 'history'));
-        this.favoritesList.addEventListener('click', e => this.handleListClick(e, 'favorites'));
+        this.historyList.addEventListener('click', (e: Event) => this.handleListClick(e, 'history'));
+        this.favoritesList.addEventListener('click', (e: Event) =>
+            this.handleListClick(e, 'favorites')
+        );
 
         // Search filtering with debounce for performance on large logs
         this.searchInput.addEventListener('input', () => {
-            clearTimeout(this.filterDebounceTimeout);
-            this.filterDebounceTimeout = setTimeout(() => this.applyFilter(), 200);
+            if (this.filterDebounceTimeout !== null) {
+                clearTimeout(this.filterDebounceTimeout);
+            }
+            this.filterDebounceTimeout = window.setTimeout(() => this.applyFilter(), 200);
         });
     }
 
@@ -107,7 +119,7 @@ for (Account acc : accounts) {
     // Storage Operations
     // ============================================================
 
-    async loadStoredData() {
+    private async loadStoredData(): Promise<void> {
         await this.historyManager.load();
         this.renderLists();
     }
@@ -116,27 +128,27 @@ for (Account acc : accounts) {
     // History & Favorites Logic
     // ============================================================
 
-    async saveToHistory(code) {
+    private async saveToHistory(code: string): Promise<void> {
         await this.historyManager.saveToHistory(code);
         this.renderLists();
     }
 
-    async addToFavorites(code, label) {
+    private async addToFavorites(code: string, label: string): Promise<void> {
         await this.historyManager.addToFavorites(code, label);
         this.renderLists();
     }
 
-    async removeFromHistory(id) {
+    private async removeFromHistory(id: string): Promise<void> {
         await this.historyManager.removeFromHistory(id);
         this.renderLists();
     }
 
-    async removeFromFavorites(id) {
+    private async removeFromFavorites(id: string): Promise<void> {
         await this.historyManager.removeFromFavorites(id);
         this.renderLists();
     }
 
-    loadScript(code) {
+    private loadScript(code: string): void {
         this.codeEditor.setValue(code);
     }
 
@@ -144,7 +156,7 @@ for (Account acc : accounts) {
     // Dropdown UI
     // ============================================================
 
-    switchTab(tabName) {
+    private switchTab(tabName: string): void {
         this.dropdownTabs.forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabName);
         });
@@ -157,12 +169,12 @@ for (Account acc : accounts) {
     // List Rendering
     // ============================================================
 
-    renderLists() {
+    private renderLists(): void {
         this.renderHistoryList();
         this.renderFavoritesList();
     }
 
-    renderHistoryList() {
+    private renderHistoryList(): void {
         const { history } = this.historyManager;
 
         if (history.length === 0) {
@@ -176,9 +188,9 @@ for (Account acc : accounts) {
 
         this.historyList.innerHTML = history
             .map(
-                item => `
+                (item: HistoryEntry) => `
             <div class="script-item" data-id="${item.id}">
-                <div class="script-preview">${escapeHtml(getPreview(item.code))}</div>
+                <div class="script-preview">${escapeHtml(getPreview((item as any).code))}</div>
                 <div class="script-meta">
                     <span>${this.historyManager.formatRelativeTime(item.timestamp)}</span>
                     <div class="script-actions">
@@ -193,7 +205,7 @@ for (Account acc : accounts) {
             .join('');
     }
 
-    renderFavoritesList() {
+    private renderFavoritesList(): void {
         const { favorites } = this.historyManager;
 
         if (favorites.length === 0) {
@@ -207,7 +219,7 @@ for (Account acc : accounts) {
 
         this.favoritesList.innerHTML = favorites
             .map(
-                item => `
+                (item: FavoriteEntry) => `
             <div class="script-item" data-id="${item.id}">
                 <div class="script-label">${escapeHtml(item.label)}</div>
                 <div class="script-meta">
@@ -223,26 +235,29 @@ for (Account acc : accounts) {
             .join('');
     }
 
-    handleListClick(event, listType) {
-        const item = event.target.closest('.script-item');
+    private handleListClick(event: Event, listType: 'history' | 'favorites'): void {
+        const item = (event.target as HTMLElement).closest('.script-item') as HTMLElement;
         if (!item) return;
 
         const { id } = item.dataset;
-        const list =
-            listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
-        const scriptData = list.find(s => s.id === id);
+        if (!id) return;
+
+        const list = listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
+        const scriptData = list.find((s: HistoryEntry | FavoriteEntry) => s.id === id);
         if (!scriptData) return;
 
+        const code = (scriptData as any).code as string;
+
         // Check which action button was clicked
-        const action = event.target.closest('.script-action');
+        const action = (event.target as HTMLElement).closest('.script-action') as HTMLElement;
         if (action) {
             event.stopPropagation();
 
             if (action.classList.contains('load')) {
-                this.loadScript(scriptData.code);
+                this.loadScript(code);
                 this.historyModal.close();
             } else if (action.classList.contains('favorite')) {
-                this.showFavoriteModal(scriptData.code);
+                this.showFavoriteModal(code);
                 this.historyModal.close();
             } else if (action.classList.contains('delete')) {
                 if (listType === 'history') {
@@ -253,12 +268,12 @@ for (Account acc : accounts) {
             }
         } else {
             // Click on item itself loads the script
-            this.loadScript(scriptData.code);
+            this.loadScript(code);
             this.historyModal.close();
         }
     }
 
-    showFavoriteModal(code) {
+    private showFavoriteModal(code: string): void {
         const defaultLabel = getPreview(code);
 
         const modal = document.createElement('div');
@@ -274,14 +289,14 @@ for (Account acc : accounts) {
             </div>
         `;
 
-        const input = modal.querySelector('.apex-favorite-input');
-        const cancelBtn = modal.querySelector('.apex-favorite-cancel');
-        const saveBtn = modal.querySelector('.apex-favorite-save');
+        const input = modal.querySelector<HTMLInputElement>('.apex-favorite-input')!;
+        const cancelBtn = modal.querySelector<HTMLButtonElement>('.apex-favorite-cancel')!;
+        const saveBtn = modal.querySelector<HTMLButtonElement>('.apex-favorite-save')!;
 
         const close = () => modal.remove();
 
         cancelBtn.addEventListener('click', close);
-        modal.addEventListener('click', e => {
+        modal.addEventListener('click', (e: Event) => {
             if (e.target === modal) close();
         });
 
@@ -293,7 +308,7 @@ for (Account acc : accounts) {
             }
         });
 
-        input.addEventListener('keydown', e => {
+        input.addEventListener('keydown', (e: KeyboardEvent) => {
             if (e.key === 'Enter') {
                 saveBtn.click();
             } else if (e.key === 'Escape') {
@@ -310,12 +325,12 @@ for (Account acc : accounts) {
     // Output Search/Filter
     // ============================================================
 
-    setOutput(text) {
+    private setOutput(text: string): void {
         this.fullOutput = text;
         this.applyFilter();
     }
 
-    applyFilter() {
+    private applyFilter(): void {
         const filter = this.searchInput.value.trim();
         const lines = this.fullOutput.split('\n');
         const filtered = filterLines(lines, filter);
@@ -326,16 +341,11 @@ for (Account acc : accounts) {
         this.outputEditor.setValue(result);
     }
 
-    clearFilter() {
-        this.searchInput.value = '';
-        this.outputEditor.setValue(this.fullOutput);
-    }
-
     // ============================================================
     // UI Helpers
     // ============================================================
 
-    setEditorMarkers(result) {
+    private setEditorMarkers(result: any): void {
         const model = this.codeEditor.editor?.getModel();
         if (!model) return;
 
@@ -368,7 +378,7 @@ for (Account acc : accounts) {
         }
     }
 
-    updateStatus(text, type = '') {
+    private updateStatus(text: string, type: StatusType = ''): void {
         updateStatusBadge(this.statusSpan, text, type);
     }
 
@@ -376,7 +386,7 @@ for (Account acc : accounts) {
     // Main Execution Handler
     // ============================================================
 
-    async executeApex() {
+    private executeApex = async (): Promise<void> => {
         const apexCode = this.codeEditor.getValue().trim();
 
         if (!apexCode) {
@@ -398,7 +408,7 @@ for (Account acc : accounts) {
         this.executeBtn.disabled = true;
 
         try {
-            const result = await executeAnonymousApex(apexCode, status => {
+            const result = await executeAnonymousApex(apexCode, (status: string) => {
                 this.updateStatus(status, 'loading');
                 this.setOutput(`// ${status}`);
             });
@@ -419,12 +429,12 @@ for (Account acc : accounts) {
             await this.saveToHistory(apexCode);
         } catch (error) {
             this.updateStatus('Error', 'error');
-            this.setOutput(`Error: ${error.message}`);
+            this.setOutput(`Error: ${(error as Error).message}`);
             console.error('Apex execution error:', error);
         } finally {
             this.executeBtn.disabled = false;
         }
-    }
+    };
 }
 
 customElements.define('apex-tab', ApexTab);

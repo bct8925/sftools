@@ -23,6 +23,13 @@ export interface ThemeChangedEvent extends CustomEvent<'light' | 'dark'> {
   type: 'theme-changed';
 }
 
+// Modal Popup Component
+export interface ModalPopupElement extends HTMLElement {
+  open(): void;
+  close(): void;
+  isOpen: boolean;
+}
+
 // Declare custom elements for type-safe querySelector
 declare global {
   interface HTMLElementTagNameMap {
@@ -37,7 +44,7 @@ declare global {
     'schema-page': HTMLElement;
     'button-dropdown': HTMLElement;
     'button-icon': HTMLElement;
-    'modal-popup': HTMLElement;
+    'modal-popup': ModalPopupElement;
     'sf-icon': HTMLElement;
   }
 

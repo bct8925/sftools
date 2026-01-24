@@ -32,6 +32,8 @@ import '../../components/events/events-tab.js';
 import '../../components/settings/settings-tab.js';
 import '../../components/utils/utils-tab.js';
 import '../../components/modal-popup/modal-popup.js';
+import type { SalesforceConnection } from '../../types/salesforce';
+import type { ModalPopupElement } from '../../types/components';
 
 // OAuth constants
 const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
@@ -59,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateFeatureGating();
 
     // Listen for proxy status changes
-    document.addEventListener('proxy-status-changed', async _e => {
+    document.addEventListener('proxy-status-changed', async (_e: Event) => {
         await checkProxyStatus(); // Update PROXY_CONNECTED state
         updateFeatureGating(); // Re-apply feature gating
     });
@@ -77,7 +79,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
         // Close auth-expired modal if present and a valid connection now exists
         const overlay = document.querySelector('.auth-expired-overlay');
         if (overlay) {
-            const connections = changes.connections.newValue || [];
+            const connections = (changes.connections.newValue || []) as SalesforceConnection[];
             const validConn = connections.find(c => c.accessToken);
             if (validConn) {
                 authExpiredModalOpen = false;
@@ -88,7 +90,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 });
 
 // --- Connection Management ---
-async function initializeConnections() {
+async function initializeConnections(): Promise<void> {
     // Migrate from old single-connection format if needed
     await migrateFromSingleConnection();
     // Migrate from global customConnectedApp to per-connection clientId
@@ -103,9 +105,9 @@ async function initializeConnections() {
 /**
  * Refresh the connection list and update all UI state.
  * This is the single source of truth for connection list changes.
- * @param {boolean} autoSelect - If true and no active connection exists, auto-select most recent
+ * @param autoSelect - If true and no active connection exists, auto-select most recent
  */
-async function refreshConnectionList(autoSelect = false) {
+async function refreshConnectionList(autoSelect = false): Promise<void> {
     const connections = await loadConnections();
 
     if (connections.length === 0) {
@@ -138,7 +140,7 @@ async function refreshConnectionList(autoSelect = false) {
  * Clears all connection displays and switches to Settings tab.
  * Called by refreshConnectionList() when connections.length === 0.
  */
-function showNoConnectionsState() {
+function showNoConnectionsState(): void {
     setActiveConnection(null); // Ensure active connection is cleared
     updateMobileConnections([]);
     updateHeaderConnectionDisplay(null);
@@ -146,20 +148,20 @@ function showNoConnectionsState() {
     switchToSettingsTab();
 }
 
-function switchToSettingsTab() {
+function switchToSettingsTab(): void {
     const mobileNavItem = document.querySelector('.mobile-nav-item[data-tab="settings"]');
     if (mobileNavItem) {
-        mobileNavItem.click();
+        (mobileNavItem as HTMLElement).click();
     }
 }
 
-function escapeHtml(str) {
+function escapeHtml(str: string): string {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
 }
 
-async function selectConnection(connection) {
+async function selectConnection(connection: SalesforceConnection): Promise<void> {
     setActiveConnection(connection);
     updateMobileConnections(await loadConnections());
     updateConnectionGating();
@@ -174,20 +176,20 @@ async function selectConnection(connection) {
     document.dispatchEvent(new CustomEvent('connection-changed', { detail: connection }));
 }
 
-function updateHeaderConnectionDisplay(connection) {
+function updateHeaderConnectionDisplay(connection: SalesforceConnection | null): void {
     const displayElement = document.querySelector('.current-connection-display');
     if (displayElement) {
-        if (connection && connection.label) {
+        if (connection?.label) {
             displayElement.textContent = connection.label;
-            displayElement.title = connection.label; // Show full text on hover
+            displayElement.setAttribute('title', connection.label); // Show full text on hover
         } else {
             displayElement.textContent = '';
-            displayElement.title = '';
+            displayElement.setAttribute('title', '');
         }
     }
 }
 
-async function detectLoginDomain() {
+async function detectLoginDomain(): Promise<void> {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.url) {
@@ -213,17 +215,17 @@ async function detectLoginDomain() {
 
 /**
  * Start OAuth authorization flow
- * @param {string|null} overrideLoginDomain - Login domain to use (or detect from current tab)
- * @param {string|null} overrideClientId - Custom client ID to use (or use default)
- * @param {string|null} connectionId - Connection ID if re-authorizing an existing connection
+ * @param overrideLoginDomain - Login domain to use (or detect from current tab)
+ * @param overrideClientId - Custom client ID to use (or use default)
+ * @param connectionId - Connection ID if re-authorizing an existing connection
  */
 async function startAuthorization(
-    overrideLoginDomain = null,
-    overrideClientId = null,
-    connectionId = null
-) {
+    overrideLoginDomain: string | null = null,
+    overrideClientId: string | null = null,
+    connectionId: string | null = null
+): Promise<void> {
     // Use provided domain or detect from current tab
-    let loginDomain;
+    let loginDomain: string;
     if (overrideLoginDomain) {
         loginDomain = overrideLoginDomain;
     } else {
@@ -266,17 +268,19 @@ async function startAuthorization(
 }
 
 // Make startAuthorization available globally for Settings tab
-window.startAuthorization = startAuthorization;
+(window as any).startAuthorization = startAuthorization;
 
 // --- Auth Expiration Handler ---
-function initAuthExpirationHandler() {
-    onAuthExpired(async expiredConnectionId => {
+function initAuthExpirationHandler(): void {
+    onAuthExpired(async (expiredConnectionId: string | null) => {
         // Prevent duplicate modals (synchronous check to avoid race condition)
         if (authExpiredModalOpen) return;
         authExpiredModalOpen = true;
 
         const connections = await loadConnections();
-        const expiredConnection = connections.find(c => c.id === expiredConnectionId);
+        const expiredConnection = expiredConnectionId
+            ? connections.find(c => c.id === expiredConnectionId)
+            : null;
 
         const connectionLabel = expiredConnection?.label || 'Unknown';
 
@@ -295,7 +299,7 @@ function initAuthExpirationHandler() {
         `;
         document.body.appendChild(overlay);
 
-        overlay.querySelector('#reauth-btn').addEventListener('click', async () => {
+        overlay.querySelector('#reauth-btn')!.addEventListener('click', async () => {
             if (!expiredConnection) {
                 console.error('Re-auth failed: expiredConnection is null');
                 return;
@@ -308,7 +312,7 @@ function initAuthExpirationHandler() {
             );
         });
 
-        overlay.querySelector('#delete-conn-btn').addEventListener('click', async () => {
+        overlay.querySelector('#delete-conn-btn')!.addEventListener('click', async () => {
             if (expiredConnectionId) {
                 // Clear active connection first to prevent auth expiration trigger
                 setActiveConnection(null);
@@ -320,7 +324,7 @@ function initAuthExpirationHandler() {
             overlay.remove();
         });
 
-        overlay.querySelector('#dismiss-btn').addEventListener('click', () => {
+        overlay.querySelector('#dismiss-btn')!.addEventListener('click', () => {
             authExpiredModalOpen = false;
             overlay.remove();
         });
@@ -328,9 +332,11 @@ function initAuthExpirationHandler() {
 }
 
 // --- Feature Gating ---
-function updateFeatureGating() {
+function updateFeatureGating(): void {
     const eventsNavItem = document.querySelector('.mobile-nav-item[data-tab="events"]');
     const eventsContent = document.getElementById('events');
+
+    if (!eventsNavItem || !eventsContent) return;
 
     if (!isProxyConnected()) {
         // Disable the events tab
@@ -351,7 +357,7 @@ function updateFeatureGating() {
             eventsContent.appendChild(overlay);
 
             // Settings button handler - switch to settings tab
-            overlay.querySelector('#feature-gate-settings-btn').addEventListener('click', () => {
+            overlay.querySelector('#feature-gate-settings-btn')!.addEventListener('click', () => {
                 switchToSettingsTab();
             });
         }
@@ -372,7 +378,7 @@ function updateFeatureGating() {
 }
 
 // --- Connection Gating ---
-function updateConnectionGating() {
+function updateConnectionGating(): void {
     const hasConnections = isAuthenticated();
 
     // List of menu items that require a connection
@@ -402,30 +408,45 @@ function updateConnectionGating() {
 
 // --- Tab Navigation ---
 // Tab switching is handled by the mobile menu
-function initTabs() {
+function initTabs(): void {
     // No-op: hamburger menu is now the primary navigation
 }
 
 // --- Mobile Menu ---
-function initMobileMenu() {
+function initMobileMenu(): void {
     const hamburgerBtn = document.querySelector('.hamburger-btn');
     const mobileMenu = document.querySelector('.mobile-menu');
     const mobileOverlay = document.querySelector('.mobile-menu-overlay');
-    const closeBtn = mobileMenu.querySelector('.mobile-menu-close');
-    const mobileNavItems = mobileMenu.querySelectorAll('.mobile-nav-item[data-tab]');
+    const closeBtn = mobileMenu?.querySelector('.mobile-menu-close');
+    const mobileNavItems = mobileMenu?.querySelectorAll<HTMLElement>('.mobile-nav-item[data-tab]');
     const mobileOpenOrg = document.getElementById('mobile-open-org');
     const mobileOpenTab = document.getElementById('mobile-open-tab');
-    const mobileAddConnection = mobileMenu.querySelector('.mobile-add-connection');
-    const mobileConnectionList = mobileMenu.querySelector('.mobile-connection-list');
+    const mobileAddConnection = mobileMenu?.querySelector('.mobile-add-connection');
+    const mobileConnectionList = mobileMenu?.querySelector('.mobile-connection-list');
 
-    function openMenu() {
-        mobileMenu.classList.add('open');
-        mobileOverlay.classList.add('open');
+    if (
+        !hamburgerBtn ||
+        !mobileMenu ||
+        !mobileOverlay ||
+        !closeBtn ||
+        !mobileNavItems ||
+        !mobileOpenOrg ||
+        !mobileOpenTab ||
+        !mobileAddConnection ||
+        !mobileConnectionList
+    ) {
+        console.error('Mobile menu elements not found');
+        return;
     }
 
-    function closeMenu() {
-        mobileMenu.classList.remove('open');
-        mobileOverlay.classList.remove('open');
+    function openMenu(): void {
+        mobileMenu!.classList.add('open');
+        mobileOverlay!.classList.add('open');
+    }
+
+    function closeMenu(): void {
+        mobileMenu!.classList.remove('open');
+        mobileOverlay!.classList.remove('open');
     }
 
     // Hamburger button opens menu
@@ -452,7 +473,7 @@ function initMobileMenu() {
 
             // Switch content
             contents.forEach(c => c.classList.remove('active'));
-            const targetContent = document.getElementById(targetId);
+            const targetContent = document.getElementById(targetId!);
             if (targetContent) {
                 targetContent.classList.add('active');
                 // Notify components that tab changed (for lazy loading)
@@ -496,14 +517,15 @@ function initMobileMenu() {
     });
 
     // Delegate clicks on mobile connection list
-    mobileConnectionList.addEventListener('click', async e => {
-        const item = e.target.closest('.mobile-connection-item');
+    mobileConnectionList.addEventListener('click', async (e: Event) => {
+        const item = (e.target as HTMLElement).closest('.mobile-connection-item') as HTMLElement;
         if (!item) return;
 
         const connectionId = item.dataset.id;
+        if (!connectionId) return;
 
         // Handle remove button click
-        if (e.target.closest('.mobile-connection-remove')) {
+        if ((e.target as HTMLElement).closest('.mobile-connection-remove')) {
             e.stopPropagation();
             if (!confirm('Remove this connection?')) return;
 
@@ -525,10 +547,12 @@ function initMobileMenu() {
     });
 }
 
-function updateMobileConnections(connections) {
+function updateMobileConnections(connections: SalesforceConnection[]): void {
     const mobileConnectionList = document.querySelector('.mobile-connection-list');
     const mobileAddConnection = document.querySelector('.mobile-add-connection');
     const activeId = getActiveConnectionId();
+
+    if (!mobileConnectionList || !mobileAddConnection) return;
 
     if (connections.length === 0) {
         mobileConnectionList.innerHTML = '';
@@ -562,8 +586,8 @@ function updateMobileConnections(connections) {
 // CORS Error Modal
 // ============================================================================
 
-function initCorsErrorModal() {
-    const modal = document.getElementById('cors-error-modal');
+function initCorsErrorModal(): void {
+    const modal = document.getElementById('cors-error-modal') as ModalPopupElement | null;
     const closeBtn = document.getElementById('cors-modal-close');
 
     if (!modal || !closeBtn) return;

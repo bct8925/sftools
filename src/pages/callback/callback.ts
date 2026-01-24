@@ -9,8 +9,24 @@ import {
     validateOAuthState,
 } from '../../lib/auth.js';
 import { escapeHtml } from '../../lib/text-utils.js';
+import type { SalesforceConnection } from '../../types/salesforce';
 
-const statusEl = document.getElementById('status');
+interface PendingAuth {
+    loginDomain?: string;
+    clientId?: string | null;
+    connectionId?: string | null;
+    state?: string;
+}
+
+interface TokenExchangeResponse {
+    success: boolean;
+    instanceUrl?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    error?: string;
+}
+
+const statusEl = document.getElementById('status')!;
 
 // Check for authorization code (code flow) in query params
 const queryParams = new URLSearchParams(window.location.search);
@@ -45,10 +61,17 @@ if (error) {
 /**
  * Handle authorization code flow - exchange code for tokens via proxy
  */
-async function handleCodeFlow(code, state) {
+async function handleCodeFlow(code: string, state: string | null): Promise<void> {
     statusEl.innerText = 'Validating authorization...';
 
     try {
+        // Validate state before proceeding
+        if (!state) {
+            statusEl.innerHTML =
+                '<span class="error">Missing authorization state parameter.</span><br>Please try authorizing again.';
+            return;
+        }
+
         const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
 
         // Validate state parameter for CSRF protection
@@ -64,15 +87,15 @@ async function handleCodeFlow(code, state) {
         // Get clientId - use pending auth's custom clientId or fall back to default
         const clientId = pendingAuth?.clientId ?? (await getOAuthCredentials()).clientId;
 
-        const response = await chrome.runtime.sendMessage({
+        const response = (await chrome.runtime.sendMessage({
             type: 'tokenExchange',
             code,
             redirectUri: CALLBACK_URL,
             loginDomain,
             clientId,
-        });
+        })) as TokenExchangeResponse;
 
-        if (response.success) {
+        if (response.success && response.instanceUrl && response.accessToken) {
             // Derive loginDomain from instanceUrl if auto-detect was used (null loginDomain)
             // The instanceUrl is the My Domain URL, which is what we want for future re-auths
             const savedLoginDomain =
@@ -83,30 +106,41 @@ async function handleCodeFlow(code, state) {
                 {
                     instanceUrl: response.instanceUrl,
                     accessToken: response.accessToken,
-                    refreshToken: response.refreshToken,
+                    refreshToken: response.refreshToken || null,
                     loginDomain: savedLoginDomain,
                     clientId: pendingAuth?.clientId || null,
                 },
-                pendingAuth?.connectionId
+                pendingAuth?.connectionId || null
             );
 
             statusEl.innerText = 'Connection saved. You can close this tab.';
             setTimeout(() => window.close(), 1000);
         } else {
-            statusEl.innerHTML = `<span class="error">Token exchange failed: ${escapeHtml(response.error)}</span>`;
+            statusEl.innerHTML = `<span class="error">Token exchange failed: ${escapeHtml(response.error || 'Unknown error')}</span>`;
         }
     } catch (err) {
-        statusEl.innerHTML = `<span class="error">Error: ${escapeHtml(err.message)}</span>`;
+        statusEl.innerHTML = `<span class="error">Error: ${escapeHtml((err as Error).message)}</span>`;
     }
 }
 
 /**
  * Handle implicit flow - store tokens directly
  */
-async function handleImplicitFlow(accessToken, instanceUrl, state) {
+async function handleImplicitFlow(
+    accessToken: string,
+    instanceUrl: string,
+    state: string | null
+): Promise<void> {
     statusEl.innerText = 'Validating authorization...';
 
     try {
+        // Validate state before proceeding
+        if (!state) {
+            statusEl.innerHTML =
+                '<span class="error">Missing authorization state parameter.</span><br>Please try authorizing again.';
+            return;
+        }
+
         // Validate state parameter for CSRF protection
         const { valid, pendingAuth } = await validateOAuthState(state);
         if (!valid) {
@@ -128,13 +162,13 @@ async function handleImplicitFlow(accessToken, instanceUrl, state) {
                 loginDomain: loginDomain,
                 clientId: pendingAuth?.clientId || null,
             },
-            pendingAuth?.connectionId
+            pendingAuth?.connectionId || null
         );
 
         statusEl.innerText = 'Connection saved. You can close this tab.';
         setTimeout(() => window.close(), 1000);
     } catch (err) {
-        statusEl.innerHTML = `<span class="error">Error storing tokens: ${escapeHtml(err.message)}</span>`;
+        statusEl.innerHTML = `<span class="error">Error storing tokens: ${escapeHtml((err as Error).message)}</span>`;
     }
 }
 
@@ -143,7 +177,7 @@ async function handleImplicitFlow(accessToken, instanceUrl, state) {
  * For My Domain orgs, the instanceUrl is the login URL
  * Falls back to standard login.salesforce.com
  */
-function deriveLoginDomain(instanceUrl) {
+function deriveLoginDomain(instanceUrl: string): string {
     if (!instanceUrl) return 'https://login.salesforce.com';
 
     try {
@@ -164,10 +198,19 @@ function deriveLoginDomain(instanceUrl) {
 
 /**
  * Add a new connection or update existing one
- * @param {object} data - Connection data
- * @param {string|null} existingConnectionId - If re-authorizing, the connection ID to update
+ * @param data - Connection data
+ * @param existingConnectionId - If re-authorizing, the connection ID to update
  */
-async function addOrUpdateConnection(data, existingConnectionId = null) {
+async function addOrUpdateConnection(
+    data: Partial<SalesforceConnection> & {
+        instanceUrl: string;
+        accessToken: string;
+        refreshToken: string | null;
+        loginDomain: string;
+        clientId: string | null;
+    },
+    existingConnectionId: string | null = null
+): Promise<void> {
     if (existingConnectionId) {
         // Re-authorizing existing connection - update it directly
         await updateConnection(existingConnectionId, {

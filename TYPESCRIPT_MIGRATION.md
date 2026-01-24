@@ -102,11 +102,11 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 10 - Entry Points
-- [ ] `src/pages/app/app.js` → `.ts`
-- [ ] `src/pages/callback/callback.js` → `.ts`
-- [ ] `src/pages/record/record.js` → `.ts`
-- [ ] `src/pages/schema/schema.js` → `.ts`
-- [ ] Verify: typecheck + build + tests
+- [x] `src/pages/app/app.js` → `.ts`
+- [x] `src/pages/callback/callback.js` → `.ts`
+- [x] `src/pages/record/record.js` → `.ts`
+- [x] `src/pages/schema/schema.js` → `.ts`
+- [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 11 - Tests
 - [ ] `tests/unit/mocks/chrome.js` → `.ts`
@@ -532,6 +532,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Wave 7 | 8 | Tab components: settings-tab, utils-tab, debug-logs, flow-cleanup, query-tab, apex-tab, rest-api-tab, events-tab |
 | 2026-01-23 | Wave 8 | 4 | Standalone pages: record-page, schema-page; missed Wave 7: schema-browser-link, search-box. Added 'html' to FieldType. |
 | 2026-01-23 | Wave 9 | 4 | Background scripts: debug, auth, native-messaging, background. Updated vite.config.js entry point. |
+| 2026-01-23 | Wave 10 | 4 | Entry points: app, callback, record, schema. Added ModalPopupElement interface to components.d.ts. |
 
 ### Issues Encountered
 

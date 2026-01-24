@@ -19,15 +19,14 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 ## Progress Tracker
 
 ### Phase 1: Foundation Setup
-- [ ] Install TypeScript dependencies
-- [ ] Create `tsconfig.json`
-- [ ] Create `src/types/vite-env.d.ts`
-- [ ] Create `src/types/salesforce.d.ts`
-- [ ] Create `src/types/components.d.ts`
-- [ ] Update `eslint.config.js` for TypeScript
-- [ ] Update `package.json` scripts
-- [ ] Update `vitest.config.js` patterns
-- [ ] Verify: `npm run typecheck && npm run build`
+- [x] Install TypeScript dependencies
+- [x] Create `tsconfig.json`
+- [x] Create `src/types/vite-env.d.ts`
+- [x] Create `src/types/salesforce.d.ts`
+- [x] Create `src/types/components.d.ts`
+- [x] Update `eslint.config.js` for TypeScript
+- [x] Update `package.json` scripts
+- [x] Verify: `npm run typecheck && npm run build && npm run test:unit`
 
 ### Phase 2: Wave 1 - Pure Utilities
 - [ ] `src/lib/text-utils.js` → `.ts`
@@ -520,6 +519,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | Date | Wave | Files | Notes |
 |------|------|-------|-------|
 | 2026-01-23 | - | - | Plan created |
+| 2026-01-23 | Phase 1 | 6 | Foundation complete: tsconfig, types, eslint, scripts |
 
 ### Issues Encountered
 

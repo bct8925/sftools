@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "@types/chrome": "^0.1.36",
     "@vitest/coverage-v8": "^2.0.0",
     "dotenv": "^16.4.7",
     "eslint": "^9.39.2",
@@ -11,6 +12,8 @@
     "playwright": "^1.50.0",
     "prettier": "^3.8.1",
     "tsx": "^4.19.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.53.1",
     "vite": "^7.2.7",
     "vitest": "^2.0.0"
   },
@@ -24,6 +27,8 @@
     "build": "SFTOOLS_PRODUCTION=false vite build",
     "watch": "SFTOOLS_PRODUCTION=false vite build --watch",
     "package": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage",
@@ -35,7 +40,7 @@
     "test:refresh-token": "node scripts/refresh-test-token.js",
     "lint": "eslint src tests scripts",
     "lint:fix": "eslint src tests scripts --fix",
-    "format": "prettier --write \"src/**/*.{js,css,html}\" \"tests/**/*.js\" \"scripts/**/*.js\"",
-    "format:check": "prettier --check \"src/**/*.{js,css,html}\" \"tests/**/*.js\" \"scripts/**/*.js\""
+    "format": "prettier --write \"src/**/*.{js,ts,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.{js,ts,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.js\""
   }
 }

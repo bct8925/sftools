@@ -1,6 +1,7 @@
 import globals from 'globals';
 import eslintPluginImport from 'eslint-plugin-import';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import tseslint from 'typescript-eslint';
 
 export default [
     // Global ignores
@@ -12,6 +13,52 @@ export default [
             'coverage/**',
             '*.min.js',
         ],
+    },
+
+    // TypeScript source files
+    ...tseslint.configs.recommended.map((config) => ({
+        ...config,
+        files: ['src/**/*.ts'],
+    })),
+    {
+        files: ['src/**/*.ts'],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            parser: tseslint.parser,
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+            },
+            globals: {
+                ...globals.browser,
+                chrome: 'readonly',
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tseslint.plugin,
+            import: eslintPluginImport,
+        },
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                },
+            ],
+            // Import rules
+            'import/first': 'error',
+            'import/no-duplicates': 'error',
+            'import/order': [
+                'warn',
+                {
+                    groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+                    'newlines-between': 'never',
+                },
+            ],
+        },
     },
 
     // Main source files
@@ -84,7 +131,7 @@ export default [
 
     // Test files - more relaxed rules
     {
-        files: ['tests/**/*.js', '**/*.test.js', '**/*.spec.js'],
+        files: ['tests/**/*.js', 'tests/**/*.ts', '**/*.test.js', '**/*.test.ts', '**/*.spec.js', '**/*.spec.ts'],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: 'module',

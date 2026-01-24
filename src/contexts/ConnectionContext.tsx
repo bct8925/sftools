@@ -23,7 +23,7 @@ interface ConnectionContextType {
   activeConnection: SalesforceConnection | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setActiveConnection: (conn: SalesforceConnection | null) => void;
+  setActiveConnection: (conn: SalesforceConnection | null) => Promise<void>;
   addConnection: (data: ConnectionData) => Promise<SalesforceConnection>;
   updateConnection: (id: string, updates: Partial<SalesforceConnection>) => Promise<void>;
   removeConnection: (id: string) => Promise<void>;
@@ -95,9 +95,13 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
     }
   }, [refreshConnections]);
 
-  const setActiveConnection = useCallback((conn: SalesforceConnection | null) => {
+  const setActiveConnection = useCallback(async (conn: SalesforceConnection | null) => {
     setActiveConn(conn);
     setActiveConnectionState(conn);
+    // Update lastUsedAt timestamp when switching connections
+    if (conn) {
+      await updateConn(conn.id, {});
+    }
   }, []);
 
   const addConnection = useCallback(

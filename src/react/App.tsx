@@ -2,6 +2,8 @@ import { useState, useCallback, type ReactNode } from 'react';
 import { AppProviders } from './AppProviders';
 import { MobileMenu } from './MobileMenu';
 import { ConnectionSelector } from './ConnectionSelector';
+import { AuthExpirationHandler } from './AuthExpirationHandler';
+import { CorsErrorHandler } from './CorsErrorHandler';
 import { type TabId } from './TabNavigation';
 
 // Import React tab components
@@ -42,6 +44,10 @@ function AppContent() {
 
   return (
     <div className={styles.appContainer}>
+      {/* Modal handlers */}
+      <AuthExpirationHandler />
+      <CorsErrorHandler />
+
       {/* Navigation Header */}
       <nav className={styles.tabNav}>
         <MobileMenu

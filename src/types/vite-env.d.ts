@@ -1,11 +1,5 @@
 /// <reference types="vite/client" />
 
-// Support for ?raw imports (HTML templates)
-declare module '*.html?raw' {
-    const content: string;
-    export default content;
-}
-
 // Support for ?raw imports (SVG icons)
 declare module '*.svg?raw' {
     const content: string;

@@ -29,10 +29,10 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: `npm run typecheck && npm run build && npm run test:unit`
 
 ### Phase 2: Wave 1 - Pure Utilities
-- [ ] `src/lib/text-utils.js` → `.ts`
-- [ ] `src/lib/icons.js` → `.ts`
-- [ ] `src/lib/debug.js` → `.ts`
-- [ ] Verify: typecheck + build + tests
+- [x] `src/lib/text-utils.js` → `.ts`
+- [x] `src/lib/icons.js` → `.ts`
+- [x] `src/lib/debug.js` → `.ts`
+- [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 2 - Core Infrastructure
 - [ ] `src/lib/oauth-credentials.js` → `.ts`
@@ -520,6 +520,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 |------|------|-------|-------|
 | 2026-01-23 | - | - | Plan created |
 | 2026-01-23 | Phase 1 | 6 | Foundation complete: tsconfig, types, eslint, scripts |
+| 2026-01-23 | Wave 1 | 3 | Pure utilities: text-utils, icons, debug |
 
 ### Issues Encountered
 
@@ -527,4 +528,6 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 
 ### Learnings
 
-(None yet)
+- Vitest doesn't auto-resolve `.js` imports to `.ts` files. Added custom `jsToTsResolver` plugin to `vitest.config.js` that checks for `.ts` files when `.js` imports fail
+- Vite build resolves `.js` → `.ts` automatically, but Vitest needs the plugin
+- Keep using `.js` extensions in imports (ESM standard) - the resolver plugin handles the migration

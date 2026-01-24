@@ -8,14 +8,14 @@
 
 const DEBUG = __SFTOOLS_DEBUG__;
 
-export function debugInfo(...args) {
-    if (DEBUG) {
-        console.info('[sftools]', ...args);
-    }
+export function debugInfo(...args: unknown[]): void {
+  if (DEBUG) {
+    console.info('[sftools]', ...args);
+  }
 }
 
-export function debugWarn(...args) {
-    if (DEBUG) {
-        console.warn('[sftools]', ...args);
-    }
+export function debugWarn(...args: unknown[]): void {
+  if (DEBUG) {
+    console.warn('[sftools]', ...args);
+  }
 }

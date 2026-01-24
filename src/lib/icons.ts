@@ -11,37 +11,43 @@ import deleteIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-sy
 import clockIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/clock.svg?raw';
 import settingsIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/settings.svg?raw';
 
+interface ProcessSvgOptions {
+  size?: number;
+}
+
 /**
  * Process raw SVG for consistent rendering
  * - Sets width/height for sizing
  * - Replaces fill color with currentColor for theming
  */
-function processSvg(svg, { size = 16 } = {}) {
-    return svg
-        .replace(/width="[^"]*"/, `width="${size}"`)
-        .replace(/height="[^"]*"/, `height="${size}"`)
-        .replace(/fill="#FFFFFF"/g, 'fill="currentColor"')
-        .replace(/fill="#ffffff"/g, 'fill="currentColor"');
+function processSvg(svg: string, { size = 16 }: ProcessSvgOptions = {}): string {
+  return svg
+    .replace(/width="[^"]*"/, `width="${size}"`)
+    .replace(/height="[^"]*"/, `height="${size}"`)
+    .replace(/fill="#FFFFFF"/g, 'fill="currentColor"')
+    .replace(/fill="#ffffff"/g, 'fill="currentColor"');
 }
 
 export const icons = {
-    // Navigation and UI
-    hamburger: processSvg(rowsIcon, { size: 20 }),
-    close: processSvg(closeIcon, { size: 16 }),
-    closeLarge: processSvg(closeIcon, { size: 20 }),
-    verticalDots: processSvg(threedotsVerticalIcon, { size: 16 }),
+  // Navigation and UI
+  hamburger: processSvg(rowsIcon, { size: 20 }),
+  close: processSvg(closeIcon, { size: 16 }),
+  closeLarge: processSvg(closeIcon, { size: 20 }),
+  verticalDots: processSvg(threedotsVerticalIcon, { size: 16 }),
 
-    // Actions
-    edit: processSvg(editIcon, { size: 16 }),
-    refresh: processSvg(refreshIcon, { size: 16 }),
-    refreshSmall: processSvg(refreshIcon, { size: 12 }),
-    trash: processSvg(deleteIcon, { size: 16 }),
+  // Actions
+  edit: processSvg(editIcon, { size: 16 }),
+  refresh: processSvg(refreshIcon, { size: 16 }),
+  refreshSmall: processSvg(refreshIcon, { size: 12 }),
+  trash: processSvg(deleteIcon, { size: 16 }),
 
-    // Smaller icons for tabs and inline use
-    refreshTab: processSvg(refreshIcon, { size: 14 }),
-    closeTab: processSvg(closeIcon, { size: 14 }),
+  // Smaller icons for tabs and inline use
+  refreshTab: processSvg(refreshIcon, { size: 14 }),
+  closeTab: processSvg(closeIcon, { size: 14 }),
 
-    // Button-icon replacements (for HTML entity migration)
-    clock: processSvg(clockIcon, { size: 16 }),
-    settings: processSvg(settingsIcon, { size: 16 }),
-};
+  // Button-icon replacements (for HTML entity migration)
+  clock: processSvg(clockIcon, { size: 16 }),
+  settings: processSvg(settingsIcon, { size: 16 }),
+} as const;
+
+export type IconName = keyof typeof icons;

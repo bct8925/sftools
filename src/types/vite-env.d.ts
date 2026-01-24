@@ -6,6 +6,12 @@ declare module '*.html?raw' {
   export default content;
 }
 
+// Support for ?raw imports (SVG icons)
+declare module '*.svg?raw' {
+  const content: string;
+  export default content;
+}
+
 // Support for ?url imports
 declare module '*?url' {
   const url: string;

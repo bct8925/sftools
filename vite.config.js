@@ -29,7 +29,7 @@ export default defineConfig({
         record: resolve(__dirname, 'src/pages/record/record.html'),
         schema: resolve(__dirname, 'src/pages/schema/schema.html'),
         // Background service worker
-        background: resolve(__dirname, 'src/background/background.js')
+        background: resolve(__dirname, 'src/background/background.ts')
       },
       output: {
         entryFileNames: (chunkInfo) => {

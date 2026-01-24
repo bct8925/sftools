@@ -5,45 +5,107 @@ import { debugInfo } from './debug.js';
 
 const NATIVE_HOST_NAME = 'com.sftools.proxy';
 
-let nativePort = null;
-const pendingRequests = new Map();
+let nativePort: chrome.runtime.Port | null = null;
+const pendingRequests = new Map<
+    number,
+    {
+        resolve: (response: NativeMessageResponse) => void;
+        reject: (error: Error) => void;
+    }
+>();
 let requestId = 0;
 
 // HTTP server info for large payloads (received during init)
-let proxyHttpPort = null;
-let proxySecret = null;
+let proxyHttpPort: number | null = null;
+let proxySecret: string | null = null;
+
+interface StreamEvent {
+    type: 'streamEvent' | 'streamError' | 'streamEnd';
+    [key: string]: unknown;
+}
+
+interface NativeMessageResponse {
+    type?: string;
+    id?: number;
+    success: boolean;
+    version?: string;
+    httpPort?: number;
+    secret?: string;
+    error?: string;
+    largePayload?: string;
+    data?: string;
+    [key: string]: unknown;
+}
+
+interface InitResponse {
+    success: boolean;
+    version?: string;
+    httpPort?: number;
+    secret?: string;
+    error?: string;
+    [key: string]: unknown;
+}
+
+interface ProxyRequest {
+    type: string;
+    url?: string;
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    subscriptionId?: string;
+    accessToken?: string;
+    instanceUrl?: string;
+    channel?: string;
+    replayPreset?: string;
+    replayId?: string | number;
+    topicName?: string;
+    schemaId?: string;
+    tenantId?: string;
+}
+
+interface ProxyResponse {
+    success: boolean;
+    data?: string;
+    error?: string;
+    largePayload?: string;
+    [key: string]: unknown;
+}
 
 /**
  * Connect to native host and perform init handshake
- * @returns {Promise<{success: boolean, version?: string, error?: string}>}
  */
-export function connectNative() {
+export function connectNative(): Promise<InitResponse> {
     if (nativePort) {
-        return { success: true, version: 'connected' };
+        return Promise.resolve({ success: true, version: 'connected' });
     }
 
     return new Promise(resolve => {
         try {
             nativePort = chrome.runtime.connectNative(NATIVE_HOST_NAME);
 
-            nativePort.onMessage.addListener(message => {
+            nativePort.onMessage.addListener((message: unknown) => {
+                const msg = message as StreamEvent | NativeMessageResponse;
+
                 // Check if this is a streaming event (no request ID)
                 if (
-                    message.type === 'streamEvent' ||
-                    message.type === 'streamError' ||
-                    message.type === 'streamEnd'
+                    msg.type === 'streamEvent' ||
+                    msg.type === 'streamError' ||
+                    msg.type === 'streamEnd'
                 ) {
-                    chrome.runtime.sendMessage(message).catch(() => {
+                    chrome.runtime.sendMessage(msg).catch(() => {
                         /* ignore */
                     });
                     return;
                 }
 
+                const response = msg as NativeMessageResponse;
                 // Handle request-response messages
-                const pending = pendingRequests.get(message.id);
-                if (pending) {
-                    pending.resolve(message);
-                    pendingRequests.delete(message.id);
+                if (response.id !== undefined) {
+                    const pending = pendingRequests.get(response.id);
+                    if (pending) {
+                        pending.resolve(response);
+                        pendingRequests.delete(response.id);
+                    }
                 }
             });
 
@@ -65,8 +127,8 @@ export function connectNative() {
             sendNativeMessage({ type: 'init' })
                 .then(initResponse => {
                     if (initResponse.success) {
-                        proxyHttpPort = initResponse.httpPort;
-                        proxySecret = initResponse.secret;
+                        proxyHttpPort = initResponse.httpPort || null;
+                        proxySecret = initResponse.secret || null;
                         debugInfo(`Proxy connected: HTTP server on port ${proxyHttpPort}`);
 
                         chrome.storage.local.set({ proxyConnected: true });
@@ -78,11 +140,11 @@ export function connectNative() {
                 .catch(err => {
                     console.error('Native init failed:', err);
                     disconnectNative();
-                    resolve({ success: false, error: err.message });
+                    resolve({ success: false, error: (err as Error).message });
                 });
         } catch (err) {
             console.error('Failed to connect to native host:', err);
-            resolve({ success: false, error: err.message });
+            resolve({ success: false, error: (err as Error).message });
         }
     });
 }
@@ -90,7 +152,7 @@ export function connectNative() {
 /**
  * Disconnect from native host
  */
-export function disconnectNative() {
+export function disconnectNative(): void {
     if (nativePort) {
         nativePort.disconnect();
         nativePort = null;
@@ -102,10 +164,8 @@ export function disconnectNative() {
 
 /**
  * Send message to native host (low-level)
- * @param {object} message - Message to send
- * @returns {Promise<object>} - Response from native host
  */
-function sendNativeMessage(message) {
+function sendNativeMessage(message: ProxyRequest): Promise<NativeMessageResponse> {
     return new Promise((resolve, reject) => {
         if (!nativePort) {
             reject(new Error('Native host not connected'));
@@ -119,11 +179,11 @@ function sendNativeMessage(message) {
         }, 30000);
 
         pendingRequests.set(id, {
-            resolve: response => {
+            resolve: (response: NativeMessageResponse) => {
                 clearTimeout(timeoutId);
                 resolve(response);
             },
-            reject: error => {
+            reject: (error: Error) => {
                 clearTimeout(timeoutId);
                 reject(error);
             },
@@ -135,10 +195,8 @@ function sendNativeMessage(message) {
 
 /**
  * Fetch large payload from HTTP server using secret
- * @param {string} payloadId - UUID of the payload to fetch
- * @returns {Promise<string>} - The payload data
  */
-async function fetchLargePayload(payloadId) {
+async function fetchLargePayload(payloadId: string): Promise<string> {
     if (!proxyHttpPort || !proxySecret) {
         throw new Error('Proxy HTTP server not available');
     }
@@ -156,34 +214,34 @@ async function fetchLargePayload(payloadId) {
 
 /**
  * Send proxy request with automatic large payload handling
- * @param {object} message - Message to send to proxy
- * @returns {Promise<object>} - Response with data resolved
  */
-export async function sendProxyRequest(message) {
+export async function sendProxyRequest(message: ProxyRequest): Promise<ProxyResponse> {
     const response = await sendNativeMessage(message);
 
     if (response.largePayload) {
         const payloadData = await fetchLargePayload(response.largePayload);
-        const fullResponse = JSON.parse(payloadData);
+        const fullResponse = JSON.parse(payloadData) as ProxyResponse;
         return fullResponse;
     }
 
-    return response;
+    return response as ProxyResponse;
 }
 
 /**
  * Check if proxy is connected
- * @returns {boolean}
  */
-export function isProxyConnected() {
+export function isProxyConnected(): boolean {
     return nativePort !== null && proxyHttpPort !== null;
 }
 
 /**
  * Get proxy connection info
- * @returns {object}
  */
-export function getProxyInfo() {
+export function getProxyInfo(): {
+    connected: boolean;
+    httpPort: number | null;
+    hasSecret: boolean;
+} {
     return {
         connected: isProxyConnected(),
         httpPort: proxyHttpPort,

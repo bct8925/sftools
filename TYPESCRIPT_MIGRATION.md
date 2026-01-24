@@ -94,12 +94,12 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 9 - Background Scripts
-- [ ] `src/background/debug.js` → `.ts`
-- [ ] `src/background/auth.js` → `.ts`
-- [ ] `src/background/native-messaging.js` → `.ts`
-- [ ] `src/background/background.js` → `.ts`
-- [ ] Update `vite.config.js` background entry to `.ts`
-- [ ] Verify: typecheck + build + tests
+- [x] `src/background/debug.js` → `.ts`
+- [x] `src/background/auth.js` → `.ts`
+- [x] `src/background/native-messaging.js` → `.ts`
+- [x] `src/background/background.js` → `.ts`
+- [x] Update `vite.config.js` background entry to `.ts`
+- [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 10 - Entry Points
 - [ ] `src/pages/app/app.js` → `.ts`
@@ -531,6 +531,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Wave 6 | 5 | Reusable components: sf-icon, button-icon, button-dropdown, modal-popup, monaco-editor |
 | 2026-01-23 | Wave 7 | 8 | Tab components: settings-tab, utils-tab, debug-logs, flow-cleanup, query-tab, apex-tab, rest-api-tab, events-tab |
 | 2026-01-23 | Wave 8 | 4 | Standalone pages: record-page, schema-page; missed Wave 7: schema-browser-link, search-box. Added 'html' to FieldType. |
+| 2026-01-23 | Wave 9 | 4 | Background scripts: debug, auth, native-messaging, background. Updated vite.config.js entry point. |
 
 ### Issues Encountered
 

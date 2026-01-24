@@ -42,10 +42,11 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 3 - Fetch/Request Layer
-- [ ] `src/lib/fetch.js` → `.ts`
-- [ ] `src/lib/salesforce-request.js` → `.ts`
-- [ ] `src/lib/background-utils.js` → `.ts`
-- [ ] Verify: typecheck + build + tests
+- [x] `src/lib/fetch.js` → `.ts`
+- [x] `src/lib/salesforce-request.js` → `.ts`
+- [x] `src/lib/background-utils.js` → `.ts`
+- [x] `src/lib/cors-detection.js` → `.ts` (dependency of salesforce-request)
+- [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 4 - Salesforce API Operations
 - [ ] `src/lib/salesforce.js` → `.ts`
@@ -522,6 +523,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Phase 1 | 6 | Foundation complete: tsconfig, types, eslint, scripts |
 | 2026-01-23 | Wave 1 | 3 | Pure utilities: text-utils, icons, debug |
 | 2026-01-23 | Wave 2 | 4 | Core infrastructure: oauth-credentials, theme, ui-helpers, auth |
+| 2026-01-23 | Wave 3 | 4 | Fetch/Request layer: fetch, salesforce-request, background-utils, cors-detection |
 
 ### Issues Encountered
 

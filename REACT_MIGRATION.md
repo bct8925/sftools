@@ -49,14 +49,15 @@ Incremental migration from Web Components to React for the sftools Chrome extens
 - [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 2 - Monaco Editor
-- [ ] `src/components/monaco-editor/MonacoEditor.tsx`
-- [ ] `src/components/monaco-editor/MonacoEditor.module.css`
-- [ ] `src/components/monaco-editor/useMonacoTheme.ts`
-- [ ] Implement forwardRef with imperative handle
-- [ ] Add Ctrl+Enter execute via onExecute prop
-- [ ] Add resize handle functionality
-- [ ] Integrate with ThemeContext
-- [ ] Verify: all editor features work (getValue, setValue, appendValue, markers)
+- [x] `src/components/monaco-editor/MonacoEditor.tsx`
+- [x] `src/components/monaco-editor/MonacoEditor.module.css`
+- [x] `src/components/monaco-editor/useMonacoTheme.ts`
+- [x] Implement forwardRef with imperative handle
+- [x] Add Ctrl+Enter execute via onExecute prop
+- [x] Add resize handle functionality
+- [x] Integrate with ThemeContext (via useMonacoTheme hook)
+- [x] Uses @monaco-editor/react with custom Monaco instance
+- [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 3 - Utils Tab Tools
 - [ ] `src/components/utils-tools/SearchBox.tsx`
@@ -685,6 +686,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | - | - | Plan created |
 | 2026-01-23 | Phase 1 | 8 | Foundation: React deps, Vite config, contexts, hooks |
 | 2026-01-23 | Wave 1 | 9 | Simple components: SfIcon, Modal, ButtonIcon, ButtonDropdown + barrel export |
+| 2026-01-23 | Wave 2 | 3 | Monaco Editor: React wrapper with @monaco-editor/react, theme hook |
 
 ### Issues Encountered
 

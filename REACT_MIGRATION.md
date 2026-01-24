@@ -117,15 +117,18 @@ Incremental migration from Web Components to React for the sftools Chrome extens
 - [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 10 - App Shell Migration
-- [ ] `src/react/App.tsx` (main React app)
-- [ ] `src/react/AppProviders.tsx` (context providers wrapper)
-- [ ] `src/react/TabNavigation.tsx`
-- [ ] `src/react/ConnectionSelector.tsx`
-- [ ] `src/react/MobileMenu.tsx`
-- [ ] Update `src/pages/app/app.html` to mount React
-- [ ] Update `src/pages/record/record.html` to mount React
-- [ ] Update `src/pages/schema/schema.html` to mount React
-- [ ] Verify: full app navigation works
+- [x] `src/react/AppProviders.tsx` (context providers wrapper)
+- [x] `src/react/TabNavigation.tsx` + `.module.css`
+- [x] `src/react/ConnectionSelector.tsx` + `.module.css`
+- [x] `src/react/MobileMenu.tsx` + `.module.css`
+- [x] `src/react/App.tsx` + `.module.css` (main React app)
+- [x] `src/react/index.tsx` (main app entry)
+- [x] `src/react/record.tsx` (record page entry)
+- [x] `src/react/schema.tsx` (schema page entry)
+- [x] Update `src/pages/app/app.html` to mount React
+- [x] Update `src/pages/record/record.html` to mount React
+- [x] Update `src/pages/schema/schema.html` to mount React
+- [x] Verify: build succeeds, types check
 
 ### Phase 3: Cleanup
 - [ ] Delete Web Component files from `src/components/*/`
@@ -681,6 +684,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Wave 7 | 4 | Apex: ApexHistory, ApexOutput, ApexTab |
 | 2026-01-23 | Wave 8 | 8 | Query: useQueryState, QueryEditor, QueryTabs, QueryResults, QueryResultsTable, QueryHistory, QueryTab |
 | 2026-01-23 | Wave 9 | 9 | Standalone: FieldRow, RichTextModal, RecordPage, ObjectList, FieldList, FormulaEditor, SchemaPage |
+| 2026-01-23 | Wave 10 | 14 | App Shell: AppProviders, TabNavigation, ConnectionSelector, MobileMenu, App + entry points |
 
 ### Issues Encountered
 

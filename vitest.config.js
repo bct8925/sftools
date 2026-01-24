@@ -34,12 +34,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './tests/unit/setup.js',
-    include: ['tests/unit/**/*.test.js'],
+    setupFiles: './tests/unit/setup.ts',
+    include: ['tests/unit/**/*.test.{js,ts}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      include: ['src/lib/**/*.js'],
+      include: ['src/lib/**/*.{js,ts}'],
       exclude: [],
     },
   },

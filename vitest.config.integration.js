@@ -5,8 +5,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: './tests/integration/setup.js',
-    include: ['tests/integration/**/*.test.js'],
+    setupFiles: './tests/integration/setup.ts',
+    include: ['tests/integration/**/*.test.{js,ts}'],
     testTimeout: 30000, // 30s for API calls
     hookTimeout: 10000, // 10s for cleanup
     pool: 'threads',

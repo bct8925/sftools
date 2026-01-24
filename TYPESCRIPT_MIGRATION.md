@@ -109,11 +109,15 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 11 - Tests
-- [ ] `tests/unit/mocks/chrome.js` → `.ts`
-- [ ] `tests/unit/setup.js` → `.ts`
-- [ ] `tests/unit/lib/*.test.js` → `.test.ts`
-- [ ] `tests/integration/*.test.js` → `.test.ts`
-- [ ] Verify: all tests pass
+- [x] `tests/unit/mocks/chrome.js` → `.ts`
+- [x] `tests/unit/mocks/salesforce.js` → `.ts`
+- [x] `tests/unit/setup.js` → `.ts`
+- [x] `tests/integration/setup.js` → `.ts`
+- [x] All 21 `tests/unit/lib/*.test.js` → `.test.ts`
+- [x] All 8 `tests/integration/*.test.js` → `.test.ts`
+- [x] Update `vitest.config.js` to include `.test.ts` files
+- [x] Update `vitest.config.integration.js` to include `.test.ts` files
+- [x] Verify: typecheck + build + all tests pass
 
 ### Phase 3: Cleanup
 - [ ] Convert `vite.config.js` → `vite.config.ts`
@@ -533,6 +537,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Wave 8 | 4 | Standalone pages: record-page, schema-page; missed Wave 7: schema-browser-link, search-box. Added 'html' to FieldType. |
 | 2026-01-23 | Wave 9 | 4 | Background scripts: debug, auth, native-messaging, background. Updated vite.config.js entry point. |
 | 2026-01-23 | Wave 10 | 4 | Entry points: app, callback, record, schema. Added ModalPopupElement interface to components.d.ts. |
+| 2026-01-23 | Wave 11 | 33 | Tests: chrome mock, salesforce mock, unit setup, integration setup, 21 unit tests, 8 integration tests. Updated vitest configs. All 619 unit tests pass. |
 
 ### Issues Encountered
 

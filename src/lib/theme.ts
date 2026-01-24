@@ -6,18 +6,37 @@ export type EffectiveTheme = 'light' | 'dark';
 
 const THEME_KEY = 'theme';
 
+// In-memory cache of current theme
+let currentTheme: Theme = 'system';
+
 export function getSystemTheme(): EffectiveTheme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 export function applyTheme(theme: Theme): void {
-  let effectiveTheme: EffectiveTheme = theme === 'system' ? getSystemTheme() : theme;
+  currentTheme = theme;
+  const effectiveTheme: EffectiveTheme = theme === 'system' ? getSystemTheme() : theme;
 
   if (effectiveTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
   } else {
     document.documentElement.removeAttribute('data-theme');
   }
+}
+
+/**
+ * Get the current theme setting
+ */
+export function getTheme(): Theme {
+  return currentTheme;
+}
+
+/**
+ * Set and persist the theme
+ */
+export async function setTheme(theme: Theme): Promise<void> {
+  await chrome.storage.local.set({ [THEME_KEY]: theme });
+  applyTheme(theme);
 }
 
 export async function initTheme(): Promise<void> {

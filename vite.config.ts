@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 const isProduction = process.env.SFTOOLS_PRODUCTION === 'true';
@@ -10,7 +11,7 @@ export default defineConfig({
   // Crucial for Chrome Extensions: ensures assets load from relative paths
   base: './',
 
-  plugins: [],
+  plugins: [react()],
 
   define: {
     __SFTOOLS_DEBUG__: !isProduction

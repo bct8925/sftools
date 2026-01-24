@@ -1,8 +1,8 @@
 # React Migration Plan
 
-> **Status:** Not Started
-> **Started:** TBD
-> **Branch:** `react`
+> **Status:** In Progress
+> **Started:** 2026-01-23
+> **Branch:** `typescript` (continuing from TS migration)
 
 ## Overview
 
@@ -25,16 +25,16 @@ Incremental migration from Web Components to React for the sftools Chrome extens
 ## Progress Tracker
 
 ### Phase 1: Foundation Setup
-- [ ] Install React dependencies
-- [ ] Configure Vite for React (@vitejs/plugin-react)
-- [ ] Update tsconfig.json for JSX
-- [ ] Create `src/contexts/ConnectionContext.tsx`
-- [ ] Create `src/contexts/ThemeContext.tsx`
-- [ ] Create `src/contexts/ProxyContext.tsx`
-- [ ] Create `src/hooks/useConnection.ts`
-- [ ] Create `src/hooks/useTheme.ts`
-- [ ] Create `src/hooks/useProxy.ts`
-- [ ] Verify: build succeeds, contexts provide values
+- [x] Install React dependencies
+- [x] Configure Vite for React (@vitejs/plugin-react)
+- [x] Update tsconfig.json for JSX
+- [x] Create `src/contexts/ConnectionContext.tsx`
+- [x] Create `src/contexts/ThemeContext.tsx`
+- [x] Create `src/contexts/ProxyContext.tsx`
+- [x] Create `src/hooks/index.ts` (re-exports hooks from contexts)
+- [x] Create `src/contexts/index.ts` (barrel export)
+- [x] Add `getTheme` and `setTheme` to `src/lib/theme.ts`
+- [x] Verify: build succeeds, contexts provide values
 
 ### Phase 2: Wave 1 - Simple Reusable Components
 - [ ] `src/components/sf-icon/SfIcon.tsx`
@@ -681,7 +681,8 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 
 | Date | Wave | Files | Notes |
 |------|------|-------|-------|
-| TBD | - | - | Plan created |
+| 2026-01-23 | - | - | Plan created |
+| 2026-01-23 | Phase 1 | 8 | Foundation: React deps, Vite config, contexts, hooks |
 
 ### Issues Encountered
 

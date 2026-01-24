@@ -15,6 +15,8 @@
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
 
+    "jsx": "react-jsx",
+
     "allowJs": true,
     "checkJs": false,
     "esModuleInterop": true,
@@ -29,6 +31,7 @@
   },
   "include": [
     "src/**/*.ts",
+    "src/**/*.tsx",
     "src/**/*.js",
     "src/types/**/*.d.ts"
   ],

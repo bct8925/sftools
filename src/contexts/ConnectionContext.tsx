@@ -41,17 +41,43 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
   const [activeConnection, setActiveConnectionState] = useState<SalesforceConnection | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Refresh connections from storage and sync active connection state
   const refreshConnections = useCallback(async () => {
     const conns = await loadConnections();
     setConnections(conns);
 
+    // Sync active connection with current module state
     const activeId = getActiveConnectionId();
     const active = conns.find((c) => c.id === activeId) || null;
     setActiveConnectionState(active);
   }, []);
 
+  // Initial load - auto-select most recently used connection if none is active
   useEffect(() => {
-    refreshConnections().finally(() => setIsLoading(false));
+    const initializeConnections = async () => {
+      const conns = await loadConnections();
+      setConnections(conns);
+
+      const activeId = getActiveConnectionId();
+      let active = conns.find((c) => c.id === activeId) || null;
+
+      // On initial load, auto-select most recently used connection if none is active
+      if (!active && conns.length > 0) {
+        // Sort by lastUsedAt descending, fall back to first if no timestamps
+        const sorted = [...conns].sort((a, b) => {
+          const aTime = a.lastUsedAt ?? 0;
+          const bTime = b.lastUsedAt ?? 0;
+          return bTime - aTime;
+        });
+        active = sorted[0];
+        setActiveConn(active); // Set module-level auth state
+      }
+
+      setActiveConnectionState(active);
+      setIsLoading(false);
+    };
+
+    initializeConnections();
 
     // Listen for storage changes from other tabs
     const handleStorageChange = (

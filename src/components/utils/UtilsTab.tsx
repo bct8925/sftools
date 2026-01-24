@@ -8,7 +8,7 @@ import { FlowCleanup } from '../utils-tools/FlowCleanup';
  */
 export function UtilsTab() {
   return (
-    <div className={styles.utilsContent}>
+    <div className={styles.utilsContent} data-testid="utils-tab">
       <SchemaBrowserLink />
       <DebugLogs />
       <FlowCleanup />

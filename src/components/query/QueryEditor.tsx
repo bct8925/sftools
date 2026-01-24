@@ -79,6 +79,7 @@ export const QueryEditor = forwardRef<QueryEditorRef, QueryEditorProps>(
         onExecute={handleExecute}
         className={className}
         resizable={true}
+        data-testid="query-editor"
       />
     );
   }

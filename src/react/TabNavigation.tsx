@@ -55,6 +55,7 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
             onClick={() => handleTabClick(tab)}
             disabled={disabled}
             data-tab={tab.id}
+            data-testid={`mobile-nav-${tab.id}`}
           >
             {tab.label}
           </button>

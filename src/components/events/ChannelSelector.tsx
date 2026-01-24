@@ -19,6 +19,8 @@ interface ChannelSelectorProps {
   /** Show only platform events (for publishing) */
   publishOnly?: boolean;
   className?: string;
+  /** Test ID for the select element */
+  'data-testid'?: string;
 }
 
 /**
@@ -35,6 +37,7 @@ export function ChannelSelector({
   disabled = false,
   publishOnly = false,
   className,
+  'data-testid': dataTestId,
 }: ChannelSelectorProps) {
   const channelGroups = useMemo(() => {
     if (publishOnly) {
@@ -62,6 +65,7 @@ export function ChannelSelector({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
+      data-testid={dataTestId}
     >
       <option value="">
         {channelGroups.length === 0

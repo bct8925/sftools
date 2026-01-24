@@ -18,6 +18,7 @@ interface ButtonIconProps {
   /** Menu content - if provided, enables dropdown mode */
   children?: ReactNode;
   className?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -34,6 +35,7 @@ export function ButtonIcon({
   onToggle,
   children,
   className,
+  'data-testid': dataTestId,
 }: ButtonIconProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,6 +92,7 @@ export function ButtonIcon({
         onClick={handleTriggerClick}
         type="button"
         dangerouslySetInnerHTML={{ __html: iconContent }}
+        data-testid={dataTestId}
       />
       {hasMenu && <div className={styles.menu}>{children}</div>}
     </div>
@@ -101,10 +104,12 @@ export function ButtonIconOption({
   children,
   disabled,
   onClick,
+  'data-testid': dataTestId,
 }: {
   children: ReactNode;
   disabled?: boolean;
   onClick?: () => void;
+  'data-testid'?: string;
 }) {
   return (
     <button
@@ -112,6 +117,7 @@ export function ButtonIconOption({
       disabled={disabled}
       onClick={onClick}
       type="button"
+      data-testid={dataTestId}
     >
       {children}
     </button>
@@ -123,10 +129,12 @@ export function ButtonIconCheckbox({
   children,
   checked,
   onChange,
+  'data-testid': dataTestId,
 }: {
   children: ReactNode;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  'data-testid'?: string;
 }) {
   return (
     <label className={styles.checkbox}>
@@ -134,6 +142,7 @@ export function ButtonIconCheckbox({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
+        data-testid={dataTestId}
       />
       {children}
     </label>

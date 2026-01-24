@@ -9,6 +9,8 @@ interface FavoriteModalProps {
   placeholder?: string;
   onSave: (label: string) => void;
   onClose: () => void;
+  /** Test ID prefix for the modal elements (e.g., "apex" results in data-testid="apex-favorite-dialog") */
+  testIdPrefix?: string;
 }
 
 /**
@@ -20,6 +22,7 @@ export function FavoriteModal({
   placeholder = 'Enter a label',
   onSave,
   onClose,
+  testIdPrefix = 'favorite',
 }: FavoriteModalProps) {
   const [label, setLabel] = useState(defaultLabel);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -56,7 +59,7 @@ export function FavoriteModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} onOpen={handleOpen}>
-      <div className={styles.favoriteDialog}>
+      <div className={styles.favoriteDialog} data-testid={`${testIdPrefix}-favorite-dialog`}>
         <h3>Add to Favorites</h3>
         <input
           ref={inputRef}
@@ -66,6 +69,7 @@ export function FavoriteModal({
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           onKeyDown={handleKeyDown}
+          data-testid={`${testIdPrefix}-favorite-input`}
         />
         <div className={styles.favoriteButtons}>
           <button className="button-neutral" onClick={onClose}>
@@ -75,6 +79,7 @@ export function FavoriteModal({
             className="button-brand"
             onClick={handleSave}
             disabled={!label.trim()}
+            data-testid={`${testIdPrefix}-favorite-save`}
           >
             Save
           </button>

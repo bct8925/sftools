@@ -192,7 +192,7 @@ export function RecordPage() {
   // Render error state
   if (error && !isLoading) {
     return (
-      <>
+      <div data-testid="record-page">
         <header className="standalone-header">
           <div className="nav-brand">
             <img src="../../icon.png" alt="" />
@@ -216,12 +216,12 @@ export function RecordPage() {
             </div>
           </div>
         </main>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div data-testid="record-page">
       <header className="standalone-header">
         <div className="nav-brand">
           <img src="../../icon.png" alt="" />
@@ -240,15 +240,16 @@ export function RecordPage() {
           </div>
           <div className="card-body">
             <div className={styles.recordInfo}>
-              <span className={styles.objectName}>{objectLabel}</span>
-              <span className={styles.recordId}>{recordId}</span>
+              <span className={styles.objectName} id="objectName">{objectLabel}</span>
+              <span className={styles.recordId} id="recordId">{recordId}</span>
               <button
                 className={`button-neutral ${styles.openInOrgBtn}`}
                 onClick={handleOpenInOrg}
+                id="openInOrgBtn"
               >
                 Open in Org
               </button>
-              <StatusBadge type={status.type}>{status.text}</StatusBadge>
+              <StatusBadge type={status.type} id="status">{status.text}</StatusBadge>
             </div>
 
             <div className={styles.fieldHeader}>
@@ -259,7 +260,7 @@ export function RecordPage() {
               <div>Preview</div>
             </div>
 
-            <div className={styles.fieldsContainer}>
+            <div className={styles.fieldsContainer} id="fieldsContainer">
               {isLoading ? (
                 <div className={styles.loadingContainer}>Loading record data...</div>
               ) : (
@@ -284,13 +285,14 @@ export function RecordPage() {
                 className={`button-brand ${styles.saveBtn}`}
                 onClick={handleSave}
                 disabled={!hasChanges || isSaving}
+                id="saveBtn"
               >
                 Save Changes
               </button>
-              <button className="button-neutral" onClick={handleRefresh} disabled={isLoading}>
+              <button className="button-neutral" onClick={handleRefresh} disabled={isLoading} id="refreshBtn">
                 Refresh
               </button>
-              <span className={styles.changeCount}>
+              <span className={styles.changeCount} id="changeCount">
                 {changeCount > 0
                   ? `${changeCount} field${changeCount > 1 ? 's' : ''} modified`
                   : ''}
@@ -306,6 +308,6 @@ export function RecordPage() {
         field={previewField}
         value={previewValue}
       />
-    </>
+    </div>
   );
 }

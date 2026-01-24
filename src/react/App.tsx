@@ -43,7 +43,7 @@ function AppContent() {
   ];
 
   return (
-    <div className={styles.appContainer}>
+    <div className={styles.appContainer} data-testid="app-root">
       {/* Modal handlers */}
       <AuthExpirationHandler />
       <CorsErrorHandler />
@@ -67,6 +67,7 @@ function AppContent() {
           <div
             key={id}
             className={activeTab === id ? styles.tabPanelActive : styles.tabPanelHidden}
+            data-testid={`tab-content-${id}`}
           >
             {component}
           </div>

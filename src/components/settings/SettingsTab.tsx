@@ -10,7 +10,7 @@ export function SettingsTab() {
   const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
 
   return (
-    <div className={styles.settingsContent}>
+    <div className={styles.settingsContent} data-testid="settings-tab">
       <div className="card">
         <div className="card-header">
           <div className="card-header-icon" style={{ backgroundColor: '#4bca81' }}>

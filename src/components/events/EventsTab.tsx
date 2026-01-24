@@ -298,7 +298,7 @@ export function EventsTab() {
   }, [isSubscribed, subscribe, unsubscribe]);
 
   return (
-    <div className={styles.eventsTab}>
+    <div className={styles.eventsTab} data-testid="events-tab">
       <div className="card">
         <div className="card-header">
           <div className="card-header-icon" style={{ backgroundColor: '#e96d63' }}>
@@ -317,6 +317,7 @@ export function EventsTab() {
               value={selectedChannel}
               onChange={setSelectedChannel}
               disabled={isSubscribed}
+              data-testid="event-channel-select"
             />
           </div>
           <div className="form-element">
@@ -327,6 +328,7 @@ export function EventsTab() {
                 value={replayPreset}
                 onChange={(e) => setReplayPreset(e.target.value)}
                 disabled={isSubscribed}
+                data-testid="event-replay-select"
               >
                 <option value="LATEST">Latest (new events only)</option>
                 <option value="EARLIEST">Earliest (all retained events)</option>
@@ -336,6 +338,7 @@ export function EventsTab() {
                 className="button-brand"
                 onClick={toggleSubscription}
                 type="button"
+                data-testid="event-subscribe-btn"
               >
                 {isSubscribed ? 'Unsubscribe' : 'Subscribe'}
               </button>
@@ -351,6 +354,7 @@ export function EventsTab() {
                 value={replayId}
                 onChange={(e) => setReplayId(e.target.value)}
                 disabled={isSubscribed}
+                data-testid="event-replay-id"
               />
             </div>
           )}
@@ -358,7 +362,7 @@ export function EventsTab() {
             <label>
               Event Stream{' '}
               {streamStatus && (
-                <StatusBadge type={streamStatusType}>{streamStatus}</StatusBadge>
+                <StatusBadge type={streamStatusType} data-testid="event-stream-status">{streamStatus}</StatusBadge>
               )}
             </label>
             <MonacoEditor
@@ -367,9 +371,10 @@ export function EventsTab() {
               value="// Subscribe to a channel to see events here\n"
               readonly
               className="monaco-container monaco-container-lg"
+              data-testid="event-stream-editor"
             />
           </div>
-          <button className="button-neutral" onClick={clearStream} type="button">
+          <button className="button-neutral" onClick={clearStream} type="button" data-testid="event-clear-btn">
             Clear Stream
           </button>
         </div>

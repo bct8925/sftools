@@ -54,7 +54,7 @@ export function FieldRow({
   );
 
   return (
-    <div className={`${styles.fieldRow}${isModified ? ` ${styles.modified}` : ''}`}>
+    <div className={`${styles.fieldRow} field-row${isModified ? ` ${styles.modified} modified` : ''}`} data-field={field.name}>
       <div className={styles.fieldLabel} title={field.label}>
         {field.label}
       </div>
@@ -62,10 +62,10 @@ export function FieldRow({
         {field.name}
       </div>
       <div className={styles.fieldType}>{typeDisplay}</div>
-      <div className={styles.fieldValue}>
+      <div className={`${styles.fieldValue} field-value`}>
         {field.type === 'picklist' && isEditable ? (
           <select
-            className={`select ${styles.fieldInput}`}
+            className={`select ${styles.fieldInput} field-input`}
             value={String(value ?? '')}
             onChange={handleInputChange}
           >
@@ -81,7 +81,7 @@ export function FieldRow({
         ) : (
           <input
             type="text"
-            className={`input ${styles.fieldInput}`}
+            className={`input ${styles.fieldInput} field-input`}
             value={displayValue}
             onChange={handleInputChange}
             disabled={!isEditable}

@@ -92,6 +92,7 @@ export function EventPublisher({
             onChange={setSelectedChannel}
             disabled={isPublishing}
             publishOnly
+            data-testid="event-publish-channel"
           />
         </div>
         <div className="form-element">
@@ -102,6 +103,7 @@ export function EventPublisher({
             value="{\n  \n}"
             onExecute={handlePublish}
             className="monaco-container"
+            data-testid="event-publish-editor"
           />
         </div>
         <div className="m-top_small">
@@ -110,10 +112,11 @@ export function EventPublisher({
             onClick={handlePublish}
             disabled={isPublishing}
             type="button"
+            data-testid="event-publish-btn"
           >
             Publish Event
           </button>
-          {status && <StatusBadge type={statusType}>{status}</StatusBadge>}
+          {status && <StatusBadge type={statusType} data-testid="event-publish-status">{status}</StatusBadge>}
         </div>
       </div>
     </div>

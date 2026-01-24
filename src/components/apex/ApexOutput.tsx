@@ -58,7 +58,7 @@ export function ApexOutput({ output }: ApexOutputProps) {
   }, []);
 
   return (
-    <div className="card">
+    <div className="card" data-testid="apex-output">
       <div className="card-header">
         <div className="card-header-icon" style={{ backgroundColor: '#3ba755' }}>
           L
@@ -71,6 +71,7 @@ export function ApexOutput({ output }: ApexOutputProps) {
             placeholder="Filter..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
+            data-testid="apex-search-input"
           />
         </div>
       </div>
@@ -80,6 +81,7 @@ export function ApexOutput({ output }: ApexOutputProps) {
           language="text"
           readonly
           className="monaco-container monaco-container-lg"
+          data-testid="apex-output-editor"
         />
       </div>
     </div>

@@ -47,7 +47,7 @@ export function QueryResults({
     // Error state
     if (activeTab.error) {
       return (
-        <div className={styles.resultsError}>{activeTab.error}</div>
+        <div className={styles.resultsError} data-testid="query-results-error">{activeTab.error}</div>
       );
     }
 

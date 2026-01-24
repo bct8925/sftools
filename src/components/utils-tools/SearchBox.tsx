@@ -20,6 +20,10 @@ interface SearchBoxProps {
   /** Callback when an item is selected */
   onSelect?: (item: unknown) => void;
   className?: string;
+  /** data-testid for the input element */
+  inputTestId?: string;
+  /** data-testid for the dropdown container */
+  dropdownTestId?: string;
 }
 
 /**
@@ -33,6 +37,8 @@ export function SearchBox({
   placeholder = '',
   onSelect,
   className,
+  inputTestId,
+  dropdownTestId,
 }: SearchBoxProps) {
   const [inputValue, setInputValue] = useState('');
   const [results, setResults] = useState<unknown[]>([]);
@@ -124,10 +130,11 @@ export function SearchBox({
           value={inputValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
+          data-testid={inputTestId}
         />
       </div>
       {isDropdownVisible && (
-        <div className={styles.dropdown}>
+        <div className={styles.dropdown} data-testid={dropdownTestId}>
           <div className={styles.results}>
             {results.length === 0 ? (
               <div className={styles.noResults}>No results found</div>
@@ -137,11 +144,12 @@ export function SearchBox({
                 return (
                   <div
                     key={data.id}
-                    className={styles.item}
+                    className={`${styles.item} search-box-item`}
                     onClick={() => handleResultClick(item)}
+                    data-testid="search-box-item"
                   >
-                    <span className={styles.itemName}>{data.name}</span>
-                    {data.detail && <span className={styles.itemDetail}>{data.detail}</span>}
+                    <span className={`${styles.itemName} search-box-item-name`}>{data.name}</span>
+                    {data.detail && <span className={`${styles.itemDetail} search-box-item-detail`}>{data.detail}</span>}
                   </div>
                 );
               })

@@ -177,7 +177,7 @@ export function QueryResultsTable({
     if (connectionId) {
       const href = `../../pages/record/record.html?objectType=${encodeURIComponent(objName)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(connectionId)}`;
       return (
-        <a href={href} target="_blank" rel="noopener noreferrer" className={styles.idLink}>
+        <a href={href} target="_blank" rel="noopener noreferrer" className={`${styles.idLink} query-id-link`} data-testid="query-id-link">
           {value}
         </a>
       );
@@ -202,9 +202,10 @@ export function QueryResultsTable({
       return (
         <input
           type="checkbox"
-          className={styles.fieldInput}
+          className={`${styles.fieldInput} query-field-input`}
           checked={displayValue === true}
           onChange={(e) => handleInputChange(recordId, col.path, e.target.checked, value)}
+          data-testid="query-field-input"
         />
       );
     }
@@ -212,9 +213,10 @@ export function QueryResultsTable({
     if (field.type === 'picklist' && field.picklistValues) {
       return (
         <select
-          className={styles.fieldInput}
+          className={`${styles.fieldInput} query-field-input`}
           value={String(displayValue ?? '')}
           onChange={(e) => handleInputChange(recordId, col.path, e.target.value, value)}
+          data-testid="query-field-input"
         >
           <option value="">--None--</option>
           {field.picklistValues
@@ -231,9 +233,10 @@ export function QueryResultsTable({
     return (
       <input
         type="text"
-        className={styles.fieldInput}
+        className={`${styles.fieldInput} query-field-input`}
         value={String(displayValue ?? '')}
         onChange={(e) => handleInputChange(recordId, col.path, e.target.value, value)}
+        data-testid="query-field-input"
       />
     );
   };

@@ -67,8 +67,9 @@ export function HistoryList<T extends HistoryEntry>({
             key={item.id}
             className={styles.scriptItem}
             onClick={() => handleLoad(content)}
+            data-testid="script-item"
           >
-            <div className={styles.scriptPreview}>{getPreview(content)}</div>
+            <div className={styles.scriptPreview} data-testid="script-preview">{getPreview(content)}</div>
             <div className={styles.scriptMeta}>
               <span>{formatTime(item.timestamp)}</span>
               <div className={styles.scriptActions}>
@@ -76,6 +77,7 @@ export function HistoryList<T extends HistoryEntry>({
                   className={styles.scriptAction}
                   title="Load"
                   onClick={(e) => handleLoad(content, e)}
+                  data-testid="script-action-load"
                 >
                   &#8629;
                 </button>
@@ -83,6 +85,7 @@ export function HistoryList<T extends HistoryEntry>({
                   className={styles.scriptAction}
                   title="Add to favorites"
                   onClick={(e) => handleFavorite(content, e)}
+                  data-testid="script-action-favorite"
                 >
                   &#9733;
                 </button>
@@ -90,6 +93,7 @@ export function HistoryList<T extends HistoryEntry>({
                   className={styles.scriptAction}
                   title="Delete"
                   onClick={(e) => handleDelete(item.id, e)}
+                  data-testid="script-action-delete"
                 >
                   &times;
                 </button>
@@ -151,8 +155,9 @@ export function FavoritesList<T extends FavoriteEntry>({
             key={item.id}
             className={styles.scriptItem}
             onClick={() => handleLoad(content)}
+            data-testid="script-item"
           >
-            <div className={styles.scriptLabel}>{item.label}</div>
+            <div className={styles.scriptLabel} data-testid="script-label">{item.label}</div>
             <div className={styles.scriptMeta}>
               <span>{formatTime(item.timestamp)}</span>
               <div className={styles.scriptActions}>
@@ -160,6 +165,7 @@ export function FavoritesList<T extends FavoriteEntry>({
                   className={styles.scriptAction}
                   title="Load"
                   onClick={(e) => handleLoad(content, e)}
+                  data-testid="script-action-load"
                 >
                   &#8629;
                 </button>
@@ -167,6 +173,7 @@ export function FavoritesList<T extends FavoriteEntry>({
                   className={styles.scriptAction}
                   title="Delete"
                   onClick={(e) => handleDelete(item.id, e)}
+                  data-testid="script-action-delete"
                 >
                   &times;
                 </button>

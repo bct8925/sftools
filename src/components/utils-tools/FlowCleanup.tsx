@@ -102,7 +102,7 @@ export function FlowCleanup() {
   const inactiveCount = inactiveVersions.length;
 
   return (
-    <div className="card">
+    <div className="card" data-testid="flow-cleanup">
       <div className="card-header">
         <div className="card-header-icon" style={{ backgroundColor: '#ff9a3c' }}>
           F
@@ -117,10 +117,12 @@ export function FlowCleanup() {
           label="FLOW SEARCH"
           placeholder="Search flows by name..."
           onSelect={handleFlowSelect}
+          inputTestId="flow-cleanup-search"
+          dropdownTestId="flow-cleanup-dropdown"
         />
         {showVersions && (
-          <div className={styles.versions}>
-            <div className="tool-summary">
+          <div className={styles.versions} data-testid="flow-cleanup-versions">
+            <div className="tool-summary" data-testid="flow-cleanup-info">
               <strong>{selectedFlowName}</strong>
               <br />
               Total versions: {versions.length}
@@ -133,6 +135,7 @@ export function FlowCleanup() {
               className="button-brand"
               disabled={inactiveCount === 0}
               onClick={handleDeleteVersions}
+              data-testid="flow-cleanup-delete-btn"
             >
               {inactiveCount === 0
                 ? 'No Inactive Versions'
@@ -141,7 +144,7 @@ export function FlowCleanup() {
           </div>
         )}
         {status && (
-          <div className="tool-status">
+          <div className="tool-status" data-testid="flow-cleanup-status">
             <span className={`status-indicator status-${status.type}`}></span>
             <span className="tool-status-text">{status.message}</span>
           </div>

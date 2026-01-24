@@ -74,6 +74,7 @@ export function MobileMenu({ activeTab, onTabChange }: MobileMenuProps) {
         className={styles.hamburgerBtn}
         onClick={openMenu}
         aria-label="Menu"
+        data-testid="hamburger-btn"
       >
         <SfIcon name="hamburger" />
       </button>

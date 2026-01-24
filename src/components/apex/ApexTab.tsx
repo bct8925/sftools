@@ -130,7 +130,7 @@ export function ApexTab() {
   }, []);
 
   return (
-    <div className={styles.apexTab}>
+    <div className={styles.apexTab} data-testid="apex-tab">
       <div className="card">
         <div className="card-header">
           <div className="card-header-icon" style={{ backgroundColor: '#6a67ce' }}>
@@ -147,6 +147,7 @@ export function ApexTab() {
               value={DEFAULT_CODE}
               onExecute={handleExecute}
               className="monaco-container"
+              data-testid="apex-editor"
             />
           </div>
           <div className="m-top_small">
@@ -154,10 +155,11 @@ export function ApexTab() {
               className="button-brand"
               onClick={handleExecute}
               disabled={isExecuting}
+              data-testid="apex-execute-btn"
             >
               Execute
             </button>
-            <StatusBadge type={statusType}>{statusText}</StatusBadge>
+            <StatusBadge type={statusType} data-testid="apex-status">{statusText}</StatusBadge>
           </div>
         </div>
       </div>

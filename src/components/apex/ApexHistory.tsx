@@ -139,20 +139,23 @@ export const ApexHistory = forwardRef<ApexHistoryRef, ApexHistoryProps>(({ onLoa
         title="History & Favorites"
         onClick={() => setIsOpen(true)}
         className={styles.historyBtn}
+        data-testid="apex-history-btn"
       />
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} onOpen={handleOpen}>
-        <div className={styles.historyModal}>
+        <div className={styles.historyModal} data-testid="apex-history-modal">
           <div className={styles.dropdownTabs}>
             <button
               className={`${styles.dropdownTab} ${activeTab === 'history' ? styles.active : ''}`}
               onClick={() => setActiveTab('history')}
+              data-testid="apex-history-tab"
             >
               History
             </button>
             <button
               className={`${styles.dropdownTab} ${activeTab === 'favorites' ? styles.active : ''}`}
               onClick={() => setActiveTab('favorites')}
+              data-testid="apex-favorites-tab"
             >
               Favorites
             </button>
@@ -160,26 +163,30 @@ export const ApexHistory = forwardRef<ApexHistoryRef, ApexHistoryProps>(({ onLoa
 
           <div className={styles.dropdownContent}>
             {activeTab === 'history' && (
-              <HistoryList
-                items={history}
-                emptyMessage={<>No scripts yet.<br />Execute some Apex to see history here.</>}
-                getContent={getCodeContent}
-                getPreview={getPreview}
-                formatTime={formatTime}
-                onLoad={handleLoadScript}
-                onAddToFavorites={handleAddToFavorites}
-                onDelete={handleDeleteHistory}
-              />
+              <div data-testid="apex-history-list">
+                <HistoryList
+                  items={history}
+                  emptyMessage={<>No scripts yet.<br />Execute some Apex to see history here.</>}
+                  getContent={getCodeContent}
+                  getPreview={getPreview}
+                  formatTime={formatTime}
+                  onLoad={handleLoadScript}
+                  onAddToFavorites={handleAddToFavorites}
+                  onDelete={handleDeleteHistory}
+                />
+              </div>
             )}
             {activeTab === 'favorites' && (
-              <FavoritesList
-                items={favorites}
-                emptyMessage={<>No favorites yet.<br />Click &#9733; on a script to save it.</>}
-                getContent={getCodeContent}
-                formatTime={formatTime}
-                onLoad={handleLoadScript}
-                onDelete={handleDeleteFavorite}
-              />
+              <div data-testid="apex-favorites-list">
+                <FavoritesList
+                  items={favorites}
+                  emptyMessage={<>No favorites yet.<br />Click &#9733; on a script to save it.</>}
+                  getContent={getCodeContent}
+                  formatTime={formatTime}
+                  onLoad={handleLoadScript}
+                  onDelete={handleDeleteFavorite}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -192,6 +199,7 @@ export const ApexHistory = forwardRef<ApexHistoryRef, ApexHistoryProps>(({ onLoa
         placeholder="Enter a label for this script"
         onSave={handleSaveFavorite}
         onClose={handleCloseFavoriteModal}
+        testIdPrefix="apex"
       />
     </>
   );

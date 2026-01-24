@@ -383,7 +383,7 @@ export function QueryTab() {
   const isEditMode = editingEnabled && activeTab?.isEditable;
 
   return (
-    <div>
+    <div data-testid="query-tab">
       {/* Query Editor Card */}
       <div className="card">
         <div className="card-header">
@@ -395,10 +395,11 @@ export function QueryTab() {
             onSelectQuery={handleSelectQuery}
             historyManagerRef={historyManagerRef}
           />
-          <ButtonIcon icon="settings" title="Settings" className={styles.settingsBtn}>
+          <ButtonIcon icon="settings" title="Settings" className={styles.settingsBtn} data-testid="query-settings-btn">
             <ButtonIconCheckbox
               checked={useToolingApi}
               onChange={setUseToolingApi}
+              data-testid="query-tooling-checkbox"
             >
               Tooling API
             </ButtonIconCheckbox>
@@ -415,10 +416,10 @@ export function QueryTab() {
             />
           </div>
           <div className={styles.footer}>
-            <button className="button-brand" onClick={executeQuery}>
+            <button className="button-brand" onClick={executeQuery} data-testid="query-execute-btn">
               Query
             </button>
-            <StatusBadge type={statusType}>{statusText}</StatusBadge>
+            <StatusBadge type={statusType} data-testid="query-status">{statusText}</StatusBadge>
           </div>
         </div>
       </div>
@@ -436,36 +437,40 @@ export function QueryTab() {
               className="search-input"
               placeholder="Filter..."
               onChange={handleFilterChange}
+              data-testid="query-search-input"
             />
           </div>
-          <ButtonIcon icon="verticalDots" title="Options" className={styles.resultsBtn}>
-            <ButtonIconOption disabled={!hasResults} onClick={exportCurrentResults}>
+          <ButtonIcon icon="verticalDots" title="Options" className={styles.resultsBtn} data-testid="query-results-btn">
+            <ButtonIconOption disabled={!hasResults} onClick={exportCurrentResults} data-testid="query-export-btn">
               Export
             </ButtonIconOption>
             <ButtonIconOption
               disabled={!hasResults || bulkExportInProgress}
               onClick={handleBulkExport}
+              data-testid="query-bulk-export-btn"
             >
               Bulk Export
             </ButtonIconOption>
-            <ButtonIconCheckbox checked={editingEnabled} onChange={setEditingEnabled}>
+            <ButtonIconCheckbox checked={editingEnabled} onChange={setEditingEnabled} data-testid="query-editing-checkbox">
               Enable Editing
             </ButtonIconCheckbox>
             <ButtonIconOption
               disabled={!isEditMode || !hasModifications}
               onClick={handleSaveChanges}
+              data-testid="query-save-btn"
             >
               Save Changes
             </ButtonIconOption>
             <ButtonIconOption
               disabled={!isEditMode || !hasModifications}
               onClick={handleClearChanges}
+              data-testid="query-clear-btn"
             >
               Clear Changes
             </ButtonIconOption>
           </ButtonIcon>
         </div>
-        <div className={`card-body ${styles.cardBody}`}>
+        <div className={`card-body ${styles.cardBody}`} data-testid="query-results">
           <QueryTabs
             tabs={state.tabs}
             activeTabId={state.activeTabId}

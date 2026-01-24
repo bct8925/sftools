@@ -179,7 +179,7 @@ export function DebugLogs() {
   }, [isAuthenticated]);
 
   return (
-    <div className="card">
+    <div className="card" data-testid="debug-logs">
       <div className="card-header">
         <div className="card-header-icon" style={{ backgroundColor: '#4bca81' }}>
           D
@@ -191,7 +191,7 @@ export function DebugLogs() {
 
         <div className={styles.section}>
           <h3 className="tool-section-title">Enable Trace Flag</h3>
-          <button className="button-brand" onClick={handleEnableForMe}>
+          <button className="button-brand" onClick={handleEnableForMe} data-testid="debug-logs-enable-for-me-btn">
             Enable for Me
           </button>
           <div className="tool-divider"></div>
@@ -203,10 +203,11 @@ export function DebugLogs() {
               placeholder="Search by name or username..."
               value={userSearchTerm}
               onChange={handleUserSearchInput}
+              data-testid="debug-logs-user-search"
             />
           </div>
           {showUserResults && (
-            <div ref={userResultsRef} className={styles.userResults}>
+            <div ref={userResultsRef} className={styles.userResults} data-testid="debug-logs-user-results">
               {userResults.length === 0 ? (
                 <div className="tool-no-results">No users found</div>
               ) : (
@@ -227,7 +228,7 @@ export function DebugLogs() {
             </div>
           )}
           {traceStatus && (
-            <div className="tool-status">
+            <div className="tool-status" data-testid="debug-logs-trace-status">
               <span className={`status-indicator status-${traceStatus.type}`}></span>
               <span className="tool-status-text">{traceStatus.message}</span>
             </div>
@@ -239,16 +240,16 @@ export function DebugLogs() {
         <div className={styles.section}>
           <h3 className="tool-section-title">Cleanup</h3>
           {deleteStatus && (
-            <div className="tool-status">
+            <div className="tool-status" data-testid="debug-logs-delete-status">
               <span className={`status-indicator status-${deleteStatus.type}`}></span>
               <span className="tool-status-text">{deleteStatus.message}</span>
             </div>
           )}
           <div className={styles.buttons}>
-            <button className="button-neutral" onClick={handleDeleteLogs}>
+            <button className="button-neutral" onClick={handleDeleteLogs} data-testid="debug-logs-delete-logs-btn">
               Delete All Logs
             </button>
-            <button className="button-neutral" onClick={handleDeleteFlags}>
+            <button className="button-neutral" onClick={handleDeleteFlags} data-testid="debug-logs-delete-flags-btn">
               Delete All Trace Flags
             </button>
           </div>

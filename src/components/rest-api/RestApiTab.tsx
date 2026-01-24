@@ -84,7 +84,7 @@ export function RestApiTab() {
   }, [url, method, showBodyInput, isAuthenticated, updateStatus]);
 
   return (
-    <div className={styles.restApiTab}>
+    <div className={styles.restApiTab} data-testid="rest-api-tab">
       {/* Request Card */}
       <div className="card">
         <div className="card-header">
@@ -102,6 +102,7 @@ export function RestApiTab() {
               className="input"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
+              data-testid="rest-api-url"
             />
           </div>
 
@@ -112,6 +113,7 @@ export function RestApiTab() {
               className="select"
               value={method}
               onChange={(e) => setMethod(e.target.value as HttpMethod)}
+              data-testid="rest-method-select"
             >
               <option value="GET">GET</option>
               <option value="POST">POST</option>
@@ -121,7 +123,7 @@ export function RestApiTab() {
           </div>
 
           {showBodyInput && (
-            <div className="form-element">
+            <div className="form-element" data-testid="rest-body-container">
               <label>Body (JSON)</label>
               <MonacoEditor
                 ref={requestEditorRef}
@@ -129,16 +131,17 @@ export function RestApiTab() {
                 value="{\n    \n}"
                 onExecute={executeRequest}
                 className={styles.requestEditor}
+                data-testid="rest-request-editor"
               />
             </div>
           )}
 
           <div className="m-top_small">
-            <button className="button-brand" onClick={executeRequest}>
+            <button className="button-brand" onClick={executeRequest} data-testid="rest-send-btn">
               Send Request
             </button>
             {status.message && (
-              <StatusBadge type={status.type}>{status.message}</StatusBadge>
+              <StatusBadge type={status.type} data-testid="rest-status">{status.message}</StatusBadge>
             )}
           </div>
         </div>
@@ -159,6 +162,7 @@ export function RestApiTab() {
             value="// Response will appear here"
             readonly
             className={styles.responseEditor}
+            data-testid="rest-response-editor"
           />
         </div>
       </div>

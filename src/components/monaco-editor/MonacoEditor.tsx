@@ -49,6 +49,8 @@ interface MonacoEditorProps {
   resizable?: boolean;
   /** Additional CSS class */
   className?: string;
+  /** Test ID for the container element */
+  'data-testid'?: string;
 }
 
 /**
@@ -65,6 +67,7 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
       readonly = false,
       resizable = true,
       className,
+      'data-testid': dataTestId,
     },
     ref
   ) => {
@@ -117,6 +120,11 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
     // Handle editor mount
     const handleMount: OnMount = useCallback((editor) => {
       editorRef.current = editor;
+
+      // Expose editor on container element for test helpers
+      if (containerRef.current) {
+        (containerRef.current as any).editor = editor;
+      }
 
       // Add Ctrl+Enter execute action
       editor.addAction({
@@ -176,6 +184,7 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
       <div
         ref={containerRef}
         className={`${styles.container}${className ? ` ${className}` : ''}`}
+        data-testid={dataTestId}
       >
         <Editor
           language={language === 'text' ? 'plaintext' : language}

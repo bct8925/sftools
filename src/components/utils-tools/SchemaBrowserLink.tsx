@@ -30,7 +30,11 @@ export function SchemaBrowserLink() {
         <p className="tool-description">
           Browse and explore Salesforce object schemas and field metadata.
         </p>
-        <button className="button-brand" onClick={handleOpenSchemaBrowser}>
+        <button
+          className="button-brand"
+          onClick={handleOpenSchemaBrowser}
+          data-testid="open-schema-btn"
+        >
           Open Schema Browser
         </button>
       </div>

@@ -16,6 +16,7 @@ export function ThemeSettings() {
             checked={theme === 'system'}
             onChange={(e) => setTheme(e.target.value as 'system')}
             className={styles.themeRadio}
+            data-testid="settings-theme-radio-system"
           />
           <span className={styles.themeOptionLabel}>System</span>
           <span className={styles.themeOptionDesc}>Follow system preference</span>
@@ -28,6 +29,7 @@ export function ThemeSettings() {
             checked={theme === 'light'}
             onChange={(e) => setTheme(e.target.value as 'light')}
             className={styles.themeRadio}
+            data-testid="settings-theme-radio-light"
           />
           <span className={styles.themeOptionLabel}>Light</span>
           <span className={styles.themeOptionDesc}>Always use light mode</span>
@@ -40,6 +42,7 @@ export function ThemeSettings() {
             checked={theme === 'dark'}
             onChange={(e) => setTheme(e.target.value as 'dark')}
             className={styles.themeRadio}
+            data-testid="settings-theme-radio-dark"
           />
           <span className={styles.themeOptionLabel}>Dark</span>
           <span className={styles.themeOptionDesc}>Always use dark mode</span>

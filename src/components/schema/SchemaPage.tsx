@@ -154,7 +154,7 @@ export function SchemaPage() {
   // Render error state
   if (error && !isLoadingObjects) {
     return (
-      <>
+      <div data-testid="schema-page">
         <header className="standalone-header">
           <div className="nav-brand">
             <img src="../../icon.png" alt="" />
@@ -178,12 +178,12 @@ export function SchemaPage() {
             </div>
           </div>
         </main>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div data-testid="schema-page">
       <header className="standalone-header">
         <div className="nav-brand">
           <img src="../../icon.png" alt="" />
@@ -236,6 +236,6 @@ export function SchemaPage() {
         allFields={allFields}
         onSaveSuccess={handleFormulaSaveSuccess}
       />
-    </>
+    </div>
   );
 }

@@ -155,20 +155,23 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
         title="History & Favorites"
         className={styles.historyBtn}
         onClick={() => setIsOpen(true)}
+        data-testid="query-history-btn"
       />
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} onOpen={handleOpen}>
-        <div className={styles.historyModal}>
+        <div className={styles.historyModal} data-testid="query-history-modal">
           <div className={styles.dropdownTabs}>
             <button
               className={`${styles.dropdownTab}${activeTab === 'history' ? ` ${styles.dropdownTabActive}` : ''}`}
               onClick={() => setActiveTab('history')}
+              data-testid="query-history-tab"
             >
               History
             </button>
             <button
               className={`${styles.dropdownTab}${activeTab === 'favorites' ? ` ${styles.dropdownTabActive}` : ''}`}
               onClick={() => setActiveTab('favorites')}
+              data-testid="query-favorites-tab"
             >
               Favorites
             </button>
@@ -176,27 +179,31 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
 
           <div className={styles.dropdownContent}>
             {activeTab === 'history' && (
-              <HistoryList
-                items={history}
-                emptyMessage={<>No queries yet.<br />Execute some SOQL to see history here.</>}
-                getContent={getQueryContent}
-                getPreview={getPreview}
-                formatTime={formatTime}
-                onLoad={handleSelectQuery}
-                onAddToFavorites={handleAddToFavorites}
-                onDelete={handleDeleteFromHistory}
-              />
+              <div data-testid="query-history-list">
+                <HistoryList
+                  items={history}
+                  emptyMessage={<>No queries yet.<br />Execute some SOQL to see history here.</>}
+                  getContent={getQueryContent}
+                  getPreview={getPreview}
+                  formatTime={formatTime}
+                  onLoad={handleSelectQuery}
+                  onAddToFavorites={handleAddToFavorites}
+                  onDelete={handleDeleteFromHistory}
+                />
+              </div>
             )}
 
             {activeTab === 'favorites' && (
-              <FavoritesList
-                items={favorites}
-                emptyMessage={<>No favorites yet.<br />Click &#9733; on a query to save it.</>}
-                getContent={getQueryContent}
-                formatTime={formatTime}
-                onLoad={handleSelectQuery}
-                onDelete={handleDeleteFromFavorites}
-              />
+              <div data-testid="query-favorites-list">
+                <FavoritesList
+                  items={favorites}
+                  emptyMessage={<>No favorites yet.<br />Click &#9733; on a query to save it.</>}
+                  getContent={getQueryContent}
+                  formatTime={formatTime}
+                  onLoad={handleSelectQuery}
+                  onDelete={handleDeleteFromFavorites}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -209,6 +216,7 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
         placeholder="Enter a label for this query"
         onSave={handleSaveFavorite}
         onClose={handleCloseFavoriteModal}
+        testIdPrefix="query"
       />
     </>
   );

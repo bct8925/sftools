@@ -66,21 +66,21 @@ export function QueryTabs({
 
   if (tabs.length === 0) {
     return (
-      <div className={styles.tabs}>
+      <div className={styles.tabs} data-testid="query-tabs">
         <div className={styles.tabsEmpty}>Run a query to see results</div>
       </div>
     );
   }
 
   return (
-    <div className={styles.tabs}>
+    <div className={styles.tabs} data-testid="query-tabs">
       {tabs.map((tab) => (
         <div
           key={tab.id}
           className={`${styles.tab}${tab.id === activeTabId ? ` ${styles.tabActive}` : ''}`}
           onClick={() => handleTabClick(tab.id)}
         >
-          <span className={styles.tabLabel} title={tab.query}>
+          <span className={styles.tabLabel} title={tab.query} data-testid="query-tab-label">
             {getTabLabel(tab)}
           </span>
           <button
@@ -88,12 +88,14 @@ export function QueryTabs({
             title="Refresh"
             onClick={(e) => handleRefreshClick(e, tab.id)}
             dangerouslySetInnerHTML={{ __html: icons.refreshTab }}
+            data-testid="query-tab-refresh"
           />
           <button
             className={styles.tabClose}
             title="Close"
             onClick={(e) => handleCloseClick(e, tab.id)}
             dangerouslySetInnerHTML={{ __html: icons.closeTab }}
+            data-testid="query-tab-close"
           />
         </div>
       ))}

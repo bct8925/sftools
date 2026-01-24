@@ -106,7 +106,8 @@ export type FieldType =
   | 'base64'
   | 'address'
   | 'location'
-  | 'encryptedstring';
+  | 'encryptedstring'
+  | 'html';
 
 export interface PicklistValue {
   value: string;

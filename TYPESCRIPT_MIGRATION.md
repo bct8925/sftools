@@ -80,6 +80,8 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] `src/components/utils-tools/limits.js` → `.ts` (did not exist)
 - [x] `src/components/utils-tools/deploy-status.js` → `.ts` (did not exist)
 - [x] `src/components/utils-tools/field-usage.js` → `.ts` (did not exist)
+- [x] `src/components/utils-tools/schema-browser-link.js` → `.ts` (missed, migrated in Wave 8)
+- [x] `src/components/utils-tools/search-box.js` → `.ts` (missed, migrated in Wave 8)
 - [x] `src/components/query/query-tab.js` → `.ts`
 - [x] `src/components/apex/apex-tab.js` → `.ts`
 - [x] `src/components/rest-api/rest-api-tab.js` → `.ts`
@@ -87,9 +89,9 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 8 - Standalone Pages
-- [ ] `src/components/record/record-page.js` → `.ts`
-- [ ] `src/components/schema/schema-page.js` → `.ts`
-- [ ] Verify: typecheck + build + tests
+- [x] `src/components/record/record-page.js` → `.ts`
+- [x] `src/components/schema/schema-page.js` → `.ts`
+- [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 9 - Background Scripts
 - [ ] `src/background/debug.js` → `.ts`
@@ -528,6 +530,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Wave 5 | 4 | Feature utilities: history-manager, settings-utils, events-utils, soql-autocomplete |
 | 2026-01-23 | Wave 6 | 5 | Reusable components: sf-icon, button-icon, button-dropdown, modal-popup, monaco-editor |
 | 2026-01-23 | Wave 7 | 8 | Tab components: settings-tab, utils-tab, debug-logs, flow-cleanup, query-tab, apex-tab, rest-api-tab, events-tab |
+| 2026-01-23 | Wave 8 | 4 | Standalone pages: record-page, schema-page; missed Wave 7: schema-browser-link, search-box. Added 'html' to FieldType. |
 
 ### Issues Encountered
 

@@ -15,34 +15,33 @@ export class RestApiTabPage extends BasePage {
 
     constructor(page: Page) {
         super(page);
-        this.requestMonaco = new MonacoHelpers(page, 'rest-api-tab .rest-request-editor');
-        this.responseMonaco = new MonacoHelpers(page, 'rest-api-tab .rest-response-editor');
+        this.requestMonaco = new MonacoHelpers(page, '[data-testid="rest-request-editor"]');
+        this.responseMonaco = new MonacoHelpers(page, '[data-testid="rest-response-editor"]');
 
-        this.methodSelect = page.locator('rest-api-tab .rest-method-select');
-        this.urlInput = page.locator('rest-api-tab .rest-api-url');
-        this.sendBtn = page.locator('rest-api-tab .rest-send-btn');
-        // Note: The element starts with class="rest-status status-badge" but updateStatusBadge
-        // replaces className with "status-badge status-{type}", removing rest-status
-        this.statusBadge = page.locator('rest-api-tab .status-badge');
-        this.bodyContainer = page.locator('rest-api-tab .rest-body-container');
+        this.methodSelect = page.locator('[data-testid="rest-method-select"]');
+        this.urlInput = page.locator('[data-testid="rest-api-url"]');
+        this.sendBtn = page.locator('[data-testid="rest-send-btn"]');
+        this.statusBadge = page.locator('[data-testid="rest-status"]');
+        this.bodyContainer = page.locator('[data-testid="rest-body-container"]');
     }
 
     /**
      * Navigate to the REST API tab
      */
     async navigateTo(): Promise<void> {
-        // Check if already on rest-api tab
-        const isActive = (await this.page.locator('rest-api-tab.active').count()) > 0;
-        if (isActive) return;
+        // Check if already on rest-api tab (must be visible, not just in DOM)
+        const tabContent = this.page.locator('[data-testid="tab-content-rest-api"]');
+        const isVisible = await tabContent.isVisible();
+        if (isVisible) return;
 
         // Open hamburger menu and wait for nav item to be visible and stable
-        await this.slowClick(this.page.locator('.hamburger-btn'));
-        const navItem = this.page.locator('.mobile-nav-item[data-tab="rest-api"]');
+        await this.slowClick(this.page.locator('[data-testid="hamburger-btn"]'));
+        const navItem = this.page.locator('[data-testid="mobile-nav-rest-api"]');
         await navItem.waitFor({ state: 'visible', timeout: 5000 });
 
         // Click the nav item
         await this.slowClick(navItem);
-        await this.page.waitForSelector('rest-api-tab.active', { timeout: 5000 });
+        await this.page.waitForSelector('[data-testid="tab-content-rest-api"]', { timeout: 5000 });
         await this.afterNavigation();
     }
 
@@ -80,7 +79,7 @@ export class RestApiTabPage extends BasePage {
         // replaces className with "status-badge status-{type}", removing rest-status
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('rest-api-tab .status-badge');
+                const status = document.querySelector('[data-testid="rest-status"]');
                 if (!status) return false;
                 // Request is complete when status has success or error class (not loading)
                 return (
@@ -125,7 +124,7 @@ export class RestApiTabPage extends BasePage {
 
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('rest-api-tab .status-badge');
+                const status = document.querySelector('[data-testid="rest-status"]');
                 if (!status) return false;
                 // Request is complete when status has success or error class (not loading)
                 return (

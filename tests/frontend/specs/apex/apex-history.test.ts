@@ -83,14 +83,14 @@ System.debug('Result: ' + result);`;
      */
     private async getHistoryCount(): Promise<number> {
         // Make sure we're on the history tab
-        const historyTab = this.page.locator('apex-tab .dropdown-tab[data-tab="history"]');
-        const isHistoryActive = await historyTab.evaluate(el => el.classList.contains('active'));
+        const historyTab = this.page.locator('[data-testid="apex-history-tab"]');
+        const isHistoryActive = await historyTab.evaluate(el => el.classList.contains('active') || el.classList.contains('_active_'));
         if (!isHistoryActive) {
             await this.apexTab.slowClick(historyTab);
         }
 
         const count = await this.page.$$eval(
-            'apex-tab .apex-history-list .script-item',
+            '[data-testid="apex-history-list"] [data-testid="script-item"]',
             items => items.length
         );
 
@@ -102,14 +102,14 @@ System.debug('Result: ' + result);`;
      */
     private async getHistoryItems(): Promise<string[]> {
         // Make sure we're on the history tab
-        const historyTab = this.page.locator('apex-tab .dropdown-tab[data-tab="history"]');
-        const isHistoryActive = await historyTab.evaluate(el => el.classList.contains('active'));
+        const historyTab = this.page.locator('[data-testid="apex-history-tab"]');
+        const isHistoryActive = await historyTab.evaluate(el => el.classList.contains('active') || el.classList.contains('_active_'));
         if (!isHistoryActive) {
             await this.apexTab.slowClick(historyTab);
         }
 
         const items = await this.page.$$eval(
-            'apex-tab .apex-history-list .script-item .script-preview',
+            '[data-testid="apex-history-list"] [data-testid="script-preview"]',
             previews => previews.map(p => p.textContent?.trim() || '')
         );
 
@@ -123,12 +123,9 @@ System.debug('Result: ' + result);`;
         // Press Escape to close modal
         await this.page.keyboard.press('Escape');
         // Wait for modal to close
-        await this.page.waitForFunction(
-            () => {
-                const modal = document.querySelector('apex-tab .apex-history-modal');
-                return modal && !modal.classList.contains('open');
-            },
-            { timeout: 5000 }
-        );
+        await this.page.waitForSelector('[data-testid="apex-history-modal"]', {
+            state: 'hidden',
+            timeout: 5000,
+        });
     }
 }

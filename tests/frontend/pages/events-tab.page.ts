@@ -24,51 +24,44 @@ export class EventsTabPage extends BasePage {
 
     constructor(page: Page) {
         super(page);
-        this.streamMonaco = new MonacoHelpers(page, 'events-tab .event-stream-editor');
-        this.publishMonaco = new MonacoHelpers(page, 'events-tab .event-publish-editor');
+        this.streamMonaco = new MonacoHelpers(page, '[data-testid="event-stream-editor"]');
+        this.publishMonaco = new MonacoHelpers(page, '[data-testid="event-publish-editor"]');
 
         // Stream selectors
-        this.channelSelect = page.locator('events-tab .event-channel-select');
-        this.replaySelect = page.locator('events-tab .event-replay-select');
-        this.replayIdInput = page.locator('events-tab .event-replay-id');
-        this.subscribeBtn = page.locator('events-tab .event-subscribe-btn');
-        this.streamStatus = page.locator('events-tab .event-stream-status');
-        this.clearStreamBtn = page.locator('events-tab .event-clear-btn');
+        this.channelSelect = page.locator('[data-testid="event-channel-select"]');
+        this.replaySelect = page.locator('[data-testid="event-replay-select"]');
+        this.replayIdInput = page.locator('[data-testid="event-replay-id"]');
+        this.subscribeBtn = page.locator('[data-testid="event-subscribe-btn"]');
+        this.streamStatus = page.locator('[data-testid="event-stream-status"]');
+        this.clearStreamBtn = page.locator('[data-testid="event-clear-btn"]');
 
         // Publish selectors
-        this.publishChannelSelect = page.locator('events-tab .event-publish-channel');
-        this.publishBtn = page.locator('events-tab .event-publish-btn');
-        this.publishStatus = page.locator('events-tab .event-publish-status');
+        this.publishChannelSelect = page.locator('[data-testid="event-publish-channel"]');
+        this.publishBtn = page.locator('[data-testid="event-publish-btn"]');
+        this.publishStatus = page.locator('[data-testid="event-publish-status"]');
 
         // Overlay
-        this.tabOverlay = page.locator('#events .feature-gate-overlay');
+        this.tabOverlay = page.locator('[data-testid="feature-gate-overlay"]');
     }
 
     /**
      * Navigate to the Events tab
      */
     async navigateTo(): Promise<void> {
-        // Check if already on events tab
-        const isActive = (await this.page.locator('events-tab.active').count()) > 0;
-        if (isActive) return;
+        // Check if already on events tab (must be visible, not just in DOM)
+        const tabContent = this.page.locator('[data-testid="tab-content-events"]');
+        const isVisible = await tabContent.isVisible();
+        if (isVisible) return;
 
         // Open hamburger menu and wait for nav item
-        await this.slowClick(this.page.locator('.hamburger-btn'));
-        const navItem = this.page.locator('.mobile-nav-item[data-tab="events"]');
+        await this.slowClick(this.page.locator('[data-testid="hamburger-btn"]'));
+        const navItem = this.page.locator('[data-testid="mobile-nav-events"]');
         await navItem.waitFor({ state: 'visible', timeout: 5000 });
 
         // Click the nav item
         await this.slowClick(navItem);
-        await this.page.waitForSelector('events-tab.active', { timeout: 5000 });
+        await this.page.waitForSelector('[data-testid="tab-content-events"]', { timeout: 5000 });
         await this.afterNavigation();
-
-        // Manually trigger checkVisibilityAndLoad() in case tab-changed event doesn't fire
-        await this.page.evaluate(() => {
-            const eventsTab = document.querySelector('events-tab');
-            if (eventsTab && typeof (eventsTab as any).checkVisibilityAndLoad === 'function') {
-                (eventsTab as any).checkVisibilityAndLoad();
-            }
-        });
     }
 
     /**
@@ -81,7 +74,7 @@ export class EventsTabPage extends BasePage {
         // Then wait for channels to appear in the select dropdown
         // Use a function that polls the DOM state
         await this.page.waitForSelector(
-            'events-tab .event-channel-select option[value="/event/Order_Event__e"]',
+            '[data-testid="event-channel-select"] option[value="/event/Order_Event__e"]',
             {
                 state: 'attached',
                 timeout: 10000,
@@ -98,7 +91,7 @@ export class EventsTabPage extends BasePage {
 
         // Then wait for options to appear in the publish select dropdown
         await this.page.waitForSelector(
-            'events-tab .event-publish-channel option[value="Order_Event__e"]',
+            '[data-testid="event-publish-channel"] option[value="Order_Event__e"]',
             {
                 state: 'attached',
                 timeout: 10000,
@@ -219,7 +212,7 @@ export class EventsTabPage extends BasePage {
         // Wait for publish to complete
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('events-tab .event-publish-status');
+                const status = document.querySelector('[data-testid="event-publish-status"]');
                 if (!status) return false;
                 return (
                     status.classList.contains('status-error') ||

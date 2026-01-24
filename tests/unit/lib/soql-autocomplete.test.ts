@@ -21,7 +21,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock Monaco editor before importing the module
-vi.mock('../../../src/components/monaco-editor/monaco-editor.js', () => ({
+vi.mock('../../../src/components/monaco-editor/MonacoEditor', () => ({
     monaco: {
         languages: {
             CompletionItemKind: {
@@ -58,7 +58,7 @@ import {
     registerSOQLCompletionProvider,
 } from '../../../src/lib/soql-autocomplete.js';
 import { getGlobalDescribe, getObjectDescribe } from '../../../src/lib/salesforce.js';
-import { monaco } from '../../../src/components/monaco-editor/monaco-editor.js';
+import { monaco } from '../../../src/components/monaco-editor/MonacoEditor';
 
 describe('soql-autocomplete', () => {
     beforeEach(() => {
@@ -189,7 +189,7 @@ describe('soql-autocomplete', () => {
             vi.resetModules();
 
             // Re-mock after reset
-            vi.doMock('../../../src/components/monaco-editor/monaco-editor.js', () => ({
+            vi.doMock('../../../src/components/monaco-editor/MonacoEditor', () => ({
                 monaco: {
                     languages: {
                         CompletionItemKind: {
@@ -220,7 +220,7 @@ describe('soql-autocomplete', () => {
 
             const autocomplete = await import('../../../src/lib/soql-autocomplete.js');
             const monacoMock =
-                await import('../../../src/components/monaco-editor/monaco-editor.js');
+                await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.registerSOQLCompletionProvider();
 

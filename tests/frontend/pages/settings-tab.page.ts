@@ -21,37 +21,38 @@ export class SettingsTabPage extends BasePage {
         super(page);
 
         // Theme radio buttons
-        this.systemThemeRadio = page.locator('settings-tab .settings-theme-radio[value="system"]');
-        this.lightThemeRadio = page.locator('settings-tab .settings-theme-radio[value="light"]');
-        this.darkThemeRadio = page.locator('settings-tab .settings-theme-radio[value="dark"]');
+        this.systemThemeRadio = page.locator('[data-testid="settings-theme-radio-system"]');
+        this.lightThemeRadio = page.locator('[data-testid="settings-theme-radio-light"]');
+        this.darkThemeRadio = page.locator('[data-testid="settings-theme-radio-dark"]');
 
         // Connection list
-        this.connectionList = page.locator('settings-tab .settings-connection-list');
-        this.connectionItems = page.locator('settings-tab .settings-connection-item');
-        this.addConnectionBtn = page.locator('settings-tab .settings-add-connection-btn');
+        this.connectionList = page.locator('[data-testid="settings-connection-list"]');
+        this.connectionItems = page.locator('[data-testid="settings-connection-item"]');
+        this.addConnectionBtn = page.locator('[data-testid="settings-add-connection-btn"]');
 
         // Edit modal
-        this.editModal = page.locator('settings-tab .settings-edit-modal');
-        this.editLabelInput = page.locator('settings-tab .settings-edit-label');
-        this.editSaveBtn = page.locator('settings-tab .settings-edit-save-btn');
+        this.editModal = page.locator('[data-testid="settings-edit-modal"]');
+        this.editLabelInput = page.locator('[data-testid="settings-edit-label"]');
+        this.editSaveBtn = page.locator('[data-testid="settings-edit-save-btn"]');
     }
 
     /**
      * Navigate to the Settings tab
      */
     async navigateTo(): Promise<void> {
-        // Check if already on settings tab
-        const isActive = (await this.page.locator('settings-tab.active').count()) > 0;
-        if (isActive) return;
+        // Check if already on settings tab (must be visible, not just in DOM)
+        const tabContent = this.page.locator('[data-testid="tab-content-settings"]');
+        const isVisible = await tabContent.isVisible();
+        if (isVisible) return;
 
         // Open hamburger menu and wait for nav item to be visible
-        await this.slowClick(this.page.locator('.hamburger-btn'));
-        const navItem = this.page.locator('.mobile-nav-item[data-tab="settings"]');
+        await this.slowClick(this.page.locator('[data-testid="hamburger-btn"]'));
+        const navItem = this.page.locator('[data-testid="mobile-nav-settings"]');
         await navItem.waitFor({ state: 'visible', timeout: 5000 });
 
         // Click the nav item
         await this.slowClick(navItem);
-        await this.page.waitForSelector('settings-tab.active', { timeout: 5000 });
+        await this.page.waitForSelector('[data-testid="tab-content-settings"]', { timeout: 5000 });
         await this.afterNavigation();
     }
 
@@ -96,7 +97,7 @@ export class SettingsTabPage extends BasePage {
      * Get connection labels
      */
     async getConnectionLabels(): Promise<string[]> {
-        return this.page.$$eval('settings-tab .settings-connection-label', labels =>
+        return this.page.$$eval('[data-testid="settings-connection-label"]', labels =>
             labels.map(l => l.textContent?.trim() || '')
         );
     }
@@ -105,10 +106,10 @@ export class SettingsTabPage extends BasePage {
      * Click edit button for a connection by label
      */
     async editConnection(label: string): Promise<void> {
-        const item = this.page.locator('settings-tab .settings-connection-item', {
+        const item = this.page.locator('[data-testid="settings-connection-item"]', {
             hasText: label,
         });
-        await item.locator('.settings-connection-edit').click();
+        await item.locator('[data-testid="settings-connection-edit"]').click();
         await this.editModal.waitFor({ state: 'visible', timeout: 5000 });
     }
 

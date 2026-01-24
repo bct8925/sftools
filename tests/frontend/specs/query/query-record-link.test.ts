@@ -59,7 +59,7 @@ export default class QueryRecordLinkTest extends SftoolsTest {
 
         // Get the Id link element
         const idLink = this.page.locator(
-            `query-tab .query-results table tbody tr:nth-child(1) td:nth-child(${idIndex + 1}) .query-id-link`
+            `[data-testid="query-results"] table tbody tr:nth-child(1) td:nth-child(${idIndex + 1}) .query-id-link`
         );
         await idLink.waitFor({ state: 'visible', timeout: 5000 });
 

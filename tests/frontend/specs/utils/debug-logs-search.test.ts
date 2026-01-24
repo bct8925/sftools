@@ -37,7 +37,7 @@ export default class DebugLogsSearchTest extends SftoolsTest {
         await this.utilsTab.userResults.waitFor({ state: 'visible', timeout: 5000 });
 
         // Verify specific user is in the results
-        const userItem = this.page.locator('debug-logs .tool-result-item', {
+        const userItem = this.page.locator('[data-testid="debug-logs-user-results"] .tool-result-item', {
             has: this.page.locator('.tool-result-name', { hasText: 'John Developer' }),
         });
         await this.expect(await userItem.count()).toBeGreaterThan(0);

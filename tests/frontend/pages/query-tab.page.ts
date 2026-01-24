@@ -19,38 +19,37 @@ export class QueryTabPage extends BasePage {
 
     constructor(page: Page) {
         super(page);
-        this.monaco = new MonacoHelpers(page, 'query-tab monaco-editor');
+        this.monaco = new MonacoHelpers(page, '[data-testid="query-editor"]');
 
-        this.executeBtn = page.locator('query-tab .query-action-btn');
-        this.historyBtn = page.locator('query-tab .query-history-btn');
-        this.settingsBtn = page.locator('query-tab .query-settings-btn');
-        this.resultsBtn = page.locator('query-tab .query-results-btn');
-        this.toolingCheckbox = page.locator('query-tab .query-tooling-checkbox');
-        this.editingCheckbox = page.locator('query-tab .query-editing-checkbox');
-        this.tabsContainer = page.locator('query-tab .query-tabs');
-        this.resultsContainer = page.locator('query-tab .query-results');
-        // Note: The element starts with class="status-badge query-status" but updateStatusBadge
-        // replaces className with "status-badge status-{type}", removing query-status
-        this.statusBadge = page.locator('query-tab .query-footer .status-badge');
-        this.searchInput = page.locator('query-tab .search-input');
+        this.executeBtn = page.locator('[data-testid="query-execute-btn"]');
+        this.historyBtn = page.locator('[data-testid="query-history-btn"]');
+        this.settingsBtn = page.locator('[data-testid="query-settings-btn"]');
+        this.resultsBtn = page.locator('[data-testid="query-results-btn"]');
+        this.toolingCheckbox = page.locator('[data-testid="query-tooling-checkbox"]');
+        this.editingCheckbox = page.locator('[data-testid="query-editing-checkbox"]');
+        this.tabsContainer = page.locator('[data-testid="query-tabs"]');
+        this.resultsContainer = page.locator('[data-testid="query-results"]');
+        this.statusBadge = page.locator('[data-testid="query-status"]');
+        this.searchInput = page.locator('[data-testid="query-search-input"]');
     }
 
     /**
      * Navigate to the Query tab
      */
     async navigateTo(): Promise<void> {
-        // Check if already on query tab
-        const isActive = (await this.page.locator('query-tab.active').count()) > 0;
-        if (isActive) return;
+        // Check if already on query tab (must be visible, not just in DOM)
+        const tabContent = this.page.locator('[data-testid="tab-content-query"]');
+        const isVisible = await tabContent.isVisible();
+        if (isVisible) return;
 
         // Open hamburger menu and wait for nav item to be visible and stable
-        await this.slowClick(this.page.locator('.hamburger-btn'));
-        const navItem = this.page.locator('.mobile-nav-item[data-tab="query"]');
+        await this.slowClick(this.page.locator('[data-testid="hamburger-btn"]'));
+        const navItem = this.page.locator('[data-testid="mobile-nav-query"]');
         await navItem.waitFor({ state: 'visible', timeout: 5000 });
 
         // Click the nav item
         await this.slowClick(navItem);
-        await this.page.waitForSelector('query-tab.active', { timeout: 5000 });
+        await this.page.waitForSelector('[data-testid="tab-content-query"]', { timeout: 5000 });
         await this.afterNavigation();
     }
 
@@ -75,7 +74,7 @@ export class QueryTabPage extends BasePage {
         // when updateStatusBadge() replaces className
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('query-tab .query-footer .status-badge');
+                const status = document.querySelector('[data-testid="query-status"]');
                 if (!status) return false;
                 // Query is complete when status has success or error class (not loading)
                 return (
@@ -95,7 +94,7 @@ export class QueryTabPage extends BasePage {
 
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('query-tab .query-footer .status-badge');
+                const status = document.querySelector('[data-testid="query-status"]');
                 if (!status) return false;
                 // Complete when status has success or error class (not loading)
                 return (
@@ -138,7 +137,7 @@ export class QueryTabPage extends BasePage {
      * Get the column headers from the results table
      */
     async getResultsHeaders(): Promise<string[]> {
-        return this.page.$$eval('query-tab .query-results table thead th', cells =>
+        return this.page.$$eval('[data-testid="query-results"] table thead th', cells =>
             cells.map(c => c.textContent?.trim() || '')
         );
     }
@@ -148,7 +147,7 @@ export class QueryTabPage extends BasePage {
      */
     async getResultsRowCount(): Promise<number> {
         return this.page.$$eval(
-            'query-tab .query-results table tbody tr',
+            '[data-testid="query-results"] table tbody tr',
             rows =>
                 rows.filter(r => {
                     const style = window.getComputedStyle(r);
@@ -161,14 +160,14 @@ export class QueryTabPage extends BasePage {
      * Check if results contain a subquery toggle
      */
     async hasSubqueryResults(): Promise<boolean> {
-        return this.page.isVisible('query-tab .query-results .query-subquery-toggle');
+        return this.page.isVisible('[data-testid="query-results"] .query-subquery-toggle');
     }
 
     /**
      * Expand a subquery result at the given index
      */
     async expandSubquery(index: number): Promise<void> {
-        const toggles = await this.page.$$('query-tab .query-results .query-subquery-toggle');
+        const toggles = await this.page.$$('[data-testid="query-results"] .query-subquery-toggle');
         if (toggles[index]) {
             await toggles[index].click();
         }
@@ -179,9 +178,9 @@ export class QueryTabPage extends BasePage {
      */
     async getSubqueryText(index: number): Promise<string> {
         // Subquery rows appear immediately after the parent row with the toggle
-        const rows = await this.page.$$('query-tab .query-results tbody tr');
+        const rows = await this.page.$$('[data-testid="query-results"] tbody tr');
         // The subquery content is in a nested table inside a colspan cell
-        const subqueryTables = await this.page.$$('query-tab .query-results .query-subquery-table');
+        const subqueryTables = await this.page.$$('[data-testid="query-results"] .query-subquery-table');
         if (subqueryTables[index]) {
             return (await subqueryTables[index].textContent()) || '';
         }
@@ -192,7 +191,7 @@ export class QueryTabPage extends BasePage {
      * Get the list of open query tabs
      */
     async getOpenTabs(): Promise<string[]> {
-        return this.page.$$eval('query-tab .query-tab-label', tabs =>
+        return this.page.$$eval('[data-testid="query-tab-label"]', tabs =>
             tabs.map(t => t.textContent?.trim() || '')
         );
     }
@@ -201,7 +200,7 @@ export class QueryTabPage extends BasePage {
      * Close a query tab by index (0-based)
      */
     async closeTab(index: number): Promise<void> {
-        const closeButtons = await this.page.$$('query-tab .query-tab-close');
+        const closeButtons = await this.page.$$('[data-testid="query-tab-close"]');
         if (closeButtons[index]) {
             await closeButtons[index].click();
         }
@@ -240,7 +239,7 @@ export class QueryTabPage extends BasePage {
      */
     async getErrorMessage(): Promise<string> {
         // Error message is displayed in the results container, not status badge
-        const errorDiv = this.page.locator('query-tab .query-results-error');
+        const errorDiv = this.page.locator('[data-testid="query-results-error"]');
         if ((await errorDiv.count()) > 0) {
             return (await errorDiv.textContent()) || '';
         }
@@ -288,7 +287,7 @@ export class QueryTabPage extends BasePage {
 
         // Get the input element for this cell
         const input = this.page.locator(
-            `query-tab .query-results table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${fieldIndex + 1}) .query-field-input`
+            `[data-testid="query-results"] table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${fieldIndex + 1}) .query-field-input`
         );
 
         // Check if it's a checkbox or text input
@@ -310,12 +309,12 @@ export class QueryTabPage extends BasePage {
      * Save changes to edited records
      */
     async saveChanges(): Promise<void> {
-        const saveBtn = this.page.locator('query-tab .query-save-btn');
+        const saveBtn = this.page.locator('[data-testid="query-save-btn"]');
 
         // Wait for save button to be enabled (indicates changes are tracked)
         await this.page.waitForFunction(
             () => {
-                const btn = document.querySelector('query-tab .query-save-btn');
+                const btn = document.querySelector('[data-testid="query-save-btn"]');
                 return btn && !(btn as HTMLButtonElement).disabled;
             },
             { timeout: 5000 }
@@ -326,7 +325,7 @@ export class QueryTabPage extends BasePage {
         // Wait for save to complete
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('query-tab .query-footer .status-badge');
+                const status = document.querySelector('[data-testid="query-status"]');
                 if (!status) return false;
                 return (
                     status.classList.contains('status-success') ||
@@ -343,7 +342,7 @@ export class QueryTabPage extends BasePage {
     async clearChanges(): Promise<void> {
         await this.resultsBtn.click();
         await this.delay('beforeClick');
-        const clearBtn = this.page.locator('query-tab .query-clear-btn');
+        const clearBtn = this.page.locator('[data-testid="query-clear-btn"]');
         await this.slowClick(clearBtn);
     }
 
@@ -351,7 +350,7 @@ export class QueryTabPage extends BasePage {
      * Get the number of pending changes
      */
     async getChangesCount(): Promise<number> {
-        return this.page.$$eval('query-tab .query-results table tbody td.modified', cells => {
+        return this.page.$$eval('[data-testid="query-results"] table tbody td.modified', cells => {
             const recordIds = new Set();
             cells.forEach(cell => {
                 const row = cell.closest('tr');
@@ -370,7 +369,7 @@ export class QueryTabPage extends BasePage {
     async exportCsv(): Promise<void> {
         await this.resultsBtn.click();
         await this.delay('beforeClick');
-        const exportBtn = this.page.locator('query-tab .query-export-btn');
+        const exportBtn = this.page.locator('[data-testid="query-export-btn"]');
         await this.slowClick(exportBtn);
     }
 
@@ -380,13 +379,13 @@ export class QueryTabPage extends BasePage {
     async bulkExport(): Promise<void> {
         await this.resultsBtn.click();
         await this.delay('beforeClick');
-        const bulkExportBtn = this.page.locator('query-tab .query-bulk-export-btn');
+        const bulkExportBtn = this.page.locator('[data-testid="query-bulk-export-btn"]');
         await this.slowClick(bulkExportBtn);
 
         // Wait for bulk export to complete (status will show "Export complete" or error)
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('query-tab .query-footer .status-badge');
+                const status = document.querySelector('[data-testid="query-status"]');
                 if (!status) return false;
                 const text = status.textContent || '';
                 return (
@@ -404,7 +403,7 @@ export class QueryTabPage extends BasePage {
      */
     async openHistory(): Promise<void> {
         await this.slowClick(this.historyBtn);
-        await this.page.waitForSelector('query-tab .query-history-modal', {
+        await this.page.waitForSelector('[data-testid="query-history-modal"]', {
             state: 'visible',
             timeout: 5000,
         });
@@ -417,11 +416,11 @@ export class QueryTabPage extends BasePage {
         await this.openHistory();
 
         // Make sure we're on the history tab
-        const historyTab = this.page.locator('query-tab .dropdown-tab[data-tab="history"]');
+        const historyTab = this.page.locator('[data-testid="query-history-tab"]');
         await this.slowClick(historyTab);
 
         await this.delay('beforeClick');
-        const historyItems = await this.page.$$('query-tab .query-history-list .script-item');
+        const historyItems = await this.page.$$('[data-testid="query-history-list"] [data-testid="script-item"]');
         if (historyItems[index]) {
             await historyItems[index].click();
         } else {
@@ -429,7 +428,7 @@ export class QueryTabPage extends BasePage {
         }
 
         // Wait for modal to close
-        await this.page.waitForSelector('query-tab .query-history-modal', {
+        await this.page.waitForSelector('[data-testid="query-history-modal"]', {
             state: 'hidden',
             timeout: 5000,
         });
@@ -442,12 +441,12 @@ export class QueryTabPage extends BasePage {
         await this.openHistory();
 
         // Make sure we're on the history tab
-        const historyTab = this.page.locator('query-tab .dropdown-tab[data-tab="history"]');
+        const historyTab = this.page.locator('[data-testid="query-history-tab"]');
         await this.slowClick(historyTab);
 
         await this.delay('beforeClick');
         const deleteButtons = await this.page.$$(
-            'query-tab .query-history-list .script-item .script-action.delete'
+            '[data-testid="query-history-list"] [data-testid="script-action-delete"]'
         );
         if (deleteButtons[index]) {
             await deleteButtons[index].click();
@@ -465,7 +464,7 @@ export class QueryTabPage extends BasePage {
         // Wait for modal to close
         await this.page.waitForFunction(
             () => {
-                const modal = document.querySelector('query-tab .query-history-modal');
+                const modal = document.querySelector('[data-testid="query-history-modal"]');
                 return modal && !modal.classList.contains('open');
             },
             { timeout: 5000 }
@@ -477,14 +476,14 @@ export class QueryTabPage extends BasePage {
      */
     async getHistoryCount(): Promise<number> {
         // Make sure we're on the history tab
-        const historyTab = this.page.locator('query-tab .dropdown-tab[data-tab="history"]');
+        const historyTab = this.page.locator('[data-testid="query-history-tab"]');
         const isHistoryActive = await historyTab.evaluate(el => el.classList.contains('active'));
         if (!isHistoryActive) {
             await this.slowClick(historyTab);
         }
 
         const count = await this.page.$$eval(
-            'query-tab .query-history-list .script-item',
+            '[data-testid="query-history-list"] [data-testid="script-item"]',
             items => items.length
         );
 
@@ -496,14 +495,14 @@ export class QueryTabPage extends BasePage {
      */
     async getHistoryItems(): Promise<string[]> {
         // Make sure we're on the history tab
-        const historyTab = this.page.locator('query-tab .dropdown-tab[data-tab="history"]');
+        const historyTab = this.page.locator('[data-testid="query-history-tab"]');
         const isHistoryActive = await historyTab.evaluate(el => el.classList.contains('active'));
         if (!isHistoryActive) {
             await this.slowClick(historyTab);
         }
 
         const items = await this.page.$$eval(
-            'query-tab .query-history-list .script-item .script-preview',
+            '[data-testid="query-history-list"] [data-testid="script-preview"]',
             previews => previews.map(p => p.textContent?.trim() || '')
         );
 
@@ -515,13 +514,13 @@ export class QueryTabPage extends BasePage {
      */
     async openFavorites(): Promise<void> {
         await this.slowClick(this.historyBtn);
-        await this.page.waitForSelector('query-tab .query-history-modal', {
+        await this.page.waitForSelector('[data-testid="query-history-modal"]', {
             state: 'visible',
             timeout: 5000,
         });
 
         // Switch to favorites tab
-        const favoritesTab = this.page.locator('query-tab .dropdown-tab[data-tab="favorites"]');
+        const favoritesTab = this.page.locator('[data-testid="query-favorites-tab"]');
         await this.slowClick(favoritesTab);
     }
 
@@ -534,26 +533,26 @@ export class QueryTabPage extends BasePage {
         // Click the favorite button on the first history item
         await this.delay('beforeClick');
         const favoriteBtn = this.page
-            .locator('query-tab .query-history-list .script-item .script-action.favorite')
+            .locator('[data-testid="query-history-list"] [data-testid="script-action-favorite"]')
             .first();
         await this.slowClick(favoriteBtn);
 
         // Wait for favorite modal to open
-        await this.page.waitForSelector('query-tab .query-favorite-modal', {
+        await this.page.waitForSelector('[data-testid="query-favorite-dialog"]', {
             state: 'visible',
             timeout: 5000,
         });
 
         // Enter label
-        const labelInput = this.page.locator('query-tab .query-favorite-input');
+        const labelInput = this.page.locator('[data-testid="query-favorite-input"]');
         await labelInput.fill(label);
 
         // Click save
-        const saveBtn = this.page.locator('query-tab .query-favorite-save');
+        const saveBtn = this.page.locator('[data-testid="query-favorite-save"]');
         await this.slowClick(saveBtn);
 
         // Wait for modal to close
-        await this.page.waitForSelector('query-tab .query-favorite-modal', {
+        await this.page.waitForSelector('[data-testid="query-favorite-dialog"]', {
             state: 'hidden',
             timeout: 5000,
         });
@@ -566,7 +565,7 @@ export class QueryTabPage extends BasePage {
         await this.openFavorites();
 
         await this.delay('beforeClick');
-        const favoriteItems = await this.page.$$('query-tab .query-favorites-list .script-item');
+        const favoriteItems = await this.page.$$('[data-testid="query-favorites-list"] [data-testid="script-item"]');
         if (favoriteItems[index]) {
             await favoriteItems[index].click();
         } else {
@@ -574,7 +573,7 @@ export class QueryTabPage extends BasePage {
         }
 
         // Wait for modal to close
-        await this.page.waitForSelector('query-tab .query-history-modal', {
+        await this.page.waitForSelector('[data-testid="query-history-modal"]', {
             state: 'hidden',
             timeout: 5000,
         });
@@ -588,7 +587,7 @@ export class QueryTabPage extends BasePage {
 
         await this.delay('beforeClick');
         const deleteButtons = await this.page.$$(
-            'query-tab .query-favorites-list .script-item .script-action.delete'
+            '[data-testid="query-favorites-list"] [data-testid="script-action-delete"]'
         );
         if (deleteButtons[index]) {
             await deleteButtons[index].click();
@@ -601,13 +600,13 @@ export class QueryTabPage extends BasePage {
      * Refresh the current tab
      */
     async refreshTab(): Promise<void> {
-        const refreshBtn = this.page.locator('query-tab .query-tab.active .query-tab-refresh');
+        const refreshBtn = this.page.locator('[data-testid="query-tab-refresh"]');
         await this.slowClick(refreshBtn);
 
         // Wait for refresh to complete
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('query-tab .query-footer .status-badge');
+                const status = document.querySelector('[data-testid="query-status"]');
                 if (!status) return false;
                 return (
                     status.classList.contains('status-error') ||
@@ -630,7 +629,7 @@ export class QueryTabPage extends BasePage {
         }
 
         const idLink = this.page.locator(
-            `query-tab .query-results table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${idIndex + 1}) .query-id-link`
+            `[data-testid="query-results"] table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${idIndex + 1}) .query-id-link`
         );
 
         await this.slowClick(idLink);
@@ -640,7 +639,7 @@ export class QueryTabPage extends BasePage {
      * Switch to a specific result tab by index
      */
     async switchToTab(index: number): Promise<void> {
-        const tabLabels = await this.page.$$('query-tab .query-tab-label');
+        const tabLabels = await this.page.$$('[data-testid="query-tab-label"]');
         if (tabLabels[index]) {
             await this.slowClick(tabLabels[index]);
             await this.delay('afterClick');
@@ -653,7 +652,7 @@ export class QueryTabPage extends BasePage {
      * Collapse an expanded subquery
      */
     async collapseSubquery(index: number): Promise<void> {
-        const toggles = await this.page.$$('query-tab .query-results .query-subquery-toggle');
+        const toggles = await this.page.$$('[data-testid="query-results"] .query-subquery-toggle');
         if (toggles[index]) {
             // Check if already expanded
             const expanded = await toggles[index].evaluate(
@@ -671,7 +670,7 @@ export class QueryTabPage extends BasePage {
      * Get the index of the currently active result tab
      */
     async getActiveTab(): Promise<number> {
-        const tabs = await this.page.$$('query-tab .query-tab');
+        const tabs = await this.page.$$('[data-testid="query-tab"]');
         for (let i = 0; i < tabs.length; i++) {
             const isActive = await tabs[i].evaluate(el => el.classList.contains('active'));
             if (isActive) return i;
@@ -683,7 +682,7 @@ export class QueryTabPage extends BasePage {
      * Check if a subquery is visible (expanded)
      */
     async isSubqueryVisible(index: number): Promise<boolean> {
-        const subqueryTables = await this.page.$$('query-tab .query-results .query-subquery-table');
+        const subqueryTables = await this.page.$$('[data-testid="query-results"] .query-subquery-table');
         if (subqueryTables[index]) {
             const isVisible = await subqueryTables[index].isVisible();
             return isVisible;

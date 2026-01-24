@@ -14,33 +14,32 @@ export class ApexTabPage extends BasePage {
 
     constructor(page: Page) {
         super(page);
-        this.codeEditor = new MonacoHelpers(page, 'apex-tab .apex-editor');
-        this.outputEditor = new MonacoHelpers(page, 'apex-tab .apex-output-editor');
+        this.codeEditor = new MonacoHelpers(page, '[data-testid="apex-editor"]');
+        this.outputEditor = new MonacoHelpers(page, '[data-testid="apex-output-editor"]');
 
-        this.executeBtn = page.locator('apex-tab .apex-execute-btn');
-        this.historyBtn = page.locator('apex-tab .apex-history-btn');
-        // Note: The element starts with class="apex-status status-badge" but updateStatusBadge
-        // replaces className with "status-badge status-{type}", removing apex-status
-        this.statusBadge = page.locator('apex-tab .m-top_small .status-badge');
-        this.searchInput = page.locator('apex-tab .search-input');
+        this.executeBtn = page.locator('[data-testid="apex-execute-btn"]');
+        this.historyBtn = page.locator('[data-testid="apex-history-btn"]');
+        this.statusBadge = page.locator('[data-testid="apex-status"]');
+        this.searchInput = page.locator('[data-testid="apex-search-input"]');
     }
 
     /**
      * Navigate to the Apex tab
      */
     async navigateTo(): Promise<void> {
-        // Check if already on apex tab
-        const isActive = (await this.page.locator('apex-tab.active').count()) > 0;
-        if (isActive) return;
+        // Check if already on apex tab (must be visible, not just in DOM)
+        const tabContent = this.page.locator('[data-testid="tab-content-apex"]');
+        const isVisible = await tabContent.isVisible();
+        if (isVisible) return;
 
         // Open hamburger menu and wait for nav item to be visible and stable
-        await this.slowClick(this.page.locator('.hamburger-btn'));
-        const navItem = this.page.locator('.mobile-nav-item[data-tab="apex"]');
+        await this.slowClick(this.page.locator('[data-testid="hamburger-btn"]'));
+        const navItem = this.page.locator('[data-testid="mobile-nav-apex"]');
         await navItem.waitFor({ state: 'visible', timeout: 5000 });
 
         // Click the nav item
         await this.slowClick(navItem);
-        await this.page.waitForSelector('apex-tab.active', { timeout: 5000 });
+        await this.page.waitForSelector('[data-testid="tab-content-apex"]', { timeout: 5000 });
         await this.afterNavigation();
     }
 
@@ -68,7 +67,7 @@ export class ApexTabPage extends BasePage {
         // Wait for execution to complete - status badge will have status-success or status-error class
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('apex-tab .m-top_small .status-badge');
+                const status = document.querySelector('[data-testid="apex-status"]');
                 if (!status) return false;
                 // Execution is complete when status has success or error class (not loading)
                 return (
@@ -88,7 +87,7 @@ export class ApexTabPage extends BasePage {
 
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('apex-tab .m-top_small .status-badge');
+                const status = document.querySelector('[data-testid="apex-status"]');
                 if (!status) return false;
                 return (
                     status.classList.contains('status-error') ||
@@ -162,7 +161,7 @@ export class ApexTabPage extends BasePage {
      */
     async openHistory(): Promise<void> {
         await this.slowClick(this.historyBtn);
-        await this.page.waitForSelector('apex-tab .apex-history-modal', {
+        await this.page.waitForSelector('[data-testid="apex-history-modal"]', {
             state: 'visible',
             timeout: 5000,
         });
@@ -175,11 +174,11 @@ export class ApexTabPage extends BasePage {
         await this.openHistory();
 
         // Make sure we're on the history tab
-        const historyTab = this.page.locator('apex-tab .dropdown-tab[data-tab="history"]');
+        const historyTab = this.page.locator('[data-testid="apex-history-tab"]');
         await this.slowClick(historyTab);
 
         await this.delay('beforeClick');
-        const historyItems = await this.page.$$('apex-tab .apex-history-list .script-item');
+        const historyItems = await this.page.$$('[data-testid="apex-history-list"] [data-testid="script-item"]');
         if (historyItems[index]) {
             await historyItems[index].click();
         } else {
@@ -187,7 +186,7 @@ export class ApexTabPage extends BasePage {
         }
 
         // Wait for modal to close
-        await this.page.waitForSelector('apex-tab .apex-history-modal', {
+        await this.page.waitForSelector('[data-testid="apex-history-modal"]', {
             state: 'hidden',
             timeout: 5000,
         });
@@ -200,12 +199,12 @@ export class ApexTabPage extends BasePage {
         await this.openHistory();
 
         // Make sure we're on the history tab
-        const historyTab = this.page.locator('apex-tab .dropdown-tab[data-tab="history"]');
+        const historyTab = this.page.locator('[data-testid="apex-history-tab"]');
         await this.slowClick(historyTab);
 
         await this.delay('beforeClick');
         const deleteButtons = await this.page.$$(
-            'apex-tab .apex-history-list .script-item .script-action.delete'
+            '[data-testid="apex-history-list"] [data-testid="script-action-delete"]'
         );
         if (deleteButtons[index]) {
             await deleteButtons[index].click();
@@ -219,13 +218,13 @@ export class ApexTabPage extends BasePage {
      */
     async openFavorites(): Promise<void> {
         await this.slowClick(this.historyBtn);
-        await this.page.waitForSelector('apex-tab .apex-history-modal', {
+        await this.page.waitForSelector('[data-testid="apex-history-modal"]', {
             state: 'visible',
             timeout: 5000,
         });
 
         // Switch to favorites tab
-        const favoritesTab = this.page.locator('apex-tab .dropdown-tab[data-tab="favorites"]');
+        const favoritesTab = this.page.locator('[data-testid="apex-favorites-tab"]');
         await this.slowClick(favoritesTab);
     }
 
@@ -238,26 +237,26 @@ export class ApexTabPage extends BasePage {
         // Click the favorite button on the first history item
         await this.delay('beforeClick');
         const favoriteBtn = this.page
-            .locator('apex-tab .apex-history-list .script-item .script-action.favorite')
+            .locator('[data-testid="apex-history-list"] [data-testid="script-action-favorite"]')
             .first();
         await this.slowClick(favoriteBtn);
 
         // Wait for favorite modal to open
-        await this.page.waitForSelector('.apex-favorite-dialog', {
+        await this.page.waitForSelector('[data-testid="apex-favorite-dialog"]', {
             state: 'visible',
             timeout: 5000,
         });
 
         // Enter label
-        const labelInput = this.page.locator('.apex-favorite-input');
+        const labelInput = this.page.locator('[data-testid="apex-favorite-input"]');
         await labelInput.fill(label);
 
         // Click save
-        const saveBtn = this.page.locator('.apex-favorite-save');
+        const saveBtn = this.page.locator('[data-testid="apex-favorite-save"]');
         await this.slowClick(saveBtn);
 
         // Wait for modal to close
-        await this.page.waitForSelector('.apex-favorite-dialog', {
+        await this.page.waitForSelector('[data-testid="apex-favorite-dialog"]', {
             state: 'hidden',
             timeout: 5000,
         });
@@ -270,7 +269,7 @@ export class ApexTabPage extends BasePage {
         await this.openFavorites();
 
         await this.delay('beforeClick');
-        const favoriteItems = await this.page.$$('apex-tab .apex-favorites-list .script-item');
+        const favoriteItems = await this.page.$$('[data-testid="apex-favorites-list"] [data-testid="script-item"]');
         if (favoriteItems[index]) {
             await favoriteItems[index].click();
         } else {
@@ -278,7 +277,7 @@ export class ApexTabPage extends BasePage {
         }
 
         // Wait for modal to close
-        await this.page.waitForSelector('apex-tab .apex-history-modal', {
+        await this.page.waitForSelector('[data-testid="apex-history-modal"]', {
             state: 'hidden',
             timeout: 5000,
         });
@@ -292,7 +291,7 @@ export class ApexTabPage extends BasePage {
 
         await this.delay('beforeClick');
         const deleteButtons = await this.page.$$(
-            'apex-tab .apex-favorites-list .script-item .script-action.delete'
+            '[data-testid="apex-favorites-list"] [data-testid="script-action-delete"]'
         );
         if (deleteButtons[index]) {
             await deleteButtons[index].click();
@@ -310,7 +309,7 @@ export class ApexTabPage extends BasePage {
         // Wait for modal to close
         await this.page.waitForFunction(
             () => {
-                const modal = document.querySelector('apex-tab .apex-history-modal');
+                const modal = document.querySelector('[data-testid="apex-history-modal"]');
                 return modal && !modal.classList.contains('open');
             },
             { timeout: 5000 }

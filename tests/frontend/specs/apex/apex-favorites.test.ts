@@ -69,7 +69,7 @@ export default class ApexFavoritesTest extends SftoolsTest {
         // Verify favorites list is now empty by opening it and checking for "No favorites"
         await this.apexTab.openFavorites();
         const emptyMessage = await this.apexTab.page
-            .locator('apex-tab .apex-favorites-list .script-empty')
+            .locator('[data-testid="apex-favorites-list"] .script-empty')
             .textContent();
         await this.expect(emptyMessage?.trim()).toContain('No favorites yet');
     }

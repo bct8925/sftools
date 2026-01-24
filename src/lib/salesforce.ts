@@ -5,19 +5,31 @@ import { salesforceRequest } from './salesforce-request.js';
 import { smartFetch } from './fetch.js';
 import { getAccessToken, getInstanceUrl, getActiveConnectionId } from './auth.js';
 import { API_VERSION } from './utils.js';
+import type {
+    SObjectDescribe,
+    DescribeGlobalResult,
+    ObjectDescribeResult,
+    SObject,
+    QueryResult,
+    ApexExecutionResult,
+    ToolingQueryResult,
+} from '../types/salesforce';
 
 // ============================================================
 // Tooling API Utilities
 // ============================================================
 
+interface CompositeRequest {
+    method: string;
+    url: string;
+    referenceId: string;
+}
+
 /**
  * Bulk delete records using Tooling API composite endpoint
  * Batches deletes into groups of 25 (Tooling API composite limit)
- * @param {string} sobjectType - SObject type to delete (e.g., 'ApexLog', 'TraceFlag', 'Flow')
- * @param {string[]} ids - Array of record IDs to delete
- * @returns {Promise<number>} - Number of records deleted
  */
-async function bulkDeleteTooling(sobjectType, ids) {
+async function bulkDeleteTooling(sobjectType: string, ids: string[]): Promise<number> {
     let deletedCount = 0;
     const batchSize = 25;
 
@@ -44,10 +56,8 @@ async function bulkDeleteTooling(sobjectType, ids) {
 
 /**
  * Escape special characters for SOQL queries
- * @param {string} str - String to escape
- * @returns {string} - Escaped string safe for SOQL LIKE clauses
  */
-function escapeSoql(str) {
+function escapeSoql(str: string): string {
     return str.replace(/'/g, "\\'").replace(/%/g, '\\%').replace(/_/g, '\\_');
 }
 
@@ -57,45 +67,48 @@ function escapeSoql(str) {
 
 const DESCRIBE_CACHE_PREFIX = 'describeCache_';
 
+interface DescribeCache {
+    global: DescribeGlobalResult | null;
+    objects: Record<string, ObjectDescribeResult>;
+}
+
 /**
  * Get the storage key for a connection's describe cache
- * @param {string} connectionId
- * @returns {string}
  */
-function getDescribeCacheKey(connectionId) {
+function getDescribeCacheKey(connectionId: string): string {
     return `${DESCRIBE_CACHE_PREFIX}${connectionId}`;
 }
 
 /**
  * Get the describe cache for the current connection
- * @returns {Promise<{global: object|null, objects: object}>}
  */
-async function getDescribeCache() {
+async function getDescribeCache(): Promise<DescribeCache> {
     const connectionId = getActiveConnectionId();
     if (!connectionId) return { global: null, objects: {} };
 
     const key = getDescribeCacheKey(connectionId);
     const data = await chrome.storage.local.get([key]);
-    return data[key] || { global: null, objects: {} };
+    return (data[key] as DescribeCache) || { global: null, objects: {} };
 }
 
 /**
  * Save describe data to cache for the current connection
- * @param {string} type - 'global' or object API name
- * @param {object} data - Describe data to cache
  */
-async function setDescribeCache(type, data) {
+async function setDescribeCache(
+    type: string,
+    data: DescribeGlobalResult | ObjectDescribeResult
+): Promise<void> {
     const connectionId = getActiveConnectionId();
     if (!connectionId) return;
 
     const key = getDescribeCacheKey(connectionId);
     const stored = await chrome.storage.local.get([key]);
-    const cache = stored[key] || { global: null, objects: {} };
+    const cache: DescribeCache = (stored[key] as DescribeCache) || { global: null, objects: {} };
 
     if (type === 'global') {
-        cache.global = data;
+        cache.global = data as DescribeGlobalResult;
     } else {
-        cache.objects[type] = data;
+        cache.objects[type] = data as ObjectDescribeResult;
     }
 
     await chrome.storage.local.set({ [key]: cache });
@@ -103,9 +116,8 @@ async function setDescribeCache(type, data) {
 
 /**
  * Clear describe cache for the current connection
- * @returns {Promise<void>}
  */
-export async function clearDescribeCache() {
+export async function clearDescribeCache(): Promise<void> {
     const connectionId = getActiveConnectionId();
     if (!connectionId) return;
 
@@ -115,10 +127,8 @@ export async function clearDescribeCache() {
 /**
  * Clear describe cache for a specific connection
  * Used when removing a connection from storage
- * @param {string} connectionId
- * @returns {Promise<void>}
  */
-export async function clearDescribeCacheForConnection(connectionId) {
+export async function clearDescribeCacheForConnection(connectionId: string): Promise<void> {
     if (!connectionId) return;
     await chrome.storage.local.remove(getDescribeCacheKey(connectionId));
 }
@@ -126,9 +136,8 @@ export async function clearDescribeCacheForConnection(connectionId) {
 /**
  * Migrate describe cache from old single-key format to per-connection keys
  * Should be called once during app initialization
- * @returns {Promise<boolean>} - Whether migration was performed
  */
-export async function migrateDescribeCache() {
+export async function migrateDescribeCache(): Promise<boolean> {
     const OLD_KEY = 'describeCache';
     const data = await chrome.storage.local.get([OLD_KEY]);
     const oldCache = data[OLD_KEY];
@@ -136,9 +145,9 @@ export async function migrateDescribeCache() {
     if (!oldCache || typeof oldCache !== 'object') return false;
 
     // Migrate each connection to its own key
-    const updates = {};
+    const updates: Record<string, DescribeCache> = {};
     for (const [connectionId, cacheData] of Object.entries(oldCache)) {
-        updates[getDescribeCacheKey(connectionId)] = cacheData;
+        updates[getDescribeCacheKey(connectionId)] = cacheData as DescribeCache;
     }
 
     // Write new keys and remove old
@@ -171,12 +180,21 @@ const DEBUG_LEVELS = {
 // User & Session
 // ============================================================
 
+interface ChatterUser {
+    id: string;
+    name: string;
+}
+
 /**
  * Get current user ID
- * @returns {Promise<string>} User ID
  */
-export async function getCurrentUserId() {
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/chatter/users/me`);
+export async function getCurrentUserId(): Promise<string> {
+    const response = await salesforceRequest<ChatterUser>(
+        `/services/data/v${API_VERSION}/chatter/users/me`
+    );
+    if (!response.json) {
+        throw new Error('No user data returned from API');
+    }
     return response.json.id;
 }
 
@@ -184,23 +202,33 @@ export async function getCurrentUserId() {
 // Debug Logging (for Apex execution)
 // ============================================================
 
+interface DebugLevel {
+    Id: string;
+}
+
+interface TraceFlag {
+    Id: string;
+    DebugLevelId: string;
+    ExpirationDate: string;
+    DebugLevel?: { DeveloperName: string };
+}
+
 /**
  * Find or create a DebugLevel with our desired log levels
- * @returns {Promise<string>} Debug level ID
  */
-async function getOrCreateDebugLevel() {
+async function getOrCreateDebugLevel(): Promise<string> {
     const query = encodeURIComponent(
         `SELECT Id FROM DebugLevel WHERE DeveloperName = '${DEBUG_LEVEL_NAME}'`
     );
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult<DebugLevel>>(
         `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
     );
 
-    if (response.json.records && response.json.records.length > 0) {
+    if (response.json?.records && response.json.records.length > 0) {
         return response.json.records[0].Id;
     }
 
-    const createResponse = await salesforceRequest(
+    const createResponse = await salesforceRequest<{ id: string }>(
         `/services/data/v${API_VERSION}/tooling/sobjects/DebugLevel`,
         {
             method: 'POST',
@@ -212,26 +240,24 @@ async function getOrCreateDebugLevel() {
         }
     );
 
-    return createResponse.json.id;
+    return createResponse.json?.id ?? '';
 }
 
 /**
  * Ensure a TraceFlag exists for the current user with correct debug level
- * @param {string} userId - The user ID to trace
- * @returns {Promise<string>} Trace flag ID
  */
-async function ensureTraceFlag(userId) {
+async function ensureTraceFlag(userId: string): Promise<string> {
     const now = new Date().toISOString();
     const fiveMinutesFromNow = Date.now() + 5 * 60 * 1000;
 
     const query = encodeURIComponent(
         `SELECT Id, DebugLevelId, DebugLevel.DeveloperName, ExpirationDate FROM TraceFlag WHERE TracedEntityId = '${userId}' AND LogType = 'USER_DEBUG' AND ExpirationDate > ${now}`
     );
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult<TraceFlag>>(
         `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
     );
 
-    if (response.json.records && response.json.records.length > 0) {
+    if (response.json?.records && response.json.records.length > 0) {
         const existing = response.json.records[0];
         const expirationTime = new Date(existing.ExpirationDate).getTime();
         const hasCorrectDebugLevel = existing.DebugLevel?.DeveloperName === DEBUG_LEVEL_NAME;
@@ -263,7 +289,7 @@ async function ensureTraceFlag(userId) {
     const startDate = new Date().toISOString();
     const expirationDate = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-    const createResponse = await salesforceRequest(
+    const createResponse = await salesforceRequest<{ id: string }>(
         `/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag`,
         {
             method: 'POST',
@@ -277,22 +303,27 @@ async function ensureTraceFlag(userId) {
         }
     );
 
-    return createResponse.json.id;
+    return createResponse.json?.id ?? '';
+}
+
+interface ApexLog {
+    Id: string;
+    LogLength: number;
+    Status: string;
 }
 
 /**
  * Get the latest anonymous apex debug log
- * @returns {Promise<string|null>} Log body or null
  */
-async function getLatestAnonymousLog() {
+async function getLatestAnonymousLog(): Promise<string | null> {
     const query = encodeURIComponent(
         `SELECT Id, LogLength, Status FROM ApexLog WHERE Operation LIKE '%executeAnonymous/' ORDER BY StartTime DESC LIMIT 1`
     );
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult<ApexLog>>(
         `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
     );
 
-    if (!response.json.records || response.json.records.length === 0) {
+    if (!response.json?.records || response.json.records.length === 0) {
         return null;
     }
 
@@ -307,21 +338,26 @@ async function getLatestAnonymousLog() {
         }
     );
 
-    return logResponse.data;
+    return logResponse.data ?? null;
 }
 
 // ============================================================
 // Apex Execution
 // ============================================================
 
+export interface ExecuteAnonymousResult {
+    execution: ApexExecutionResult;
+    debugLog: string | null;
+}
+
 /**
  * Execute anonymous Apex code
  * Sets up trace flags, executes the code, and retrieves the debug log
- * @param {string} apexCode - The Apex code to execute
- * @param {function} onProgress - Optional callback for progress updates
- * @returns {Promise<{execution: object, debugLog: string|null}>}
  */
-export async function executeAnonymousApex(apexCode, onProgress) {
+export async function executeAnonymousApex(
+    apexCode: string,
+    onProgress?: (message: string) => void
+): Promise<ExecuteAnonymousResult> {
     // Step 1: Setup trace flag
     onProgress?.('Setting up trace...');
     const userId = await getCurrentUserId();
@@ -330,13 +366,17 @@ export async function executeAnonymousApex(apexCode, onProgress) {
     // Step 2: Execute the apex
     onProgress?.('Executing...');
     const encodedCode = encodeURIComponent(apexCode);
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<ApexExecutionResult>(
         `/services/data/v${API_VERSION}/tooling/executeAnonymous/?anonymousBody=${encodedCode}`
     );
     const execution = response.json;
 
+    if (!execution) {
+        throw new Error('No execution result returned from API');
+    }
+
     // Step 3: Get debug log (only if execution was attempted)
-    let debugLog = null;
+    let debugLog: string | null = null;
     if (execution.compiled) {
         onProgress?.('Fetching log...');
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -350,31 +390,43 @@ export async function executeAnonymousApex(apexCode, onProgress) {
 // SOQL Query
 // ============================================================
 
+import type { ColumnMetadata } from '../types/salesforce';
+
+export interface QueryWithColumnsResult {
+    records: SObject[];
+    totalSize: number;
+    columnMetadata: ColumnMetadata[];
+    entityName: string | null;
+}
+
 /**
  * Execute a SOQL query with column metadata
  * Fetches column metadata first, then query results
- * @param {string} soql - The SOQL query
- * @param {boolean} useToolingApi - If true, use the Tooling API endpoint
- * @returns {Promise<{records: array, totalSize: number, columnMetadata: array, entityName: string}>}
  */
-export async function executeQueryWithColumns(soql, useToolingApi = false) {
+export async function executeQueryWithColumns(
+    soql: string,
+    useToolingApi = false
+): Promise<QueryWithColumnsResult> {
     const encodedQuery = encodeURIComponent(soql);
     const apiPath = useToolingApi ? 'tooling/query' : 'query';
     const baseUrl = `/services/data/v${API_VERSION}/${apiPath}/?q=${encodedQuery}`;
 
     // Execute columns request first to fail fast on query errors
-    const columnsResponse = await salesforceRequest(`${baseUrl}&columns=true`);
-    const columnData = columnsResponse.json || {};
+    const columnsResponse = await salesforceRequest<{
+        columnMetadata?: ColumnMetadata[];
+        entityName?: string;
+    }>(`${baseUrl}&columns=true`);
+    const columnData = columnsResponse.json ?? { columnMetadata: [], entityName: null };
 
     // Only proceed with data request if columns request succeeded
-    const dataResponse = await salesforceRequest(baseUrl);
-    const queryData = dataResponse.json || {};
+    const dataResponse = await salesforceRequest<QueryResult>(`${baseUrl}`);
+    const queryData = dataResponse.json ?? { records: [], totalSize: 0, done: true };
 
     return {
-        records: queryData.records || [],
-        totalSize: queryData.totalSize || 0,
-        columnMetadata: columnData.columnMetadata || [],
-        entityName: columnData.entityName || null,
+        records: queryData.records ?? [],
+        totalSize: queryData.totalSize ?? 0,
+        columnMetadata: columnData.columnMetadata ?? [],
+        entityName: columnData.entityName ?? null,
     };
 }
 
@@ -385,10 +437,10 @@ export async function executeQueryWithColumns(soql, useToolingApi = false) {
 /**
  * Get global describe metadata (all objects)
  * Uses cache if available, otherwise fetches and caches
- * @param {boolean} bypassCache - If true, skip cache lookup (still saves to cache)
- * @returns {Promise<{sobjects: array}>}
  */
-export async function getGlobalDescribe(bypassCache = false) {
+export async function getGlobalDescribe(
+    bypassCache = false
+): Promise<DescribeGlobalResult> {
     if (!bypassCache) {
         const cache = await getDescribeCache();
         if (cache.global) {
@@ -396,8 +448,14 @@ export async function getGlobalDescribe(bypassCache = false) {
         }
     }
 
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/sobjects`);
+    const response = await salesforceRequest<DescribeGlobalResult>(
+        `/services/data/v${API_VERSION}/sobjects`
+    );
     const data = response.json;
+
+    if (!data) {
+        throw new Error('No global describe data returned from API');
+    }
 
     // Cache the result
     await setDescribeCache('global', data);
@@ -408,11 +466,11 @@ export async function getGlobalDescribe(bypassCache = false) {
 /**
  * Get object describe metadata (field definitions, etc.)
  * Uses cache if available, otherwise fetches and caches
- * @param {string} objectType - The SObject API name
- * @param {boolean} bypassCache - If true, skip cache lookup (still saves to cache)
- * @returns {Promise<object>} Describe result with fields array
  */
-export async function getObjectDescribe(objectType, bypassCache = false) {
+export async function getObjectDescribe(
+    objectType: string,
+    bypassCache = false
+): Promise<ObjectDescribeResult> {
     if (!bypassCache) {
         const cache = await getDescribeCache();
         if (cache.objects[objectType]) {
@@ -420,10 +478,14 @@ export async function getObjectDescribe(objectType, bypassCache = false) {
         }
     }
 
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<ObjectDescribeResult>(
         `/services/data/v${API_VERSION}/sobjects/${objectType}/describe`
     );
     const data = response.json;
+
+    if (!data) {
+        throw new Error(`No describe data returned for ${objectType}`);
+    }
 
     // Cache the result
     await setDescribeCache(objectType, data);
@@ -433,27 +495,34 @@ export async function getObjectDescribe(objectType, bypassCache = false) {
 
 /**
  * Get a single record by ID
- * @param {string} objectType - The SObject API name
- * @param {string} recordId - The record ID
- * @returns {Promise<object>} Record data
  */
-export async function getRecord(objectType, recordId) {
-    const response = await salesforceRequest(
+export async function getRecord(objectType: string, recordId: string): Promise<SObject> {
+    const response = await salesforceRequest<SObject>(
         `/services/data/v${API_VERSION}/sobjects/${objectType}/${recordId}`
     );
+    if (!response.json) {
+        throw new Error(`No record data returned for ${objectType} with ID ${recordId}`);
+    }
     return response.json;
+}
+
+import type { FieldDescribe } from '../types/salesforce';
+
+export interface RecordWithRelationships {
+    record: SObject;
+    nameFieldMap: Record<string, string>;
 }
 
 /**
  * Get a single record with relationship names included
- * @param {string} objectType - The SObject API name
- * @param {string} recordId - The record ID
- * @param {Array} fields - Field metadata from describe
- * @returns {Promise<{record: object, nameFieldMap: object}>} Record data and map of objectType -> nameField
  */
-export async function getRecordWithRelationships(objectType, recordId, fields) {
+export async function getRecordWithRelationships(
+    objectType: string,
+    recordId: string,
+    fields: FieldDescribe[]
+): Promise<RecordWithRelationships> {
     // Collect unique referenced object types
-    const referencedTypes = new Set();
+    const referencedTypes = new Set<string>();
     for (const field of fields) {
         if (field.type === 'reference' && field.referenceTo?.length > 0) {
             referencedTypes.add(field.referenceTo[0]);
@@ -461,7 +530,7 @@ export async function getRecordWithRelationships(objectType, recordId, fields) {
     }
 
     // Get describes for all referenced types to find their name fields
-    const nameFieldMap = {};
+    const nameFieldMap: Record<string, string> = {};
     if (referencedTypes.size > 0) {
         const describes = await Promise.all(
             [...referencedTypes].map(type => getObjectDescribe(type).catch(() => null))
@@ -496,11 +565,11 @@ export async function getRecordWithRelationships(objectType, recordId, fields) {
     }
 
     const soql = `SELECT ${fieldNames.join(', ')} FROM ${objectType} WHERE Id = '${recordId}'`;
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult>(
         `/services/data/v${API_VERSION}/query/?q=${encodeURIComponent(soql)}`
     );
 
-    if (!response.json.records || response.json.records.length === 0) {
+    if (!response.json?.records || response.json.records.length === 0) {
         throw new Error('Record not found');
     }
 
@@ -509,12 +578,12 @@ export async function getRecordWithRelationships(objectType, recordId, fields) {
 
 /**
  * Update a record
- * @param {string} objectType - The SObject API name
- * @param {string} recordId - The record ID
- * @param {object} fields - Field values to update
- * @returns {Promise<void>}
  */
-export async function updateRecord(objectType, recordId, fields) {
+export async function updateRecord(
+    objectType: string,
+    recordId: string,
+    fields: Record<string, unknown>
+): Promise<void> {
     await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/${objectType}/${recordId}`, {
         method: 'PATCH',
         body: JSON.stringify(fields),
@@ -525,15 +594,17 @@ export async function updateRecord(objectType, recordId, fields) {
 // Generic REST
 // ============================================================
 
+import type { RestApiResponse } from '../types/salesforce';
+
 /**
  * Execute a generic REST API request
  * Returns raw response data for the REST API explorer
- * @param {string} endpoint - API endpoint (relative to instance URL)
- * @param {string} method - HTTP method
- * @param {string|null} body - Request body (JSON string)
- * @returns {Promise<{success: boolean, status: number, data: any, raw: string}>}
  */
-export async function executeRestRequest(endpoint, method, body = null) {
+export async function executeRestRequest(
+    endpoint: string,
+    method: string,
+    body: string | null = null
+): Promise<RestApiResponse> {
     const response = await smartFetch(`${getInstanceUrl()}${endpoint}`, {
         method,
         headers: {
@@ -541,12 +612,12 @@ export async function executeRestRequest(endpoint, method, body = null) {
             Accept: 'application/json',
             'Content-Type': 'application/json',
         },
-        body,
+        body: body ?? undefined,
     });
 
-    let { data } = response;
+    let data: unknown = response.data;
     try {
-        data = JSON.parse(response.data);
+        data = JSON.parse(response.data ?? '');
     } catch {
         // Keep as raw string if not JSON
     }
@@ -554,10 +625,10 @@ export async function executeRestRequest(endpoint, method, body = null) {
     return {
         success: response.success,
         status: response.status,
-        statusText: response.statusText,
-        error: response.error,
+        statusText: response.statusText ?? '',
+        error: response.error ?? undefined,
         data,
-        raw: response.data,
+        raw: response.data ?? '',
     };
 }
 
@@ -565,37 +636,51 @@ export async function executeRestRequest(endpoint, method, body = null) {
 // Streaming Channels
 // ============================================================
 
+interface EntityDefinition {
+    DeveloperName: string;
+    QualifiedApiName: string;
+    Label: string;
+}
+
+interface PushTopic {
+    Id: string;
+    Name: string;
+    Query: string;
+    ApiVersion: string;
+    IsActive: boolean;
+}
+
 /**
  * Get available Platform Event channels
  * Queries for custom Platform Events (entities ending in __e)
- * @returns {Promise<{customEvents: array}>}
  */
-export async function getEventChannels() {
+export async function getEventChannels(): Promise<{ customEvents: EntityDefinition[] }> {
     const query = encodeURIComponent(
         "SELECT DeveloperName, QualifiedApiName, Label FROM EntityDefinition WHERE QualifiedApiName LIKE '%__e' AND IsCustomizable = true ORDER BY Label"
     );
 
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult<EntityDefinition>>(
         `/services/data/v${API_VERSION}/tooling/query?q=${query}`
     );
 
     return {
-        customEvents: response.json.records || [],
+        customEvents: response.json?.records ?? [],
     };
 }
 
 /**
  * Get active PushTopic channels
- * @returns {Promise<array>} PushTopic records
  */
-export async function getPushTopics() {
+export async function getPushTopics(): Promise<PushTopic[]> {
     const query = encodeURIComponent(
         'SELECT Id, Name, Query, ApiVersion, IsActive FROM PushTopic WHERE IsActive = true ORDER BY Name'
     );
 
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/query?q=${query}`);
+    const response = await salesforceRequest<QueryResult<PushTopic>>(
+        `/services/data/v${API_VERSION}/query?q=${query}`
+    );
 
-    return response.json.records || [];
+    return response.json?.records ?? [];
 }
 
 // Standard Platform Events (commonly available)
@@ -609,11 +694,17 @@ const STANDARD_EVENTS = [
 // System Topics (CometD only)
 const SYSTEM_TOPICS = [{ channel: '/systemTopic/Logging', label: 'Debug Logs' }];
 
+export interface StreamingChannels {
+    platformEvents: EntityDefinition[];
+    standardEvents: typeof STANDARD_EVENTS;
+    pushTopics: PushTopic[];
+    systemTopics: typeof SYSTEM_TOPICS;
+}
+
 /**
  * Get all streaming channels (unified)
- * @returns {Promise<{platformEvents: array, standardEvents: array, pushTopics: array, systemTopics: array}>}
  */
-export async function getAllStreamingChannels() {
+export async function getAllStreamingChannels(): Promise<StreamingChannels> {
     const [platformEvents, pushTopics] = await Promise.all([
         getEventChannels(),
         getPushTopics().catch(() => []),
@@ -627,13 +718,19 @@ export async function getAllStreamingChannels() {
     };
 }
 
+export interface PublishEventResult {
+    success: boolean;
+    id: string | null;
+    error: string | null;
+}
+
 /**
  * Publish a Platform Event
- * @param {string} eventType - The event API name (e.g., 'My_Event__e')
- * @param {object} payload - The event payload
- * @returns {Promise<{success: boolean, id: string|null, error: string|null}>}
  */
-export async function publishPlatformEvent(eventType, payload) {
+export async function publishPlatformEvent(
+    eventType: string,
+    payload: Record<string, unknown>
+): Promise<PublishEventResult> {
     const response = await smartFetch(
         `${getInstanceUrl()}/services/data/v${API_VERSION}/sobjects/${eventType}`,
         {
@@ -647,13 +744,13 @@ export async function publishPlatformEvent(eventType, payload) {
     );
 
     if (response.success) {
-        const data = JSON.parse(response.data);
+        const data = JSON.parse(response.data ?? '{}');
         return { success: true, id: data.id, error: null };
     }
 
     let errorMsg = 'Publish failed';
     try {
-        const errorData = JSON.parse(response.data);
+        const errorData = JSON.parse(response.data ?? '{}');
         if (Array.isArray(errorData) && errorData[0]?.message) {
             errorMsg = errorData[0].message;
         }
@@ -670,15 +767,14 @@ export async function publishPlatformEvent(eventType, payload) {
 
 /**
  * Delete all ApexLog records
- * @returns {Promise<{deletedCount: number}>}
  */
-export async function deleteAllDebugLogs() {
+export async function deleteAllDebugLogs(): Promise<{ deletedCount: number }> {
     const query = encodeURIComponent('SELECT Id FROM ApexLog');
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult<{ Id: string }>>(
         `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
     );
 
-    const logIds = (response.json.records || []).map(l => l.Id);
+    const logIds = (response.json?.records ?? []).map(l => l.Id);
     if (logIds.length === 0) {
         return { deletedCount: 0 };
     }
@@ -687,26 +783,30 @@ export async function deleteAllDebugLogs() {
     return { deletedCount };
 }
 
+interface User {
+    Id: string;
+    Name: string;
+    Username: string;
+}
+
 /**
  * Search users by name or username
- * @param {string} searchTerm
- * @returns {Promise<Array>}
  */
-export async function searchUsers(searchTerm) {
+export async function searchUsers(searchTerm: string): Promise<User[]> {
     const escaped = escapeSoql(searchTerm);
     const query = encodeURIComponent(
         `SELECT Id, Name, Username FROM User WHERE (Name LIKE '%${escaped}%' OR Username LIKE '%${escaped}%') AND IsActive = true ORDER BY Name LIMIT 10`
     );
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/query/?q=${query}`);
-    return response.json.records || [];
+    const response = await salesforceRequest<QueryResult<User>>(
+        `/services/data/v${API_VERSION}/query/?q=${query}`
+    );
+    return response.json?.records ?? [];
 }
 
 /**
  * Enable trace flag for a user (30 minutes)
- * @param {string} userId
- * @returns {Promise<string>} Trace flag ID
  */
-export async function enableTraceFlagForUser(userId) {
+export async function enableTraceFlagForUser(userId: string): Promise<string> {
     const now = new Date().toISOString();
     const thirtyMinutesFromNow = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
@@ -714,11 +814,11 @@ export async function enableTraceFlagForUser(userId) {
     const query = encodeURIComponent(
         `SELECT Id, DebugLevelId, ExpirationDate FROM TraceFlag WHERE TracedEntityId = '${userId}' AND LogType = 'USER_DEBUG' AND DebugLevel.DeveloperName = '${DEBUG_LEVEL_NAME}'`
     );
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult<TraceFlag>>(
         `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
     );
 
-    if (response.json.records && response.json.records.length > 0) {
+    if (response.json?.records && response.json.records.length > 0) {
         const existing = response.json.records[0];
 
         await salesforceRequest(
@@ -736,7 +836,7 @@ export async function enableTraceFlagForUser(userId) {
 
     // Create new trace flag
     const debugLevelId = await getOrCreateDebugLevel();
-    const createResponse = await salesforceRequest(
+    const createResponse = await salesforceRequest<{ id: string }>(
         `/services/data/v${API_VERSION}/tooling/sobjects/TraceFlag`,
         {
             method: 'POST',
@@ -749,20 +849,19 @@ export async function enableTraceFlagForUser(userId) {
             }),
         }
     );
-    return createResponse.json.id;
+    return createResponse.json?.id ?? '';
 }
 
 /**
  * Delete all TraceFlag records
- * @returns {Promise<{deletedCount: number}>}
  */
-export async function deleteAllTraceFlags() {
+export async function deleteAllTraceFlags(): Promise<{ deletedCount: number }> {
     const query = encodeURIComponent('SELECT Id FROM TraceFlag');
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult<{ Id: string }>>(
         `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
     );
 
-    const flagIds = (response.json.records || []).map(f => f.Id);
+    const flagIds = (response.json?.records ?? []).map(f => f.Id);
     if (flagIds.length === 0) {
         return { deletedCount: 0 };
     }
@@ -771,43 +870,41 @@ export async function deleteAllTraceFlags() {
     return { deletedCount };
 }
 
+import type { FlowDefinition, FlowVersion } from '../types/salesforce';
+
 /**
  * Search flows by name
- * @param {string} searchTerm
- * @returns {Promise<Array>}
  */
-export async function searchFlows(searchTerm) {
+export async function searchFlows(searchTerm: string): Promise<FlowDefinition[]> {
     const escaped = escapeSoql(searchTerm);
     const query = encodeURIComponent(
         `SELECT Id, DeveloperName, ActiveVersionId FROM FlowDefinition WHERE DeveloperName LIKE '%${escaped}%' ORDER BY DeveloperName LIMIT 10`
     );
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult<FlowDefinition>>(
         `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
     );
-    return response.json.records || [];
+    return response.json?.records ?? [];
 }
 
 /**
  * Get all versions of a flow
- * @param {string} flowDefinitionId
- * @returns {Promise<Array>}
  */
-export async function getFlowVersions(flowDefinitionId) {
+export async function getFlowVersions(flowDefinitionId: string): Promise<FlowVersion[]> {
     const query = encodeURIComponent(
         `SELECT Id, VersionNumber, Status, Description FROM Flow WHERE DefinitionId = '${flowDefinitionId}' ORDER BY VersionNumber DESC`
     );
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult<FlowVersion>>(
         `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
     );
-    return response.json.records || [];
+    return response.json?.records ?? [];
 }
 
 /**
  * Delete inactive flow versions
- * @param {string[]} versionIds
- * @returns {Promise<{deletedCount: number}>}
  */
-export async function deleteInactiveFlowVersions(versionIds) {
+export async function deleteInactiveFlowVersions(
+    versionIds: string[]
+): Promise<{ deletedCount: number }> {
     if (versionIds.length === 0) {
         return { deletedCount: 0 };
     }
@@ -816,56 +913,73 @@ export async function deleteInactiveFlowVersions(versionIds) {
     return { deletedCount };
 }
 
+interface Profile {
+    Id: string;
+    Name: string;
+}
+
 /**
  * Search Profiles by name
- * @param {string} searchTerm
- * @returns {Promise<Array>}
  */
-export async function searchProfiles(searchTerm) {
+export async function searchProfiles(searchTerm: string): Promise<Profile[]> {
     const escaped = escapeSoql(searchTerm);
     const query = encodeURIComponent(
         `SELECT Id, Name FROM Profile WHERE Name LIKE '%${escaped}%' ORDER BY Name LIMIT 10`
     );
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/query/?q=${query}`);
-    return response.json.records || [];
+    const response = await salesforceRequest<QueryResult<Profile>>(
+        `/services/data/v${API_VERSION}/query/?q=${query}`
+    );
+    return response.json?.records ?? [];
 }
 
 // ============================================================
 // Bulk API v2 - Query Export
 // ============================================================
 
+interface BulkQueryJob {
+    id: string;
+    state: string;
+    numberRecordsProcessed?: number;
+    errorMessage?: string;
+}
+
 /**
  * Create a Bulk API v2 query job
- * @param {string} soql - The SOQL query
- * @returns {Promise<{id: string, state: string}>}
  */
-export async function createBulkQueryJob(soql) {
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/jobs/query`, {
-        method: 'POST',
-        body: JSON.stringify({
-            operation: 'query',
-            query: soql,
-        }),
-    });
+export async function createBulkQueryJob(soql: string): Promise<BulkQueryJob> {
+    const response = await salesforceRequest<BulkQueryJob>(
+        `/services/data/v${API_VERSION}/jobs/query`,
+        {
+            method: 'POST',
+            body: JSON.stringify({
+                operation: 'query',
+                query: soql,
+            }),
+        }
+    );
+    if (!response.json) {
+        throw new Error('No job data returned from bulk query API');
+    }
     return response.json;
 }
 
 /**
  * Get the status of a Bulk API v2 query job
- * @param {string} jobId - The job ID
- * @returns {Promise<{id: string, state: string, numberRecordsProcessed: number}>}
  */
-export async function getBulkQueryJobStatus(jobId) {
-    const response = await salesforceRequest(`/services/data/v${API_VERSION}/jobs/query/${jobId}`);
+export async function getBulkQueryJobStatus(jobId: string): Promise<BulkQueryJob> {
+    const response = await salesforceRequest<BulkQueryJob>(
+        `/services/data/v${API_VERSION}/jobs/query/${jobId}`
+    );
+    if (!response.json) {
+        throw new Error(`No job status returned for job ${jobId}`);
+    }
     return response.json;
 }
 
 /**
  * Get the CSV results of a completed Bulk API v2 query job
- * @param {string} jobId - The job ID
- * @returns {Promise<string>} - CSV content
  */
-export async function getBulkQueryResults(jobId) {
+export async function getBulkQueryResults(jobId: string): Promise<string> {
     const response = await smartFetch(
         `${getInstanceUrl()}/services/data/v${API_VERSION}/jobs/query/${jobId}/results`,
         {
@@ -877,18 +991,16 @@ export async function getBulkQueryResults(jobId) {
     );
 
     if (!response.success) {
-        throw new Error(response.error || 'Failed to fetch results');
+        throw new Error(response.error ?? 'Failed to fetch results');
     }
 
-    return response.data;
+    return response.data ?? '';
 }
 
 /**
  * Abort a Bulk API v2 query job
- * @param {string} jobId - The job ID
- * @returns {Promise<void>}
  */
-export async function abortBulkQueryJob(jobId) {
+export async function abortBulkQueryJob(jobId: string): Promise<void> {
     await salesforceRequest(`/services/data/v${API_VERSION}/jobs/query/${jobId}`, {
         method: 'PATCH',
         body: JSON.stringify({ state: 'Aborted' }),
@@ -898,11 +1010,11 @@ export async function abortBulkQueryJob(jobId) {
 /**
  * Execute a bulk query export with polling
  * Handles job creation, polling, and result retrieval
- * @param {string} soql - The SOQL query
- * @param {function} onProgress - Progress callback (state, recordCount)
- * @returns {Promise<string>} - CSV content
  */
-export async function executeBulkQueryExport(soql, onProgress) {
+export async function executeBulkQueryExport(
+    soql: string,
+    onProgress?: (state: string, recordCount?: number) => void
+): Promise<string> {
     onProgress?.('Creating job...');
     const job = await createBulkQueryJob(soql);
     const jobId = job.id;
@@ -940,29 +1052,45 @@ export async function executeBulkQueryExport(soql, onProgress) {
 // Formula Field Editor
 // ============================================================
 
+interface CustomField {
+    Id: string;
+    FullName: string;
+    Metadata: {
+        formula?: string;
+        [key: string]: unknown;
+    };
+}
+
+export interface FormulaFieldMetadata {
+    id: string;
+    formula: string;
+    fullName: string;
+    metadata: CustomField['Metadata'];
+}
+
 /**
  * Get formula field metadata from Tooling API
- * @param {string} objectType - The SObject API name
- * @param {string} fieldName - The field API name
- * @returns {Promise<{id: string, formula: string, fullName: string, metadata: object}>}
  */
-export async function getFormulaFieldMetadata(objectType, fieldName) {
+export async function getFormulaFieldMetadata(
+    objectType: string,
+    fieldName: string
+): Promise<FormulaFieldMetadata> {
     // Query the CustomField via Tooling API
     const query = encodeURIComponent(
         `SELECT Id, FullName, Metadata FROM CustomField WHERE TableEnumOrId = '${objectType}' AND DeveloperName = '${fieldName.replace(/__c$/, '')}'`
     );
-    const response = await salesforceRequest(
+    const response = await salesforceRequest<QueryResult<CustomField>>(
         `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
     );
 
-    if (!response.json.records || response.json.records.length === 0) {
+    if (!response.json?.records || response.json.records.length === 0) {
         throw new Error('Formula field not found');
     }
 
     const record = response.json.records[0];
     return {
         id: record.Id,
-        formula: record.Metadata?.formula || '',
+        formula: record.Metadata?.formula ?? '',
         fullName: record.FullName,
         metadata: record.Metadata,
     };
@@ -970,12 +1098,12 @@ export async function getFormulaFieldMetadata(objectType, fieldName) {
 
 /**
  * Update formula field via Tooling API
- * @param {string} fieldId - The CustomField ID
- * @param {string} formula - The new formula
- * @param {object} existingMetadata - Existing metadata to preserve
- * @returns {Promise<void>}
  */
-export async function updateFormulaField(fieldId, formula, existingMetadata) {
+export async function updateFormulaField(
+    fieldId: string,
+    formula: string,
+    existingMetadata: CustomField['Metadata']
+): Promise<void> {
     // Update only the formula property, preserve other metadata
     const updatedMetadata = {
         ...existingMetadata,

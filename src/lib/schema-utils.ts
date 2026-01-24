@@ -1,13 +1,12 @@
 // Schema Browser Utilities
 // Pure functions for filtering and formatting object/field data
 
+import type { SObjectDescribe, FieldDescribe } from '../types/salesforce';
+
 /**
  * Filter objects by API name or label
- * @param {Array} objects - Array of Salesforce object metadata
- * @param {string} searchTerm - Search term to filter by
- * @returns {Array} Filtered objects
  */
-export function filterObjects(objects, searchTerm) {
+export function filterObjects(objects: SObjectDescribe[], searchTerm: string): SObjectDescribe[] {
     const term = searchTerm.toLowerCase().trim();
 
     if (!term) {
@@ -21,11 +20,8 @@ export function filterObjects(objects, searchTerm) {
 
 /**
  * Filter fields by API name or label
- * @param {Array} fields - Array of Salesforce field metadata
- * @param {string} searchTerm - Search term to filter by
- * @returns {Array} Filtered fields
  */
-export function filterFields(fields, searchTerm) {
+export function filterFields(fields: FieldDescribe[], searchTerm: string): FieldDescribe[] {
     const term = searchTerm.toLowerCase().trim();
 
     if (!term) {
@@ -37,14 +33,18 @@ export function filterFields(fields, searchTerm) {
     );
 }
 
+export interface FieldTypeDisplay {
+    text: string;
+    isReference: boolean;
+    referenceTo?: string[];
+}
+
 /**
  * Get display string for field type
- * @param {Object} field - Salesforce field metadata
- * @returns {Object} { text: string, isReference: boolean, referenceTo?: Array }
  */
-export function getFieldTypeDisplay(field) {
+export function getFieldTypeDisplay(field: FieldDescribe): FieldTypeDisplay {
     if (field.calculated) {
-        if (field.calculatedFormula) {
+        if ((field as { calculatedFormula?: string }).calculatedFormula) {
             return { text: `${field.type} (formula)`, isReference: false };
         }
         return { text: `${field.type} (rollup)`, isReference: false };

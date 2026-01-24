@@ -1,20 +1,33 @@
 // Query Tab Utility Functions
 // Pure functions for data transformation and CSV export
 
+import type { ColumnMetadata, SObject } from '../types/salesforce';
+
 /**
  * Normalizes a SOQL query for comparison purposes
  * Converts to lowercase and collapses whitespace
  */
-export function normalizeQuery(query) {
+export function normalizeQuery(query: string): string {
     return query.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+export interface FlatColumn {
+    title: string;
+    path: string;
+    aggregate: boolean;
+    isSubquery: boolean;
+    subqueryColumns?: ColumnMetadata[];
 }
 
 /**
  * Flattens column metadata from Salesforce REST Query API
  * Handles nested joinColumns for relationship fields and subqueries
  */
-export function flattenColumnMetadata(columnMetadata, prefix = '') {
-    const columns = [];
+export function flattenColumnMetadata(
+    columnMetadata: ColumnMetadata[],
+    prefix = ''
+): FlatColumn[] {
+    const columns: FlatColumn[] = [];
 
     for (const col of columnMetadata) {
         const { columnName } = col;
@@ -56,7 +69,7 @@ export function flattenColumnMetadata(columnMetadata, prefix = '') {
  * Extracts column definitions from a record's keys
  * Used as fallback when no column metadata is available
  */
-export function extractColumnsFromRecord(record) {
+export function extractColumnsFromRecord(record: SObject): FlatColumn[] {
     return Object.keys(record)
         .filter(key => key !== 'attributes')
         .map(key => ({
@@ -70,15 +83,15 @@ export function extractColumnsFromRecord(record) {
 /**
  * Gets a nested value from a record using dot notation path
  */
-export function getValueByPath(record, path) {
+export function getValueByPath(record: SObject, path: string): unknown {
     if (!path) return undefined;
 
     const parts = path.split('.');
-    let value = record;
+    let value: unknown = record;
 
     for (const part of parts) {
         if (value === null || value === undefined) return undefined;
-        value = value[part];
+        value = (value as Record<string, unknown>)[part];
     }
 
     return value;
@@ -87,8 +100,8 @@ export function getValueByPath(record, path) {
 /**
  * Converts records to CSV format
  */
-export function recordsToCsv(records, columns) {
-    const rows = [];
+export function recordsToCsv(records: SObject[], columns: FlatColumn[]): string {
+    const rows: string[] = [];
 
     const headers = columns.map(col => escapeCsvField(col.title));
     rows.push(headers.join(','));
@@ -107,7 +120,7 @@ export function recordsToCsv(records, columns) {
 /**
  * Escapes a field value for CSV output
  */
-export function escapeCsvField(value) {
+export function escapeCsvField(value: unknown): string {
     if (value === null || value === undefined) return '';
     const str = String(value);
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
@@ -119,46 +132,55 @@ export function escapeCsvField(value) {
 /**
  * Formats a cell value for display
  */
-export function formatCellValue(value, col) {
+export function formatCellValue(value: unknown, col?: FlatColumn): string {
     if (value === null || value === undefined) {
         return '';
     }
 
-    if (col?.isSubquery && typeof value === 'object') {
-        if (value.records) {
-            return `[${value.totalSize || value.records.length} records]`;
+    if (col?.isSubquery && typeof value === 'object' && value !== null) {
+        const objValue = value as { records?: unknown[]; totalSize?: number };
+        if (objValue.records) {
+            return `[${objValue.totalSize || objValue.records.length} records]`;
         }
         if (Array.isArray(value)) {
             return `[${value.length} records]`;
         }
     }
 
-    if (typeof value === 'object') {
-        if (value.Name !== undefined) return value.Name;
-        if (value.Id !== undefined) return value.Id;
+    if (typeof value === 'object' && value !== null) {
+        const objValue = value as { Name?: string; Id?: string };
+        if (objValue.Name !== undefined) return String(objValue.Name);
+        if (objValue.Id !== undefined) return String(objValue.Id);
         return JSON.stringify(value);
     }
 
     return String(value);
 }
 
+import type { FieldDescribe } from '../types/salesforce';
+
 /**
  * Parses a string value from an input based on field type
  */
-export function parseValueFromInput(stringValue, field) {
+export function parseValueFromInput(
+    stringValue: string | null,
+    field: FieldDescribe
+): string | number | boolean | null {
     if (stringValue === '' || stringValue === null) return null;
 
     switch (field.type) {
         case 'boolean':
-            return stringValue === 'true' || stringValue === true;
-        case 'int':
+            return stringValue === 'true';
+        case 'int': {
             const intVal = parseInt(stringValue, 10);
             return isNaN(intVal) ? null : intVal;
+        }
         case 'double':
         case 'currency':
-        case 'percent':
+        case 'percent': {
             const floatVal = parseFloat(stringValue);
             return isNaN(floatVal) ? null : floatVal;
+        }
         default:
             return stringValue;
     }
@@ -167,7 +189,10 @@ export function parseValueFromInput(stringValue, field) {
 /**
  * Checks if a field is editable based on its metadata
  */
-export function isFieldEditable(fieldPath, fieldDescribe) {
+export function isFieldEditable(
+    fieldPath: string,
+    fieldDescribe?: Record<string, FieldDescribe>
+): boolean {
     // Only direct fields (not relationships) are editable
     if (fieldPath.includes('.')) return false;
 
@@ -181,7 +206,7 @@ export function isFieldEditable(fieldPath, fieldDescribe) {
  * Checks if a result set is editable
  * Must have Id column, no aggregate functions, and a single object name
  */
-export function checkIfEditable(columns, objectName) {
+export function checkIfEditable(columns: FlatColumn[], objectName: string | null): boolean {
     // Must have Id column
     const hasIdColumn = columns.some(col => col.path === 'Id');
     if (!hasIdColumn) return false;

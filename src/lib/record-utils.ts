@@ -1,12 +1,12 @@
 // Record Viewer Utility Functions
 // Pure functions for field manipulation, formatting, and parsing
 
+import type { FieldDescribe, SObject } from '../types/salesforce';
+
 /**
  * Sorts fields with Id first, Name second, then alphabetically.
- * @param {Array} fields - Field metadata array
- * @returns {Array} Sorted field array
  */
-export function sortFields(fields) {
+export function sortFields(fields: FieldDescribe[]): FieldDescribe[] {
     return [...fields].sort((a, b) => {
         if (a.name === 'Id') return -1;
         if (b.name === 'Id') return 1;
@@ -18,10 +18,8 @@ export function sortFields(fields) {
 
 /**
  * Filters out fields that should not be displayed (address, location types, and 'attributes').
- * @param {Array} fields - Field metadata array
- * @returns {Array} Filtered field array
  */
-export function filterFields(fields) {
+export function filterFields(fields: FieldDescribe[]): FieldDescribe[] {
     const excludeTypes = ['address', 'location'];
     const excludeNames = ['attributes'];
     return fields.filter(f => !excludeNames.includes(f.name) && !excludeTypes.includes(f.type));
@@ -29,11 +27,8 @@ export function filterFields(fields) {
 
 /**
  * Formats a field value for display in an input field.
- * @param {*} value - The raw field value
- * @param {Object} field - Field metadata
- * @returns {string} Formatted value string
  */
-export function formatValue(value, field) {
+export function formatValue(value: unknown, field: FieldDescribe): string {
     if (value === null || value === undefined) return '';
 
     switch (field.type) {
@@ -41,7 +36,7 @@ export function formatValue(value, field) {
             return value ? 'true' : 'false';
         case 'datetime':
         case 'date':
-            return value;
+            return String(value);
         case 'double':
         case 'currency':
         case 'percent':
@@ -56,14 +51,14 @@ export function formatValue(value, field) {
  * Formats a field value for preview display (HTML output).
  * Returns special HTML for booleans (checkbox), dates (formatted), and references (links).
  * Returns a preview button indicator for rich text fields.
- * @param {*} value - The raw field value
- * @param {Object} field - Field metadata
- * @param {Object} record - Full record data (for relationship lookups)
- * @param {Object} nameFieldMap - Map of object types to their name fields
- * @param {string} connectionId - Connection ID for building record links
- * @returns {string} HTML string for preview column
  */
-export function formatPreviewHtml(value, field, record, nameFieldMap = {}, connectionId = null) {
+export function formatPreviewHtml(
+    value: unknown,
+    field: FieldDescribe,
+    record: SObject,
+    nameFieldMap: Record<string, string> = {},
+    connectionId: string | null = null
+): string {
     if (value === null || value === undefined) return '';
 
     // Check if this is a rich text/textarea field that should have a preview button
@@ -76,12 +71,12 @@ export function formatPreviewHtml(value, field, record, nameFieldMap = {}, conne
         case 'boolean':
             return `__CHECKBOX_${value ? 'CHECKED' : 'UNCHECKED'}__`; // Placeholder for checkbox
         case 'datetime':
-            return new Date(value).toLocaleString();
+            return new Date(String(value)).toLocaleString();
         case 'date':
             return new Date(`${value}T00:00:00`).toLocaleDateString();
         case 'reference':
             if (field.relationshipName && field.referenceTo?.length > 0) {
-                const related = record[field.relationshipName];
+                const related = record[field.relationshipName] as SObject | undefined;
                 const relatedType = field.referenceTo[0];
                 const nameField = nameFieldMap[relatedType];
                 const relatedName = nameField ? related?.[nameField] : null;
@@ -98,24 +93,26 @@ export function formatPreviewHtml(value, field, record, nameFieldMap = {}, conne
 
 /**
  * Parses a string input value to the appropriate type based on field metadata.
- * @param {string} stringValue - The string value from input
- * @param {Object} field - Field metadata
- * @returns {*} Parsed value (boolean, number, or string)
  */
-export function parseValue(stringValue, field) {
+export function parseValue(
+    stringValue: string | null,
+    field: FieldDescribe
+): string | number | boolean | null {
     if (stringValue === '' || stringValue === null) return null;
 
     switch (field.type) {
         case 'boolean':
             return stringValue.toLowerCase() === 'true';
-        case 'int':
+        case 'int': {
             const intVal = parseInt(stringValue, 10);
             return isNaN(intVal) ? null : intVal;
+        }
         case 'double':
         case 'currency':
-        case 'percent':
+        case 'percent': {
             const floatVal = parseFloat(stringValue);
             return isNaN(floatVal) ? null : floatVal;
+        }
         default:
             return stringValue;
     }
@@ -123,13 +120,13 @@ export function parseValue(stringValue, field) {
 
 /**
  * Returns only the fields that have been modified.
- * @param {Object} originalValues - Original record values
- * @param {Object} currentValues - Current record values
- * @param {Object} fieldDescribe - Field metadata map
- * @returns {Object} Map of changed field names to their new values
  */
-export function getChangedFields(originalValues, currentValues, fieldDescribe) {
-    const changes = {};
+export function getChangedFields(
+    originalValues: Record<string, unknown>,
+    currentValues: Record<string, unknown>,
+    fieldDescribe: Record<string, FieldDescribe>
+): Record<string, unknown> {
+    const changes: Record<string, unknown> = {};
 
     for (const [fieldName, field] of Object.entries(fieldDescribe)) {
         if (!field.updateable || field.calculated) continue;

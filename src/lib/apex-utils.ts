@@ -2,11 +2,13 @@
  * Utility functions for Apex tab operations
  */
 
+import type { ApexExecutionResult } from '../types/salesforce';
+
 /**
  * Gets a preview of code for display in history/favorites
  * Returns first non-empty, non-comment line, truncated to 50 chars
  */
-export function getPreview(code) {
+export function getPreview(code: string): string {
     const lines = code.split('\n');
     for (const line of lines) {
         const trimmed = line.trim();
@@ -22,13 +24,13 @@ export function getPreview(code) {
 /**
  * Formats execution result and debug log for output display
  */
-export function formatOutput(result, debugLog) {
-    const lines = [];
+export function formatOutput(result: ApexExecutionResult, debugLog: string | null): string {
+    const lines: string[] = [];
 
     if (!result.compiled) {
         lines.push('=== COMPILATION ERROR ===');
         lines.push(`Line ${result.line}, Column ${result.column || 1}`);
-        lines.push(result.compileProblem);
+        lines.push(result.compileProblem || 'Unknown compilation error');
         lines.push('');
     } else if (!result.success) {
         lines.push('=== RUNTIME EXCEPTION ===');
@@ -60,7 +62,7 @@ export function formatOutput(result, debugLog) {
 /**
  * Filters output lines by search term (case-insensitive)
  */
-export function filterLines(lines, filter) {
+export function filterLines(lines: string[], filter: string): string[] {
     if (!filter) {
         return lines;
     }

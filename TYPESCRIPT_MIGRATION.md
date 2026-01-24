@@ -49,13 +49,13 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 4 - Salesforce API Operations
-- [ ] `src/lib/salesforce.js` → `.ts`
-- [ ] `src/lib/query-utils.js` → `.ts`
-- [ ] `src/lib/record-utils.js` → `.ts`
-- [ ] `src/lib/schema-utils.js` → `.ts`
-- [ ] `src/lib/apex-utils.js` → `.ts`
-- [ ] `src/lib/rest-api-utils.js` → `.ts`
-- [ ] Verify: typecheck + build + tests
+- [x] `src/lib/salesforce.js` → `.ts`
+- [x] `src/lib/query-utils.js` → `.ts`
+- [x] `src/lib/record-utils.js` → `.ts`
+- [x] `src/lib/schema-utils.js` → `.ts`
+- [x] `src/lib/apex-utils.js` → `.ts`
+- [x] `src/lib/rest-api-utils.js` → `.ts`
+- [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 5 - Feature Utilities
 - [ ] `src/lib/history-manager.js` → `.ts`
@@ -524,6 +524,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Wave 1 | 3 | Pure utilities: text-utils, icons, debug |
 | 2026-01-23 | Wave 2 | 4 | Core infrastructure: oauth-credentials, theme, ui-helpers, auth |
 | 2026-01-23 | Wave 3 | 4 | Fetch/Request layer: fetch, salesforce-request, background-utils, cors-detection |
+| 2026-01-23 | Wave 4 | 6 | Salesforce API operations: salesforce, query-utils, record-utils, schema-utils, apex-utils, rest-api-utils |
 
 ### Issues Encountered
 

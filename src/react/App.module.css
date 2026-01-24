@@ -29,3 +29,13 @@
   margin: 0 auto;
   box-sizing: border-box;
 }
+
+/* Tab Panel States - keeps components mounted to retain state */
+.tabPanelActive {
+  display: block;
+  height: 100%;
+}
+
+.tabPanelHidden {
+  display: none;
+}

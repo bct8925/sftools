@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, type ReactNode } from 'react';
 import { AppProviders } from './AppProviders';
 import { MobileMenu } from './MobileMenu';
 import { ConnectionSelector } from './ConnectionSelector';
@@ -30,25 +30,15 @@ function AppContent() {
     );
   }, []);
 
-  // Render tab content based on active tab
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'query':
-        return <QueryTab />;
-      case 'apex':
-        return <ApexTab />;
-      case 'rest-api':
-        return <RestApiTab />;
-      case 'events':
-        return <EventsTab />;
-      case 'utils':
-        return <UtilsTab />;
-      case 'settings':
-        return <SettingsTab />;
-      default:
-        return <QueryTab />;
-    }
-  };
+  // Tab configuration for rendering all tabs (memoized)
+  const tabs: { id: TabId; component: ReactNode }[] = [
+    { id: 'query', component: <QueryTab /> },
+    { id: 'apex', component: <ApexTab /> },
+    { id: 'rest-api', component: <RestApiTab /> },
+    { id: 'events', component: <EventsTab /> },
+    { id: 'utils', component: <UtilsTab /> },
+    { id: 'settings', component: <SettingsTab /> },
+  ];
 
   return (
     <div className={styles.appContainer}>
@@ -65,9 +55,16 @@ function AppContent() {
         <ConnectionSelector />
       </nav>
 
-      {/* Main Content Area */}
+      {/* Main Content Area - All tabs rendered, only active visible */}
       <main className={styles.contentArea}>
-        {renderTabContent()}
+        {tabs.map(({ id, component }) => (
+          <div
+            key={id}
+            className={activeTab === id ? styles.tabPanelActive : styles.tabPanelHidden}
+          >
+            {component}
+          </div>
+        ))}
       </main>
     </div>
   );

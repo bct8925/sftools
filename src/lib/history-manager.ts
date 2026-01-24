@@ -1,24 +1,49 @@
 // History & Favorites Manager for component tabs
 // Handles storage and data management for history/favorites lists
 
+export interface HistoryEntry<T extends string = 'content'> {
+    id: string;
+    timestamp: number;
+    [key: string]: unknown;
+}
+
+export interface FavoriteEntry<T extends string = 'content'> extends HistoryEntry<T> {
+    label: string;
+}
+
+export interface HistoryManagerOptions {
+    maxSize?: number;
+    contentProperty?: string;
+}
+
+export interface StorageKeys {
+    history: string;
+    favorites: string;
+}
+
 export class HistoryManager {
-    constructor(storageKeys, options = {}) {
+    private historyKey: string;
+    private favoritesKey: string;
+    private maxSize: number;
+    private contentProperty: string;
+
+    public history: HistoryEntry[] = [];
+    public favorites: FavoriteEntry[] = [];
+
+    constructor(storageKeys: StorageKeys, options: HistoryManagerOptions = {}) {
         this.historyKey = storageKeys.history;
         this.favoritesKey = storageKeys.favorites;
         this.maxSize = options.maxSize || 30;
         this.contentProperty = options.contentProperty || 'content';
-
-        this.history = [];
-        this.favorites = [];
     }
 
     /**
      * Load history and favorites from storage
      */
-    async load() {
+    async load(): Promise<void> {
         const data = await chrome.storage.local.get([this.historyKey, this.favoritesKey]);
-        this.history = data[this.historyKey] || [];
-        this.favorites = data[this.favoritesKey] || [];
+        this.history = (data[this.historyKey] as HistoryEntry[]) || [];
+        this.favorites = (data[this.favoritesKey] as FavoriteEntry[]) || [];
     }
 
     /**
@@ -26,7 +51,7 @@ export class HistoryManager {
      * If item is already in favorites, just update timestamp
      * If item exists in history, move it to the top
      */
-    async saveToHistory(content) {
+    async saveToHistory(content: string): Promise<void> {
         const trimmed = content.trim();
         if (!trimmed) return;
 
@@ -34,7 +59,7 @@ export class HistoryManager {
 
         // If already in favorites, just update the timestamp
         const favoriteIndex = this.favorites.findIndex(
-            item => item[contentProp].trim() === trimmed
+            item => (item[contentProp] as string).trim() === trimmed
         );
         if (favoriteIndex !== -1) {
             this.favorites[favoriteIndex].timestamp = Date.now();
@@ -43,7 +68,9 @@ export class HistoryManager {
         }
 
         // Remove duplicate if exists
-        const existingIndex = this.history.findIndex(item => item[contentProp].trim() === trimmed);
+        const existingIndex = this.history.findIndex(
+            item => (item[contentProp] as string).trim() === trimmed
+        );
         if (existingIndex !== -1) {
             this.history.splice(existingIndex, 1);
         }
@@ -66,7 +93,7 @@ export class HistoryManager {
     /**
      * Add item to favorites with a label
      */
-    async addToFavorites(content, label) {
+    async addToFavorites(content: string, label: string): Promise<void> {
         const trimmedContent = content.trim();
         const trimmedLabel = label.trim();
 
@@ -87,7 +114,7 @@ export class HistoryManager {
     /**
      * Remove item from history by ID
      */
-    async removeFromHistory(id) {
+    async removeFromHistory(id: string): Promise<void> {
         this.history = this.history.filter(item => item.id !== id);
         await this.saveHistory();
     }
@@ -95,7 +122,7 @@ export class HistoryManager {
     /**
      * Remove item from favorites by ID
      */
-    async removeFromFavorites(id) {
+    async removeFromFavorites(id: string): Promise<void> {
         this.favorites = this.favorites.filter(item => item.id !== id);
         await this.saveFavorites();
     }
@@ -103,7 +130,7 @@ export class HistoryManager {
     /**
      * Get a preview of content (truncated)
      */
-    getPreview(content, maxLength = 60) {
+    getPreview(content: string, maxLength: number = 60): string {
         const cleaned = content.replace(/\s+/g, ' ').trim();
         return cleaned.length > maxLength ? `${cleaned.substring(0, maxLength)}...` : cleaned;
     }
@@ -111,7 +138,7 @@ export class HistoryManager {
     /**
      * Format timestamp as relative time
      */
-    formatRelativeTime(timestamp) {
+    formatRelativeTime(timestamp: number): string {
         const now = Date.now();
         const diff = now - timestamp;
         const minutes = Math.floor(diff / 60000);
@@ -126,11 +153,11 @@ export class HistoryManager {
     }
 
     // Private storage methods
-    async saveHistory() {
+    private async saveHistory(): Promise<void> {
         await chrome.storage.local.set({ [this.historyKey]: this.history });
     }
 
-    async saveFavorites() {
+    private async saveFavorites(): Promise<void> {
         await chrome.storage.local.set({ [this.favoritesKey]: this.favorites });
     }
 }

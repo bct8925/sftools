@@ -2,9 +2,27 @@
 import { parseQuery } from '@jetstreamapp/soql-parser-js';
 import { monaco } from '../components/monaco-editor/monaco-editor.js';
 import { getGlobalDescribe, getObjectDescribe } from './salesforce.js';
+import type { FieldDescribe, DescribeGlobalResult, ObjectDescribeResult } from '../types/salesforce';
 
 // Module state
-const state = {
+interface AutocompleteState {
+    active: boolean;
+    providerRegistered: boolean;
+    globalDescribe: DescribeGlobalResult | null;
+    globalDescribeLoading: boolean;
+    fromObject: string | null;
+    fromObjectLoadId: number;
+    fields: FieldDescribe[];
+    relationships: Map<string, RelationshipMetadata>;
+}
+
+interface RelationshipMetadata {
+    targetObject: string;
+    fields: FieldDescribe[];
+    relationshipName: string;
+}
+
+const state: AutocompleteState = {
     active: false,
     providerRegistered: false,
     globalDescribe: null,
@@ -12,11 +30,22 @@ const state = {
     fromObject: null,
     fromObjectLoadId: 0,
     fields: [],
-    relationships: new Map(), // relationshipName -> { targetObject, fields }
+    relationships: new Map(),
 };
 
 // SOQL Keywords
-const SOQL_KEYWORDS = [
+interface KeywordDefinition {
+    name: string;
+    description: string;
+}
+
+interface FunctionDefinition {
+    name: string;
+    signature: string;
+    description: string;
+}
+
+const SOQL_KEYWORDS: KeywordDefinition[] = [
     { name: 'SELECT', description: 'Select fields to return' },
     { name: 'FROM', description: 'Specify the object to query' },
     { name: 'WHERE', description: 'Filter results' },
@@ -43,7 +72,7 @@ const SOQL_KEYWORDS = [
 ];
 
 // Aggregate functions
-const AGGREGATE_FUNCTIONS = [
+const AGGREGATE_FUNCTIONS: FunctionDefinition[] = [
     { name: 'COUNT', signature: 'COUNT()', description: 'Count of records' },
     { name: 'COUNT', signature: 'COUNT(field)', description: 'Count of non-null values' },
     {
@@ -58,7 +87,7 @@ const AGGREGATE_FUNCTIONS = [
 ];
 
 // Date literals
-const DATE_LITERALS = [
+const DATE_LITERALS: KeywordDefinition[] = [
     { name: 'TODAY', description: 'Current date' },
     { name: 'YESTERDAY', description: 'Previous day' },
     { name: 'TOMORROW', description: 'Next day' },
@@ -83,7 +112,7 @@ const DATE_LITERALS = [
 ];
 
 // Parse SOQL query with error handling
-function parseSOQL(text) {
+function parseSOQL(text: string): { sObject?: string } | null {
     try {
         return parseQuery(text, { allowPartialQuery: true });
     } catch {
@@ -92,7 +121,7 @@ function parseSOQL(text) {
 }
 
 // Extract FROM object
-function extractFromObject(text) {
+function extractFromObject(text: string): string | null {
     const parsed = parseSOQL(text);
     if (parsed?.sObject) {
         return parsed.sObject;
@@ -101,7 +130,7 @@ function extractFromObject(text) {
 }
 
 // Detect which clause the cursor is in
-function detectClause(text, offset) {
+function detectClause(text: string, offset: number): string {
     const textBeforeCursor = text.substring(0, offset).toUpperCase();
 
     // Find the last occurrence of each clause keyword
@@ -131,7 +160,7 @@ function detectClause(text, offset) {
 }
 
 // Extract dot chain from current position (e.g., "Account.Owner." -> ["Account", "Owner"])
-function extractDotChain(text, offset) {
+function extractDotChain(text: string, offset: number): string[] | null {
     // Get text before cursor on current line
     const textBeforeCursor = text.substring(0, offset);
     const lastNewline = textBeforeCursor.lastIndexOf('\n');
@@ -147,14 +176,14 @@ function extractDotChain(text, offset) {
 }
 
 // Get the current word being typed (reserved for future use)
-function _getCurrentWord(text, offset) {
+function _getCurrentWord(text: string, offset: number): string {
     const textBeforeCursor = text.substring(0, offset);
     const match = textBeforeCursor.match(/(\w+)$/);
     return match ? match[1] : '';
 }
 
 // Map field types to Monaco completion item kinds
-function getCompletionKind(field) {
+function getCompletionKind(field: FieldDescribe): monaco.languages.CompletionItemKind {
     if (field.calculated) {
         return monaco.languages.CompletionItemKind.Constant;
     }
@@ -180,7 +209,10 @@ function getCompletionKind(field) {
 }
 
 // Resolve a relationship chain to get the target object
-async function resolveRelationshipChain(baseObject, chain) {
+async function resolveRelationshipChain(
+    baseObject: string,
+    chain: string[]
+): Promise<string | null> {
     let currentObject = baseObject;
 
     for (const relationshipName of chain) {
@@ -209,7 +241,7 @@ async function resolveRelationshipChain(baseObject, chain) {
 }
 
 // Load metadata for a FROM object
-async function loadFromObject(objectName) {
+async function loadFromObject(objectName: string): Promise<void> {
     if (!objectName) return;
 
     // Increment load ID and capture for stale request detection
@@ -248,11 +280,13 @@ async function loadFromObject(objectName) {
             const targetObj = refField.referenceTo[0];
             const targetDescribe = describes.find(d => d?.name === targetObj);
 
-            state.relationships.set(refField.relationshipName.toLowerCase(), {
-                targetObject: targetObj,
-                fields: targetDescribe?.fields || [],
-                relationshipName: refField.relationshipName,
-            });
+            if (refField.relationshipName) {
+                state.relationships.set(refField.relationshipName.toLowerCase(), {
+                    targetObject: targetObj,
+                    fields: targetDescribe?.fields || [],
+                    relationshipName: refField.relationshipName,
+                });
+            }
         }
     } catch (error) {
         console.error('Failed to load object describe:', error);
@@ -260,7 +294,11 @@ async function loadFromObject(objectName) {
 }
 
 // Build field suggestions
-function buildFieldSuggestions(fields, range, sortPrefix = '1') {
+function buildFieldSuggestions(
+    fields: FieldDescribe[],
+    range: monaco.IRange,
+    sortPrefix: string = '1'
+): monaco.languages.CompletionItem[] {
     return fields.map(field => ({
         label: field.name,
         kind: getCompletionKind(field),
@@ -273,8 +311,8 @@ function buildFieldSuggestions(fields, range, sortPrefix = '1') {
 }
 
 // Build relationship name suggestions
-function buildRelationshipSuggestions(range) {
-    const suggestions = [];
+function buildRelationshipSuggestions(range: monaco.IRange): monaco.languages.CompletionItem[] {
+    const suggestions: monaco.languages.CompletionItem[] = [];
 
     for (const [_key, rel] of state.relationships) {
         suggestions.push({
@@ -292,7 +330,9 @@ function buildRelationshipSuggestions(range) {
 }
 
 // Build object name suggestions (for FROM clause) - lazy loads global describe
-async function buildObjectSuggestions(range) {
+async function buildObjectSuggestions(
+    range: monaco.IRange
+): Promise<monaco.languages.CompletionItem[]> {
     // Lazy load global describe on first need (cached in storage per-connection)
     if (!state.globalDescribe && !state.globalDescribeLoading) {
         state.globalDescribeLoading = true;
@@ -320,8 +360,11 @@ async function buildObjectSuggestions(range) {
 }
 
 // Build keyword suggestions
-function buildKeywordSuggestions(range, clause) {
-    const suggestions = [];
+function buildKeywordSuggestions(
+    range: monaco.IRange,
+    clause: string
+): monaco.languages.CompletionItem[] {
+    const suggestions: monaco.languages.CompletionItem[] = [];
 
     // Context-aware keyword filtering
     let keywords = SOQL_KEYWORDS;
@@ -347,7 +390,7 @@ function buildKeywordSuggestions(range, clause) {
 }
 
 // Build aggregate function suggestions
-function buildAggregateSuggestions(range) {
+function buildAggregateSuggestions(range: monaco.IRange): monaco.languages.CompletionItem[] {
     return AGGREGATE_FUNCTIONS.map(fn => ({
         label: fn.name,
         kind: monaco.languages.CompletionItemKind.Function,
@@ -361,7 +404,7 @@ function buildAggregateSuggestions(range) {
 }
 
 // Build date literal suggestions
-function buildDateLiteralSuggestions(range) {
+function buildDateLiteralSuggestions(range: monaco.IRange): monaco.languages.CompletionItem[] {
     return DATE_LITERALS.map(dl => ({
         label: dl.name,
         kind: monaco.languages.CompletionItemKind.Constant,
@@ -374,7 +417,7 @@ function buildDateLiteralSuggestions(range) {
 }
 
 // Register the completion provider (only once)
-export function registerSOQLCompletionProvider() {
+export function registerSOQLCompletionProvider(): void {
     if (state.providerRegistered) return;
     state.providerRegistered = true;
 
@@ -402,14 +445,14 @@ export function registerSOQLCompletionProvider() {
 
             // Get range for suggestions
             const word = model.getWordUntilPosition(position);
-            const range = {
+            const range: monaco.IRange = {
                 startLineNumber: position.lineNumber,
                 endLineNumber: position.lineNumber,
                 startColumn: word.startColumn,
                 endColumn: word.endColumn,
             };
 
-            let suggestions = [];
+            let suggestions: monaco.languages.CompletionItem[] = [];
 
             // Handle dot chain (relationship traversal)
             if (dotChain) {
@@ -429,15 +472,17 @@ export function registerSOQLCompletionProvider() {
                             f => f.type === 'reference' && f.relationshipName
                         );
                         for (const ref of targetRefs) {
-                            suggestions.push({
-                                label: ref.relationshipName,
-                                kind: monaco.languages.CompletionItemKind.Module,
-                                detail: `→ ${ref.referenceTo?.[0] || 'Object'}`,
-                                documentation: `Access fields from related ${ref.referenceTo?.[0]} record`,
-                                insertText: ref.relationshipName,
-                                range,
-                                sortText: `2_${ref.relationshipName}`,
-                            });
+                            if (ref.relationshipName) {
+                                suggestions.push({
+                                    label: ref.relationshipName,
+                                    kind: monaco.languages.CompletionItemKind.Module,
+                                    detail: `→ ${ref.referenceTo?.[0] || 'Object'}`,
+                                    documentation: `Access fields from related ${ref.referenceTo?.[0]} record`,
+                                    insertText: ref.relationshipName,
+                                    range,
+                                    sortText: `2_${ref.relationshipName}`,
+                                });
+                            }
                         }
                     }
                 }
@@ -499,17 +544,17 @@ export function registerSOQLCompletionProvider() {
 }
 
 // Activate autocomplete
-export function activateSOQLAutocomplete() {
+export function activateSOQLAutocomplete(): void {
     state.active = true;
 }
 
 // Deactivate autocomplete (not currently used - query-tab is persistent)
-export function deactivateSOQLAutocomplete() {
+export function deactivateSOQLAutocomplete(): void {
     state.active = false;
 }
 
 // Clear state (on connection change)
-export function clearState() {
+export function clearState(): void {
     state.fromObject = null;
     state.fields = [];
     state.relationships.clear();

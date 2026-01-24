@@ -58,11 +58,11 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 5 - Feature Utilities
-- [ ] `src/lib/history-manager.js` → `.ts`
-- [ ] `src/lib/settings-utils.js` → `.ts`
-- [ ] `src/lib/events-utils.js` → `.ts`
-- [ ] `src/lib/soql-autocomplete.js` → `.ts`
-- [ ] Verify: typecheck + build + tests
+- [x] `src/lib/history-manager.js` → `.ts`
+- [x] `src/lib/settings-utils.js` → `.ts`
+- [x] `src/lib/events-utils.js` → `.ts`
+- [x] `src/lib/soql-autocomplete.js` → `.ts`
+- [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 6 - Reusable Components
 - [ ] `src/components/sf-icon/sf-icon.js` → `.ts`
@@ -525,6 +525,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Wave 2 | 4 | Core infrastructure: oauth-credentials, theme, ui-helpers, auth |
 | 2026-01-23 | Wave 3 | 4 | Fetch/Request layer: fetch, salesforce-request, background-utils, cors-detection |
 | 2026-01-23 | Wave 4 | 6 | Salesforce API operations: salesforce, query-utils, record-utils, schema-utils, apex-utils, rest-api-utils |
+| 2026-01-23 | Wave 5 | 4 | Feature utilities: history-manager, settings-utils, events-utils, soql-autocomplete |
 
 ### Issues Encountered
 

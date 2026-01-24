@@ -23,10 +23,7 @@ export interface FlatColumn {
  * Flattens column metadata from Salesforce REST Query API
  * Handles nested joinColumns for relationship fields and subqueries
  */
-export function flattenColumnMetadata(
-    columnMetadata: ColumnMetadata[],
-    prefix = ''
-): FlatColumn[] {
+export function flattenColumnMetadata(columnMetadata: ColumnMetadata[], prefix = ''): FlatColumn[] {
     const columns: FlatColumn[] = [];
 
     for (const col of columnMetadata) {

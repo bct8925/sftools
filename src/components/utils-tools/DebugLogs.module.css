@@ -1,0 +1,15 @@
+/* Debug Logs component styles */
+
+.section {
+    /* Debug logs sections */
+}
+
+.userResults {
+    margin-top: 0.75rem;
+}
+
+.buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}

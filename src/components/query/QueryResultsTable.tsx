@@ -1,0 +1,447 @@
+// Query Results Table - Data table with inline editing and subquery support
+import { useState, useCallback, useMemo } from 'react';
+import type { SObject, FieldDescribe, ColumnMetadata } from '../../types/salesforce';
+import type { QueryColumn } from './useQueryState';
+import { getActiveConnectionId } from '../../lib/auth.js';
+import styles from './QueryTab.module.css';
+
+interface QueryResultsTableProps {
+  /** Records to display */
+  records: SObject[];
+  /** Column definitions */
+  columns: QueryColumn[];
+  /** Object name for record links */
+  objectName: string | null;
+  /** Field metadata for editing */
+  fieldDescribe: Record<string, FieldDescribe> | null;
+  /** Map of modified records and their changed fields */
+  modifiedRecords: Map<string, Record<string, unknown>>;
+  /** Whether edit mode is active */
+  isEditMode: boolean;
+  /** Called when a field value changes */
+  onFieldChange: (recordId: string, fieldName: string, value: unknown, originalValue: unknown) => void;
+  /** Filter text for row visibility */
+  filterText: string;
+}
+
+// Get value from record by dot-notation path
+function getValueByPath(record: SObject, path: string): unknown {
+  if (!path) return undefined;
+  const parts = path.split('.');
+  let value: unknown = record;
+  for (const part of parts) {
+    if (value === null || value === undefined) return undefined;
+    value = (value as Record<string, unknown>)[part];
+  }
+  return value;
+}
+
+// Format cell value for display
+function formatCellValue(value: unknown, col: QueryColumn): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (col?.isSubquery && typeof value === 'object') {
+    const subquery = value as { records?: unknown[]; totalSize?: number };
+    if (subquery.records) {
+      return `[${subquery.totalSize || subquery.records.length} records]`;
+    }
+    if (Array.isArray(value)) {
+      return `[${value.length} records]`;
+    }
+  }
+
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    if (obj.Name !== undefined) return String(obj.Name);
+    if (obj.Id !== undefined) return String(obj.Id);
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+}
+
+// Parse input value based on field type
+function parseValueFromInput(stringValue: string, field: FieldDescribe): unknown {
+  if (stringValue === '' || stringValue === null) return null;
+
+  switch (field.type) {
+    case 'boolean':
+      return stringValue === 'true';
+    case 'int': {
+      const intVal = parseInt(stringValue, 10);
+      return isNaN(intVal) ? null : intVal;
+    }
+    case 'double':
+    case 'currency':
+    case 'percent': {
+      const floatVal = parseFloat(stringValue);
+      return isNaN(floatVal) ? null : floatVal;
+    }
+    default:
+      return stringValue;
+  }
+}
+
+// Compare values for equality (handles type coercion)
+function valuesEqual(original: unknown, newValue: unknown): boolean {
+  if (original === null || original === undefined) {
+    return newValue === null || newValue === undefined || newValue === '';
+  }
+  return String(original) === String(newValue ?? '');
+}
+
+/**
+ * Results table component with inline editing and subquery expansion.
+ */
+export function QueryResultsTable({
+  records,
+  columns,
+  objectName,
+  fieldDescribe,
+  modifiedRecords,
+  isEditMode,
+  onFieldChange,
+  filterText,
+}: QueryResultsTableProps) {
+  // Track expanded subquery rows
+  const [expandedSubqueries, setExpandedSubqueries] = useState<Set<string>>(new Set());
+
+  // Filter records based on filterText
+  const filteredRecords = useMemo(() => {
+    if (!filterText.trim()) {
+      return records;
+    }
+    const lowerFilter = filterText.toLowerCase();
+    return records.filter((record) => {
+      for (const col of columns) {
+        const value = getValueByPath(record, col.path);
+        const formatted = formatCellValue(value, col).toLowerCase();
+        if (formatted.includes(lowerFilter)) {
+          return true;
+        }
+      }
+      return false;
+    });
+  }, [records, columns, filterText]);
+
+  // Toggle subquery expansion
+  const toggleSubquery = useCallback((rowId: string, colPath: string) => {
+    const key = `${rowId}:${colPath}`;
+    setExpandedSubqueries((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
+  // Check if a field is editable
+  const isFieldEditable = useCallback(
+    (fieldPath: string): boolean => {
+      if (fieldPath.includes('.')) return false;
+      const field = fieldDescribe?.[fieldPath];
+      if (!field) return false;
+      return field.updateable && !field.calculated;
+    },
+    [fieldDescribe]
+  );
+
+  // Handle field input change
+  const handleInputChange = useCallback(
+    (recordId: string, fieldName: string, inputValue: string | boolean, originalValue: unknown) => {
+      const field = fieldDescribe?.[fieldName];
+      if (!field) return;
+
+      let newValue: unknown;
+      if (typeof inputValue === 'boolean') {
+        newValue = inputValue;
+      } else {
+        newValue = parseValueFromInput(inputValue, field);
+      }
+
+      onFieldChange(recordId, fieldName, newValue, originalValue);
+    },
+    [fieldDescribe, onFieldChange]
+  );
+
+  // Get the connection ID for record links
+  const connectionId = getActiveConnectionId();
+
+  // Render ID cell with link
+  const renderIdCell = (value: string, objName: string) => {
+    if (connectionId) {
+      const href = `../../pages/record/record.html?objectType=${encodeURIComponent(objName)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(connectionId)}`;
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className={styles.idLink}>
+          {value}
+        </a>
+      );
+    }
+    return <span title={value}>{value}</span>;
+  };
+
+  // Render editable cell
+  const renderEditableCell = (
+    value: unknown,
+    col: QueryColumn,
+    recordId: string,
+    modifiedValue: unknown
+  ) => {
+    const field = fieldDescribe?.[col.path];
+    if (!field) return null;
+
+    const displayValue = modifiedValue !== undefined ? modifiedValue : value;
+    const isModified = modifiedValue !== undefined;
+
+    if (field.type === 'boolean') {
+      return (
+        <input
+          type="checkbox"
+          className={styles.fieldInput}
+          checked={displayValue === true}
+          onChange={(e) => handleInputChange(recordId, col.path, e.target.checked, value)}
+        />
+      );
+    }
+
+    if (field.type === 'picklist' && field.picklistValues) {
+      return (
+        <select
+          className={styles.fieldInput}
+          value={String(displayValue ?? '')}
+          onChange={(e) => handleInputChange(recordId, col.path, e.target.value, value)}
+        >
+          <option value="">--None--</option>
+          {field.picklistValues
+            .filter((pv) => pv.active)
+            .map((pv) => (
+              <option key={pv.value} value={pv.value}>
+                {pv.label}
+              </option>
+            ))}
+        </select>
+      );
+    }
+
+    return (
+      <input
+        type="text"
+        className={styles.fieldInput}
+        value={String(displayValue ?? '')}
+        onChange={(e) => handleInputChange(recordId, col.path, e.target.value, value)}
+      />
+    );
+  };
+
+  // Render subquery cell
+  const renderSubqueryCell = (
+    value: unknown,
+    col: QueryColumn,
+    recordId: string
+  ) => {
+    const subquery = value as { records?: SObject[]; totalSize?: number } | null;
+
+    if (!subquery?.records || subquery.records.length === 0) {
+      return <span className={styles.subqueryEmpty}>(0 records)</span>;
+    }
+
+    const count = subquery.totalSize || subquery.records.length;
+    const key = `${recordId}:${col.path}`;
+    const isExpanded = expandedSubqueries.has(key);
+
+    return (
+      <button
+        className={styles.subqueryToggle}
+        onClick={() => toggleSubquery(recordId, col.path)}
+      >
+        {isExpanded ? '\u25BC' : '\u25B6'} {count} record{count !== 1 ? 's' : ''}
+      </button>
+    );
+  };
+
+  // Render subquery detail row
+  const renderSubqueryDetailRow = (
+    parentRecord: SObject,
+    col: QueryColumn,
+    colSpan: number
+  ) => {
+    const key = `${parentRecord.Id}:${col.path}`;
+    if (!expandedSubqueries.has(key)) return null;
+
+    const subqueryData = getValueByPath(parentRecord, col.path) as {
+      records?: SObject[];
+    } | null;
+    if (!subqueryData?.records) return null;
+
+    // Get subquery columns
+    let subColumns: QueryColumn[];
+    if (col.subqueryColumns && col.subqueryColumns.length > 0) {
+      subColumns = flattenColumnMetadata(col.subqueryColumns);
+    } else if (subqueryData.records.length > 0) {
+      subColumns = Object.keys(subqueryData.records[0])
+        .filter((k) => k !== 'attributes')
+        .map((k) => ({ title: k, path: k, aggregate: false, isSubquery: false }));
+    } else {
+      subColumns = [];
+    }
+
+    return (
+      <tr key={`${key}-detail`} className={styles.subqueryDetail}>
+        <td colSpan={colSpan}>
+          <table className={styles.subqueryTable}>
+            <thead>
+              <tr>
+                {subColumns.map((sc) => (
+                  <th key={sc.path}>{sc.title}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {subqueryData.records.map((subRecord, idx) => (
+                <tr key={subRecord.Id || idx}>
+                  {subColumns.map((sc) => {
+                    const val = getValueByPath(subRecord, sc.path);
+                    return (
+                      <td key={sc.path} title={formatCellValue(val, sc)}>
+                        {formatCellValue(val, sc)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    );
+  };
+
+  // Render a single cell
+  const renderCell = (
+    record: SObject,
+    col: QueryColumn,
+    recordId: string,
+    modifiedFields: Record<string, unknown> | undefined
+  ) => {
+    const value = getValueByPath(record, col.path);
+    const modifiedValue = modifiedFields?.[col.path];
+    const isModified = modifiedValue !== undefined;
+
+    // Subquery cell
+    if (col.isSubquery) {
+      return (
+        <td key={col.path} className={styles.subqueryCell}>
+          {renderSubqueryCell(value, col, recordId)}
+        </td>
+      );
+    }
+
+    // ID cell with link
+    if (col.path === 'Id' && value && objectName) {
+      return (
+        <td key={col.path}>
+          {renderIdCell(String(value), objectName)}
+        </td>
+      );
+    }
+
+    // Editable cell
+    if (isEditMode && isFieldEditable(col.path)) {
+      return (
+        <td
+          key={col.path}
+          className={isModified ? styles.modified : undefined}
+        >
+          {renderEditableCell(value, col, recordId, modifiedValue)}
+        </td>
+      );
+    }
+
+    // Read-only cell
+    const formatted = formatCellValue(value, col);
+    return (
+      <td key={col.path} title={formatted}>
+        {formatted}
+      </td>
+    );
+  };
+
+  return (
+    <table className={`${styles.resultsTable}${isEditMode ? ` ${styles.resultsEditable}` : ''}`}>
+      <thead>
+        <tr>
+          {columns.map((col) => (
+            <th key={col.path}>{col.title}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {filteredRecords.map((record) => {
+          const recordId = String(record.Id);
+          const modifiedFields = modifiedRecords.get(recordId);
+          const subqueryColumns = columns.filter((c) => c.isSubquery);
+
+          return (
+            <>
+              <tr key={recordId} data-record-id={recordId}>
+                {columns.map((col) => renderCell(record, col, recordId, modifiedFields))}
+              </tr>
+              {/* Render expanded subquery rows */}
+              {subqueryColumns.map((col) =>
+                renderSubqueryDetailRow(record, col, columns.length)
+              )}
+            </>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+// Helper to flatten column metadata (copied from Web Component)
+function flattenColumnMetadata(
+  columnMetadata: ColumnMetadata[],
+  prefix = ''
+): QueryColumn[] {
+  const columns: QueryColumn[] = [];
+
+  for (const col of columnMetadata) {
+    const { columnName } = col;
+    const path = prefix ? `${prefix}.${columnName}` : columnName;
+
+    const isSubquery = col.aggregate && col.joinColumns && col.joinColumns.length > 0;
+
+    if (isSubquery) {
+      const title = prefix ? path : col.displayName;
+      columns.push({
+        title,
+        path,
+        aggregate: false,
+        isSubquery: true,
+        subqueryColumns: col.joinColumns,
+      });
+    } else if (col.joinColumns && col.joinColumns.length > 0) {
+      // Regular parent relationship - flatten it
+      columns.push(...flattenColumnMetadata(col.joinColumns, path));
+    } else {
+      // Regular scalar column
+      const title = prefix ? path : col.displayName;
+      columns.push({
+        title,
+        path,
+        aggregate: col.aggregate || false,
+        isSubquery: false,
+      });
+    }
+  }
+
+  return columns;
+}
+
+// Export flatten function for use in query execution
+export { flattenColumnMetadata };

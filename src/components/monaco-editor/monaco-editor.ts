@@ -117,7 +117,7 @@ class MonacoEditor extends HTMLElement {
 
     private initThemeListener(): void {
         // Watch for data-theme attribute changes on documentElement
-        this.themeObserver = new MutationObserver((mutations) => {
+        this.themeObserver = new MutationObserver(mutations => {
             for (const mutation of mutations) {
                 if (mutation.attributeName === 'data-theme') {
                     this.updateEditorTheme();
@@ -202,7 +202,11 @@ class MonacoEditor extends HTMLElement {
         document.body.style.userSelect = '';
     }
 
-    attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void {
+    attributeChangedCallback(
+        name: string,
+        _oldValue: string | null,
+        newValue: string | null
+    ): void {
         if (!this.editor) return;
 
         if (name === 'language') {

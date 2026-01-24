@@ -12,7 +12,8 @@ if (!globalThis.crypto) {
 }
 if (!globalThis.crypto.randomUUID) {
     let counter = 0;
-    globalThis.crypto.randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => `test-uuid-${++counter}` as `${string}-${string}-${string}-${string}-${string}`;
+    globalThis.crypto.randomUUID = (): `${string}-${string}-${string}-${string}-${string}` =>
+        `test-uuid-${++counter}` as `${string}-${string}-${string}-${string}-${string}`;
 }
 
 // Reset all mocks between tests
@@ -20,5 +21,6 @@ beforeEach(() => {
     chromeMock._reset();
     // Reset UUID counter for predictable IDs
     let counter = 0;
-    globalThis.crypto.randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => `test-uuid-${++counter}` as `${string}-${string}-${string}-${string}-${string}`;
+    globalThis.crypto.randomUUID = (): `${string}-${string}-${string}-${string}-${string}` =>
+        `test-uuid-${++counter}` as `${string}-${string}-${string}-${string}-${string}`;
 });

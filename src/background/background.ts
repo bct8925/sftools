@@ -181,9 +181,7 @@ chrome.contextMenus.onClicked.addListener(
     }
 );
 
-async function findConnectionByDomain(
-    tabUrl: string
-): Promise<SalesforceConnection | null> {
+async function findConnectionByDomain(tabUrl: string): Promise<SalesforceConnection | null> {
     const { connections } = await chrome.storage.local.get(['connections']);
     return findConnectionByDomainUtil(connections as SalesforceConnection[], tabUrl);
 }

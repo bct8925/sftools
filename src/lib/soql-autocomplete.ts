@@ -2,7 +2,11 @@
 import { parseQuery } from '@jetstreamapp/soql-parser-js';
 import { monaco } from '../components/monaco-editor/monaco-editor.js';
 import { getGlobalDescribe, getObjectDescribe } from './salesforce.js';
-import type { FieldDescribe, DescribeGlobalResult, ObjectDescribeResult } from '../types/salesforce';
+import type {
+    FieldDescribe,
+    DescribeGlobalResult,
+    ObjectDescribeResult,
+} from '../types/salesforce';
 
 // Module state
 interface AutocompleteState {

@@ -1,0 +1,13 @@
+/* REST API Tab Component */
+
+.restApiTab {
+    display: block;
+}
+
+.requestEditor {
+    height: 150px;
+}
+
+.responseEditor {
+    height: 400px;
+}

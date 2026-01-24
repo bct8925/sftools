@@ -1,0 +1,121 @@
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import type { SObjectDescribe } from '../../types/salesforce';
+import { filterObjects } from '../../lib/schema-utils.js';
+import { ButtonIcon } from '../button-icon/ButtonIcon';
+import styles from './SchemaPage.module.css';
+
+interface ObjectListProps {
+  objects: SObjectDescribe[];
+  selectedObjectName: string | null;
+  isLoading: boolean;
+  onSelect: (objectName: string) => void;
+  onRefresh: () => void;
+}
+
+/**
+ * Searchable list of SObjects with filtering and selection.
+ */
+export function ObjectList({
+  objects,
+  selectedObjectName,
+  isLoading,
+  onSelect,
+  onRefresh,
+}: ObjectListProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Filter objects based on search term
+  const filteredObjects = useMemo(
+    () => filterObjects(objects, searchTerm),
+    [objects, searchTerm]
+  );
+
+  // Handle search input
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  // Handle object selection
+  const handleObjectClick = useCallback(
+    (objectName: string) => {
+      onSelect(objectName);
+    },
+    [onSelect]
+  );
+
+  // Count display text
+  const countText = useMemo(() => {
+    const total = objects.length;
+    const filtered = filteredObjects.length;
+    return filtered === total ? `${total} objects` : `${filtered} of ${total} objects`;
+  }, [objects.length, filteredObjects.length]);
+
+  // Scroll to selected object when it changes
+  useEffect(() => {
+    if (selectedObjectName && listRef.current) {
+      const selectedElement = listRef.current.querySelector(
+        `[data-object-name="${selectedObjectName}"]`
+      );
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [selectedObjectName]);
+
+  return (
+    <div className={`${styles.objectsPanel}${selectedObjectName ? ` ${styles.withFields}` : ''}`}>
+      <div className={styles.objectsHeader}>
+        <input
+          type="text"
+          className={`input ${styles.filterInput}`}
+          placeholder="Filter objects..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+        />
+        <div className={styles.objectsHeaderRow}>
+          <div className={styles.objectCount}>{countText}</div>
+          <ButtonIcon icon="refresh" title="Refresh objects" onClick={onRefresh} />
+        </div>
+      </div>
+
+      <div ref={listRef} className={styles.objectsList}>
+        {isLoading ? (
+          <div className={styles.loadingContainer}>Loading objects...</div>
+        ) : filteredObjects.length === 0 ? (
+          <div className={styles.loadingContainer}>No objects found</div>
+        ) : (
+          filteredObjects.map((obj) => (
+            <div
+              key={obj.name}
+              data-object-name={obj.name}
+              className={`${styles.objectItem}${
+                obj.name === selectedObjectName ? ` ${styles.selected}` : ''
+              }`}
+              onClick={() => handleObjectClick(obj.name)}
+            >
+              <div className={styles.objectItemLabel}>{obj.label}</div>
+              <div className={styles.objectItemName}>{obj.name}</div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Public method to scroll to and select an object.
+ * Call this when navigating from a reference field link.
+ */
+export function scrollToObject(
+  listRef: React.RefObject<HTMLDivElement>,
+  objectName: string
+): void {
+  if (listRef.current) {
+    const element = listRef.current.querySelector(`[data-object-name="${objectName}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+}

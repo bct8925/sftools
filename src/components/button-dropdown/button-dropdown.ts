@@ -70,7 +70,9 @@ class ButtonDropdown extends HTMLElement {
         });
 
         this.menu.addEventListener('click', (e: Event) => {
-            const option = (e.target as HTMLElement).closest<HTMLButtonElement>('.btn-dropdown-option');
+            const option = (e.target as HTMLElement).closest<HTMLButtonElement>(
+                '.btn-dropdown-option'
+            );
             if (option && !option.disabled) {
                 const index = parseInt(option.dataset.index || '0', 10);
                 this.dispatchEvent(

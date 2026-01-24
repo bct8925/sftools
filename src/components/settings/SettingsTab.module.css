@@ -1,0 +1,10 @@
+/* Settings Tab Styles */
+
+.settingsContent {
+    /* Container for all settings cards */
+}
+
+.description {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+}

@@ -194,7 +194,9 @@ LIMIT 10`);
         });
 
         // List click delegation
-        this.historyList.addEventListener('click', (e: Event) => this.handleListClick(e, 'history'));
+        this.historyList.addEventListener('click', (e: Event) =>
+            this.handleListClick(e, 'history')
+        );
         this.favoritesList.addEventListener('click', (e: Event) =>
             this.handleListClick(e, 'favorites')
         );
@@ -321,10 +323,9 @@ LIMIT 10`);
         }
 
         this.historyList.innerHTML = history
-            .map(
-                (item: any) => {
-                    const query = (item as any).query as string | undefined;
-                    return `
+            .map((item: any) => {
+                const query = (item as any).query as string | undefined;
+                return `
             <div class="script-item" data-id="${item.id}">
                 <div class="script-preview">${escapeHtml(this.historyManager.getPreview(query || ''))}</div>
                 <div class="script-meta">
@@ -337,12 +338,11 @@ LIMIT 10`);
                 </div>
             </div>
         `;
-                }
-            )
+            })
             .join('');
     }
 
-    private renderFavoritesList(): void{
+    private renderFavoritesList(): void {
         const { favorites } = this.historyManager;
 
         if (favorites.length === 0) {
@@ -355,10 +355,9 @@ LIMIT 10`);
         }
 
         this.favoritesList.innerHTML = favorites
-            .map(
-                (item: any) => {
-                    const label = (item as any).label as string | undefined;
-                    return `
+            .map((item: any) => {
+                const label = (item as any).label as string | undefined;
+                return `
             <div class="script-item" data-id="${item.id}">
                 <div class="script-label">${escapeHtml(label || '')}</div>
                 <div class="script-meta">
@@ -370,8 +369,7 @@ LIMIT 10`);
                 </div>
             </div>
         `;
-                }
-            )
+            })
             .join('');
     }
 
@@ -382,7 +380,8 @@ LIMIT 10`);
         const { id } = item.dataset;
         if (!id) return;
 
-        const list = listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
+        const list =
+            listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
         const scriptData = list.find((s: any) => s.id === id);
         if (!scriptData) return;
 
@@ -436,7 +435,9 @@ LIMIT 10`);
 
     private applyRowFilter(): void {
         const filter = this.searchInput.value.trim().toLowerCase();
-        const rows = this.resultsContainer.querySelectorAll<HTMLElement>('.query-results-table tbody tr');
+        const rows = this.resultsContainer.querySelectorAll<HTMLElement>(
+            '.query-results-table tbody tr'
+        );
 
         if (!filter) {
             rows.forEach(row => row.classList.remove('hidden'));
@@ -451,7 +452,9 @@ LIMIT 10`);
 
     private clearRowFilter(): void {
         this.searchInput.value = '';
-        const rows = this.resultsContainer.querySelectorAll<HTMLElement>('.query-results-table tbody tr');
+        const rows = this.resultsContainer.querySelectorAll<HTMLElement>(
+            '.query-results-table tbody tr'
+        );
         rows.forEach(row => row.classList.remove('hidden'));
     }
 
@@ -570,7 +573,10 @@ LIMIT 10`);
 
         try {
             const useToolingApi = this.toolingCheckbox.checked;
-            const result = (await executeQueryWithColumns(tabData.query, useToolingApi)) as QueryResult;
+            const result = (await executeQueryWithColumns(
+                tabData.query,
+                useToolingApi
+            )) as QueryResult;
 
             tabData.records = result.records;
             tabData.totalSize = result.totalSize;
@@ -873,7 +879,11 @@ LIMIT 10`);
         return tbody;
     }
 
-    private createRecordRow(record: SObject, tabData: TabData, isEditMode: boolean): HTMLTableRowElement {
+    private createRecordRow(
+        record: SObject,
+        tabData: TabData,
+        isEditMode: boolean
+    ): HTMLTableRowElement {
         const recordId = this.getValueByPath(record, 'Id');
         const row = document.createElement('tr');
         row.dataset.recordId = recordId;
@@ -925,7 +935,13 @@ LIMIT 10`);
         }
     }
 
-    private renderEditableCell2(td: HTMLTableCellElement, value: any, col: Column, tabData: TabData, recordId: string): void {
+    private renderEditableCell2(
+        td: HTMLTableCellElement,
+        value: any,
+        col: Column,
+        tabData: TabData,
+        recordId: string
+    ): void {
         const field = tabData.fieldDescribe?.[col.path];
         if (!field) return;
 
@@ -1011,7 +1027,13 @@ LIMIT 10`);
     }
 
     // Remove duplicate that I accidentally added
-    private renderEditableCell3(td: HTMLTableCellElement, value: any, col: Column, tabData: TabData, recordId: string): void {
+    private renderEditableCell3(
+        td: HTMLTableCellElement,
+        value: any,
+        col: Column,
+        tabData: TabData,
+        recordId: string
+    ): void {
         this.renderEditableCell2(td, value, col, tabData, recordId);
     }
 
@@ -1187,15 +1209,18 @@ LIMIT 10`);
         this.bulkExportBtn.disabled = true;
 
         try {
-            const csv = await executeBulkQueryExport(query, (state: string, recordCount?: number) => {
-                if (state === 'InProgress' || state === 'UploadComplete') {
-                    this.updateStatus(`Processing: ${recordCount || 0} records`, 'loading');
-                } else if (state === 'Creating job...') {
-                    this.updateStatus('Creating bulk job...', 'loading');
-                } else if (state === 'Downloading...') {
-                    this.updateStatus('Downloading results...', 'loading');
+            const csv = await executeBulkQueryExport(
+                query,
+                (state: string, recordCount?: number) => {
+                    if (state === 'InProgress' || state === 'UploadComplete') {
+                        this.updateStatus(`Processing: ${recordCount || 0} records`, 'loading');
+                    } else if (state === 'Creating job...') {
+                        this.updateStatus('Creating bulk job...', 'loading');
+                    } else if (state === 'Downloading...') {
+                        this.updateStatus('Downloading results...', 'loading');
+                    }
                 }
-            });
+            );
 
             const objectMatch = query.match(/FROM\s+(\w+)/i);
             const objectName = objectMatch ? objectMatch[1] : 'export';
@@ -1339,7 +1364,9 @@ LIMIT 10`);
     }
 
     private attachEditableListeners(tabData: TabData): void {
-        const inputs = this.resultsContainer.querySelectorAll<HTMLInputElement | HTMLSelectElement>('.query-field-input');
+        const inputs = this.resultsContainer.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
+            '.query-field-input'
+        );
 
         inputs.forEach(input => {
             const handler = (e: Event) => {

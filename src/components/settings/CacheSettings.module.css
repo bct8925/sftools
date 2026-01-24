@@ -1,0 +1,25 @@
+/* Cache Settings Styles */
+
+.description {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+}
+
+.cacheRow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cacheStatus {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.cacheStatus.success {
+    color: var(--indicator-success);
+}
+
+.cacheStatus.error {
+    color: var(--error-color);
+}

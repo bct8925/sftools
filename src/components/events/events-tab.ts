@@ -120,7 +120,8 @@ class EventsTab extends HTMLElement {
         this.subscribeBtn = this.querySelector<HTMLButtonElement>('.event-subscribe-btn')!;
         this.streamStatus = this.querySelector<HTMLElement>('.event-stream-status')!;
         this.clearBtn = this.querySelector<HTMLButtonElement>('.event-clear-btn')!;
-        this.publishChannelSelect = this.querySelector<HTMLSelectElement>('.event-publish-channel')!;
+        this.publishChannelSelect =
+            this.querySelector<HTMLSelectElement>('.event-publish-channel')!;
         this.publishBtn = this.querySelector<HTMLButtonElement>('.event-publish-btn')!;
         this.publishStatus = this.querySelector<HTMLElement>('.event-publish-status')!;
         this.replaySelect = this.querySelector<HTMLSelectElement>('.event-replay-select')!;
@@ -167,7 +168,7 @@ class EventsTab extends HTMLElement {
         this.publishChannelSelect.innerHTML = '<option value="">Loading...</option>';
 
         try {
-            const channels = await getAllStreamingChannels() as any;
+            const channels = (await getAllStreamingChannels()) as any;
             this.buildChannelOptionsUI(channels);
         } catch (err) {
             console.error('Error loading streaming channels:', err);

@@ -1,0 +1,169 @@
+import { useState, useRef, useCallback } from 'react';
+import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/MonacoEditor';
+import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
+import { ApexOutput } from './ApexOutput';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { executeAnonymousApex } from '../../lib/salesforce';
+import { formatOutput } from '../../lib/apex-utils';
+import { updateStatusBadge } from '../../lib/ui-helpers';
+import type { ApexExecutionResult } from '../../types/salesforce';
+import type { StatusType } from '../../lib/ui-helpers';
+import styles from './ApexTab.module.css';
+
+const DEFAULT_CODE = `// Enter your Apex code here
+System.debug('Hello from Anonymous Apex!');
+
+// Example: Query and debug accounts
+List<Account> accounts = [SELECT Id, Name FROM Account LIMIT 5];
+for (Account acc : accounts) {
+    System.debug('Account: ' + acc.Name);
+}`;
+
+/**
+ * Anonymous Apex execution tab with history, favorites, and debug logging
+ */
+export function ApexTab() {
+  const { isAuthenticated } = useConnection();
+  const codeEditorRef = useRef<MonacoEditorRef>(null);
+  const statusRef = useRef<HTMLSpanElement>(null);
+  const historyRef = useRef<ApexHistoryRef>(null);
+
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [output, setOutput] = useState('// Output will appear here after execution');
+
+  // Update status badge
+  const updateStatus = useCallback((text: string, type: StatusType = '') => {
+    if (statusRef.current) {
+      updateStatusBadge(statusRef.current, text, type);
+    }
+  }, []);
+
+  // Set editor markers for compile/runtime errors
+  const setEditorMarkers = useCallback((result: ApexExecutionResult) => {
+    const editor = codeEditorRef.current?.getEditor();
+    const model = editor?.getModel();
+    if (!model) return;
+
+    monaco.editor.setModelMarkers(model, 'apex', []);
+
+    const markers = [];
+
+    if (!result.compiled && result.compileProblem && result.line) {
+      markers.push({
+        severity: monaco.MarkerSeverity.Error,
+        message: result.compileProblem,
+        startLineNumber: result.line,
+        startColumn: result.column || 1,
+        endLineNumber: result.line,
+        endColumn: result.column ? result.column + 10 : model.getLineMaxColumn(result.line),
+      });
+    } else if (!result.success && result.exceptionMessage && result.line) {
+      markers.push({
+        severity: monaco.MarkerSeverity.Error,
+        message: result.exceptionMessage,
+        startLineNumber: result.line,
+        startColumn: 1,
+        endLineNumber: result.line,
+        endColumn: model.getLineMaxColumn(result.line),
+      });
+    }
+
+    if (markers.length > 0) {
+      monaco.editor.setModelMarkers(model, 'apex', markers);
+    }
+  }, []);
+
+  // Execute Apex code
+  const handleExecute = useCallback(async () => {
+    const apexCode = codeEditorRef.current?.getValue().trim() || '';
+
+    if (!apexCode) {
+      setOutput('// Please enter Apex code to execute');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      alert('Not authenticated. Please authorize via the connection selector.');
+      return;
+    }
+
+    // Clear previous markers
+    const editor = codeEditorRef.current?.getEditor();
+    const model = editor?.getModel();
+    if (model) {
+      monaco.editor.setModelMarkers(model, 'apex', []);
+    }
+
+    setIsExecuting(true);
+
+    try {
+      const result = await executeAnonymousApex(apexCode, (status: string) => {
+        updateStatus(status, 'loading');
+        setOutput(`// ${status}`);
+      });
+
+      setEditorMarkers(result.execution);
+
+      if (!result.execution.compiled) {
+        updateStatus('Compile Error', 'error');
+      } else if (!result.execution.success) {
+        updateStatus('Runtime Error', 'error');
+      } else {
+        updateStatus('Success', 'success');
+      }
+
+      setOutput(formatOutput(result.execution, result.debugLog));
+
+      // Save to history after successful execution
+      await historyRef.current?.saveToHistory(apexCode);
+    } catch (error) {
+      updateStatus('Error', 'error');
+      setOutput(`Error: ${(error as Error).message}`);
+      console.error('Apex execution error:', error);
+    } finally {
+      setIsExecuting(false);
+    }
+  }, [isAuthenticated, updateStatus, setEditorMarkers]);
+
+  // Load script from history/favorites
+  const handleLoadScript = useCallback((code: string) => {
+    codeEditorRef.current?.setValue(code);
+  }, []);
+
+  return (
+    <div className={styles.apexTab}>
+      <div className="card">
+        <div className="card-header">
+          <div className="card-header-icon" style={{ backgroundColor: '#6a67ce' }}>
+            A
+          </div>
+          <h2>Anonymous Apex</h2>
+          <ApexHistory ref={historyRef} onLoadScript={handleLoadScript} />
+        </div>
+        <div className="card-body">
+          <div className="form-element">
+            <MonacoEditor
+              ref={codeEditorRef}
+              language="apex"
+              value={DEFAULT_CODE}
+              onExecute={handleExecute}
+              className="monaco-container"
+            />
+          </div>
+          <div className="m-top_small">
+            <button
+              className="button-brand"
+              onClick={handleExecute}
+              disabled={isExecuting}
+            >
+              Execute
+            </button>
+            <span ref={statusRef} className="status-badge" />
+          </div>
+        </div>
+      </div>
+
+      <ApexOutput output={output} />
+    </div>
+  );
+}

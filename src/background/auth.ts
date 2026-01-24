@@ -132,9 +132,7 @@ const refreshPromises = new Map<string, Promise<TokenRefreshResult>>();
  * Uses mutex pattern per connection to prevent concurrent refreshes.
  * Routes through proxy to bypass CORS.
  */
-export function refreshAccessToken(
-    connection: SalesforceConnection
-): Promise<TokenRefreshResult> {
+export function refreshAccessToken(connection: SalesforceConnection): Promise<TokenRefreshResult> {
     if (!connection || !connection.id) {
         return Promise.resolve({ success: false, error: 'No connection provided' });
     }

@@ -438,9 +438,7 @@ export async function executeQueryWithColumns(
  * Get global describe metadata (all objects)
  * Uses cache if available, otherwise fetches and caches
  */
-export async function getGlobalDescribe(
-    bypassCache = false
-): Promise<DescribeGlobalResult> {
+export async function getGlobalDescribe(bypassCache = false): Promise<DescribeGlobalResult> {
     if (!bypassCache) {
         const cache = await getDescribeCache();
         if (cache.global) {

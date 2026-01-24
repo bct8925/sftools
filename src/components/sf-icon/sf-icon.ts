@@ -19,9 +19,10 @@ class SfIcon extends HTMLElement {
 
     private render(): void {
         const iconName = this.getAttribute('name');
-        this.innerHTML = iconName && (icons as Record<string, string>)[iconName]
-            ? (icons as Record<string, string>)[iconName]
-            : '';
+        this.innerHTML =
+            iconName && (icons as Record<string, string>)[iconName]
+                ? (icons as Record<string, string>)[iconName]
+                : '';
     }
 }
 

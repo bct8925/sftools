@@ -146,7 +146,9 @@ class SettingsTab extends HTMLElement {
         this.editCancelBtn = this.querySelector<HTMLButtonElement>('.settings-edit-cancel-btn')!;
 
         // Cache management elements
-        this.refreshCacheBtn = this.querySelector<HTMLButtonElement>('.settings-refresh-cache-btn')!;
+        this.refreshCacheBtn = this.querySelector<HTMLButtonElement>(
+            '.settings-refresh-cache-btn'
+        )!;
         this.cacheStatus = this.querySelector<HTMLElement>('.settings-cache-status')!;
     }
 
@@ -255,10 +257,7 @@ class SettingsTab extends HTMLElement {
             .join('');
     }
 
-    private createConnectionCardHtml(
-        conn: SalesforceConnection,
-        activeId: string | null
-    ): string {
+    private createConnectionCardHtml(conn: SalesforceConnection, activeId: string | null): string {
         const isActive = conn.id === activeId;
         const refreshBadge = conn.refreshToken
             ? `<span class="settings-connection-badge refresh-enabled" title="Auto-refresh enabled">${icons.refreshSmall} Auto-refresh</span>`

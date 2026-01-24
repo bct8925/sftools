@@ -60,74 +60,61 @@ Incremental migration from Web Components to React for the sftools Chrome extens
 - [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 3 - Utils Tab Tools
-- [ ] `src/components/utils-tools/SearchBox.tsx`
-- [ ] `src/components/utils-tools/SearchBox.module.css`
-- [ ] `src/components/utils-tools/SchemaBrowserLink.tsx`
-- [ ] `src/components/utils-tools/DebugLogs.tsx`
-- [ ] `src/components/utils-tools/DebugLogs.module.css`
-- [ ] `src/components/utils-tools/FlowCleanup.tsx`
-- [ ] `src/components/utils-tools/FlowCleanup.module.css`
-- [ ] `src/components/utils-tools/Limits.tsx`
-- [ ] `src/components/utils-tools/DeployStatus.tsx`
-- [ ] `src/components/utils-tools/FieldUsage.tsx`
-- [ ] Verify: all utils tools function correctly
+- [x] `src/components/utils-tools/SearchBox.tsx` + `.module.css`
+- [x] `src/components/utils-tools/SchemaBrowserLink.tsx`
+- [x] `src/components/utils-tools/DebugLogs.tsx` + `.module.css`
+- [x] `src/components/utils-tools/FlowCleanup.tsx` + `.module.css`
+- [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 4 - Settings Tab
-- [ ] `src/components/settings/ConnectionList.tsx`
-- [ ] `src/components/settings/ConnectionCard.tsx`
-- [ ] `src/components/settings/ProxySettings.tsx`
-- [ ] `src/components/settings/ThemeSettings.tsx`
-- [ ] `src/components/settings/CacheSettings.tsx`
-- [ ] `src/components/settings/SettingsTab.tsx`
-- [ ] `src/components/settings/SettingsTab.module.css`
-- [ ] Verify: connections, theme, proxy, cache all work
+- [x] `src/components/settings/ConnectionList.tsx` + `.module.css`
+- [x] `src/components/settings/ConnectionCard.tsx` + `.module.css`
+- [x] `src/components/settings/ProxySettings.tsx` + `.module.css`
+- [x] `src/components/settings/ThemeSettings.tsx` + `.module.css`
+- [x] `src/components/settings/CacheSettings.tsx` + `.module.css`
+- [x] `src/components/settings/EditConnectionModal.tsx` + `.module.css`
+- [x] `src/components/settings/SettingsTab.tsx` + `.module.css`
+- [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 5 - Simple Tabs
-- [ ] `src/components/rest-api/RestApiTab.tsx`
-- [ ] `src/components/rest-api/RestApiTab.module.css`
-- [ ] `src/components/utils/UtilsTab.tsx`
-- [ ] `src/components/utils/UtilsTab.module.css`
-- [ ] Verify: REST requests work, utils tools render
+- [x] `src/components/rest-api/RestApiTab.tsx` + `.module.css`
+- [x] `src/components/utils/UtilsTab.tsx` + `.module.css`
+- [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 6 - Events Tab
-- [ ] `src/components/events/ChannelSelector.tsx`
-- [ ] `src/components/events/EventPublisher.tsx`
-- [ ] `src/components/events/EventsTab.tsx`
-- [ ] `src/components/events/EventsTab.module.css`
-- [ ] Handle chrome.runtime message listeners with useEffect
-- [ ] Verify: subscribe/unsubscribe works (requires proxy)
+- [x] `src/components/events/ChannelSelector.tsx`
+- [x] `src/components/events/EventPublisher.tsx`
+- [x] `src/components/events/EventsTab.tsx` + `.module.css`
+- [x] Handle chrome.runtime message listeners with useEffect
+- [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 7 - Apex Tab
-- [ ] `src/components/apex/ApexHistory.tsx`
-- [ ] `src/components/apex/ApexOutput.tsx`
-- [ ] `src/components/apex/ApexTab.tsx`
-- [ ] `src/components/apex/ApexTab.module.css`
-- [ ] Integrate HistoryManager with useMemo
-- [ ] Verify: execution, output filtering, history work
+- [x] `src/components/apex/ApexHistory.tsx`
+- [x] `src/components/apex/ApexOutput.tsx`
+- [x] `src/components/apex/ApexTab.tsx` + `.module.css`
+- [x] Integrate HistoryManager with useMemo
+- [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 8 - Query Tab (Most Complex)
-- [ ] `src/components/query/useQueryState.ts` (useReducer for tab state)
-- [ ] `src/components/query/QueryEditor.tsx`
-- [ ] `src/components/query/QueryTabs.tsx`
-- [ ] `src/components/query/QueryResults.tsx`
-- [ ] `src/components/query/QueryResultsTable.tsx`
-- [ ] `src/components/query/QueryHistory.tsx`
-- [ ] `src/components/query/QueryTab.tsx`
-- [ ] `src/components/query/QueryTab.module.css`
-- [ ] Integrate SOQL autocomplete
-- [ ] Verify: all query features work (multi-tab, inline edit, export)
+- [x] `src/components/query/useQueryState.ts` (useReducer for tab state)
+- [x] `src/components/query/QueryEditor.tsx`
+- [x] `src/components/query/QueryTabs.tsx`
+- [x] `src/components/query/QueryResults.tsx`
+- [x] `src/components/query/QueryResultsTable.tsx`
+- [x] `src/components/query/QueryHistory.tsx`
+- [x] `src/components/query/QueryTab.tsx` + `.module.css`
+- [x] Integrate SOQL autocomplete
+- [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 9 - Standalone Pages
-- [ ] `src/components/record/FieldRow.tsx`
-- [ ] `src/components/record/RichTextModal.tsx`
-- [ ] `src/components/record/RecordPage.tsx`
-- [ ] `src/components/record/RecordPage.module.css`
-- [ ] `src/components/schema/ObjectList.tsx`
-- [ ] `src/components/schema/FieldList.tsx`
-- [ ] `src/components/schema/FormulaEditor.tsx`
-- [ ] `src/components/schema/SchemaPage.tsx`
-- [ ] `src/components/schema/SchemaPage.module.css`
-- [ ] Verify: record viewer and schema browser work
+- [x] `src/components/record/FieldRow.tsx`
+- [x] `src/components/record/RichTextModal.tsx`
+- [x] `src/components/record/RecordPage.tsx` + `.module.css`
+- [x] `src/components/schema/ObjectList.tsx`
+- [x] `src/components/schema/FieldList.tsx`
+- [x] `src/components/schema/FormulaEditor.tsx`
+- [x] `src/components/schema/SchemaPage.tsx` + `.module.css`
+- [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 10 - App Shell Migration
 - [ ] `src/react/App.tsx` (main React app)
@@ -687,6 +674,13 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Phase 1 | 8 | Foundation: React deps, Vite config, contexts, hooks |
 | 2026-01-23 | Wave 1 | 9 | Simple components: SfIcon, Modal, ButtonIcon, ButtonDropdown + barrel export |
 | 2026-01-23 | Wave 2 | 3 | Monaco Editor: React wrapper with @monaco-editor/react, theme hook |
+| 2026-01-23 | Wave 3 | 7 | Utils tools: SearchBox, SchemaBrowserLink, DebugLogs, FlowCleanup |
+| 2026-01-23 | Wave 4 | 14 | Settings: ConnectionCard/List, ProxySettings, ThemeSettings, CacheSettings, EditConnectionModal, SettingsTab |
+| 2026-01-23 | Wave 5 | 4 | Simple tabs: RestApiTab, UtilsTab |
+| 2026-01-23 | Wave 6 | 4 | Events: ChannelSelector, EventPublisher, EventsTab |
+| 2026-01-23 | Wave 7 | 4 | Apex: ApexHistory, ApexOutput, ApexTab |
+| 2026-01-23 | Wave 8 | 8 | Query: useQueryState, QueryEditor, QueryTabs, QueryResults, QueryResultsTable, QueryHistory, QueryTab |
+| 2026-01-23 | Wave 9 | 9 | Standalone: FieldRow, RichTextModal, RecordPage, ObjectList, FieldList, FormulaEditor, SchemaPage |
 
 ### Issues Encountered
 

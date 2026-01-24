@@ -10,34 +10,34 @@ import { MockRouter } from '../../../shared/mocks/index.js';
  * - A-F-018: Compilation error on specific line - Marker on line 5
  */
 export default class ApexErrorsTest extends SftoolsTest {
-  configureMocks() {
-    const router = new MockRouter();
+    configureMocks() {
+        const router = new MockRouter();
 
-    // Mock compilation error response
-    router.onApexExecute(false, false, '');
+        // Mock compilation error response
+        router.onApexExecute(false, false, '');
 
-    return router;
-  }
+        return router;
+    }
 
-  async test(): Promise<void> {
-    // Navigate to extension
-    await this.navigateToExtension();
+    async test(): Promise<void> {
+        // Navigate to extension
+        await this.navigateToExtension();
 
-    // Navigate to Apex tab
-    await this.apexTab.navigateTo();
+        // Navigate to Apex tab
+        await this.apexTab.navigateTo();
 
-    // Set code with syntax error (undefined variable)
-    const invalidCode = `System.debug(undefinedVariable);`;
-    await this.apexTab.setCode(invalidCode);
+        // Set code with syntax error (undefined variable)
+        const invalidCode = `System.debug(undefinedVariable);`;
+        await this.apexTab.setCode(invalidCode);
 
-    // Execute (will use mocked error response)
-    await this.apexTab.execute();
+        // Execute (will use mocked error response)
+        await this.apexTab.execute();
 
-    // Verify status indicates failure (Compile Error or Error)
-    const status = await this.apexTab.getStatus();
-    await this.expect(status.success).toBe(false);
+        // Verify status indicates failure (Compile Error or Error)
+        const status = await this.apexTab.getStatus();
+        await this.expect(status.success).toBe(false);
 
-    // Status text should indicate compile error
-    await this.expect(status.text).toContain('Error');
-  }
+        // Status text should indicate compile error
+        await this.expect(status.text).toContain('Error');
+    }
 }

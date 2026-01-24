@@ -1,0 +1,282 @@
+/* Record Viewer Page Styles */
+
+/* Record Info */
+.recordInfo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    background: var(--card-header-bg);
+    border-radius: var(--radius-md);
+}
+
+.objectName {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.recordId {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.openInOrgBtn {
+    margin-left: auto;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+/* Fields Container */
+.fieldsContainer {
+    max-height: calc(100vh - 350px);
+    overflow-y: auto;
+}
+
+/* Field Header */
+.fieldHeader {
+    display: grid;
+    grid-template-columns: 200px 200px 100px 1fr 250px;
+    gap: 15px;
+    padding: 10px 0;
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Field Row */
+.fieldRow {
+    display: grid;
+    grid-template-columns: 200px 200px 100px 1fr 250px;
+    gap: 15px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+}
+
+.fieldRow:last-child {
+    border-bottom: none;
+}
+
+.fieldLabel {
+    font-weight: 500;
+    color: var(--text-main);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fieldApiName {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fieldType {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.fieldValue {
+    min-width: 0;
+}
+
+.fieldInput {
+    width: 100%;
+    font-size: 13px;
+}
+
+.fieldInput:disabled {
+    background-color: var(--bg-secondary);
+    cursor: not-allowed;
+    color: var(--text-muted);
+}
+
+/* Field Preview */
+.fieldPreview {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fieldPreview a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.fieldPreview a:hover {
+    text-decoration: underline;
+}
+
+/* Rich Text Preview Button */
+.fieldPreviewBtn {
+    padding: 4px 12px;
+    font-size: 12px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.fieldPreviewBtn:hover {
+    background: var(--primary-hover);
+}
+
+/* Modified Field State */
+.modified .fieldLabel {
+    color: var(--primary-color);
+}
+
+.modified .fieldInput {
+    border-color: var(--primary-color);
+    background-color: var(--bg-selected);
+}
+
+/* Actions Bar */
+.actionsBar {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 20px 0;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+.saveBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.changeCount {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* Error Container */
+.errorContainer {
+    padding: 30px;
+    text-align: center;
+}
+
+.errorMessage {
+    color: var(--error-color);
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.errorHint {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Loading Container */
+.loadingContainer {
+    padding: 30px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* Rich Text Preview Modal */
+.richTextModal {
+    /* Override Modal content positioning if needed */
+}
+
+.modal {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 16px var(--shadow-lg);
+    max-width: 90vw;
+    max-height: 90vh;
+    width: 800px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modalFieldInfo {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 0.2s,
+        color 0.2s;
+}
+
+.closeBtn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.modalBody {
+    flex: 1;
+    padding: 20px;
+    overflow: auto;
+}
+
+.modalContentArea {
+    min-height: 200px;
+    padding: 15px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* Style rich text content */
+.modalContentArea p {
+    margin: 0 0 10px 0;
+}
+
+.modalContentArea ul,
+.modalContentArea ol {
+    margin: 0 0 10px 20px;
+}
+
+.modalContentArea a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.modalContentArea a:hover {
+    text-decoration: underline;
+}

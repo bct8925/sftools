@@ -101,7 +101,9 @@ for (Account acc : accounts) {
         });
 
         // List click delegation
-        this.historyList.addEventListener('click', (e: Event) => this.handleListClick(e, 'history'));
+        this.historyList.addEventListener('click', (e: Event) =>
+            this.handleListClick(e, 'history')
+        );
         this.favoritesList.addEventListener('click', (e: Event) =>
             this.handleListClick(e, 'favorites')
         );
@@ -242,7 +244,8 @@ for (Account acc : accounts) {
         const { id } = item.dataset;
         if (!id) return;
 
-        const list = listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
+        const list =
+            listType === 'history' ? this.historyManager.history : this.historyManager.favorites;
         const scriptData = list.find((s: HistoryEntry | FavoriteEntry) => s.id === id);
         if (!scriptData) return;
 

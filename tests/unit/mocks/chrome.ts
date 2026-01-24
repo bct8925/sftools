@@ -11,7 +11,11 @@ interface StorageChanges {
 }
 
 type StorageListener = (changes: StorageChanges, areaName: string) => void;
-type MessageListener = (message: unknown, sender: chrome.runtime.MessageSender, sendResponse: (response?: unknown) => void) => void;
+type MessageListener = (
+    message: unknown,
+    sender: chrome.runtime.MessageSender,
+    sendResponse: (response?: unknown) => void
+) => void;
 
 interface ChromeMockStorage {
     [key: string]: unknown;
@@ -49,7 +53,10 @@ export function createChromeMock(): ChromeMock {
     const chrome = {
         storage: {
             local: {
-                get(keys?: string | string[] | null, callback?: (items: ChromeMockStorage) => void): Promise<ChromeMockStorage> | void {
+                get(
+                    keys?: string | string[] | null,
+                    callback?: (items: ChromeMockStorage) => void
+                ): Promise<ChromeMockStorage> | void {
                     const result: ChromeMockStorage = {};
                     const keyList = Array.isArray(keys)
                         ? keys

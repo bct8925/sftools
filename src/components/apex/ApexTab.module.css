@@ -1,0 +1,105 @@
+/* Apex Tab Styles */
+
+/* ============================================================
+   Main Container
+   ============================================================ */
+
+.apexTab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ============================================================
+   Output Search
+   ============================================================ */
+
+.outputSearch {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+/* ============================================================
+   History/Favorites Button
+   ============================================================ */
+
+.historyBtn {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   History/Favorites Modal
+   ============================================================ */
+
+.historyModal {
+    width: 300px;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.dropdownTabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-bg);
+}
+
+.dropdownTab {
+    flex: 1;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s ease;
+}
+
+.dropdownTab:hover {
+    color: var(--text-main);
+    background: var(--bg-hover);
+}
+
+.dropdownTab.active {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    margin-bottom: -1px;
+}
+
+.dropdownContent {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* ============================================================
+   Favorite Modal
+   ============================================================ */
+
+.favoriteDialog {
+    width: 320px;
+}
+
+.favoriteInput {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+    background: var(--bg-color);
+    color: var(--text-main);
+}
+
+.favoriteInput:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color) inset;
+}

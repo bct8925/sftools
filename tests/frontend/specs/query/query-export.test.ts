@@ -11,93 +11,89 @@ import { MockRouter } from '../../../shared/mocks/index.js';
  * - Q-F-012: Export to CSV button triggers download with correct data
  */
 export default class QueryExportTest extends SftoolsTest {
-  private readonly RECORD_COUNT = 5;
+    private readonly RECORD_COUNT = 5;
 
-  configureMocks() {
-    const router = new MockRouter();
+    configureMocks() {
+        const router = new MockRouter();
 
-    // Mock query response with multiple records
-    const records = [];
-    for (let i = 0; i < this.RECORD_COUNT; i++) {
-      records.push({
-        Id: `001MOCKACCOUNT0${i}`,
-        Name: `Export Test ${i}`,
-        BillingCity: `City ${i}`,
-        BillingState: 'CA'
-      });
+        // Mock query response with multiple records
+        const records = [];
+        for (let i = 0; i < this.RECORD_COUNT; i++) {
+            records.push({
+                Id: `001MOCKACCOUNT0${i}`,
+                Name: `Export Test ${i}`,
+                BillingCity: `City ${i}`,
+                BillingState: 'CA',
+            });
+        }
+
+        router.onQuery(/\/query/, records, [
+            { columnName: 'Id', displayName: 'Id', aggregate: false },
+            { columnName: 'Name', displayName: 'Name', aggregate: false },
+            { columnName: 'BillingCity', displayName: 'BillingCity', aggregate: false },
+            { columnName: 'BillingState', displayName: 'BillingState', aggregate: false },
+        ]);
+
+        return router;
     }
 
-    router.onQuery(
-      /\/query/,
-      records,
-      [
-        { columnName: 'Id', displayName: 'Id', aggregate: false },
-        { columnName: 'Name', displayName: 'Name', aggregate: false },
-        { columnName: 'BillingCity', displayName: 'BillingCity', aggregate: false },
-        { columnName: 'BillingState', displayName: 'BillingState', aggregate: false }
-      ]
-    );
+    async test(): Promise<void> {
+        // Navigate to extension
+        await this.navigateToExtension();
 
-    return router;
-  }
+        // Navigate to Query tab
+        await this.queryTab.navigateTo();
 
-  async test(): Promise<void> {
-    // Navigate to extension
-    await this.navigateToExtension();
+        // Execute query
+        const query = `SELECT Id, Name, BillingCity, BillingState FROM Account LIMIT 10`;
+        await this.queryTab.executeQuery(query);
 
-    // Navigate to Query tab
-    await this.queryTab.navigateTo();
+        // Verify query succeeded
+        const status = await this.queryTab.getStatus();
+        await this.expect(status.type).toBe('success');
 
-    // Execute query
-    const query = `SELECT Id, Name, BillingCity, BillingState FROM Account LIMIT 10`;
-    await this.queryTab.executeQuery(query);
+        const count = await this.queryTab.getResultsCount();
+        await this.expect(count).toBe(this.RECORD_COUNT);
 
-    // Verify query succeeded
-    const status = await this.queryTab.getStatus();
-    await this.expect(status.type).toBe('success');
+        // Set up download listener before clicking export
+        const downloadPromise = this.page.waitForEvent('download', { timeout: 10000 });
 
-    const count = await this.queryTab.getResultsCount();
-    await this.expect(count).toBe(this.RECORD_COUNT);
+        // Click export CSV button
+        await this.queryTab.exportCsv();
 
-    // Set up download listener before clicking export
-    const downloadPromise = this.page.waitForEvent('download', { timeout: 10000 });
+        // Wait for download to complete
+        const download: Download = await downloadPromise;
+        const filename = download.suggestedFilename();
 
-    // Click export CSV button
-    await this.queryTab.exportCsv();
+        // Verify filename is CSV
+        await this.expect(filename).toContain('.csv');
 
-    // Wait for download to complete
-    const download: Download = await downloadPromise;
-    const filename = download.suggestedFilename();
+        // Read the downloaded CSV content
+        const csvPath = await download.path();
+        if (!csvPath) {
+            throw new Error('Download path is null');
+        }
 
-    // Verify filename is CSV
-    await this.expect(filename).toContain('.csv');
+        const fs = await import('fs/promises');
+        const csvContent = await fs.readFile(csvPath, 'utf-8');
 
-    // Read the downloaded CSV content
-    const csvPath = await download.path();
-    if (!csvPath) {
-      throw new Error('Download path is null');
+        // Parse CSV to verify content
+        const lines = csvContent.split('\n').filter(line => line.trim().length > 0);
+        const recordCount = lines.length - 1; // Subtract header row
+
+        // Verify all records are present
+        await this.expect(recordCount).toBe(this.RECORD_COUNT);
+
+        // Verify CSV has expected columns
+        const header = lines[0];
+        await this.expect(header).toContain('Id');
+        await this.expect(header).toContain('Name');
+        await this.expect(header).toContain('BillingCity');
+        await this.expect(header).toContain('BillingState');
+
+        // Verify at least one data row contains expected values
+        const dataLine = lines[1];
+        await this.expect(dataLine).toContain('Export Test');
+        await this.expect(dataLine).toContain('CA');
     }
-
-    const fs = await import('fs/promises');
-    const csvContent = await fs.readFile(csvPath, 'utf-8');
-
-    // Parse CSV to verify content
-    const lines = csvContent.split('\n').filter(line => line.trim().length > 0);
-    const recordCount = lines.length - 1; // Subtract header row
-
-    // Verify all records are present
-    await this.expect(recordCount).toBe(this.RECORD_COUNT);
-
-    // Verify CSV has expected columns
-    const header = lines[0];
-    await this.expect(header).toContain('Id');
-    await this.expect(header).toContain('Name');
-    await this.expect(header).toContain('BillingCity');
-    await this.expect(header).toContain('BillingState');
-
-    // Verify at least one data row contains expected values
-    const dataLine = lines[1];
-    await this.expect(dataLine).toContain('Export Test');
-    await this.expect(dataLine).toContain('CA');
-  }
 }

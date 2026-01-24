@@ -1,9 +1,5 @@
 // Flow Version Cleanup Tool
-import {
-    searchFlows,
-    getFlowVersions,
-    deleteInactiveFlowVersions,
-} from '../../lib/salesforce.js';
+import { searchFlows, getFlowVersions, deleteInactiveFlowVersions } from '../../lib/salesforce.js';
 import { escapeHtml } from '../../lib/text-utils.js';
 import type { SObject } from '../../types/salesforce';
 import './search-box.js';
@@ -54,10 +50,12 @@ class FlowCleanup extends HTMLElement {
 
         // Configure search box
         this.flowSearch.setSearchFn(searchFlows);
-        this.flowSearch.setRenderFn((flow: Flow): SearchResult => ({
-            id: flow.Id,
-            name: flow.DeveloperName,
-        }));
+        this.flowSearch.setRenderFn(
+            (flow: Flow): SearchResult => ({
+                id: flow.Id,
+                name: flow.DeveloperName,
+            })
+        );
     }
 
     private attachEventListeners(): void {

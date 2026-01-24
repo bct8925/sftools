@@ -2,20 +2,20 @@
 
 // Support for ?raw imports (HTML templates)
 declare module '*.html?raw' {
-  const content: string;
-  export default content;
+    const content: string;
+    export default content;
 }
 
 // Support for ?raw imports (SVG icons)
 declare module '*.svg?raw' {
-  const content: string;
-  export default content;
+    const content: string;
+    export default content;
 }
 
 // Support for ?url imports
 declare module '*?url' {
-  const url: string;
-  export default url;
+    const url: string;
+    export default url;
 }
 
 // CSS imports (side-effect only in this project)

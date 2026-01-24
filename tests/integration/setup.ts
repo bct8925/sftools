@@ -46,7 +46,11 @@ export const salesforce = {
     /**
      * Make a REST API request
      */
-    async request<T = unknown>(method: string, path: string, body: unknown = null): Promise<T | null> {
+    async request<T = unknown>(
+        method: string,
+        path: string,
+        body: unknown = null
+    ): Promise<T | null> {
         const url = `${instanceUrl}/services/data/v${API_VERSION}${path}`;
 
         const options: RequestInit = {
@@ -86,7 +90,11 @@ export const salesforce = {
     /**
      * Make a Tooling API request
      */
-    async toolingRequest<T = unknown>(method: string, path: string, body: unknown = null): Promise<T | null> {
+    async toolingRequest<T = unknown>(
+        method: string,
+        path: string,
+        body: unknown = null
+    ): Promise<T | null> {
         const url = `${instanceUrl}/services/data/v${API_VERSION}/tooling${path}`;
 
         const options: RequestInit = {
@@ -127,7 +135,10 @@ export const salesforce = {
      * Execute a SOQL query
      */
     async query<T = unknown>(soql: string): Promise<T[]> {
-        const response = await this.request<{ records?: T[] }>('GET', `/query?q=${encodeURIComponent(soql)}`);
+        const response = await this.request<{ records?: T[] }>(
+            'GET',
+            `/query?q=${encodeURIComponent(soql)}`
+        );
         return response?.records || [];
     },
 
@@ -135,7 +146,10 @@ export const salesforce = {
      * Execute a Tooling API query
      */
     async toolingQuery<T = unknown>(soql: string): Promise<T[]> {
-        const response = await this.toolingRequest<{ records?: T[] }>('GET', `/query?q=${encodeURIComponent(soql)}`);
+        const response = await this.toolingRequest<{ records?: T[] }>(
+            'GET',
+            `/query?q=${encodeURIComponent(soql)}`
+        );
         return response?.records || [];
     },
 
@@ -143,14 +157,22 @@ export const salesforce = {
      * Create a record
      */
     async createRecord(objectType: string, fields: Record<string, unknown>): Promise<string> {
-        const response = await this.request<{ id: string }>('POST', `/sobjects/${objectType}`, fields);
+        const response = await this.request<{ id: string }>(
+            'POST',
+            `/sobjects/${objectType}`,
+            fields
+        );
         return response!.id;
     },
 
     /**
      * Get a record by ID
      */
-    async getRecord<T = unknown>(objectType: string, recordId: string, fields: string[] | null = null): Promise<T> {
+    async getRecord<T = unknown>(
+        objectType: string,
+        recordId: string,
+        fields: string[] | null = null
+    ): Promise<T> {
         let path = `/sobjects/${objectType}/${recordId}`;
         if (fields && fields.length > 0) {
             path += `?fields=${fields.join(',')}`;
@@ -161,7 +183,11 @@ export const salesforce = {
     /**
      * Update a record
      */
-    async updateRecord(objectType: string, recordId: string, fields: Record<string, unknown>): Promise<void> {
+    async updateRecord(
+        objectType: string,
+        recordId: string,
+        fields: Record<string, unknown>
+    ): Promise<void> {
         await this.request('PATCH', `/sobjects/${objectType}/${recordId}`, fields);
     },
 
@@ -207,7 +233,11 @@ export const salesforce = {
     /**
      * Make a generic REST request (for REST API tab tests)
      */
-    async restRequest(path: string, method = 'GET', body: string | Record<string, unknown> | null = null): Promise<RestResponse> {
+    async restRequest(
+        path: string,
+        method = 'GET',
+        body: string | Record<string, unknown> | null = null
+    ): Promise<RestResponse> {
         const url = `${instanceUrl}${path}`;
 
         const options: RequestInit = {
@@ -273,7 +303,9 @@ export class TestDataManager {
                 await salesforce.deleteRecord(objectType, recordId);
             } catch (e) {
                 // Ignore errors - record may already be deleted
-                console.warn(`Warning: Failed to delete ${objectType}/${recordId}: ${(e as Error).message}`);
+                console.warn(
+                    `Warning: Failed to delete ${objectType}/${recordId}: ${(e as Error).message}`
+                );
             }
         }
         this.createdRecords = [];
@@ -296,7 +328,10 @@ interface WaitForOptions {
 /**
  * Helper to wait for a condition (with timeout)
  */
-export async function waitFor(conditionFn: () => Promise<boolean> | boolean, options: WaitForOptions = {}): Promise<boolean> {
+export async function waitFor(
+    conditionFn: () => Promise<boolean> | boolean,
+    options: WaitForOptions = {}
+): Promise<boolean> {
     const { timeout = 30000, interval = 1000, message = 'Condition not met' } = options;
     const startTime = Date.now();
 

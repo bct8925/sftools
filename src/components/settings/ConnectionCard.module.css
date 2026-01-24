@@ -1,0 +1,90 @@
+/* Connection Card Styles */
+
+.connectionItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 0.5rem;
+    transition: all 0.15s;
+}
+
+.connectionItem:hover {
+    border-color: var(--primary-color);
+}
+
+.connectionItem.active {
+    border-color: var(--primary-color);
+    background: var(--bg-selected);
+}
+
+.connectionInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.connectionLabel {
+    font-weight: 500;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.connectionDetail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: var(--status-loading-bg);
+    color: var(--primary-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.badge.refreshEnabled {
+    background: var(--status-success-bg);
+    color: var(--status-success-text);
+}
+
+.badge :global(svg) {
+    flex-shrink: 0;
+}
+
+.connectionActions {
+    display: flex;
+    gap: 4px;
+}
+
+.actionButton {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.actionButton:hover {
+    border-color: var(--border-color);
+    background: var(--bg-color);
+    color: var(--primary-color);
+}
+
+.actionButton.deleteButton:hover {
+    color: var(--error-color);
+}

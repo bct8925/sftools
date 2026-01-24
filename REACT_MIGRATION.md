@@ -37,15 +37,16 @@ Incremental migration from Web Components to React for the sftools Chrome extens
 - [x] Verify: build succeeds, contexts provide values
 
 ### Phase 2: Wave 1 - Simple Reusable Components
-- [ ] `src/components/sf-icon/SfIcon.tsx`
-- [ ] `src/components/sf-icon/SfIcon.module.css`
-- [ ] `src/components/modal-popup/Modal.tsx`
-- [ ] `src/components/modal-popup/Modal.module.css`
-- [ ] `src/components/button-icon/ButtonIcon.tsx`
-- [ ] `src/components/button-icon/ButtonIcon.module.css`
-- [ ] `src/components/button-dropdown/ButtonDropdown.tsx`
-- [ ] `src/components/button-dropdown/ButtonDropdown.module.css`
-- [ ] Verify: components render identically to Web Components
+- [x] `src/components/sf-icon/SfIcon.tsx`
+- [x] `src/components/sf-icon/SfIcon.module.css`
+- [x] `src/components/modal-popup/Modal.tsx`
+- [x] `src/components/modal-popup/Modal.module.css`
+- [x] `src/components/button-icon/ButtonIcon.tsx`
+- [x] `src/components/button-icon/ButtonIcon.module.css`
+- [x] `src/components/button-dropdown/ButtonDropdown.tsx`
+- [x] `src/components/button-dropdown/ButtonDropdown.module.css`
+- [x] `src/components/index.ts` (barrel export)
+- [x] Verify: build succeeds, types check
 
 ### Phase 2: Wave 2 - Monaco Editor
 - [ ] `src/components/monaco-editor/MonacoEditor.tsx`
@@ -683,6 +684,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 |------|------|-------|-------|
 | 2026-01-23 | - | - | Plan created |
 | 2026-01-23 | Phase 1 | 8 | Foundation: React deps, Vite config, contexts, hooks |
+| 2026-01-23 | Wave 1 | 9 | Simple components: SfIcon, Modal, ButtonIcon, ButtonDropdown + barrel export |
 
 ### Issues Encountered
 

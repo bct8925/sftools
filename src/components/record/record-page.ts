@@ -17,7 +17,7 @@ import {
   parseValue,
   getChangedFields,
 } from '../../lib/record-utils.js';
-import '../modal-popup/modal-popup.js';
+import '../modal/modal-popup.js';
 import template from './record.html?raw';
 import './record.css';
 import type { SalesforceConnection, FieldDescribe, SObject } from '../../types/salesforce';

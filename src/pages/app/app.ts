@@ -31,7 +31,7 @@ import '../../components/rest-api/rest-api-tab.js';
 import '../../components/events/events-tab.js';
 import '../../components/settings/settings-tab.js';
 import '../../components/utils/utils-tab.js';
-import '../../components/modal-popup/modal-popup.js';
+import '../../components/modal/modal-popup.js';
 import type { SalesforceConnection } from '../../types/salesforce';
 import type { ModalPopupElement } from '../../types/components';
 

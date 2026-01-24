@@ -20,7 +20,7 @@ import type { MonacoEditorElement } from '../../types/components';
 import type { StatusType } from '../../lib/ui-helpers';
 import '../monaco-editor/monaco-editor.js';
 import '../button-icon/button-icon.js';
-import '../modal-popup/modal-popup.js';
+import '../modal/modal-popup.js';
 import template from './query.html?raw';
 import './query.css';
 

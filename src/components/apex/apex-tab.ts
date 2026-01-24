@@ -10,7 +10,7 @@ import type { MonacoEditorElement } from '../../types/components';
 import type { HistoryEntry, FavoriteEntry } from '../../lib/history-manager';
 import type { StatusType } from '../../lib/ui-helpers';
 import '../button-icon/button-icon.js';
-import '../modal-popup/modal-popup.js';
+import '../modal/modal-popup.js';
 import template from './apex.html?raw';
 import './apex.css';
 

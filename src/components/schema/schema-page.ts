@@ -16,7 +16,7 @@ import {
 } from '../../lib/schema-utils.js';
 import '../button-icon/button-icon.js';
 import { monaco } from '../monaco-editor/monaco-editor.js';
-import '../modal-popup/modal-popup.js';
+import '../modal/modal-popup.js';
 import template from './schema.html?raw';
 import './schema.css';
 import type {

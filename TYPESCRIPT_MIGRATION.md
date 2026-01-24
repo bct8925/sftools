@@ -120,11 +120,11 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + all tests pass
 
 ### Phase 3: Cleanup
-- [ ] Convert `vite.config.js` → `vite.config.ts`
-- [ ] Convert `vitest.config.js` → `vitest.config.ts`
-- [ ] Convert `vitest.config.integration.js` → `vitest.config.integration.ts`
-- [ ] Remove `allowJs: true` from tsconfig (optional)
-- [ ] Final verification: full test suite
+- [x] Convert `vite.config.js` → `vite.config.ts`
+- [x] Convert `vitest.config.js` → `vitest.config.ts`
+- [x] Convert `vitest.config.integration.js` → `vitest.config.integration.ts`
+- [ ] Remove `allowJs: true` from tsconfig (optional - keeping for now as some .js test files remain)
+- [x] Final verification: typecheck + build + unit tests all pass
 
 ---
 
@@ -538,6 +538,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | Wave 9 | 4 | Background scripts: debug, auth, native-messaging, background. Updated vite.config.js entry point. |
 | 2026-01-23 | Wave 10 | 4 | Entry points: app, callback, record, schema. Added ModalPopupElement interface to components.d.ts. |
 | 2026-01-23 | Wave 11 | 33 | Tests: chrome mock, salesforce mock, unit setup, integration setup, 21 unit tests, 8 integration tests. Updated vitest configs. All 619 unit tests pass. |
+| 2026-01-23 | Phase 3 | 3 | Config cleanup: vite.config.ts, vitest.config.ts, vitest.config.integration.ts. Typecheck, build, and all 619 unit tests pass. |
 
 ### Issues Encountered
 

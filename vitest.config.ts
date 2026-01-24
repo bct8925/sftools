@@ -1,4 +1,3 @@
-// vitest.config.js
 import { defineConfig } from 'vitest/config';
 import { existsSync } from 'fs';
 import { resolve, dirname } from 'path';
@@ -7,7 +6,7 @@ import { resolve, dirname } from 'path';
 function jsToTsResolver() {
   return {
     name: 'js-to-ts-resolver',
-    resolveId(source, importer) {
+    resolveId(source: string, importer: string | undefined) {
       if (!importer || !source.endsWith('.js')) return null;
 
       // Try to resolve .ts file instead of .js

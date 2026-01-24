@@ -35,11 +35,11 @@ Incremental migration to strict TypeScript for the sftools Chrome extension. Jav
 - [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 2 - Core Infrastructure
-- [ ] `src/lib/oauth-credentials.js` → `.ts`
-- [ ] `src/lib/theme.js` → `.ts`
-- [ ] `src/lib/ui-helpers.js` → `.ts`
-- [ ] `src/lib/auth.js` → `.ts` (critical - defines Connection type)
-- [ ] Verify: typecheck + build + tests
+- [x] `src/lib/oauth-credentials.js` → `.ts`
+- [x] `src/lib/theme.js` → `.ts`
+- [x] `src/lib/ui-helpers.js` → `.ts`
+- [x] `src/lib/auth.js` → `.ts` (critical - defines Connection type)
+- [x] Verify: typecheck + build + tests
 
 ### Phase 2: Wave 3 - Fetch/Request Layer
 - [ ] `src/lib/fetch.js` → `.ts`
@@ -521,6 +521,7 @@ npm run typecheck && npm run build && npm run test:unit && npm run test:frontend
 | 2026-01-23 | - | - | Plan created |
 | 2026-01-23 | Phase 1 | 6 | Foundation complete: tsconfig, types, eslint, scripts |
 | 2026-01-23 | Wave 1 | 3 | Pure utilities: text-utils, icons, debug |
+| 2026-01-23 | Wave 2 | 4 | Core infrastructure: oauth-credentials, theme, ui-helpers, auth |
 
 ### Issues Encountered
 

@@ -12,7 +12,7 @@ interface AutocompleteState {
     active: boolean;
     providerRegistered: boolean;
     globalDescribe: DescribeGlobalResult | null;
-    globalDescribeLoading: boolean;
+    globalDescribePromise: Promise<DescribeGlobalResult | null> | null;
     fromObject: string | null;
     fromObjectLoadId: number;
     fields: FieldDescribe[];
@@ -29,7 +29,7 @@ const state: AutocompleteState = {
     active: false,
     providerRegistered: false,
     globalDescribe: null,
-    globalDescribeLoading: false,
+    globalDescribePromise: null,
     fromObject: null,
     fromObjectLoadId: 0,
     fields: [],
@@ -89,6 +89,28 @@ const AGGREGATE_FUNCTIONS: FunctionDefinition[] = [
     { name: 'MAX', signature: 'MAX(field)', description: 'Maximum value' },
 ];
 
+// Universal fields that exist on all SObjects
+const UNIVERSAL_FIELDS: FieldDescribe[] = [
+    {
+        name: 'Id',
+        label: 'Record ID',
+        type: 'id',
+        calculated: false,
+        nillable: false,
+        updateable: false,
+        createable: false,
+    } as FieldDescribe,
+    {
+        name: 'Name',
+        label: 'Name',
+        type: 'string',
+        calculated: false,
+        nillable: false,
+        updateable: true,
+        createable: true,
+    } as FieldDescribe,
+];
+
 // Date literals
 const DATE_LITERALS: KeywordDefinition[] = [
     { name: 'TODAY', description: 'Current date' },
@@ -136,26 +158,33 @@ function extractFromObject(text: string): string | null {
 function detectClause(text: string, offset: number): string {
     const textBeforeCursor = text.substring(0, offset).toUpperCase();
 
-    // Find the last occurrence of each clause keyword
-    const clauses = [
-        { name: 'SELECT', index: textBeforeCursor.lastIndexOf('SELECT') },
-        { name: 'FROM', index: textBeforeCursor.lastIndexOf(' FROM ') },
-        { name: 'WHERE', index: textBeforeCursor.lastIndexOf(' WHERE ') },
-        { name: 'ORDER BY', index: textBeforeCursor.lastIndexOf(' ORDER BY ') },
-        { name: 'GROUP BY', index: textBeforeCursor.lastIndexOf(' GROUP BY ') },
-        { name: 'HAVING', index: textBeforeCursor.lastIndexOf(' HAVING ') },
-        { name: 'LIMIT', index: textBeforeCursor.lastIndexOf(' LIMIT ') },
-        { name: 'OFFSET', index: textBeforeCursor.lastIndexOf(' OFFSET ') },
+    // Use regex to find clause keywords with word boundaries (handles newlines and varied whitespace)
+    const clausePatterns: { name: string; pattern: RegExp }[] = [
+        { name: 'SELECT', pattern: /\bSELECT\b/g },
+        { name: 'FROM', pattern: /\bFROM\b/g },
+        { name: 'WHERE', pattern: /\bWHERE\b/g },
+        { name: 'ORDER BY', pattern: /\bORDER\s+BY\b/g },
+        { name: 'GROUP BY', pattern: /\bGROUP\s+BY\b/g },
+        { name: 'HAVING', pattern: /\bHAVING\b/g },
+        { name: 'LIMIT', pattern: /\bLIMIT\b/g },
+        { name: 'OFFSET', pattern: /\bOFFSET\b/g },
     ];
 
-    // Find the clause with the highest index (most recent)
+    // Find the last occurrence of each clause keyword
     let currentClause = 'SELECT';
     let maxIndex = -1;
 
-    for (const clause of clauses) {
-        if (clause.index > maxIndex) {
-            maxIndex = clause.index;
-            currentClause = clause.name;
+    for (const { name, pattern } of clausePatterns) {
+        let match;
+        let lastIndex = -1;
+        // Reset regex lastIndex to ensure fresh search
+        pattern.lastIndex = 0;
+        while ((match = pattern.exec(textBeforeCursor)) !== null) {
+            lastIndex = match.index;
+        }
+        if (lastIndex > maxIndex) {
+            maxIndex = lastIndex;
+            currentClause = name;
         }
     }
 
@@ -331,14 +360,25 @@ async function buildObjectSuggestions(
     range: monaco.IRange
 ): Promise<monaco.languages.CompletionItem[]> {
     // Lazy load global describe on first need (cached in storage per-connection)
-    if (!state.globalDescribe && !state.globalDescribeLoading) {
-        state.globalDescribeLoading = true;
-        try {
-            state.globalDescribe = await getGlobalDescribe();
-        } catch (error) {
-            console.error('Failed to load global describe:', error);
-        } finally {
-            state.globalDescribeLoading = false;
+    if (!state.globalDescribe) {
+        // If already loading, wait for existing promise
+        if (state.globalDescribePromise) {
+            await state.globalDescribePromise;
+        } else {
+            // Start new load
+            state.globalDescribePromise = getGlobalDescribe()
+                .then(result => {
+                    state.globalDescribe = result;
+                    return result;
+                })
+                .catch(error => {
+                    console.error('Failed to load global describe:', error);
+                    return null;
+                })
+                .finally(() => {
+                    state.globalDescribePromise = null;
+                });
+            await state.globalDescribePromise;
         }
     }
 
@@ -486,7 +526,7 @@ export function registerSOQLCompletionProvider(): void {
                 return { suggestions };
             }
 
-            // Handle different clauses
+            // Build context-specific suggestions
             switch (clause) {
                 case 'FROM':
                     suggestions = await buildObjectSuggestions(range);
@@ -500,10 +540,12 @@ export function registerSOQLCompletionProvider(): void {
                             ...buildAggregateSuggestions(range),
                         ];
                     } else {
-                        // No FROM object yet, just show aggregates and hint
-                        suggestions = buildAggregateSuggestions(range);
+                        // No FROM object yet, show universal fields (Id) and aggregates
+                        suggestions = [
+                            ...buildFieldSuggestions(UNIVERSAL_FIELDS, range, '0'),
+                            ...buildAggregateSuggestions(range),
+                        ];
                     }
-                    suggestions.push(...buildKeywordSuggestions(range, clause));
                     break;
 
                 case 'WHERE':
@@ -515,7 +557,6 @@ export function registerSOQLCompletionProvider(): void {
                             ...buildDateLiteralSuggestions(range),
                         ];
                     }
-                    suggestions.push(...buildKeywordSuggestions(range, clause));
                     break;
 
                 case 'ORDER BY':
@@ -526,14 +567,11 @@ export function registerSOQLCompletionProvider(): void {
                             ...buildRelationshipSuggestions(range),
                         ];
                     }
-                    if (clause === 'ORDER BY') {
-                        suggestions.push(...buildKeywordSuggestions(range, clause));
-                    }
                     break;
-
-                default:
-                    suggestions = buildKeywordSuggestions(range, clause);
             }
+
+            // Always include keywords in all contexts
+            suggestions.push(...buildKeywordSuggestions(range, clause));
 
             return { suggestions };
         },
@@ -556,4 +594,5 @@ export function clearState(): void {
     state.fields = [];
     state.relationships.clear();
     state.globalDescribe = null;
+    state.globalDescribePromise = null;
 }

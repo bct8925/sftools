@@ -1,11 +1,10 @@
 // SOQL Autocomplete for Query Tab
 import { parseQuery } from '@jetstreamapp/soql-parser-js';
-import { monaco } from '../components/monaco-editor/monaco-editor.js';
+import { monaco } from '../components/monaco-editor/MonacoEditor';
 import { getGlobalDescribe, getObjectDescribe } from './salesforce.js';
 import type {
     FieldDescribe,
     DescribeGlobalResult,
-    ObjectDescribeResult,
 } from '../types/salesforce';
 
 // Module state
@@ -179,12 +178,6 @@ function extractDotChain(text: string, offset: number): string[] | null {
     return null;
 }
 
-// Get the current word being typed (reserved for future use)
-function _getCurrentWord(text: string, offset: number): string {
-    const textBeforeCursor = text.substring(0, offset);
-    const match = textBeforeCursor.match(/(\w+)$/);
-    return match ? match[1] : '';
-}
 
 // Map field types to Monaco completion item kinds
 function getCompletionKind(field: FieldDescribe): monaco.languages.CompletionItemKind {

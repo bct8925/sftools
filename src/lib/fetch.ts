@@ -3,6 +3,9 @@
 import { getActiveConnectionId, triggerAuthExpired } from './auth.js';
 import { debugInfo } from './debug.js';
 
+// Test extension ID used by headless test mode
+const TEST_EXTENSION_ID = 'test-extension-id';
+
 // --- Types ---
 
 export interface FetchOptions {
@@ -103,9 +106,53 @@ export async function proxyFetch(url: string, options: FetchOptions = {}): Promi
 }
 
 /**
+ * Detect if we're running in a real Chrome extension context.
+ * Returns false in headless test mode where chrome.runtime.id is mocked.
+ */
+function isExtensionContext(): boolean {
+    if (typeof chrome === 'undefined' || !chrome.runtime) {
+        return false;
+    }
+    // The mock sets id to TEST_EXTENSION_ID
+    return chrome.runtime.id !== TEST_EXTENSION_ID;
+}
+
+/**
+ * Perform a direct fetch (used in headless test mode).
+ * MockRouter intercepts these at the network level.
+ */
+async function directFetch(url: string, options: FetchOptions = {}): Promise<FetchResponse> {
+    try {
+        const response = await fetch(url, {
+            method: options.method || 'GET',
+            headers: options.headers,
+            body: options.body,
+        });
+        const data = await response.text();
+        return {
+            success: response.ok,
+            status: response.status,
+            statusText: response.statusText,
+            data,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            status: 0,
+            error: error instanceof Error ? error.message : 'Network error',
+        };
+    }
+}
+
+/**
  * Smart fetch: uses proxy if available, falls back to extensionFetch
  */
 export function smartFetch(url: string, options: FetchOptions = {}): Promise<FetchResponse> {
+    // In headless test mode, use direct fetch
+    if (!isExtensionContext()) {
+        return directFetch(url, options);
+    }
+
     if (PROXY_CONNECTED) {
         return proxyFetch(url, options);
     }

@@ -25,10 +25,16 @@ async function main(): Promise<void> {
     // Parse --slow flag for human-like timing
     const slowMode = args.includes('--slow');
 
+    // Parse --extension flag for extension mode (default is headless)
+    const extensionMode = args.includes('--extension');
+    const headlessMode = !extensionMode;
+
     console.log('');
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║                   sftools Test Runner                      ║');
     console.log('╚════════════════════════════════════════════════════════════╝');
+    console.log('');
+    console.log(`Mode: ${headlessMode ? 'Headless' : 'Extension'}`);
     console.log('');
 
     // Find all test files
@@ -36,7 +42,7 @@ async function main(): Promise<void> {
     let testFiles = await glob(pattern);
 
     if (testFiles.length === 0) {
-        console.log('❌ No test files found matching pattern:', pattern);
+        console.log('No test files found matching pattern:', pattern);
         process.exit(1);
     }
 
@@ -44,15 +50,13 @@ async function main(): Promise<void> {
     if (filter) {
         const beforeCount = testFiles.length;
         testFiles = testFiles.filter(f => f.includes(filter));
-        console.log(
-            `📋 Filter "${filter}" applied: ${testFiles.length}/${beforeCount} tests match`
-        );
+        console.log(`Filter "${filter}" applied: ${testFiles.length}/${beforeCount} tests match`);
     } else {
-        console.log(`📋 Found ${testFiles.length} test file(s)`);
+        console.log(`Found ${testFiles.length} test file(s)`);
     }
 
     if (testFiles.length === 0) {
-        console.log('❌ No tests match the filter');
+        console.log('No tests match the filter');
         process.exit(1);
     }
 
@@ -68,9 +72,10 @@ async function main(): Promise<void> {
     // Run tests
     const runner = new TestRunner();
     runner.setSlowMode(slowMode);
+    runner.setHeadlessMode(headlessMode);
 
     if (slowMode) {
-        console.log('🐢 Slow mode enabled - using human-like timing');
+        console.log('Slow mode enabled - using human-like timing');
         console.log('');
     }
 
@@ -79,7 +84,7 @@ async function main(): Promise<void> {
     try {
         results = await runner.runAll(testFiles);
     } catch (error) {
-        console.error('\n❌ Test runner error:', (error as Error).message);
+        console.error('\nTest runner error:', (error as Error).message);
         if (process.env.DEBUG) {
             console.error((error as Error).stack);
         }
@@ -106,9 +111,9 @@ function printSummary(results: TestResult[]): void {
     const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
 
     for (const result of results) {
-        const icon = result.success ? '✅' : '❌';
+        const icon = result.success ? 'PASS' : 'FAIL';
         const duration = formatDuration(result.duration);
-        console.log(`${icon} ${result.name} (${duration})`);
+        console.log(`[${icon}] ${result.name} (${duration})`);
 
         if (result.error) {
             console.log(`   Error: ${result.error.message}`);

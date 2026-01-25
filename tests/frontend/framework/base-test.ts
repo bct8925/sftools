@@ -17,6 +17,8 @@ export abstract class SftoolsTest {
     protected page: Page;
     protected context: BrowserContext;
     protected extensionId: string;
+    /** Base URL for headless mode (e.g., "http://localhost:5173"). Empty string in extension mode. */
+    protected baseUrl: string;
     protected salesforce: SalesforceClient;
     protected config: TestConfig;
 
@@ -34,8 +36,29 @@ export abstract class SftoolsTest {
         this.page = ctx.page;
         this.context = ctx.context;
         this.extensionId = ctx.extensionId;
+        this.baseUrl = ctx.baseUrl;
         this.salesforce = ctx.salesforce;
         this.config = ctx.config;
+    }
+
+    /**
+     * Check if running in headless mode (pages loaded from Vite server).
+     */
+    protected isHeadlessMode(): boolean {
+        return this.baseUrl !== '';
+    }
+
+    /**
+     * Build URL for navigation, handling both extension and headless modes.
+     */
+    private buildUrl(path: string): string {
+        if (this.baseUrl) {
+            // Headless mode - use Vite server
+            return `${this.baseUrl}${path}`;
+        } else {
+            // Extension mode - use chrome-extension:// URL
+            return `chrome-extension://${this.extensionId}${path}`;
+        }
     }
 
     // Lifecycle methods - override in subclasses
@@ -129,30 +152,35 @@ export abstract class SftoolsTest {
 
     // Navigation helpers
     async navigateToExtension(): Promise<void> {
-        // Skip if already on extension app page (runner pre-loads it)
+        // In headless mode, server serves from dist, so no /dist prefix needed
+        // In extension mode, we need /dist prefix
+        const targetPath = this.baseUrl ? '/pages/app/app.html' : '/dist/pages/app/app.html';
         const currentUrl = this.page.url();
-        if (currentUrl.includes(`chrome-extension://${this.extensionId}/dist/pages/app/`)) {
+
+        // Skip if already on the app page
+        if (currentUrl.includes('pages/app/app')) {
             return;
         }
-        await this.page.goto(`chrome-extension://${this.extensionId}/dist/pages/app/app.html`);
+
+        await this.page.goto(this.buildUrl(targetPath));
         await this.page.waitForLoadState('networkidle');
     }
 
     async navigateToRecord(objectType: string, recordId: string): Promise<void> {
         const connectionId = this.salesforce.getConnectionId();
-        await this.page.goto(
-            `chrome-extension://${this.extensionId}/dist/pages/record/record.html` +
-                `?objectType=${objectType}&recordId=${recordId}&connectionId=${connectionId}`
-        );
+        // In headless mode, server serves from dist, so no /dist prefix needed
+        const basePath = this.baseUrl ? '/pages/record/record.html' : '/dist/pages/record/record.html';
+        const path = `${basePath}?objectType=${objectType}&recordId=${recordId}&connectionId=${connectionId}`;
+        await this.page.goto(this.buildUrl(path));
         await this.page.waitForLoadState('networkidle');
     }
 
     async navigateToSchema(): Promise<void> {
         const connectionId = this.salesforce.getConnectionId();
-        await this.page.goto(
-            `chrome-extension://${this.extensionId}/dist/pages/schema/schema.html` +
-                `?connectionId=${connectionId}`
-        );
+        // In headless mode, server serves from dist, so no /dist prefix needed
+        const basePath = this.baseUrl ? '/pages/schema/schema.html' : '/dist/pages/schema/schema.html';
+        const path = `${basePath}?connectionId=${connectionId}`;
+        await this.page.goto(this.buildUrl(path));
         await this.page.waitForLoadState('networkidle');
     }
 

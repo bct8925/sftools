@@ -42,6 +42,8 @@ export interface TestContext {
     page: Page;
     context: BrowserContext;
     extensionId: string;
+    /** Base URL for headless mode (e.g., "http://localhost:5173"). Empty string in extension mode. */
+    baseUrl: string;
     salesforce: SalesforceClient;
     config: TestConfig;
 }

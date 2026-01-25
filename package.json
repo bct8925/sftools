@@ -41,6 +41,7 @@
     "test:integration": "vitest run --config vitest.config.integration.ts",
     "test:integration:watch": "vitest --config vitest.config.integration.ts",
     "test:frontend": "tsx tests/frontend/run-tests.ts",
+    "test:frontend:extension": "tsx tests/frontend/run-tests.ts --extension",
     "test:frontend:slow": "tsx tests/frontend/run-tests.ts --slow",
     "test:validate-ids": "node scripts/validate-test-ids.js",
     "test:refresh-token": "node scripts/refresh-test-token.js",

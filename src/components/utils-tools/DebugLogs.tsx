@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext.js';
 import {
   getCurrentUserId,
@@ -7,8 +7,8 @@ import {
   deleteAllDebugLogs,
   deleteAllTraceFlags,
 } from '../../lib/salesforce.js';
-import { escapeHtml } from '../../lib/text-utils.js';
 import type { SObject } from '../../types/salesforce';
+import { SearchBox, type SearchBoxRenderData } from './SearchBox.js';
 import './utils-tools.css';
 import styles from './DebugLogs.module.css';
 
@@ -31,9 +31,6 @@ export function DebugLogs() {
   const { activeConnection, isAuthenticated } = useConnection();
 
   // Trace flag state
-  const [userSearchTerm, setUserSearchTerm] = useState('');
-  const [userResults, setUserResults] = useState<User[]>([]);
-  const [showUserResults, setShowUserResults] = useState(false);
   const [enableForMeLoading, setEnableForMeLoading] = useState(false);
   const [traceStatus, setTraceStatus] = useState<{
     type: StatusType;
@@ -46,26 +43,8 @@ export function DebugLogs() {
     message: string;
   } | null>(null);
 
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const userResultsRef = useRef<HTMLDivElement>(null);
-
-  // Close user results on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (userResultsRef.current && !userResultsRef.current.contains(e.target as Node)) {
-        setShowUserResults(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
-
   // Clear state on connection change
   useEffect(() => {
-    setUserSearchTerm('');
-    setUserResults([]);
-    setShowUserResults(false);
     setEnableForMeLoading(false);
     setTraceStatus(null);
     setDeleteStatus(null);
@@ -91,49 +70,25 @@ export function DebugLogs() {
     }
   }, [isAuthenticated]);
 
-  const handleUserSearchInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const term = e.target.value;
-      setUserSearchTerm(term);
-
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-
-      if (term.trim().length < 2) {
-        setShowUserResults(false);
-        return;
-      }
-
-      searchTimeoutRef.current = setTimeout(async () => {
-        if (!isAuthenticated) return;
-
-        try {
-          const users = await searchUsers(term.trim());
-          setUserResults(users as User[]);
-          setShowUserResults(true);
-        } catch (error) {
-          console.error('User search error:', error);
-          setUserResults([]);
-          setShowUserResults(false);
-        }
-      }, 300);
-    },
-    [isAuthenticated]
-  );
-
-  const handleUserSelect = useCallback(async (user: User) => {
-    setShowUserResults(false);
-    setUserSearchTerm(user.Name);
-
+  const handleUserSelect = useCallback(async (user: unknown) => {
+    const userObj = user as User;
     setTraceStatus({ type: 'loading', message: 'Enabling trace flag...' });
 
     try {
-      await enableTraceFlagForUser(user.Id);
+      await enableTraceFlagForUser(userObj.Id);
       setTraceStatus({ type: 'success', message: 'Trace flag enabled for 30 minutes' });
     } catch (error) {
       setTraceStatus({ type: 'error', message: (error as Error).message });
     }
+  }, []);
+
+  const renderUserSearch = useCallback((user: unknown): SearchBoxRenderData => {
+    const userObj = user as User;
+    return {
+      id: userObj.Id,
+      name: userObj.Name,
+      detail: userObj.Username,
+    };
   }, []);
 
   const handleDeleteFlags = useCallback(async () => {
@@ -201,38 +156,15 @@ export function DebugLogs() {
             Enable for Me
           </button>
           <div className="tool-divider"></div>
-          <div className="form-element">
-            <label>USER LOOKUP</label>
-            <input
-              type="text"
-              className="input"
-              placeholder="Search by name or username..."
-              value={userSearchTerm}
-              onChange={handleUserSearchInput}
-              data-testid="debug-logs-user-search"
-            />
-          </div>
-          {showUserResults && (
-            <div ref={userResultsRef} className={`tool-results ${styles.userResults}`} data-testid="debug-logs-user-results">
-              {userResults.length === 0 ? (
-                <div className="tool-no-results">No users found</div>
-              ) : (
-                userResults.map((user) => (
-                  <div
-                    key={user.Id}
-                    className="tool-result-item"
-                    onClick={() => handleUserSelect(user)}
-                  >
-                    <div>
-                      <span className="tool-result-name">{user.Name}</span>
-                      <br />
-                      <span className="tool-result-detail">{user.Username}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
+          <SearchBox
+            searchFn={searchUsers}
+            renderFn={renderUserSearch}
+            label="USER LOOKUP"
+            placeholder="Search by name or username..."
+            onSelect={handleUserSelect}
+            inputTestId="debug-logs-user-search"
+            dropdownTestId="debug-logs-user-results"
+          />
           {traceStatus && (
             <div className="tool-status" data-testid="debug-logs-trace-status">
               <span className={`status-indicator status-${traceStatus.type}`}></span>

@@ -1,18 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useConnection } from '../contexts/ConnectionContext';
-import { onAuthExpired, loadConnections, setPendingAuth } from '../lib/auth';
+import { onAuthExpired, loadConnections } from '../lib/auth';
+import { startAuthorization } from '../lib/start-authorization';
 import { Modal } from '../components/modal/Modal';
 import type { SalesforceConnection } from '../types/salesforce';
-
-declare global {
-  interface Window {
-    startAuthorization?: (
-      loginDomain: string | null,
-      clientId: string | null,
-      connectionId: string | null
-    ) => void;
-  }
-}
 
 /**
  * Handles auth expiration events by showing a modal with options to
@@ -40,22 +31,12 @@ export function AuthExpirationHandler() {
   const handleReauthorize = useCallback(async () => {
     if (!expiredConnection) return;
 
-    // Set up pending auth for the OAuth callback
-    await setPendingAuth({
-      loginDomain: expiredConnection.instanceUrl,
-      clientId: expiredConnection.clientId,
-      connectionId: expiredConnection.id,
-      state: '',
-    });
-
     // Start OAuth flow
-    if (window.startAuthorization) {
-      window.startAuthorization(
-        expiredConnection.instanceUrl,
-        expiredConnection.clientId,
-        expiredConnection.id
-      );
-    }
+    await startAuthorization(
+      expiredConnection.instanceUrl,
+      expiredConnection.clientId,
+      expiredConnection.id
+    );
 
     setIsOpen(false);
   }, [expiredConnection]);

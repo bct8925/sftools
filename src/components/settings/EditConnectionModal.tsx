@@ -1,22 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { SalesforceConnection } from '../../types/salesforce';
 import { useConnection } from '../../contexts/ConnectionContext.jsx';
-import { setPendingAuth } from '../../lib/auth.js';
+import { startAuthorization } from '../../lib/start-authorization.js';
 import styles from './EditConnectionModal.module.css';
 
 interface EditConnectionModalProps {
   connectionId: string | null;
   onClose: () => void;
-}
-
-declare global {
-  interface Window {
-    startAuthorization?: (
-      loginDomain: string | null,
-      clientId: string | null,
-      connectionId: string | null
-    ) => void;
-  }
 }
 
 export function EditConnectionModal({ connectionId, onClose }: EditConnectionModalProps) {
@@ -60,16 +50,7 @@ export function EditConnectionModal({ connectionId, onClose }: EditConnectionMod
         : 'Client ID removed. Re-authorize now to use the default Connected App?';
 
       if (confirm(message)) {
-        await setPendingAuth({
-          loginDomain: connection.instanceUrl,
-          clientId: newClientId,
-          connectionId,
-          state: '',
-        } as any);
-
-        if (window.startAuthorization) {
-          window.startAuthorization(connection.instanceUrl, newClientId, connectionId);
-        }
+        await startAuthorization(connection.instanceUrl, newClientId, connectionId);
       }
     }
   };

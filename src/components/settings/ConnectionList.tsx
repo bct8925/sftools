@@ -1,21 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext.jsx';
-import { setPendingAuth } from '../../lib/auth.js';
+import { startAuthorization } from '../../lib/start-authorization.js';
 import { ConnectionCard } from './ConnectionCard.jsx';
 import styles from './ConnectionList.module.css';
 
 interface ConnectionListProps {
   onEditConnection: (connectionId: string) => void;
-}
-
-declare global {
-  interface Window {
-    startAuthorization?: (
-      loginDomain: string | null,
-      clientId: string | null,
-      connectionId: string | null
-    ) => void;
-  }
 }
 
 export function ConnectionList({ onEditConnection }: ConnectionListProps) {
@@ -43,16 +33,7 @@ export function ConnectionList({ onEditConnection }: ConnectionListProps) {
 
     const clientId = newClientId.trim() || null;
 
-    await setPendingAuth({
-      loginDomain: domain,
-      clientId,
-      connectionId: null,
-      state: '',
-    } as any);
-
-    if (window.startAuthorization) {
-      window.startAuthorization(domain, clientId, null);
-    }
+    await startAuthorization(domain, clientId, null);
 
     setShowAddForm(false);
     setLoginDomain('auto');
@@ -60,21 +41,12 @@ export function ConnectionList({ onEditConnection }: ConnectionListProps) {
     setNewClientId('');
   };
 
-  const handleReauth = async (connectionId: string) => {
+  const handleReauth = useCallback(async (connectionId: string) => {
     const connection = connections.find((c) => c.id === connectionId);
     if (!connection) return;
 
-    await setPendingAuth({
-      loginDomain: connection.instanceUrl,
-      clientId: connection.clientId,
-      connectionId,
-      state: '',
-    } as any);
-
-    if (window.startAuthorization) {
-      window.startAuthorization(connection.instanceUrl, connection.clientId, connectionId);
-    }
-  };
+    await startAuthorization(connection.instanceUrl, connection.clientId, connectionId);
+  }, [connections]);
 
   const handleDelete = async (connectionId: string) => {
     if (!confirm('Remove this connection?')) return;

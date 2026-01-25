@@ -130,6 +130,7 @@ export function useStreamSubscription({
 
     // Listen for chrome runtime messages
     useEffect(() => {
+        //eslint-disable-next-line @typescript-eslint/no-explicit-any
         const handler = (message: any) => {
             if (
                 message.type === 'streamEvent' ||

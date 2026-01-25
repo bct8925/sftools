@@ -8,7 +8,7 @@
 |--------|---------|
 | **Unit Tests** | Vitest with jsdom, Chrome API mocks, TypeScript |
 | **Integration Tests** | Vitest with real Salesforce API calls |
-| **Frontend Tests** | Playwright with mocked API responses |
+| **Frontend Tests** | Playwright headless with mocked Chrome & Salesforce APIs |
 
 ## Quick Commands
 
@@ -23,10 +23,11 @@ npm run test:unit:coverage               # With coverage report
 npm run test:integration                 # Run all
 npm run test:integration -- query        # Match pattern
 
-# Frontend tests
-npm run test:frontend                    # Run all
+# Frontend tests (headless by default)
+npm run test:frontend                    # Run all (headless)
 npm run test:frontend -- --filter=query  # Filter by name
 npm run test:frontend:slow               # With human timing
+npm run test:frontend:extension          # Run with real Chrome extension
 ```
 
 ## Directory Structure
@@ -56,11 +57,12 @@ tests/
 ├── frontend/                 # Playwright browser tests
 │   ├── framework/
 │   │   ├── base-test.ts      # SftoolsTest base class
-│   │   ├── runner.ts         # Custom test runner
+│   │   ├── runner.ts         # Custom test runner (headless/extension modes)
 │   │   ├── assertions.ts     # Fluent assertion API
 │   │   └── types.ts          # TypeScript interfaces
 │   ├── services/
-│   │   ├── extension-loader.ts
+│   │   ├── headless-loader.ts    # Headless mode: Vite + Chrome mocks
+│   │   ├── extension-loader.ts   # Extension mode: real Chrome extension
 │   │   └── salesforce-client.ts
 │   ├── pages/                # Page object models
 │   │   ├── base.page.ts
@@ -78,9 +80,10 @@ tests/
 └── shared/                   # Shared mock infrastructure
     └── mocks/
         ├── index.ts
-        ├── mock-data.ts      # Response factories
-        ├── mock-scenarios.ts # Pre-built scenarios
-        └── playwright-adapter.ts # MockRouter for Playwright
+        ├── mock-data.ts           # Response factories
+        ├── mock-scenarios.ts      # Pre-built scenarios
+        ├── playwright-adapter.ts  # MockRouter for Playwright
+        └── chrome-browser-mock.ts # Browser-injectable Chrome API mock
 ```
 
 ## Test ID Convention
@@ -318,15 +321,33 @@ describe('Feature Integration', () => {
 
 ### Architecture
 
-Frontend tests use a custom Playwright framework:
+Frontend tests run in **headless mode** by default, using a Vite dev server with mocked Chrome APIs. This enables fast, CI-friendly execution without requiring a real Chrome extension installation.
 
 ```
+TestRunner (runner.ts)
+    ├── Headless Mode (default)
+    │   ├── Vite dev server (auto-started)
+    │   ├── Chrome API mocks (injected via addInitScript)
+    │   └── No .env.test required (uses mock credentials)
+    │
+    └── Extension Mode (--extension flag)
+        ├── Real Chrome extension loaded
+        ├── Service worker for API calls
+        └── Requires valid .env.test credentials
+
 BaseTest (base-test.ts)
     ├── Page objects (lazy-loaded getters)
     ├── MockRouter (route interception)
-    ├── Assertion helpers
-    └── Extension loader
+    └── Assertion helpers
 ```
+
+### Modes
+
+| Mode | Command | Use Case |
+|------|---------|----------|
+| **Headless** | `npm run test:frontend` | CI, fast iteration, default |
+| **Extension** | `npm run test:frontend:extension` | Extension-specific behavior |
+| **Slow** | `npm run test:frontend:slow` | Debugging (visible browser) |
 
 ### Writing Frontend Tests
 
@@ -612,11 +633,14 @@ npm run test:unit -- --testNamePattern="my test name"
 # Run in slow mode (visible browser, human timing)
 npm run test:frontend:slow
 
-# Run with headed browser
-HEADED=true npm run test:frontend
-
-# Debug specific test
+# Run specific test
 npm run test:frontend -- --filter=my-test
+
+# Run in extension mode (real Chrome extension)
+npm run test:frontend:extension
+
+# Enable debug output
+DEBUG=true npm run test:frontend
 ```
 
 ### Common Issues
@@ -628,6 +652,8 @@ npm run test:frontend -- --filter=my-test
 | Frontend test timeout | Use `--slow` mode to observe behavior |
 | Mock not matching | Check exact URL/query pattern in MockRouter |
 | TypeScript errors in tests | Check tsconfig includes test files |
+| Vite server port conflict | Set `VITE_PORT=5174` env var |
+| Extension mode test fails | Ensure `.env.test` has valid credentials |
 
 ## Adding New Tests
 

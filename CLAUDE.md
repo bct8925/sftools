@@ -10,7 +10,7 @@
 | **Type** | Chrome Extension (Manifest V3) |
 | **Stack** | React 19, TypeScript 5.9, Vite 7, Monaco Editor |
 | **State** | React Context API (3 providers) |
-| **Testing** | Vitest (unit), Playwright (E2E) |
+| **Testing** | Vitest (unit), Playwright headless (E2E) |
 | **Optional** | Node.js native messaging proxy for gRPC/CometD streaming |
 
 ## Universal Development Rules
@@ -67,10 +67,11 @@ npm run test:unit:coverage               # With coverage report
 npm run test:integration                 # Run all integration tests
 npm run test:integration -- query        # Run tests matching "query"
 
-# Frontend tests (Playwright with mocks)
-npm run test:frontend                    # Run all frontend tests
+# Frontend tests (Playwright headless with mocks)
+npm run test:frontend                    # Run all (headless, no .env.test needed)
 npm run test:frontend -- --filter=query  # Run tests matching "query"
 npm run test:frontend:slow               # With human-like timing
+npm run test:frontend:extension          # Run with real Chrome extension
 ```
 
 ### Code Quality
@@ -112,7 +113,7 @@ npm run typecheck && npm run lint && npm run test:unit && npm run test:frontend 
 - **`tests/`** → All test files ([see tests/CLAUDE.md](tests/CLAUDE.md))
   - `unit/` → Vitest with mocks (jsdom)
   - `integration/` → Vitest with real API (node)
-  - `frontend/` → Playwright browser tests
+  - `frontend/` → Playwright headless tests
 
 ### Build Output
 
@@ -201,10 +202,11 @@ sftools/
 │   │   ├── mocks/            # Chrome, Salesforce mocks
 │   │   └── setup.ts          # Test setup
 │   │
-│   ├── frontend/             # Playwright tests
+│   ├── frontend/             # Playwright headless tests
 │   │   ├── specs/            # Test suites
 │   │   ├── pages/            # Page objects
-│   │   └── framework/        # Test utilities
+│   │   ├── services/         # Headless/extension loaders
+│   │   └── framework/        # Test runner, base class
 │   │
 │   └── integration/          # Real API tests
 │
@@ -741,7 +743,7 @@ See [tests/CLAUDE.md](tests/CLAUDE.md) for comprehensive testing documentation.
 
 1. **Unit Tests** (`tests/unit/`) - Vitest with mocks, TypeScript
 2. **Integration Tests** (`tests/integration/`) - Real Salesforce API
-3. **Frontend Tests** (`tests/frontend/`) - Playwright browser tests
+3. **Frontend Tests** (`tests/frontend/`) - Playwright headless (no .env.test needed)
 
 ### Test Files to Match Source
 
@@ -753,7 +755,7 @@ See [tests/CLAUDE.md](tests/CLAUDE.md) for comprehensive testing documentation.
 ## Security Guidelines
 
 - **NEVER** commit tokens, API keys, or credentials
-- Use `.env.test` for test org credentials (gitignored)
+- Use `.env.test` for integration tests and extension-mode frontend tests (gitignored)
 - Use environment variables for CI/CD secrets
 - Review generated bash commands before execution
 

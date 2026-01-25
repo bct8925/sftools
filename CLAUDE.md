@@ -81,12 +81,15 @@ npm run lint                   # ESLint check
 npm run lint:fix               # Auto-fix linting issues
 npm run format                 # Prettier format
 npm run format:check           # Check formatting
+npm run fix                    # Auto-fix lint + format
+npm run check                  # Run typecheck + lint + format:check
+npm run validate               # Auto-fix, then run all checks
 ```
 
 ### Pre-PR Validation
 
 ```bash
-npm run typecheck && npm run lint && npm run test:unit && npm run test:frontend && npm run build
+npm run validate && npm run test:unit && npm run test:frontend && npm run build
 ```
 
 ## Project Structure

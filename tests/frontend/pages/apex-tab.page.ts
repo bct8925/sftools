@@ -77,6 +77,9 @@ export class ApexTabPage extends BasePage {
             },
             { timeout: 60000 } // Apex execution can take longer
         );
+
+        // Wait for log output to be updated (debounced state updates)
+        await this.page.waitForTimeout(500);
     }
 
     /**
@@ -96,6 +99,9 @@ export class ApexTabPage extends BasePage {
             },
             { timeout: 60000 }
         );
+
+        // Wait for log output to be updated (debounced state updates)
+        await this.page.waitForTimeout(500);
     }
 
     /**
@@ -226,6 +232,12 @@ export class ApexTabPage extends BasePage {
         // Switch to favorites tab
         const favoritesTab = this.page.locator('[data-testid="apex-favorites-tab"]');
         await this.slowClick(favoritesTab);
+
+        // Wait for favorites list to be visible
+        await this.page.waitForSelector('[data-testid="apex-favorites-list"]', {
+            state: 'visible',
+            timeout: 5000,
+        });
     }
 
     /**
@@ -306,13 +318,10 @@ export class ApexTabPage extends BasePage {
     async closeHistory(): Promise<void> {
         // Press Escape to close modal
         await this.page.keyboard.press('Escape');
-        // Wait for modal to close
-        await this.page.waitForFunction(
-            () => {
-                const modal = document.querySelector('[data-testid="apex-history-modal"]');
-                return modal && !modal.classList.contains('open');
-            },
-            { timeout: 5000 }
-        );
+        // Wait for modal to be removed from DOM
+        await this.page.waitForSelector('[data-testid="apex-history-modal"]', {
+            state: 'hidden',
+            timeout: 5000,
+        });
     }
 }

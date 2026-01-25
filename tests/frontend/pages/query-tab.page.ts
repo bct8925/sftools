@@ -309,8 +309,6 @@ export class QueryTabPage extends BasePage {
      * Save changes to edited records
      */
     async saveChanges(): Promise<void> {
-        const saveBtn = this.page.locator('[data-testid="query-save-btn"]');
-
         // Wait for save button to be enabled (indicates changes are tracked)
         await this.page.waitForFunction(
             () => {
@@ -319,6 +317,16 @@ export class QueryTabPage extends BasePage {
             },
             { timeout: 5000 }
         );
+
+        // Open the dropdown menu if not already open
+        const saveBtn = this.page.locator('[data-testid="query-save-btn"]');
+        const isVisible = await saveBtn.isVisible().catch(() => false);
+
+        if (!isVisible) {
+            await this.resultsBtn.click();
+            // Wait for the dropdown menu to actually open
+            await saveBtn.waitFor({ state: 'visible', timeout: 5000 });
+        }
 
         await this.slowClick(saveBtn);
 
@@ -349,11 +357,16 @@ export class QueryTabPage extends BasePage {
             { timeout: 5000 }
         );
 
-        // Open the dropdown menu
-        await this.resultsBtn.click();
-        await this.delay('beforeClick');
-
+        // Open the dropdown menu if not already open
         const clearBtn = this.page.locator('[data-testid="query-clear-btn"]');
+        const isVisible = await clearBtn.isVisible().catch(() => false);
+
+        if (!isVisible) {
+            await this.resultsBtn.click();
+            // Wait for the dropdown menu to actually open
+            await clearBtn.waitFor({ state: 'visible', timeout: 5000 });
+        }
+
         await this.slowClick(clearBtn);
     }
 
@@ -472,14 +485,11 @@ export class QueryTabPage extends BasePage {
     async closeHistory(): Promise<void> {
         // Press Escape to close modal
         await this.page.keyboard.press('Escape');
-        // Wait for modal to close
-        await this.page.waitForFunction(
-            () => {
-                const modal = document.querySelector('[data-testid="query-history-modal"]');
-                return modal && !modal.classList.contains('open');
-            },
-            { timeout: 5000 }
-        );
+        // Wait for modal to be removed from DOM
+        await this.page.waitForSelector('[data-testid="query-history-modal"]', {
+            state: 'hidden',
+            timeout: 5000,
+        });
     }
 
     /**
@@ -533,6 +543,12 @@ export class QueryTabPage extends BasePage {
         // Switch to favorites tab
         const favoritesTab = this.page.locator('[data-testid="query-favorites-tab"]');
         await this.slowClick(favoritesTab);
+
+        // Wait for favorites list to be visible
+        await this.page.waitForSelector('[data-testid="query-favorites-list"]', {
+            state: 'visible',
+            timeout: 5000,
+        });
     }
 
     /**
@@ -540,6 +556,12 @@ export class QueryTabPage extends BasePage {
      */
     async saveToFavorites(label: string): Promise<void> {
         await this.openHistory();
+
+        // Wait for at least one history item to appear
+        await this.page.waitForSelector('[data-testid="query-history-list"] [data-testid="script-item"]', {
+            state: 'visible',
+            timeout: 5000,
+        });
 
         // Click the favorite button on the first history item
         await this.delay('beforeClick');
@@ -562,8 +584,14 @@ export class QueryTabPage extends BasePage {
         const saveBtn = this.page.locator('[data-testid="query-favorite-save"]');
         await this.slowClick(saveBtn);
 
-        // Wait for modal to close
+        // Wait for favorite dialog to close
         await this.page.waitForSelector('[data-testid="query-favorite-dialog"]', {
+            state: 'hidden',
+            timeout: 5000,
+        });
+
+        // Wait for history modal to close (it closes when favorite button is clicked)
+        await this.page.waitForSelector('[data-testid="query-history-modal"]', {
             state: 'hidden',
             timeout: 5000,
         });
@@ -663,7 +691,7 @@ export class QueryTabPage extends BasePage {
      * Get the index of the currently active result tab
      */
     async getActiveTab(): Promise<number> {
-        const tabs = await this.page.$$('[data-testid="query-tab"]');
+        const tabs = await this.page.$$('[data-testid="query-tabs"] [data-testid="query-tab"]');
         for (let i = 0; i < tabs.length; i++) {
             const isActive = await tabs[i].evaluate(el => el.getAttribute('data-active') === 'true');
             if (isActive) return i;

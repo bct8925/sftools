@@ -66,7 +66,8 @@ export default class QueryFavoritesTest extends SftoolsTest {
         // Verify favorites list is now empty by opening it and checking for "No favorites"
         await this.queryTab.openFavorites();
         const emptyMessage = await this.queryTab.page
-            .locator('[data-testid="query-favorites-list"] .script-empty')
+            .locator('[data-testid="query-favorites-list"]')
+            .getByText('No favorites yet')
             .textContent();
         await this.expect(emptyMessage?.trim()).toContain('No favorites yet');
     }

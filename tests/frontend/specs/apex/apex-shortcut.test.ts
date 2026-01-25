@@ -21,7 +21,7 @@ export default class ApexShortcutTest extends SftoolsTest {
 
         // Mock ApexLog query (returns the log record metadata)
         router.addRoute(
-            /\/tooling\/query.*ApexLog/,
+            /\/services\/data\/v[\d.]+\/tooling\/query.*ApexLog/,
             {
                 done: true,
                 totalSize: 1,
@@ -38,7 +38,7 @@ export default class ApexShortcutTest extends SftoolsTest {
 
         // Mock ApexLog body retrieval (returns the actual log content as plain text)
         router.addRoute(
-            /\/tooling\/sobjects\/ApexLog\/07LMOCKLOG001\/Body/,
+            /\/tooling\/sobjects\/ApexLog\/.*\/Body/,
             {
                 data: 'USER_DEBUG|[1]|DEBUG|Executed via keyboard shortcut\nUSER_DEBUG|[3]|DEBUG|Result: 100',
                 contentType: 'text/plain',

@@ -59,14 +59,12 @@ export default class QueryHistoryTest extends SftoolsTest {
         // Q-F-018: Delete from history and verify removal
         await this.queryTab.openHistory();
         const beforeDeleteCount = await this.queryTab.getHistoryCount();
-
-        // Delete the first item (deleteFromHistory already opens history)
         await this.queryTab.closeHistory();
+
+        // Delete the first item (deleteFromHistory opens history internally)
         await this.queryTab.deleteFromHistory(0);
 
-        // Reopen to check the count
-        await this.queryTab.closeHistory();
-        await this.queryTab.openHistory();
+        // Check the count (modal is still open from deleteFromHistory)
         const afterDeleteCount = await this.queryTab.getHistoryCount();
         await this.expect(afterDeleteCount).toBe(beforeDeleteCount - 1);
 

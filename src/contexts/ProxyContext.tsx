@@ -1,9 +1,10 @@
 import {
   createContext,
   useContext,
-  useState,
+  useReducer,
   useEffect,
   useCallback,
+  useMemo,
   type ReactNode,
 } from 'react';
 
@@ -31,12 +32,49 @@ interface ProxyConnectResponse {
   error?: string;
 }
 
+// Reducer state and actions for proxy connection
+interface ProxyState {
+  status: 'disconnected' | 'connecting' | 'connected';
+  httpPort: number | null;
+  version: string | null;
+  error: string | null;
+}
+
+type ProxyAction =
+  | { type: 'CONNECTING' }
+  | { type: 'CONNECTED'; payload: { httpPort: number | null; version: string | null } }
+  | { type: 'DISCONNECTED' }
+  | { type: 'ERROR'; payload: string };
+
+function proxyReducer(state: ProxyState, action: ProxyAction): ProxyState {
+  switch (action.type) {
+    case 'CONNECTING':
+      return { ...state, status: 'connecting', error: null };
+    case 'CONNECTED':
+      return {
+        status: 'connected',
+        httpPort: action.payload.httpPort,
+        version: action.payload.version,
+        error: null,
+      };
+    case 'DISCONNECTED':
+      return { status: 'disconnected', httpPort: null, version: null, error: null };
+    case 'ERROR':
+      return { ...state, status: 'disconnected', error: action.payload };
+    default:
+      return state;
+  }
+}
+
+const initialState: ProxyState = {
+  status: 'disconnected',
+  httpPort: null,
+  version: null,
+  error: null,
+};
+
 export function ProxyProvider({ children }: ProxyProviderProps) {
-  const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [httpPort, setHttpPort] = useState<number | null>(null);
-  const [version, setVersion] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(proxyReducer, initialState);
 
   const checkStatus = useCallback(async () => {
     if (typeof chrome === 'undefined' || !chrome.runtime) {
@@ -48,13 +86,16 @@ export function ProxyProvider({ children }: ProxyProviderProps) {
         type: 'getProxyInfo',
       })) as { success: boolean; connected: boolean; httpPort?: number; version?: string };
 
-      setIsConnected(response.connected);
-      setHttpPort(response.httpPort ?? null);
-      setVersion(response.version ?? null);
+      if (response.connected) {
+        dispatch({
+          type: 'CONNECTED',
+          payload: { httpPort: response.httpPort ?? null, version: response.version ?? null },
+        });
+      } else {
+        dispatch({ type: 'DISCONNECTED' });
+      }
     } catch {
-      setIsConnected(false);
-      setHttpPort(null);
-      setVersion(null);
+      dispatch({ type: 'DISCONNECTED' });
     }
   }, []);
 
@@ -64,62 +105,58 @@ export function ProxyProvider({ children }: ProxyProviderProps) {
 
   const connect = useCallback(async () => {
     if (typeof chrome === 'undefined' || !chrome.runtime) {
-      setError('Chrome runtime not available');
+      dispatch({ type: 'ERROR', payload: 'Chrome runtime not available' });
       return;
     }
 
-    setIsConnecting(true);
-    setError(null);
+    dispatch({ type: 'CONNECTING' });
     try {
       const response = (await chrome.runtime.sendMessage({
         type: 'connectProxy',
       })) as ProxyConnectResponse;
       if (response.success) {
-        setIsConnected(true);
-        setHttpPort(response.httpPort || null);
-        setVersion(response.version || null);
+        dispatch({
+          type: 'CONNECTED',
+          payload: { httpPort: response.httpPort ?? null, version: response.version ?? null },
+        });
       } else {
-        setError(response.error || 'Failed to connect');
+        dispatch({ type: 'ERROR', payload: response.error || 'Failed to connect' });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection failed');
-    } finally {
-      setIsConnecting(false);
+      dispatch({ type: 'ERROR', payload: err instanceof Error ? err.message : 'Connection failed' });
     }
   }, []);
 
   const disconnect = useCallback(async () => {
     if (typeof chrome === 'undefined' || !chrome.runtime) {
-      setError('Chrome runtime not available');
+      dispatch({ type: 'ERROR', payload: 'Chrome runtime not available' });
       return;
     }
 
     try {
       await chrome.runtime.sendMessage({ type: 'disconnectProxy' });
-      setIsConnected(false);
-      setHttpPort(null);
-      setVersion(null);
+      dispatch({ type: 'DISCONNECTED' });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Disconnect failed');
+      dispatch({ type: 'ERROR', payload: err instanceof Error ? err.message : 'Disconnect failed' });
     }
   }, []);
 
-  return (
-    <ProxyContext.Provider
-      value={{
-        isConnected,
-        isConnecting,
-        httpPort,
-        version,
-        error,
-        connect,
-        disconnect,
-        checkStatus,
-      }}
-    >
-      {children}
-    </ProxyContext.Provider>
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<ProxyContextType>(
+    () => ({
+      isConnected: state.status === 'connected',
+      isConnecting: state.status === 'connecting',
+      httpPort: state.httpPort,
+      version: state.version,
+      error: state.error,
+      connect,
+      disconnect,
+      checkStatus,
+    }),
+    [state, connect, disconnect, checkStatus]
   );
+
+  return <ProxyContext.Provider value={value}>{children}</ProxyContext.Provider>;
 }
 
 export function useProxy() {

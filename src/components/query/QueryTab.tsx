@@ -1,6 +1,7 @@
 // Query Tab - SOQL Query Editor with tabbed results (React version)
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
+import { useStatusBadge } from '../../hooks';
 import { ButtonIcon, ButtonIconOption, ButtonIconCheckbox } from '../button-icon/ButtonIcon';
 import { QueryEditor, clearQueryAutocompleteState, type QueryEditorRef } from './QueryEditor';
 import { QueryTabs } from './QueryTabs';
@@ -14,7 +15,14 @@ import {
   getObjectDescribe,
   updateRecord,
 } from '../../lib/salesforce.js';
-import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
+import {
+  getValueByPath,
+  formatCellValue,
+  escapeCsvField,
+  getExportFilename,
+  downloadCsv,
+} from '../../lib/csv-utils.js';
+import { StatusBadge } from '../status-badge/StatusBadge';
 import type { HistoryManager } from '../../lib/history-manager.js';
 import type { FieldDescribe, SObject } from '../../types/salesforce';
 import styles from './QueryTab.module.css';
@@ -54,8 +62,7 @@ export function QueryTab() {
   const [editingEnabled, setEditingEnabled] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [bulkExportInProgress, setBulkExportInProgress] = useState(false);
-  const [statusText, setStatusText] = useState('');
-  const [statusType, setStatusType] = useState<StatusType>('');
+  const { statusText, statusType, updateStatus } = useStatusBadge();
 
   // Editor state
   const [editorValue, setEditorValue] = useState(DEFAULT_QUERY);
@@ -72,12 +79,6 @@ export function QueryTab() {
   useEffect(() => {
     clearQueryAutocompleteState();
   }, [activeConnection?.id]);
-
-  // Update status display
-  const updateStatus = useCallback((text: string, type: StatusType = '') => {
-    setStatusText(text);
-    setStatusType(type);
-  }, []);
 
   // Check if query results are editable
   const checkIfEditable = useCallback((columns: QueryColumn[], objectName: string | null): boolean => {
@@ -488,63 +489,4 @@ export function QueryTab() {
       </div>
     </div>
   );
-}
-
-// Helper functions
-function getValueByPath(record: SObject, path: string): unknown {
-  if (!path) return undefined;
-  const parts = path.split('.');
-  let value: unknown = record;
-  for (const part of parts) {
-    if (value === null || value === undefined) return undefined;
-    value = (value as Record<string, unknown>)[part];
-  }
-  return value;
-}
-
-function formatCellValue(value: unknown, col: QueryColumn): string {
-  if (value === null || value === undefined) return '';
-  if (col?.isSubquery && typeof value === 'object') {
-    const subquery = value as { records?: unknown[]; totalSize?: number };
-    if (subquery.records) {
-      return `[${subquery.totalSize || subquery.records.length} records]`;
-    }
-  }
-  if (typeof value === 'object') {
-    const obj = value as Record<string, unknown>;
-    if (obj.Name !== undefined) return String(obj.Name);
-    if (obj.Id !== undefined) return String(obj.Id);
-    return JSON.stringify(value);
-  }
-  return String(value);
-}
-
-function escapeCsvField(value: string | null | undefined): string {
-  if (value === null || value === undefined) return '';
-  const str = String(value);
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
-function getExportFilename(objectName: string | null): string {
-  const name = objectName || 'query';
-  const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-  return `${name}_${timestamp}.csv`;
-}
-
-function downloadCsv(content: string, filename: string): void {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

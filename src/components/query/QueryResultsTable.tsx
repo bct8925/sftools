@@ -3,6 +3,8 @@ import { useState, useCallback, useMemo } from 'react';
 import type { SObject, FieldDescribe, ColumnMetadata } from '../../types/salesforce';
 import type { QueryColumn } from './useQueryState';
 import { getActiveConnectionId } from '../../lib/auth.js';
+import { getValueByPath, formatCellValue } from '../../lib/csv-utils.js';
+import { parseFieldValue } from '../../lib/value-utils.js';
 import styles from './QueryTab.module.css';
 
 interface QueryResultsTableProps {
@@ -22,74 +24,6 @@ interface QueryResultsTableProps {
   onFieldChange: (recordId: string, fieldName: string, value: unknown, originalValue: unknown) => void;
   /** Filter text for row visibility */
   filterText: string;
-}
-
-// Get value from record by dot-notation path
-function getValueByPath(record: SObject, path: string): unknown {
-  if (!path) return undefined;
-  const parts = path.split('.');
-  let value: unknown = record;
-  for (const part of parts) {
-    if (value === null || value === undefined) return undefined;
-    value = (value as Record<string, unknown>)[part];
-  }
-  return value;
-}
-
-// Format cell value for display
-function formatCellValue(value: unknown, col: QueryColumn): string {
-  if (value === null || value === undefined) {
-    return '';
-  }
-
-  if (col?.isSubquery && typeof value === 'object') {
-    const subquery = value as { records?: unknown[]; totalSize?: number };
-    if (subquery.records) {
-      return `[${subquery.totalSize || subquery.records.length} records]`;
-    }
-    if (Array.isArray(value)) {
-      return `[${value.length} records]`;
-    }
-  }
-
-  if (typeof value === 'object') {
-    const obj = value as Record<string, unknown>;
-    if (obj.Name !== undefined) return String(obj.Name);
-    if (obj.Id !== undefined) return String(obj.Id);
-    return JSON.stringify(value);
-  }
-
-  return String(value);
-}
-
-// Parse input value based on field type
-function parseValueFromInput(stringValue: string, field: FieldDescribe): unknown {
-  if (stringValue === '' || stringValue === null) return null;
-
-  switch (field.type) {
-    case 'boolean':
-      return stringValue === 'true';
-    case 'int': {
-      const intVal = parseInt(stringValue, 10);
-      return isNaN(intVal) ? null : intVal;
-    }
-    case 'double':
-    case 'currency':
-    case 'percent': {
-      const floatVal = parseFloat(stringValue);
-      return isNaN(floatVal) ? null : floatVal;
-    }
-    default:
-      return stringValue;
-  }
-}
-
-// Compare values for equality (handles type coercion)
-function valuesEqual(original: unknown, newValue: unknown): boolean {
-  if (original === null || original === undefined) {
-    return newValue === null || newValue === undefined || newValue === '';
-  }
-  return String(original) === String(newValue ?? '');
 }
 
 /**
@@ -161,7 +95,7 @@ export function QueryResultsTable({
       if (typeof inputValue === 'boolean') {
         newValue = inputValue;
       } else {
-        newValue = parseValueFromInput(inputValue, field);
+        newValue = parseFieldValue(inputValue, field);
       }
 
       onFieldChange(recordId, fieldName, newValue, originalValue);

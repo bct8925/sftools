@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   type ReactNode,
 } from 'react';
 import type { SalesforceConnection } from '../types/salesforce';
@@ -129,23 +130,32 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
     [refreshConnections]
   );
 
-  return (
-    <ConnectionContext.Provider
-      value={{
-        connections,
-        activeConnection,
-        isAuthenticated: checkAuth(),
-        isLoading,
-        setActiveConnection,
-        addConnection,
-        updateConnection,
-        removeConnection,
-        refreshConnections,
-      }}
-    >
-      {children}
-    </ConnectionContext.Provider>
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<ConnectionContextType>(
+    () => ({
+      connections,
+      activeConnection,
+      isAuthenticated: checkAuth(),
+      isLoading,
+      setActiveConnection,
+      addConnection,
+      updateConnection,
+      removeConnection,
+      refreshConnections,
+    }),
+    [
+      connections,
+      activeConnection,
+      isLoading,
+      setActiveConnection,
+      addConnection,
+      updateConnection,
+      removeConnection,
+      refreshConnections,
+    ]
   );
+
+  return <ConnectionContext.Provider value={value}>{children}</ConnectionContext.Provider>;
 }
 
 export function useConnection() {

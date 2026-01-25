@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   type ReactNode,
 } from 'react';
 import { initTheme, getTheme, setTheme as setThemeStorage } from '../lib/theme.js';
@@ -58,11 +59,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     [updateEffectiveTheme]
   );
 
-  return (
-    <ThemeContext.Provider value={{ theme, effectiveTheme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<ThemeContextType>(
+    () => ({ theme, effectiveTheme, setTheme }),
+    [theme, effectiveTheme, setTheme]
   );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

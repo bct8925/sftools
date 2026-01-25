@@ -219,8 +219,7 @@ describe('soql-autocomplete', () => {
             }));
 
             const autocomplete = await import('../../../src/lib/soql-autocomplete.js');
-            const monacoMock =
-                await import('../../../src/components/monaco-editor/MonacoEditor');
+            const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.registerSOQLCompletionProvider();
 

@@ -89,7 +89,9 @@ export class SchemaPage extends BasePage {
      * Select an object to view its fields
      */
     async selectObject(apiName: string): Promise<void> {
-        const objectItem = this.page.locator(`[data-testid="schema-object-item"][data-object-name="${apiName}"]`);
+        const objectItem = this.page.locator(
+            `[data-testid="schema-object-item"][data-object-name="${apiName}"]`
+        );
         await this.slowClick(objectItem);
 
         // Wait for fields panel to show
@@ -152,8 +154,10 @@ export class SchemaPage extends BasePage {
             return null;
         }
 
-        const label = (await fieldItem.locator('[data-testid="schema-field-label"]').textContent()) || '';
-        const type = (await fieldItem.locator('[data-testid="schema-field-type"]').textContent()) || '';
+        const label =
+            (await fieldItem.locator('[data-testid="schema-field-label"]').textContent()) || '';
+        const type =
+            (await fieldItem.locator('[data-testid="schema-field-type"]').textContent()) || '';
 
         return { label: label.trim(), type: type.trim() };
     }

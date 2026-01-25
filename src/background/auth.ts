@@ -2,11 +2,11 @@
 // Handles OAuth token exchange and refresh in the service worker
 
 import { getOAuthCredentials } from '../lib/oauth-credentials.js';
+import type { SalesforceConnection } from '../types/salesforce';
 import { isProxyConnected, sendProxyRequest } from './native-messaging.js';
 import { debugInfo } from './debug.js';
-import type { SalesforceConnection } from '../types/salesforce';
 
-interface TokenExchangeRequest {
+interface _TokenExchangeRequest {
     code: string;
     redirectUri: string;
     loginDomain: string;

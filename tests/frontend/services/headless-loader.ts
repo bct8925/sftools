@@ -6,7 +6,10 @@
  */
 
 import { chromium, BrowserContext } from 'playwright';
-import { createChromeMockScript, ChromeMockInitialState } from '../../shared/mocks/chrome-browser-mock';
+import {
+    createChromeMockScript,
+    ChromeMockInitialState,
+} from '../../shared/mocks/chrome-browser-mock';
 import type { SalesforceClient } from './salesforce-client';
 
 export interface HeadlessLoadResult {

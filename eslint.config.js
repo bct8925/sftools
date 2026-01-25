@@ -129,9 +129,47 @@ export default [
         },
     },
 
-    // Test files - more relaxed rules
+    // TypeScript test files (no projectService - tests not in tsconfig)
+    ...tseslint.configs.recommended.map((config) => ({
+        ...config,
+        files: ['tests/**/*.ts'],
+    })),
     {
-        files: ['tests/**/*.js', 'tests/**/*.ts', '**/*.test.js', '**/*.test.ts', '**/*.spec.js', '**/*.spec.ts'],
+        files: ['tests/**/*.ts'],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            parser: tseslint.parser,
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+                chrome: 'readonly',
+                vi: 'readonly',
+                describe: 'readonly',
+                it: 'readonly',
+                test: 'readonly',
+                expect: 'readonly',
+                beforeEach: 'readonly',
+                afterEach: 'readonly',
+                beforeAll: 'readonly',
+                afterAll: 'readonly',
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tseslint.plugin,
+        },
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off', // Tests often need any
+            '@typescript-eslint/no-unused-vars': 'off', // Relaxed for tests
+            '@typescript-eslint/no-require-imports': 'off', // Dynamic test loading
+            'no-unused-expressions': 'off', // Allow expect().toBe() chains
+            'no-empty-function': 'off',
+        },
+    },
+
+    // JavaScript test files - more relaxed rules
+    {
+        files: ['tests/**/*.js', '**/*.test.js', '**/*.spec.js'],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: 'module',

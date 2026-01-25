@@ -1,24 +1,24 @@
 .currentConnectionDisplay {
-  margin-left: auto;
-  font-size: 14px;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 200px;
+    margin-left: auto;
+    font-size: 14px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
 }
 
 /* Responsive: smaller screens */
 @media (max-width: 480px) {
-  .currentConnectionDisplay {
-    max-width: 120px;
-    font-size: 13px;
-  }
+    .currentConnectionDisplay {
+        max-width: 120px;
+        font-size: 13px;
+    }
 }
 
 @media (max-width: 320px) {
-  .currentConnectionDisplay {
-    max-width: 80px;
-    font-size: 12px;
-  }
+    .currentConnectionDisplay {
+        max-width: 80px;
+        font-size: 12px;
+    }
 }

@@ -1,8 +1,8 @@
 // Frontend Auth Module for sftools
 // Used by content scripts (app.js, etc.) - NOT the service worker
 
-import { debugInfo } from './debug.js';
 import type { SalesforceConnection } from '../types/salesforce';
+import { debugInfo } from './debug.js';
 
 // --- Types ---
 

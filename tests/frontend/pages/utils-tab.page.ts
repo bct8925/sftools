@@ -36,13 +36,21 @@ export class UtilsTabPage extends BasePage {
         this.userSearchInput = page.locator('[data-testid="debug-logs-user-search"]');
         this.userResults = page.locator('[data-testid="debug-logs-user-results"]');
         this.traceStatus = page.locator('[data-testid="debug-logs-trace-status"]');
-        this.traceStatusIndicator = page.locator('[data-testid="debug-logs-trace-status"] .status-indicator');
-        this.traceStatusText = page.locator('[data-testid="debug-logs-trace-status"] .tool-status-text');
+        this.traceStatusIndicator = page.locator(
+            '[data-testid="debug-logs-trace-status"] .status-indicator'
+        );
+        this.traceStatusText = page.locator(
+            '[data-testid="debug-logs-trace-status"] .tool-status-text'
+        );
         this.deleteLogsBtn = page.locator('[data-testid="debug-logs-delete-logs-btn"]');
         this.deleteFlagsBtn = page.locator('[data-testid="debug-logs-delete-flags-btn"]');
         this.deleteStatus = page.locator('[data-testid="debug-logs-delete-status"]');
-        this.deleteStatusIndicator = page.locator('[data-testid="debug-logs-delete-status"] .status-indicator');
-        this.deleteStatusText = page.locator('[data-testid="debug-logs-delete-status"] .tool-status-text');
+        this.deleteStatusIndicator = page.locator(
+            '[data-testid="debug-logs-delete-status"] .status-indicator'
+        );
+        this.deleteStatusText = page.locator(
+            '[data-testid="debug-logs-delete-status"] .tool-status-text'
+        );
 
         // Flow Cleanup elements
         this.flowSearchInput = page.locator('[data-testid="flow-cleanup-search"]');
@@ -54,7 +62,9 @@ export class UtilsTabPage extends BasePage {
         this.flowCleanupStatusIndicator = page.locator(
             '[data-testid="flow-cleanup-status"] .status-indicator'
         );
-        this.flowCleanupStatusText = page.locator('[data-testid="flow-cleanup-status"] .tool-status-text');
+        this.flowCleanupStatusText = page.locator(
+            '[data-testid="flow-cleanup-status"] .tool-status-text'
+        );
 
         // Schema Browser Link
         this.openSchemaBtn = page.locator('[data-testid="open-schema-btn"]');
@@ -177,9 +187,12 @@ export class UtilsTabPage extends BasePage {
         await this.userResults.waitFor({ state: 'visible', timeout: 5000 });
 
         // Find and click the user by name
-        const userItem = this.page.locator('[data-testid="debug-logs-user-results"] .tool-result-item', {
-            has: this.page.locator('.tool-result-name', { hasText: name }),
-        });
+        const userItem = this.page.locator(
+            '[data-testid="debug-logs-user-results"] .search-box-item',
+            {
+                has: this.page.locator('.search-box-item-name', { hasText: name }),
+            }
+        );
         await this.slowClick(userItem);
 
         // Wait for status to update
@@ -297,9 +310,12 @@ export class UtilsTabPage extends BasePage {
         await this.flowSearchDropdown.waitFor({ state: 'visible', timeout: 5000 });
 
         // Find and click the flow by name
-        const flowItem = this.page.locator('[data-testid="flow-cleanup-dropdown"] .search-box-item', {
-            has: this.page.locator('.search-box-item-name', { hasText: name }),
-        });
+        const flowItem = this.page.locator(
+            '[data-testid="flow-cleanup-dropdown"] .search-box-item',
+            {
+                has: this.page.locator('.search-box-item-name', { hasText: name }),
+            }
+        );
         await this.slowClick(flowItem);
 
         // Wait for versions section to appear or status to show

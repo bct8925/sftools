@@ -4,6 +4,7 @@ import {
     parseLightningUrl,
     findConnectionByDomain as findConnectionByDomainUtil,
 } from '../lib/background-utils.js';
+import type { SalesforceConnection } from '../types/salesforce';
 import {
     connectNative,
     disconnectNative,
@@ -13,7 +14,6 @@ import {
 } from './native-messaging.js';
 import { exchangeCodeForTokens, refreshAccessToken, updateConnectionToken } from './auth.js';
 import { debugInfo } from './debug.js';
-import type { SalesforceConnection } from '../types/salesforce';
 
 // ============================================================================
 // Message Types

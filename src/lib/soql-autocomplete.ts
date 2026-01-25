@@ -1,11 +1,8 @@
 // SOQL Autocomplete for Query Tab
 import { parseQuery } from '@jetstreamapp/soql-parser-js';
 import { monaco } from '../components/monaco-editor/MonacoEditor';
+import type { FieldDescribe, DescribeGlobalResult } from '../types/salesforce';
 import { getGlobalDescribe, getObjectDescribe } from './salesforce.js';
-import type {
-    FieldDescribe,
-    DescribeGlobalResult,
-} from '../types/salesforce';
 
 // Module state
 interface AutocompleteState {
@@ -206,7 +203,6 @@ function extractDotChain(text: string, offset: number): string[] | null {
 
     return null;
 }
-
 
 // Map field types to Monaco completion item kinds
 function getCompletionKind(field: FieldDescribe): monaco.languages.CompletionItemKind {

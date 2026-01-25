@@ -1,13 +1,13 @@
 // History & Favorites Manager for component tabs
 // Handles storage and data management for history/favorites lists
 
-export interface HistoryEntry<T extends string = 'content'> {
+export interface HistoryEntry<_T extends string = 'content'> {
     id: string;
     timestamp: number;
     [key: string]: unknown;
 }
 
-export interface FavoriteEntry<T extends string = 'content'> extends HistoryEntry<T> {
+export interface FavoriteEntry<_T extends string = 'content'> extends HistoryEntry<_T> {
     label: string;
 }
 

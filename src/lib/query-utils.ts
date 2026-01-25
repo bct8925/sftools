@@ -1,7 +1,7 @@
 // Query Tab Utility Functions
 // Pure functions for data transformation and CSV export
 
-import type { ColumnMetadata, SObject } from '../types/salesforce';
+import type { ColumnMetadata, SObject, FieldDescribe } from '../types/salesforce';
 
 /**
  * Normalizes a SOQL query for comparison purposes
@@ -153,8 +153,6 @@ export function formatCellValue(value: unknown, col?: FlatColumn): string {
 
     return String(value);
 }
-
-import type { FieldDescribe } from '../types/salesforce';
 
 /**
  * Parses a string value from an input based on field type

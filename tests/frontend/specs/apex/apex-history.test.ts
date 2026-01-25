@@ -84,7 +84,9 @@ System.debug('Result: ' + result);`;
     private async getHistoryCount(): Promise<number> {
         // Make sure we're on the history tab
         const historyTab = this.page.locator('[data-testid="apex-history-tab"]');
-        const isHistoryActive = await historyTab.evaluate(el => el.classList.contains('active') || el.classList.contains('_active_'));
+        const isHistoryActive = await historyTab.evaluate(
+            el => el.classList.contains('active') || el.classList.contains('_active_')
+        );
         if (!isHistoryActive) {
             await this.apexTab.slowClick(historyTab);
         }
@@ -103,7 +105,9 @@ System.debug('Result: ' + result);`;
     private async getHistoryItems(): Promise<string[]> {
         // Make sure we're on the history tab
         const historyTab = this.page.locator('[data-testid="apex-history-tab"]');
-        const isHistoryActive = await historyTab.evaluate(el => el.classList.contains('active') || el.classList.contains('_active_'));
+        const isHistoryActive = await historyTab.evaluate(
+            el => el.classList.contains('active') || el.classList.contains('_active_')
+        );
         if (!isHistoryActive) {
             await this.apexTab.slowClick(historyTab);
         }

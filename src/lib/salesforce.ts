@@ -1,25 +1,28 @@
 // Salesforce Service Module
 // All Salesforce API operations for the application
 
-import { salesforceRequest } from './salesforce-request.js';
-import { smartFetch } from './fetch.js';
-import { getAccessToken, getInstanceUrl, getActiveConnectionId } from './auth.js';
-import { API_VERSION } from './utils.js';
 import type {
-    SObjectDescribe,
     DescribeGlobalResult,
     ObjectDescribeResult,
     SObject,
     QueryResult,
     ApexExecutionResult,
-    ToolingQueryResult,
+    ColumnMetadata,
+    FieldDescribe,
+    RestApiResponse,
+    FlowDefinition,
+    FlowVersion,
 } from '../types/salesforce';
+import { API_VERSION } from './utils.js';
+import { getAccessToken, getInstanceUrl, getActiveConnectionId } from './auth.js';
+import { smartFetch } from './fetch.js';
+import { salesforceRequest } from './salesforce-request.js';
 
 // ============================================================
 // Tooling API Utilities
 // ============================================================
 
-interface CompositeRequest {
+interface _CompositeRequest {
     method: string;
     url: string;
     referenceId: string;
@@ -386,12 +389,6 @@ export async function executeAnonymousApex(
     return { execution, debugLog };
 }
 
-// ============================================================
-// SOQL Query
-// ============================================================
-
-import type { ColumnMetadata } from '../types/salesforce';
-
 export interface QueryWithColumnsResult {
     records: SObject[];
     totalSize: number;
@@ -504,8 +501,6 @@ export async function getRecord(objectType: string, recordId: string): Promise<S
     return response.json;
 }
 
-import type { FieldDescribe } from '../types/salesforce';
-
 export interface RecordWithRelationships {
     record: SObject;
     nameFieldMap: Record<string, string>;
@@ -587,12 +582,6 @@ export async function updateRecord(
         body: JSON.stringify(fields),
     });
 }
-
-// ============================================================
-// Generic REST
-// ============================================================
-
-import type { RestApiResponse } from '../types/salesforce';
 
 /**
  * Execute a generic REST API request
@@ -906,8 +895,6 @@ export async function deleteAllTraceFlags(): Promise<{ deletedCount: number }> {
     const deletedCount = await bulkDeleteTooling('TraceFlag', flagIds);
     return { deletedCount };
 }
-
-import type { FlowDefinition, FlowVersion } from '../types/salesforce';
 
 /**
  * Search flows by name

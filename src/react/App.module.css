@@ -1,41 +1,41 @@
 /* Layout Shell */
 .appContainer {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 /* Tab Navigation */
 .tabNav {
-  display: flex;
-  align-items: center;
-  background: var(--nav-bg);
-  border-bottom: 2px solid var(--border-color);
-  padding: 0 20px;
-  height: 50px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 2px 0 var(--shadow-sm);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+    display: flex;
+    align-items: center;
+    background: var(--nav-bg);
+    border-bottom: 2px solid var(--border-color);
+    padding: 0 20px;
+    height: 50px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 2px 0 var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 /* Content Area */
 .contentArea {
-  flex: 1;
-  padding: 20px;
-  padding-bottom: 0;
-  width: 100%;
-  margin: 0 auto;
-  box-sizing: border-box;
+    flex: 1;
+    padding: 20px;
+    padding-bottom: 0;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 
 /* Tab Panel States - keeps components mounted to retain state */
 .tabPanelActive {
-  display: block;
-  height: 100%;
+    display: block;
+    height: 100%;
 }
 
 .tabPanelHidden {
-  display: none;
+    display: none;
 }

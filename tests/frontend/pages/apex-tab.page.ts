@@ -184,7 +184,9 @@ export class ApexTabPage extends BasePage {
         await this.slowClick(historyTab);
 
         await this.delay('beforeClick');
-        const historyItems = await this.page.$$('[data-testid="apex-history-list"] [data-testid="script-item"]');
+        const historyItems = await this.page.$$(
+            '[data-testid="apex-history-list"] [data-testid="script-item"]'
+        );
         if (historyItems[index]) {
             await historyItems[index].click();
         } else {
@@ -281,7 +283,9 @@ export class ApexTabPage extends BasePage {
         await this.openFavorites();
 
         await this.delay('beforeClick');
-        const favoriteItems = await this.page.$$('[data-testid="apex-favorites-list"] [data-testid="script-item"]');
+        const favoriteItems = await this.page.$$(
+            '[data-testid="apex-favorites-list"] [data-testid="script-item"]'
+        );
         if (favoriteItems[index]) {
             await favoriteItems[index].click();
         } else {

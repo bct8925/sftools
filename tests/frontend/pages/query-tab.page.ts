@@ -160,14 +160,18 @@ export class QueryTabPage extends BasePage {
      * Check if results contain a subquery toggle
      */
     async hasSubqueryResults(): Promise<boolean> {
-        return this.page.isVisible('[data-testid="query-results"] [data-testid="query-subquery-toggle"]');
+        return this.page.isVisible(
+            '[data-testid="query-results"] [data-testid="query-subquery-toggle"]'
+        );
     }
 
     /**
      * Expand a subquery result at the given index
      */
     async expandSubquery(index: number): Promise<void> {
-        const toggles = await this.page.$$('[data-testid="query-results"] [data-testid="query-subquery-toggle"]');
+        const toggles = await this.page.$$(
+            '[data-testid="query-results"] [data-testid="query-subquery-toggle"]'
+        );
         if (toggles[index]) {
             await toggles[index].click();
         }
@@ -180,7 +184,9 @@ export class QueryTabPage extends BasePage {
         // Subquery rows appear immediately after the parent row with the toggle
         const rows = await this.page.$$('[data-testid="query-results"] tbody tr');
         // The subquery content is in a nested table inside a colspan cell
-        const subqueryTables = await this.page.$$('[data-testid="query-results"] [data-testid="query-subquery-table"]');
+        const subqueryTables = await this.page.$$(
+            '[data-testid="query-results"] [data-testid="query-subquery-table"]'
+        );
         if (subqueryTables[index]) {
             return (await subqueryTables[index].textContent()) || '';
         }
@@ -374,17 +380,20 @@ export class QueryTabPage extends BasePage {
      * Get the number of pending changes
      */
     async getChangesCount(): Promise<number> {
-        return this.page.$$eval('[data-testid="query-results"] table tbody td[data-modified="true"]', cells => {
-            const recordIds = new Set();
-            cells.forEach(cell => {
-                const row = cell.closest('tr');
-                if (row) {
-                    const recordId = row.getAttribute('data-record-id');
-                    if (recordId) recordIds.add(recordId);
-                }
-            });
-            return recordIds.size;
-        });
+        return this.page.$$eval(
+            '[data-testid="query-results"] table tbody td[data-modified="true"]',
+            cells => {
+                const recordIds = new Set();
+                cells.forEach(cell => {
+                    const row = cell.closest('tr');
+                    if (row) {
+                        const recordId = row.getAttribute('data-record-id');
+                        if (recordId) recordIds.add(recordId);
+                    }
+                });
+                return recordIds.size;
+            }
+        );
     }
 
     /**
@@ -444,7 +453,9 @@ export class QueryTabPage extends BasePage {
         await this.slowClick(historyTab);
 
         await this.delay('beforeClick');
-        const historyItems = await this.page.$$('[data-testid="query-history-list"] [data-testid="script-item"]');
+        const historyItems = await this.page.$$(
+            '[data-testid="query-history-list"] [data-testid="script-item"]'
+        );
         if (historyItems[index]) {
             await historyItems[index].click();
         } else {
@@ -558,10 +569,13 @@ export class QueryTabPage extends BasePage {
         await this.openHistory();
 
         // Wait for at least one history item to appear
-        await this.page.waitForSelector('[data-testid="query-history-list"] [data-testid="script-item"]', {
-            state: 'visible',
-            timeout: 5000,
-        });
+        await this.page.waitForSelector(
+            '[data-testid="query-history-list"] [data-testid="script-item"]',
+            {
+                state: 'visible',
+                timeout: 5000,
+            }
+        );
 
         // Click the favorite button on the first history item
         await this.delay('beforeClick');
@@ -604,7 +618,9 @@ export class QueryTabPage extends BasePage {
         await this.openFavorites();
 
         await this.delay('beforeClick');
-        const favoriteItems = await this.page.$$('[data-testid="query-favorites-list"] [data-testid="script-item"]');
+        const favoriteItems = await this.page.$$(
+            '[data-testid="query-favorites-list"] [data-testid="script-item"]'
+        );
         if (favoriteItems[index]) {
             await favoriteItems[index].click();
         } else {
@@ -693,7 +709,9 @@ export class QueryTabPage extends BasePage {
     async getActiveTab(): Promise<number> {
         const tabs = await this.page.$$('[data-testid="query-tabs"] [data-testid="query-tab"]');
         for (let i = 0; i < tabs.length; i++) {
-            const isActive = await tabs[i].evaluate(el => el.getAttribute('data-active') === 'true');
+            const isActive = await tabs[i].evaluate(
+                el => el.getAttribute('data-active') === 'true'
+            );
             if (isActive) return i;
         }
         return -1;
@@ -703,7 +721,9 @@ export class QueryTabPage extends BasePage {
      * Collapse an expanded subquery
      */
     async collapseSubquery(index: number): Promise<void> {
-        const toggles = await this.page.$$('[data-testid="query-results"] [data-testid="query-subquery-toggle"]');
+        const toggles = await this.page.$$(
+            '[data-testid="query-results"] [data-testid="query-subquery-toggle"]'
+        );
         if (toggles[index]) {
             // Check if already expanded
             const expanded = await toggles[index].evaluate(
@@ -721,7 +741,9 @@ export class QueryTabPage extends BasePage {
      * Check if a subquery is visible (expanded)
      */
     async isSubqueryVisible(index: number): Promise<boolean> {
-        const subqueryTables = await this.page.$$('[data-testid="query-results"] [data-testid="query-subquery-table"]');
+        const subqueryTables = await this.page.$$(
+            '[data-testid="query-results"] [data-testid="query-subquery-table"]'
+        );
         if (subqueryTables[index]) {
             const isVisible = await subqueryTables[index].isVisible();
             return isVisible;

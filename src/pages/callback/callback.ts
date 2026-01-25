@@ -11,7 +11,7 @@ import {
 import { escapeHtml } from '../../lib/text-utils.js';
 import type { SalesforceConnection } from '../../types/salesforce';
 
-interface PendingAuth {
+interface _PendingAuth {
     loginDomain?: string;
     clientId?: string | null;
     connectionId?: string | null;

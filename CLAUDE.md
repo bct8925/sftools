@@ -780,5 +780,10 @@ See [tests/CLAUDE.md](tests/CLAUDE.md) for comprehensive testing documentation.
 | [src/components/CLAUDE.md](src/components/CLAUDE.md) | React component patterns |
 | [src/contexts/CLAUDE.md](src/contexts/CLAUDE.md) | State management patterns |
 | [src/lib/CLAUDE.md](src/lib/CLAUDE.md) | TypeScript utility patterns |
+| [src/types/CLAUDE.md](src/types/CLAUDE.md) | TypeScript type definitions |
+| [src/hooks/CLAUDE.md](src/hooks/CLAUDE.md) | React hooks exports |
+| [src/react/CLAUDE.md](src/react/CLAUDE.md) | App shell and entry points |
+| [src/background/CLAUDE.md](src/background/CLAUDE.md) | Service worker patterns |
+| [src/pages/CLAUDE.md](src/pages/CLAUDE.md) | HTML entry points |
 | [tests/CLAUDE.md](tests/CLAUDE.md) | Testing framework and patterns |
 | [sftools-proxy/CLAUDE.md](sftools-proxy/CLAUDE.md) | Proxy architecture |

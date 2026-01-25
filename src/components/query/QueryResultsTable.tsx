@@ -261,6 +261,8 @@ export function QueryResultsTable({
       <button
         className={styles.subqueryToggle}
         onClick={() => toggleSubquery(recordId, col.path)}
+        data-testid="query-subquery-toggle"
+        data-expanded={isExpanded ? 'true' : 'false'}
       >
         {isExpanded ? '\u25BC' : '\u25B6'} {count} record{count !== 1 ? 's' : ''}
       </button>
@@ -294,9 +296,9 @@ export function QueryResultsTable({
     }
 
     return (
-      <tr key={`${key}-detail`} className={styles.subqueryDetail}>
+      <tr key={`${key}-detail`} className={styles.subqueryDetail} data-testid="query-subquery-detail">
         <td colSpan={colSpan}>
-          <table className={styles.subqueryTable}>
+          <table className={styles.subqueryTable} data-testid="query-subquery-table">
             <thead>
               <tr>
                 {subColumns.map((sc) => (
@@ -359,6 +361,7 @@ export function QueryResultsTable({
         <td
           key={col.path}
           className={isModified ? styles.modified : undefined}
+          data-modified={isModified ? 'true' : 'false'}
         >
           {renderEditableCell(value, col, recordId, modifiedValue)}
         </td>

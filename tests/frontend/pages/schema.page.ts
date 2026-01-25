@@ -25,22 +25,22 @@ export class SchemaPage extends BasePage {
     constructor(page: Page) {
         super(page);
 
-        this.objectFilter = page.locator('#objectFilter');
-        this.objectsList = page.locator('#objectsList');
-        this.objectCount = page.locator('#objectCount');
-        this.refreshObjectsBtn = page.locator('#refreshObjectsBtn');
-        this.fieldsPanel = page.locator('#fieldsPanel');
-        this.fieldFilter = page.locator('#fieldFilter');
-        this.fieldsList = page.locator('#fieldsList');
-        this.selectedObjectLabel = page.locator('#selectedObjectLabel');
-        this.selectedObjectName = page.locator('#selectedObjectName');
-        this.closeFieldsBtn = page.locator('#closeFieldsBtn');
+        this.objectFilter = page.locator('[data-testid="schema-object-filter"]');
+        this.objectsList = page.locator('[data-testid="schema-objects-list"]');
+        this.objectCount = page.locator('[data-testid="schema-object-count"]');
+        this.refreshObjectsBtn = page.locator('[data-testid="schema-refresh-objects"]');
+        this.fieldsPanel = page.locator('[data-testid="schema-fields-panel"]');
+        this.fieldFilter = page.locator('[data-testid="schema-field-filter"]');
+        this.fieldsList = page.locator('[data-testid="schema-fields-list"]');
+        this.selectedObjectLabel = page.locator('[data-testid="schema-selected-object-label"]');
+        this.selectedObjectName = page.locator('[data-testid="schema-selected-object-name"]');
+        this.closeFieldsBtn = page.locator('[data-testid="schema-close-fields"]');
 
-        this.formulaModal = page.locator('#formulaModal');
-        this.formulaEditor = new MonacoHelpers(page, '#formulaEditor');
-        this.modalSaveBtn = page.locator('#modalSaveBtn');
-        this.modalCancelBtn = page.locator('#modalCancelBtn');
-        this.modalStatus = page.locator('#modalStatus');
+        this.formulaModal = page.locator('[data-testid="schema-formula-modal"]');
+        this.formulaEditor = new MonacoHelpers(page, '[data-testid="schema-formula-editor"]');
+        this.modalSaveBtn = page.locator('[data-testid="schema-formula-save"]');
+        this.modalCancelBtn = page.locator('[data-testid="schema-formula-cancel"]');
+        this.modalStatus = page.locator('[data-testid="schema-formula-status"]');
     }
 
     /**
@@ -49,8 +49,9 @@ export class SchemaPage extends BasePage {
     async waitForLoad(): Promise<void> {
         await this.page.waitForFunction(
             () => {
-                const list = document.getElementById('objectsList');
-                return list && !list.innerHTML.includes('Loading');
+                const list = document.querySelector('[data-testid="schema-objects-list"]');
+                const loading = document.querySelector('[data-testid="schema-objects-loading"]');
+                return list && !loading;
             },
             { timeout: 30000 }
         );
@@ -77,10 +78,10 @@ export class SchemaPage extends BasePage {
      * Get list of visible object names
      */
     async getVisibleObjectNames(): Promise<string[]> {
-        return this.page.$$eval('#objectsList .object-item', items =>
+        return this.page.$$eval('[data-testid="schema-object-item"]', items =>
             items
                 .filter(item => (item as HTMLElement).style.display !== 'none')
-                .map(item => item.getAttribute('data-name') || '')
+                .map(item => item.getAttribute('data-object-name') || '')
         );
     }
 
@@ -88,7 +89,7 @@ export class SchemaPage extends BasePage {
      * Select an object to view its fields
      */
     async selectObject(apiName: string): Promise<void> {
-        const objectItem = this.page.locator(`#objectsList .object-item[data-name="${apiName}"]`);
+        const objectItem = this.page.locator(`[data-testid="schema-object-item"][data-object-name="${apiName}"]`);
         await this.slowClick(objectItem);
 
         // Wait for fields panel to show
@@ -97,8 +98,9 @@ export class SchemaPage extends BasePage {
         // Wait for fields to load
         await this.page.waitForFunction(
             () => {
-                const list = document.getElementById('fieldsList');
-                return list && !list.innerHTML.includes('Loading');
+                const list = document.querySelector('[data-testid="schema-fields-list"]');
+                const loading = document.querySelector('[data-testid="schema-fields-loading"]');
+                return list && !loading;
             },
             { timeout: 30000 }
         );
@@ -131,7 +133,7 @@ export class SchemaPage extends BasePage {
      * Get list of visible field API names
      */
     async getVisibleFieldNames(): Promise<string[]> {
-        return this.page.$$eval('#fieldsList .field-item', items =>
+        return this.page.$$eval('[data-testid="schema-field-item"]', items =>
             items
                 .filter(item => (item as HTMLElement).style.display !== 'none')
                 .map(item => item.getAttribute('data-field-name') || '')
@@ -143,15 +145,15 @@ export class SchemaPage extends BasePage {
      */
     async getFieldDetails(fieldApiName: string): Promise<{ label: string; type: string } | null> {
         const fieldItem = this.page.locator(
-            `#fieldsList .field-item[data-field-name="${fieldApiName}"]`
+            `[data-testid="schema-field-item"][data-field-name="${fieldApiName}"]`
         );
 
         if ((await fieldItem.count()) === 0) {
             return null;
         }
 
-        const label = (await fieldItem.locator('.field-item-label').textContent()) || '';
-        const type = (await fieldItem.locator('.field-item-type').textContent()) || '';
+        const label = (await fieldItem.locator('[data-testid="schema-field-label"]').textContent()) || '';
+        const type = (await fieldItem.locator('[data-testid="schema-field-type"]').textContent()) || '';
 
         return { label: label.trim(), type: type.trim() };
     }
@@ -161,9 +163,9 @@ export class SchemaPage extends BasePage {
      */
     async isFormulaField(fieldApiName: string): Promise<boolean> {
         const fieldItem = this.page.locator(
-            `#fieldsList .field-item[data-field-name="${fieldApiName}"]`
+            `[data-testid="schema-field-item"][data-field-name="${fieldApiName}"]`
         );
-        const editBtn = fieldItem.locator('.formula-edit-btn');
+        const editBtn = fieldItem.locator('[data-testid="schema-field-edit"]');
         return (await editBtn.count()) > 0;
     }
 
@@ -172,14 +174,14 @@ export class SchemaPage extends BasePage {
      */
     async openFormulaEditor(fieldApiName: string): Promise<void> {
         const fieldItem = this.page.locator(
-            `#fieldsList .field-item[data-field-name="${fieldApiName}"]`
+            `[data-testid="schema-field-item"][data-field-name="${fieldApiName}"]`
         );
 
         // Hover to reveal menu
         await fieldItem.hover();
 
         // Click the edit button or menu
-        const editBtn = fieldItem.locator('.formula-edit-btn');
+        const editBtn = fieldItem.locator('[data-testid="schema-field-edit"]');
         await editBtn.click();
 
         // Wait for modal
@@ -209,11 +211,11 @@ export class SchemaPage extends BasePage {
         // Wait for save to complete
         await this.page.waitForFunction(
             () => {
-                const modal = document.getElementById('formulaModal');
-                const status = document.getElementById('modalStatus');
+                const modal = document.querySelector('[data-testid="schema-formula-modal"]');
+                const status = document.querySelector('[data-testid="schema-formula-status"]');
                 return (
                     !modal ||
-                    modal.style.display === 'none' ||
+                    (modal as HTMLElement).style.display === 'none' ||
                     status?.textContent?.includes('Error')
                 );
             },

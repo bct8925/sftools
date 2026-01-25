@@ -72,22 +72,24 @@ export function ObjectList({
           placeholder="Filter objects..."
           value={searchTerm}
           onChange={handleSearchChange}
+          data-testid="schema-object-filter"
         />
         <div className={styles.objectsHeaderRow}>
-          <div className={styles.objectCount}>{countText}</div>
-          <ButtonIcon icon="refresh" title="Refresh objects" onClick={onRefresh} />
+          <div className={styles.objectCount} data-testid="schema-object-count">{countText}</div>
+          <ButtonIcon icon="refresh" title="Refresh objects" onClick={onRefresh} data-testid="schema-refresh-objects" />
         </div>
       </div>
 
-      <div ref={listRef} className={styles.objectsList}>
+      <div ref={listRef} className={styles.objectsList} data-testid="schema-objects-list">
         {isLoading ? (
-          <div className={styles.loadingContainer}>Loading objects...</div>
+          <div className={styles.loadingContainer} data-testid="schema-objects-loading">Loading objects...</div>
         ) : filteredObjects.length === 0 ? (
           <div className={styles.loadingContainer}>No objects found</div>
         ) : (
           filteredObjects.map((obj) => (
             <div
               key={obj.name}
+              data-testid="schema-object-item"
               data-object-name={obj.name}
               className={`${styles.objectItem}${
                 obj.name === selectedObjectName ? ` ${styles.selected}` : ''

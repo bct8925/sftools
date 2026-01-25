@@ -88,24 +88,25 @@ export function FieldList({
   }, [objectName]);
 
   return (
-    <div ref={containerRef} className={styles.fieldsPanel}>
+    <div ref={containerRef} className={styles.fieldsPanel} data-testid="schema-fields-panel">
       <div className={styles.fieldsHeader}>
         <div className={styles.fieldsHeaderTop}>
-          <h3>{objectLabel}</h3>
+          <h3 data-testid="schema-selected-object-label">{objectLabel}</h3>
           <div className={styles.fieldsHeaderActions}>
-            <ButtonIcon icon="refresh" title="Refresh fields" onClick={onRefresh} />
-            <button className={styles.closeBtn} onClick={onClose} title="Close">
+            <ButtonIcon icon="refresh" title="Refresh fields" onClick={onRefresh} data-testid="schema-refresh-fields" />
+            <button className={styles.closeBtn} onClick={onClose} title="Close" data-testid="schema-close-fields">
               <SfIcon name="close" />
             </button>
           </div>
         </div>
-        <div className={styles.selectedObjectName}>{objectName}</div>
+        <div className={styles.selectedObjectName} data-testid="schema-selected-object-name">{objectName}</div>
         <input
           type="text"
           className={`input ${styles.filterInput}`}
           placeholder="Filter fields..."
           value={searchTerm}
           onChange={handleSearchChange}
+          data-testid="schema-field-filter"
         />
       </div>
 
@@ -115,9 +116,9 @@ export function FieldList({
         <div>Type</div>
       </div>
 
-      <div className={styles.fieldsList}>
+      <div className={styles.fieldsList} data-testid="schema-fields-list">
         {isLoading ? (
-          <div className={styles.loadingContainer}>Loading fields...</div>
+          <div className={styles.loadingContainer} data-testid="schema-fields-loading">Loading fields...</div>
         ) : filteredFields.length === 0 ? (
           <div className={styles.loadingContainer}>No fields found</div>
         ) : (
@@ -193,14 +194,14 @@ function FieldItem({
   };
 
   return (
-    <div className={styles.fieldItem}>
-      <div className={styles.fieldItemLabel} title={field.label}>
+    <div className={styles.fieldItem} data-testid="schema-field-item" data-field-name={field.name}>
+      <div className={styles.fieldItemLabel} data-testid="schema-field-label" title={field.label}>
         {field.label}
       </div>
       <div className={styles.fieldItemName} title={field.name}>
         {field.name}
       </div>
-      <div className={styles.fieldItemType} title={typeDisplay.text}>
+      <div className={styles.fieldItemType} data-testid="schema-field-type" title={typeDisplay.text}>
         {renderTypeCell()}
       </div>
       <div className={styles.fieldItemActions}>

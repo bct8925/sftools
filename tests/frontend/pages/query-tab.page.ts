@@ -160,14 +160,14 @@ export class QueryTabPage extends BasePage {
      * Check if results contain a subquery toggle
      */
     async hasSubqueryResults(): Promise<boolean> {
-        return this.page.isVisible('[data-testid="query-results"] .query-subquery-toggle');
+        return this.page.isVisible('[data-testid="query-results"] [data-testid="query-subquery-toggle"]');
     }
 
     /**
      * Expand a subquery result at the given index
      */
     async expandSubquery(index: number): Promise<void> {
-        const toggles = await this.page.$$('[data-testid="query-results"] .query-subquery-toggle');
+        const toggles = await this.page.$$('[data-testid="query-results"] [data-testid="query-subquery-toggle"]');
         if (toggles[index]) {
             await toggles[index].click();
         }
@@ -180,7 +180,7 @@ export class QueryTabPage extends BasePage {
         // Subquery rows appear immediately after the parent row with the toggle
         const rows = await this.page.$$('[data-testid="query-results"] tbody tr');
         // The subquery content is in a nested table inside a colspan cell
-        const subqueryTables = await this.page.$$('[data-testid="query-results"] .query-subquery-table');
+        const subqueryTables = await this.page.$$('[data-testid="query-results"] [data-testid="query-subquery-table"]');
         if (subqueryTables[index]) {
             return (await subqueryTables[index].textContent()) || '';
         }
@@ -287,7 +287,7 @@ export class QueryTabPage extends BasePage {
 
         // Get the input element for this cell
         const input = this.page.locator(
-            `[data-testid="query-results"] table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${fieldIndex + 1}) .query-field-input`
+            `[data-testid="query-results"] table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${fieldIndex + 1}) [data-testid="query-field-input"]`
         );
 
         // Check if it's a checkbox or text input
@@ -340,8 +340,19 @@ export class QueryTabPage extends BasePage {
      * Clear all pending changes
      */
     async clearChanges(): Promise<void> {
+        // Wait for clear button to be enabled (indicates changes are tracked)
+        await this.page.waitForFunction(
+            () => {
+                const btn = document.querySelector('[data-testid="query-clear-btn"]');
+                return btn && !(btn as HTMLButtonElement).disabled;
+            },
+            { timeout: 5000 }
+        );
+
+        // Open the dropdown menu
         await this.resultsBtn.click();
         await this.delay('beforeClick');
+
         const clearBtn = this.page.locator('[data-testid="query-clear-btn"]');
         await this.slowClick(clearBtn);
     }
@@ -350,7 +361,7 @@ export class QueryTabPage extends BasePage {
      * Get the number of pending changes
      */
     async getChangesCount(): Promise<number> {
-        return this.page.$$eval('[data-testid="query-results"] table tbody td.modified', cells => {
+        return this.page.$$eval('[data-testid="query-results"] table tbody td[data-modified="true"]', cells => {
             const recordIds = new Set();
             cells.forEach(cell => {
                 const row = cell.closest('tr');
@@ -629,7 +640,7 @@ export class QueryTabPage extends BasePage {
         }
 
         const idLink = this.page.locator(
-            `[data-testid="query-results"] table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${idIndex + 1}) .query-id-link`
+            `[data-testid="query-results"] table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${idIndex + 1}) [data-testid="query-id-link"]`
         );
 
         await this.slowClick(idLink);
@@ -649,10 +660,22 @@ export class QueryTabPage extends BasePage {
     }
 
     /**
+     * Get the index of the currently active result tab
+     */
+    async getActiveTab(): Promise<number> {
+        const tabs = await this.page.$$('[data-testid="query-tab"]');
+        for (let i = 0; i < tabs.length; i++) {
+            const isActive = await tabs[i].evaluate(el => el.getAttribute('data-active') === 'true');
+            if (isActive) return i;
+        }
+        return -1;
+    }
+
+    /**
      * Collapse an expanded subquery
      */
     async collapseSubquery(index: number): Promise<void> {
-        const toggles = await this.page.$$('[data-testid="query-results"] .query-subquery-toggle');
+        const toggles = await this.page.$$('[data-testid="query-results"] [data-testid="query-subquery-toggle"]');
         if (toggles[index]) {
             // Check if already expanded
             const expanded = await toggles[index].evaluate(
@@ -667,22 +690,10 @@ export class QueryTabPage extends BasePage {
     }
 
     /**
-     * Get the index of the currently active result tab
-     */
-    async getActiveTab(): Promise<number> {
-        const tabs = await this.page.$$('[data-testid="query-tab"]');
-        for (let i = 0; i < tabs.length; i++) {
-            const isActive = await tabs[i].evaluate(el => el.classList.contains('active'));
-            if (isActive) return i;
-        }
-        return -1;
-    }
-
-    /**
      * Check if a subquery is visible (expanded)
      */
     async isSubqueryVisible(index: number): Promise<boolean> {
-        const subqueryTables = await this.page.$$('[data-testid="query-results"] .query-subquery-table');
+        const subqueryTables = await this.page.$$('[data-testid="query-results"] [data-testid="query-subquery-table"]');
         if (subqueryTables[index]) {
             const isVisible = await subqueryTables[index].isVisible();
             return isVisible;

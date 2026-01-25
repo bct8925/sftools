@@ -22,8 +22,9 @@ USER_DEBUG|[6]|DEBUG|Calculation result: 30`;
         router.onApexExecute(true, true, mockLog);
 
         // Mock ApexLog query (returns the log record metadata)
+        // Use pattern that matches the full tooling query path
         router.addRoute(
-            /\/tooling\/query.*ApexLog/,
+            /\/services\/data\/v[\d.]+\/tooling\/query.*ApexLog/,
             {
                 done: true,
                 totalSize: 1,
@@ -39,8 +40,9 @@ USER_DEBUG|[6]|DEBUG|Calculation result: 30`;
         );
 
         // Mock ApexLog body retrieval (returns the actual log content as plain text)
+        // Use pattern that matches any ApexLog ID
         router.addRoute(
-            /\/tooling\/sobjects\/ApexLog\/07LMOCKLOG002\/Body/,
+            /\/tooling\/sobjects\/ApexLog\/.*\/Body/,
             {
                 data: mockLog,
                 contentType: 'text/plain',
@@ -71,6 +73,9 @@ USER_DEBUG|[6]|DEBUG|Calculation result: 30`;
 
         // Execute (will use mocked response)
         await this.apexTab.execute();
+
+        // Wait for log fetch to complete (state update may be async)
+        await this.wait(1000);
 
         // Verify execution succeeded
         const status = await this.apexTab.getStatus();

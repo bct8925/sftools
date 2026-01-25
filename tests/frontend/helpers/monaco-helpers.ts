@@ -92,8 +92,16 @@ export class MonacoHelpers {
      * Press Ctrl/Cmd+Enter to trigger execute event
      */
     async pressExecuteShortcut(): Promise<void> {
-        // Focus the editor first
-        await this.container.click();
+        // Focus the Monaco editor using its internal focus method
+        await this.page.evaluate((sel: string) => {
+            const container = document.querySelector(sel) as any;
+            if (container?.editor) {
+                container.editor.focus();
+            }
+        }, this.selector);
+
+        // Small delay to ensure focus is established
+        await this.page.waitForTimeout(100);
 
         // Use Ctrl+Enter (or Cmd+Enter on Mac)
         const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';

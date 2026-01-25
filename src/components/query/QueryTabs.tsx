@@ -79,6 +79,8 @@ export function QueryTabs({
           key={tab.id}
           className={`${styles.tab}${tab.id === activeTabId ? ` ${styles.tabActive}` : ''}`}
           onClick={() => handleTabClick(tab.id)}
+          data-testid="query-tab"
+          data-active={tab.id === activeTabId ? 'true' : 'false'}
         >
           <span className={styles.tabLabel} title={tab.query} data-testid="query-tab-label">
             {getTabLabel(tab)}

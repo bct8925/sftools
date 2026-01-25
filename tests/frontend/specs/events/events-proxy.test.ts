@@ -16,21 +16,26 @@ export default class EventsProxyTest extends SftoolsTest {
     }
 
     async setup(): Promise<void> {
-        // DO NOT mock proxy connection in setup() - this test needs proxy to be disconnected
-        // The tab should show an overlay indicating the proxy is not connected
+        // Set proxy status to disconnected for this test
+        // This test verifies the "proxy not connected" overlay behavior
     }
 
     async test(): Promise<void> {
+        // Set proxy to disconnected before navigation
+        await this.page.addInitScript(() => {
+            window.__testProxyConnected = false;
+        });
+
         // Navigate to extension
         await this.navigateToExtension();
 
-        // Navigate to Events tab
-        await this.eventsTab.navigateTo();
+        // Open hamburger menu
+        await this.page.locator('[data-testid="hamburger-btn"]').click();
+        const navItem = this.page.locator('[data-testid="mobile-nav-events"]');
+        await navItem.waitFor({ state: 'visible', timeout: 5000 });
 
-        // Wait for tab to render and check for overlay
-        await this.wait(1000);
-
-        // Verify tab overlay is visible (feature gating overlay when proxy not connected)
-        await this.expect(await this.eventsTab.isTabDisabled()).toBe(true);
+        // Verify Events nav item is disabled when proxy is not connected
+        const isDisabled = await navItem.isDisabled();
+        await this.expect(isDisabled).toBe(true);
     }
 }

@@ -84,7 +84,7 @@ export const QueryErrorScenario = {
 };
 
 /**
- * Successful Apex execution
+ * Successful Apex execution with debug log fetching
  */
 export const ApexSuccessScenario = {
     name: 'apex-success',
@@ -101,6 +101,31 @@ export const ApexSuccessScenario = {
                 line: -1,
                 column: -1,
                 log: 'USER_DEBUG|Hello from Apex\nUSER_DEBUG|Execution complete',
+            },
+        },
+        {
+            // ApexLog query to get log record metadata
+            pattern: /\/tooling\/query.*ApexLog/,
+            method: 'GET',
+            response: {
+                done: true,
+                totalSize: 1,
+                records: [
+                    {
+                        Id: '07LMOCKLOGID001',
+                        LogLength: 500,
+                        Status: 'Success',
+                    },
+                ],
+            },
+        },
+        {
+            // ApexLog body retrieval (plain text)
+            pattern: /\/tooling\/sobjects\/ApexLog\/.*\/Body/,
+            method: 'GET',
+            response: {
+                data: 'USER_DEBUG|Hello from Apex\nUSER_DEBUG|Execution complete',
+                contentType: 'text/plain',
             },
         },
     ],

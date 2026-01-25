@@ -643,6 +643,27 @@ npm run test:frontend:extension
 DEBUG=true npm run test:frontend
 ```
 
+### Failure Artifacts
+
+When a frontend test fails, the runner automatically captures:
+
+| Artifact | Location | Content |
+|----------|----------|---------|
+| Screenshot | `/tmp/test-failure-{TestName}.png` | Visual state at failure |
+| HTML dump | `/tmp/test-failure-{TestName}.html` | Full page DOM |
+
+Console output on failure:
+```
+  Failed: <error message>
+  Screenshot saved: /tmp/test-failure-MyTest.png
+  Current URL: chrome-extension://...
+  HTML saved: /tmp/test-failure-MyTest.html
+```
+
+Use these artifacts to debug failures:
+- **Screenshot**: See what the UI looked like when the test failed
+- **HTML dump**: Inspect the DOM structure, find missing elements, check attribute values
+
 ### Common Issues
 
 | Problem | Solution |

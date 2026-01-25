@@ -123,6 +123,18 @@ export class TestRunner {
             } catch {
                 // Ignore screenshot errors
             }
+            // Dump page HTML on failure
+            try {
+                const htmlPath = `/tmp/test-failure-${testName}.html`;
+                const html = await page?.content();
+                if (html) {
+                    const fs = await import('fs/promises');
+                    await fs.writeFile(htmlPath, html, 'utf-8');
+                    console.log(`  HTML saved: ${htmlPath}`);
+                }
+            } catch {
+                // Ignore HTML dump errors
+            }
             // Still try teardown on error
             console.log('  Teardown...');
         } finally {

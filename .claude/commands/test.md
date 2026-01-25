@@ -82,6 +82,15 @@ npm run test:unit && npm run test:frontend
 | `element not found` | Selector changed or element not rendered |
 | `mock not matching` | MockRouter pattern doesn't match request |
 
+### Failure Artifacts (Frontend Tests)
+
+When a frontend test fails, artifacts are automatically saved:
+
+- **Screenshot**: `/tmp/test-failure-{TestName}.png`
+- **HTML dump**: `/tmp/test-failure-{TestName}.html`
+
+Check these files to see the UI state and DOM structure at the time of failure.
+
 ## Step 4: Report Results
 
 Provide a summary:

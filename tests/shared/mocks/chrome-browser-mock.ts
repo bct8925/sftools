@@ -182,6 +182,12 @@ export function createChromeMockScript(initialState?: ChromeMockInitialState): s
                         const connected = testProxyStatus !== undefined ? testProxyStatus : true;
                         return { connected };
                     },
+                    'getProxyInfo': () => {
+                        // ProxyContext uses getProxyInfo to check connection status
+                        const testProxyStatus = window.__testProxyConnected;
+                        const connected = testProxyStatus !== undefined ? testProxyStatus : true;
+                        return { success: true, connected, httpPort: 7443, version: '1.0.0-test' };
+                    },
                     'connectProxy': () => ({
                         success: false,
                         error: 'Proxy not available in test mode'

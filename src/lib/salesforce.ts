@@ -763,22 +763,61 @@ export async function publishPlatformEvent(
 // Utils Tab - API Helpers
 // ============================================================
 
+export interface DebugLogStats {
+    count: number;
+    totalSize: number;
+    logIds: string[];
+}
+
 /**
- * Delete all ApexLog records
+ * Get debug log statistics (count, total size, and IDs)
+ * Handles pagination to get all records beyond the 2000 limit
  */
-export async function deleteAllDebugLogs(): Promise<{ deletedCount: number }> {
-    const query = encodeURIComponent('SELECT Id FROM ApexLog');
-    const response = await salesforceRequest<QueryResult<{ Id: string }>>(
+export async function getDebugLogStats(): Promise<DebugLogStats> {
+    const allRecords: { Id: string; LogLength: number }[] = [];
+
+    // Initial query
+    const query = encodeURIComponent('SELECT Id, LogLength FROM ApexLog');
+    let response = await salesforceRequest<QueryResult<{ Id: string; LogLength: number }>>(
         `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
     );
 
-    const logIds = (response.json?.records ?? []).map(l => l.Id);
+    allRecords.push(...(response.json?.records ?? []));
+
+    // Handle pagination
+    while (response.json?.nextRecordsUrl) {
+        response = await salesforceRequest<QueryResult<{ Id: string; LogLength: number }>>(
+            response.json.nextRecordsUrl
+        );
+        allRecords.push(...(response.json?.records ?? []));
+    }
+
+    return {
+        count: allRecords.length,
+        totalSize: allRecords.reduce((sum, log) => sum + (log.LogLength || 0), 0),
+        logIds: allRecords.map(l => l.Id),
+    };
+}
+
+/**
+ * Delete specific ApexLog records by ID
+ */
+export async function deleteDebugLogs(logIds: string[]): Promise<{ deletedCount: number }> {
     if (logIds.length === 0) {
         return { deletedCount: 0 };
     }
 
     const deletedCount = await bulkDeleteTooling('ApexLog', logIds);
     return { deletedCount };
+}
+
+/**
+ * Delete all ApexLog records
+ * @deprecated Use getDebugLogStats() + deleteDebugLogs() for better UX
+ */
+export async function deleteAllDebugLogs(): Promise<{ deletedCount: number }> {
+    const stats = await getDebugLogStats();
+    return deleteDebugLogs(stats.logIds);
 }
 
 interface User {

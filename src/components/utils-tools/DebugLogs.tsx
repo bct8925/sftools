@@ -4,7 +4,8 @@ import {
   getCurrentUserId,
   searchUsers,
   enableTraceFlagForUser,
-  deleteAllDebugLogs,
+  getDebugLogStats,
+  deleteDebugLogs,
   deleteAllTraceFlags,
 } from '../../lib/salesforce.js';
 import type { SObject } from '../../types/salesforce';
@@ -38,6 +39,8 @@ export function DebugLogs() {
   } | null>(null);
 
   // Cleanup state
+  const [deleteLogsLoading, setDeleteLogsLoading] = useState(false);
+  const [deleteFlagsLoading, setDeleteFlagsLoading] = useState(false);
   const [deleteStatus, setDeleteStatus] = useState<{
     type: StatusType;
     message: string;
@@ -47,6 +50,8 @@ export function DebugLogs() {
   useEffect(() => {
     setEnableForMeLoading(false);
     setTraceStatus(null);
+    setDeleteLogsLoading(false);
+    setDeleteFlagsLoading(false);
     setDeleteStatus(null);
   }, [activeConnection?.id]);
 
@@ -102,6 +107,7 @@ export function DebugLogs() {
     }
 
     setDeleteStatus({ type: 'loading', message: 'Deleting trace flags...' });
+    setDeleteFlagsLoading(true);
 
     try {
       const result = (await deleteAllTraceFlags()) as DeleteResult;
@@ -112,8 +118,18 @@ export function DebugLogs() {
       });
     } catch (error) {
       setDeleteStatus({ type: 'error', message: (error as Error).message });
+    } finally {
+      setDeleteFlagsLoading(false);
     }
   }, [isAuthenticated]);
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
 
   const handleDeleteLogs = useCallback(async () => {
     if (!isAuthenticated) {
@@ -121,21 +137,37 @@ export function DebugLogs() {
       return;
     }
 
-    if (!confirm('Delete ALL debug logs? This cannot be undone.')) {
-      return;
-    }
-
-    setDeleteStatus({ type: 'loading', message: 'Deleting logs...' });
+    setDeleteStatus({ type: 'loading', message: 'Checking logs...' });
+    setDeleteLogsLoading(true);
 
     try {
-      const result = (await deleteAllDebugLogs()) as DeleteResult;
+      // First get stats
+      const stats = await getDebugLogStats();
+
+      if (stats.count === 0) {
+        setDeleteStatus({ type: 'success', message: 'No logs to delete' });
+        return;
+      }
+
+      const sizeStr = formatBytes(stats.totalSize);
+      if (!confirm(`Delete ${stats.count} debug log${stats.count !== 1 ? 's' : ''} (${sizeStr})? This cannot be undone.`)) {
+        setDeleteStatus(null);
+        return;
+      }
+
+      setDeleteStatus({ type: 'loading', message: 'Deleting logs...' });
+
+      // Delete the specific logs we queried
+      const result = await deleteDebugLogs(stats.logIds);
       const count = result.deletedCount;
       setDeleteStatus({
         type: 'success',
-        message: `Deleted ${count} log${count !== 1 ? 's' : ''}`,
+        message: `Deleted ${count} log${count !== 1 ? 's' : ''} (${sizeStr})`,
       });
     } catch (error) {
       setDeleteStatus({ type: 'error', message: (error as Error).message });
+    } finally {
+      setDeleteLogsLoading(false);
     }
   }, [isAuthenticated]);
 
@@ -184,10 +216,10 @@ export function DebugLogs() {
             </div>
           )}
           <div className="debug-logs-buttons">
-            <button className="button-neutral" onClick={handleDeleteLogs} data-testid="debug-logs-delete-logs-btn">
+            <button className="button-neutral" onClick={handleDeleteLogs} disabled={deleteLogsLoading} data-testid="debug-logs-delete-logs-btn">
               Delete All Logs
             </button>
-            <button className="button-neutral" onClick={handleDeleteFlags} data-testid="debug-logs-delete-flags-btn">
+            <button className="button-neutral" onClick={handleDeleteFlags} disabled={deleteFlagsLoading} data-testid="debug-logs-delete-flags-btn">
               Delete All Trace Flags
             </button>
           </div>

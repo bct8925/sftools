@@ -9,6 +9,7 @@ import {
 } from '../../lib/salesforce.js';
 import { escapeHtml } from '../../lib/text-utils.js';
 import type { SObject } from '../../types/salesforce';
+import './utils-tools.css';
 import styles from './DebugLogs.module.css';
 
 interface User extends SObject {
@@ -33,6 +34,7 @@ export function DebugLogs() {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [userResults, setUserResults] = useState<User[]>([]);
   const [showUserResults, setShowUserResults] = useState(false);
+  const [enableForMeLoading, setEnableForMeLoading] = useState(false);
   const [traceStatus, setTraceStatus] = useState<{
     type: StatusType;
     message: string;
@@ -64,6 +66,7 @@ export function DebugLogs() {
     setUserSearchTerm('');
     setUserResults([]);
     setShowUserResults(false);
+    setEnableForMeLoading(false);
     setTraceStatus(null);
     setDeleteStatus(null);
   }, [activeConnection?.id]);
@@ -75,6 +78,7 @@ export function DebugLogs() {
     }
 
     setTraceStatus({ type: 'loading', message: 'Enabling trace flag...' });
+    setEnableForMeLoading(true);
 
     try {
       const userId = await getCurrentUserId();
@@ -82,6 +86,8 @@ export function DebugLogs() {
       setTraceStatus({ type: 'success', message: 'Trace flag enabled for 30 minutes' });
     } catch (error) {
       setTraceStatus({ type: 'error', message: (error as Error).message });
+    } finally {
+      setEnableForMeLoading(false);
     }
   }, [isAuthenticated]);
 
@@ -191,7 +197,7 @@ export function DebugLogs() {
 
         <div className={styles.section}>
           <h3 className="tool-section-title">Enable Trace Flag</h3>
-          <button className="button-brand" onClick={handleEnableForMe} data-testid="debug-logs-enable-for-me-btn">
+          <button className="button-brand" onClick={handleEnableForMe} disabled={enableForMeLoading} data-testid="debug-logs-enable-for-me-btn">
             Enable for Me
           </button>
           <div className="tool-divider"></div>
@@ -207,7 +213,7 @@ export function DebugLogs() {
             />
           </div>
           {showUserResults && (
-            <div ref={userResultsRef} className={styles.userResults} data-testid="debug-logs-user-results">
+            <div ref={userResultsRef} className={`tool-results ${styles.userResults}`} data-testid="debug-logs-user-results">
               {userResults.length === 0 ? (
                 <div className="tool-no-results">No users found</div>
               ) : (
@@ -245,7 +251,7 @@ export function DebugLogs() {
               <span className="tool-status-text">{deleteStatus.message}</span>
             </div>
           )}
-          <div className={styles.buttons}>
+          <div className="debug-logs-buttons">
             <button className="button-neutral" onClick={handleDeleteLogs} data-testid="debug-logs-delete-logs-btn">
               Delete All Logs
             </button>

@@ -114,15 +114,28 @@ export function EventsTab() {
     }
   }, [isAuthenticated]);
 
+  // Track subscription state in refs for use in connection change handler
+  // This avoids re-running the effect when subscription state changes
+  const subscriptionRef = useRef<{ isSubscribed: boolean; subscriptionId: string | null }>({
+    isSubscribed: false,
+    subscriptionId: null,
+  });
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    subscriptionRef.current = { isSubscribed, subscriptionId: currentSubscriptionId };
+  }, [isSubscribed, currentSubscriptionId]);
+
   // Handle connection change - reload channels for new org
   useEffect(() => {
     const handleConnectionChange = async () => {
-      // Unsubscribe from current channel if subscribed
-      if (isSubscribed && currentSubscriptionId) {
+      // Unsubscribe from current channel if subscribed (using ref to avoid stale closure)
+      const { isSubscribed: wasSubscribed, subscriptionId } = subscriptionRef.current;
+      if (wasSubscribed && subscriptionId) {
         try {
           await chrome.runtime.sendMessage({
             type: 'unsubscribe',
-            subscriptionId: currentSubscriptionId,
+            subscriptionId,
           });
         } catch {
           // Ignore errors during cleanup
@@ -142,15 +155,7 @@ export function EventsTab() {
     };
 
     handleConnectionChange();
-  }, [
-    activeConnection,
-    isAuthenticated,
-    loadChannels,
-    clearStream,
-    updateStreamStatus,
-    isSubscribed,
-    currentSubscriptionId,
-  ]);
+  }, [activeConnection, isAuthenticated, loadChannels, clearStream, updateStreamStatus]);
 
   // Load channels on mount if authenticated
   useEffect(() => {

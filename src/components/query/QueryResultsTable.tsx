@@ -1,7 +1,7 @@
 // Query Results Table - Data table with inline editing and subquery support
 import { useState, useCallback, useMemo } from 'react';
-import type { SObject, FieldDescribe, ColumnMetadata } from '../../types/salesforce';
-import type { QueryColumn } from './useQueryState';
+import type { SObject, FieldDescribe } from '../../types/salesforce';
+import { flattenColumnMetadata, type QueryColumn } from '../../lib/column-utils';
 import { getActiveConnectionId } from '../../lib/auth.js';
 import { getValueByPath, formatCellValue } from '../../lib/csv-utils.js';
 import { parseFieldValue } from '../../lib/value-utils.js';
@@ -342,46 +342,3 @@ export function QueryResultsTable({
     </table>
   );
 }
-
-// Helper to flatten column metadata (copied from Web Component)
-function flattenColumnMetadata(
-  columnMetadata: ColumnMetadata[],
-  prefix = ''
-): QueryColumn[] {
-  const columns: QueryColumn[] = [];
-
-  for (const col of columnMetadata) {
-    const { columnName } = col;
-    const path = prefix ? `${prefix}.${columnName}` : columnName;
-
-    const isSubquery = col.aggregate && col.joinColumns && col.joinColumns.length > 0;
-
-    if (isSubquery) {
-      const title = prefix ? path : col.displayName;
-      columns.push({
-        title,
-        path,
-        aggregate: false,
-        isSubquery: true,
-        subqueryColumns: col.joinColumns,
-      });
-    } else if (col.joinColumns && col.joinColumns.length > 0) {
-      // Regular parent relationship - flatten it
-      columns.push(...flattenColumnMetadata(col.joinColumns, path));
-    } else {
-      // Regular scalar column
-      const title = prefix ? path : col.displayName;
-      columns.push({
-        title,
-        path,
-        aggregate: col.aggregate || false,
-        isSubquery: false,
-      });
-    }
-  }
-
-  return columns;
-}
-
-// Export flatten function for use in query execution
-export { flattenColumnMetadata };

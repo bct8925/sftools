@@ -7,7 +7,7 @@
  * @returns Date object for the future time
  */
 export function getFutureDate(minutes: number): Date {
-  return new Date(Date.now() + minutes * 60 * 1000);
+    return new Date(Date.now() + minutes * 60 * 1000);
 }
 
 /**
@@ -17,7 +17,7 @@ export function getFutureDate(minutes: number): Date {
  * @returns ISO date string (e.g., "2024-01-15T14:30:00.000Z")
  */
 export function getISODateFromNow(minutes: number): string {
-  return getFutureDate(minutes).toISOString();
+    return getFutureDate(minutes).toISOString();
 }
 
 /**
@@ -26,7 +26,7 @@ export function getISODateFromNow(minutes: number): string {
  * @returns Current time as ISO string
  */
 export function getNowISO(): string {
-  return new Date().toISOString();
+    return new Date().toISOString();
 }
 
 /**
@@ -37,8 +37,8 @@ export function getNowISO(): string {
  * @returns true if the timestamp is older than the specified minutes
  */
 export function isExpired(timestamp: number, minutes: number): boolean {
-  const expirationMs = minutes * 60 * 1000;
-  return Date.now() - timestamp > expirationMs;
+    const expirationMs = minutes * 60 * 1000;
+    return Date.now() - timestamp > expirationMs;
 }
 
 /**
@@ -48,17 +48,17 @@ export function isExpired(timestamp: number, minutes: number): boolean {
  * @returns Human-readable relative time string
  */
 export function formatRelativeTime(timestamp: number): string {
-  const now = Date.now();
-  const diff = now - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
-  return new Date(timestamp).toLocaleDateString();
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return new Date(timestamp).toLocaleDateString();
 }
 
 /**
@@ -68,5 +68,5 @@ export function formatRelativeTime(timestamp: number): string {
  * @returns Timestamp string without special characters
  */
 export function getFilenameTimestamp(): string {
-  return new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+    return new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
 }

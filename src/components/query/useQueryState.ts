@@ -1,15 +1,7 @@
 // Query Tab State Management with useReducer
 import { useReducer, useCallback, useMemo } from 'react';
-import type { ColumnMetadata, FieldDescribe, SObject } from '../../types/salesforce';
-
-// Column definition for display
-export interface QueryColumn {
-    title: string;
-    path: string;
-    aggregate: boolean;
-    isSubquery: boolean;
-    subqueryColumns?: ColumnMetadata[];
-}
+import type { FieldDescribe, SObject } from '../../types/salesforce';
+import type { QueryColumn } from '../../lib/column-utils';
 
 // Individual query tab state
 export interface QueryTabState {

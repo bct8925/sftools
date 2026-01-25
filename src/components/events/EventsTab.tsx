@@ -4,24 +4,12 @@ import { ChannelSelector } from './ChannelSelector';
 import { EventPublisher } from './EventPublisher';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useProxy } from '../../contexts/ProxyContext';
+import { useStatusBadge } from '../../hooks';
 import { getAllStreamingChannels } from '../../lib/salesforce';
-import { formatEventEntry, formatSystemMessage } from '../../lib/events-utils';
-import { getInstanceUrl, getAccessToken } from '../../lib/auth';
-import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
+import { formatSystemMessage } from '../../lib/events-utils';
+import { StatusBadge } from '../status-badge/StatusBadge';
+import { useStreamSubscription } from './useStreamSubscription';
 import styles from './EventsTab.module.css';
-
-interface StreamMessage {
-  subscriptionId: string;
-  type: 'streamEvent' | 'streamError' | 'streamEnd';
-  event?: {
-    channel?: string;
-    protocol?: string;
-    replayId?: number | string;
-    payload?: unknown;
-    error?: string;
-  };
-  error?: string;
-}
 
 interface StreamingChannels {
   platformEvents: Array<{ QualifiedApiName: string; Label?: string; DeveloperName: string }>;
@@ -52,22 +40,7 @@ export function EventsTab() {
   const [selectedChannel, setSelectedChannel] = useState('');
   const [replayPreset, setReplayPreset] = useState('LATEST');
   const [replayId, setReplayId] = useState('');
-  const [currentSubscriptionId, setCurrentSubscriptionId] = useState<string | null>(null);
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [streamStatus, setStreamStatus] = useState('');
-  const [streamStatusType, setStreamStatusType] = useState<StatusType>('');
-
-  // Event counting
-  const eventCountRef = useRef(0);
-
-  // Update stream status helper
-  const updateStreamStatus = useCallback(
-    (text: string, type: '' | 'loading' | 'success' | 'error' = '') => {
-      setStreamStatus(text);
-      setStreamStatusType(type);
-    },
-    []
-  );
+  const { statusText: streamStatus, statusType: streamStatusType, updateStatus: updateStreamStatus } = useStatusBadge();
 
   // Append system message to stream
   const appendSystemMessage = useCallback((msg: string) => {
@@ -90,7 +63,6 @@ export function EventsTab() {
 
   // Clear stream
   const clearStream = useCallback(() => {
-    eventCountRef.current = 0;
     streamEditorRef.current?.setValue('// Stream cleared\n');
   }, []);
 
@@ -114,36 +86,24 @@ export function EventsTab() {
     }
   }, [isAuthenticated]);
 
-  // Track subscription state in refs for use in connection change handler
-  // This avoids re-running the effect when subscription state changes
-  const subscriptionRef = useRef<{ isSubscribed: boolean; subscriptionId: string | null }>({
-    isSubscribed: false,
-    subscriptionId: null,
+  // Stream subscription hook
+  const { isSubscribed, toggleSubscription, handleDisconnect } = useStreamSubscription({
+    selectedChannel,
+    replayPreset,
+    replayId,
+    isAuthenticated,
+    isProxyConnected,
+    updateStreamStatus,
+    appendSystemMessage,
+    streamEditorRef,
+    scrollStreamToBottom,
   });
-
-  // Keep refs in sync with state
-  useEffect(() => {
-    subscriptionRef.current = { isSubscribed, subscriptionId: currentSubscriptionId };
-  }, [isSubscribed, currentSubscriptionId]);
 
   // Handle connection change - reload channels for new org
   useEffect(() => {
     const handleConnectionChange = async () => {
-      // Unsubscribe from current channel if subscribed (using ref to avoid stale closure)
-      const { isSubscribed: wasSubscribed, subscriptionId } = subscriptionRef.current;
-      if (wasSubscribed && subscriptionId) {
-        try {
-          await chrome.runtime.sendMessage({
-            type: 'unsubscribe',
-            subscriptionId,
-          });
-        } catch {
-          // Ignore errors during cleanup
-        }
-        setIsSubscribed(false);
-        setCurrentSubscriptionId(null);
-        updateStreamStatus('Disconnected', '');
-      }
+      // Unsubscribe from current channel if subscribed
+      await handleDisconnect();
 
       // Clear stream and reload channels
       clearStream();
@@ -155,7 +115,7 @@ export function EventsTab() {
     };
 
     handleConnectionChange();
-  }, [activeConnection, isAuthenticated, loadChannels, clearStream, updateStreamStatus]);
+  }, [activeConnection, isAuthenticated, loadChannels, clearStream, handleDisconnect]);
 
   // Load channels on mount if authenticated
   useEffect(() => {
@@ -164,143 +124,6 @@ export function EventsTab() {
       setChannelsLoaded(true);
     }
   }, [isAuthenticated, channelsLoaded, loadChannels]);
-
-  // Handle stream messages
-  const handleStreamMessage = useCallback(
-    (message: StreamMessage) => {
-      if (message.subscriptionId !== currentSubscriptionId) return;
-
-      switch (message.type) {
-        case 'streamEvent': {
-          if (!message.event) return;
-
-          eventCountRef.current++;
-          const timestamp = new Date().toISOString();
-          const eventEntry = formatEventEntry(message.event, eventCountRef.current, timestamp);
-
-          const currentValue = streamEditorRef.current?.getValue() || '';
-          const newEntry = JSON.stringify(eventEntry, null, 2);
-
-          if (currentValue.startsWith('//')) {
-            streamEditorRef.current?.setValue(newEntry);
-          } else {
-            streamEditorRef.current?.setValue(`${currentValue}\n\n${newEntry}`);
-          }
-
-          scrollStreamToBottom();
-          break;
-        }
-
-        case 'streamError':
-          appendSystemMessage(`Error: ${message.error}`);
-          updateStreamStatus('Error', 'error');
-          break;
-
-        case 'streamEnd':
-          appendSystemMessage('Stream ended by server');
-          setIsSubscribed(false);
-          setCurrentSubscriptionId(null);
-          updateStreamStatus('Disconnected', '');
-          break;
-      }
-    },
-    [currentSubscriptionId, appendSystemMessage, updateStreamStatus, scrollStreamToBottom]
-  );
-
-  // Listen for chrome runtime messages
-  useEffect(() => {
-    const handler = (message: any) => {
-      if (message.type === 'streamEvent' || message.type === 'streamError' || message.type === 'streamEnd') {
-        handleStreamMessage(message as StreamMessage);
-      }
-    };
-
-    chrome.runtime.onMessage.addListener(handler);
-    return () => chrome.runtime.onMessage.removeListener(handler);
-  }, [handleStreamMessage]);
-
-  // Subscribe to channel
-  const subscribe = useCallback(async () => {
-    if (!selectedChannel) {
-      updateStreamStatus('Select a channel', 'error');
-      return;
-    }
-
-    if (!isAuthenticated) {
-      updateStreamStatus('Not authenticated', 'error');
-      return;
-    }
-
-    if (!isProxyConnected) {
-      updateStreamStatus('Proxy required', 'error');
-      appendSystemMessage('Streaming requires the local proxy. Open Settings to connect.');
-      return;
-    }
-
-    updateStreamStatus('Connecting...', 'loading');
-
-    try {
-      const response = await chrome.runtime.sendMessage({
-        type: 'subscribe',
-        instanceUrl: getInstanceUrl(),
-        accessToken: getAccessToken(),
-        channel: selectedChannel,
-        replayPreset,
-        replayId: replayPreset === 'CUSTOM' ? replayId : undefined,
-      });
-
-      if (response.success) {
-        setCurrentSubscriptionId(response.subscriptionId);
-        setIsSubscribed(true);
-        updateStreamStatus('Subscribed', 'success');
-        appendSystemMessage(`Subscribed to ${selectedChannel} (replay: ${replayPreset})`);
-      } else {
-        throw new Error(response.error || 'Subscription failed');
-      }
-    } catch (err) {
-      console.error('Subscribe error:', err);
-      updateStreamStatus('Error', 'error');
-      appendSystemMessage(`Error: ${(err as Error).message}`);
-    }
-  }, [
-    selectedChannel,
-    isAuthenticated,
-    isProxyConnected,
-    replayPreset,
-    replayId,
-    updateStreamStatus,
-    appendSystemMessage,
-  ]);
-
-  // Unsubscribe from channel
-  const unsubscribe = useCallback(async () => {
-    if (!currentSubscriptionId) return;
-
-    updateStreamStatus('Disconnecting...', 'loading');
-
-    try {
-      await chrome.runtime.sendMessage({
-        type: 'unsubscribe',
-        subscriptionId: currentSubscriptionId,
-      });
-      appendSystemMessage('Unsubscribed');
-    } catch (err) {
-      console.error('Unsubscribe error:', err);
-    }
-
-    setCurrentSubscriptionId(null);
-    setIsSubscribed(false);
-    updateStreamStatus('Disconnected', '');
-  }, [currentSubscriptionId, updateStreamStatus, appendSystemMessage]);
-
-  // Toggle subscription
-  const toggleSubscription = useCallback(() => {
-    if (isSubscribed) {
-      unsubscribe();
-    } else {
-      subscribe();
-    }
-  }, [isSubscribed, subscribe, unsubscribe]);
 
   return (
     <div className={styles.eventsTab} data-testid="events-tab">

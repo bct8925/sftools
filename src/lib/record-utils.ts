@@ -2,6 +2,10 @@
 // Pure functions for field manipulation, formatting, and parsing
 
 import type { FieldDescribe, SObject } from '../types/salesforce';
+import { parseFieldValue } from './value-utils.js';
+
+// Re-export for backwards compatibility
+export { parseFieldValue as parseValue };
 
 /**
  * Sorts fields with Id first, Name second, then alphabetically.
@@ -88,33 +92,6 @@ export function formatPreviewHtml(
             return String(value ?? '');
         default:
             return String(value ?? '');
-    }
-}
-
-/**
- * Parses a string input value to the appropriate type based on field metadata.
- */
-export function parseValue(
-    stringValue: string | null,
-    field: FieldDescribe
-): string | number | boolean | null {
-    if (stringValue === '' || stringValue === null) return null;
-
-    switch (field.type) {
-        case 'boolean':
-            return stringValue.toLowerCase() === 'true';
-        case 'int': {
-            const intVal = parseInt(stringValue, 10);
-            return isNaN(intVal) ? null : intVal;
-        }
-        case 'double':
-        case 'currency':
-        case 'percent': {
-            const floatVal = parseFloat(stringValue);
-            return isNaN(floatVal) ? null : floatVal;
-        }
-        default:
-            return stringValue;
     }
 }
 

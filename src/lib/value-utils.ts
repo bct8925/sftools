@@ -11,32 +11,32 @@ import type { FieldDescribe } from '../types/salesforce';
  * @returns true if values are equal
  */
 export function valuesEqual(original: unknown, newValue: unknown): boolean {
-  if (original === null || original === undefined) {
-    return newValue === null || newValue === undefined || newValue === '';
-  }
-  return String(original) === String(newValue ?? '');
+    if (original === null || original === undefined) {
+        return newValue === null || newValue === undefined || newValue === '';
+    }
+    return String(original) === String(newValue ?? '');
 }
 
 /**
  * Check if a value is null or undefined.
  */
 export function isNullish(value: unknown): value is null | undefined {
-  return value === null || value === undefined;
+    return value === null || value === undefined;
 }
 
 /**
  * Check if a value is empty (null, undefined, or empty string).
  */
 export function isEmpty(value: unknown): boolean {
-  return value === null || value === undefined || value === '';
+    return value === null || value === undefined || value === '';
 }
 
 /**
  * Ensure a value is a string, with optional default.
  */
 export function ensureString(value: unknown, defaultValue = ''): string {
-  if (value === null || value === undefined) return defaultValue;
-  return String(value);
+    if (value === null || value === undefined) return defaultValue;
+    return String(value);
 }
 
 /**
@@ -48,27 +48,27 @@ export function ensureString(value: unknown, defaultValue = ''): string {
  * @returns Parsed value of the appropriate type
  */
 export function parseFieldValue(
-  stringValue: string | null,
-  field: FieldDescribe
+    stringValue: string | null,
+    field: FieldDescribe
 ): string | number | boolean | null {
-  if (stringValue === '' || stringValue === null) return null;
+    if (stringValue === '' || stringValue === null) return null;
 
-  switch (field.type) {
-    case 'boolean':
-      return stringValue.toLowerCase() === 'true';
-    case 'int': {
-      const intVal = parseInt(stringValue, 10);
-      return isNaN(intVal) ? null : intVal;
+    switch (field.type) {
+        case 'boolean':
+            return stringValue.toLowerCase() === 'true';
+        case 'int': {
+            const intVal = parseInt(stringValue, 10);
+            return isNaN(intVal) ? null : intVal;
+        }
+        case 'double':
+        case 'currency':
+        case 'percent': {
+            const floatVal = parseFloat(stringValue);
+            return isNaN(floatVal) ? null : floatVal;
+        }
+        default:
+            return stringValue;
     }
-    case 'double':
-    case 'currency':
-    case 'percent': {
-      const floatVal = parseFloat(stringValue);
-      return isNaN(floatVal) ? null : floatVal;
-    }
-    default:
-      return stringValue;
-  }
 }
 
 /**
@@ -79,18 +79,18 @@ export function parseFieldValue(
  * @returns String representation for display
  */
 export function formatFieldForInput(value: unknown, field: FieldDescribe): string {
-  if (value === null || value === undefined) return '';
+    if (value === null || value === undefined) return '';
 
-  switch (field.type) {
-    case 'boolean':
-      return value ? 'true' : 'false';
-    case 'datetime':
-    case 'date':
-    case 'double':
-    case 'currency':
-    case 'percent':
-    case 'int':
-    default:
-      return String(value);
-  }
+    switch (field.type) {
+        case 'boolean':
+            return value ? 'true' : 'false';
+        case 'datetime':
+        case 'date':
+        case 'double':
+        case 'currency':
+        case 'percent':
+        case 'int':
+        default:
+            return String(value);
+    }
 }

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext.js';
+import { useStatusBadge } from '../../hooks';
 import {
   getCurrentUserId,
   searchUsers,
@@ -22,8 +23,6 @@ interface DeleteResult {
   deletedCount: number;
 }
 
-type StatusType = 'loading' | 'success' | 'error';
-
 /**
  * Debug Logs Tool - Trace flags and log management.
  * Enables trace flags for users and cleans up logs/flags.
@@ -33,27 +32,21 @@ export function DebugLogs() {
 
   // Trace flag state
   const [enableForMeLoading, setEnableForMeLoading] = useState(false);
-  const [traceStatus, setTraceStatus] = useState<{
-    type: StatusType;
-    message: string;
-  } | null>(null);
+  const { statusText: traceStatusText, statusType: traceStatusType, updateStatus: updateTraceStatus, clearStatus: clearTraceStatus } = useStatusBadge();
 
   // Cleanup state
   const [deleteLogsLoading, setDeleteLogsLoading] = useState(false);
   const [deleteFlagsLoading, setDeleteFlagsLoading] = useState(false);
-  const [deleteStatus, setDeleteStatus] = useState<{
-    type: StatusType;
-    message: string;
-  } | null>(null);
+  const { statusText: deleteStatusText, statusType: deleteStatusType, updateStatus: updateDeleteStatus, clearStatus: clearDeleteStatus } = useStatusBadge();
 
   // Clear state on connection change
   useEffect(() => {
     setEnableForMeLoading(false);
-    setTraceStatus(null);
+    clearTraceStatus();
     setDeleteLogsLoading(false);
     setDeleteFlagsLoading(false);
-    setDeleteStatus(null);
-  }, [activeConnection?.id]);
+    clearDeleteStatus();
+  }, [activeConnection?.id, clearTraceStatus, clearDeleteStatus]);
 
   const handleEnableForMe = useCallback(async () => {
     if (!isAuthenticated) {
@@ -61,31 +54,31 @@ export function DebugLogs() {
       return;
     }
 
-    setTraceStatus({ type: 'loading', message: 'Enabling trace flag...' });
+    updateTraceStatus('Enabling trace flag...', 'loading');
     setEnableForMeLoading(true);
 
     try {
       const userId = await getCurrentUserId();
       await enableTraceFlagForUser(userId);
-      setTraceStatus({ type: 'success', message: 'Trace flag enabled for 30 minutes' });
+      updateTraceStatus('Trace flag enabled for 30 minutes', 'success');
     } catch (error) {
-      setTraceStatus({ type: 'error', message: (error as Error).message });
+      updateTraceStatus((error as Error).message, 'error');
     } finally {
       setEnableForMeLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, updateTraceStatus]);
 
   const handleUserSelect = useCallback(async (user: unknown) => {
     const userObj = user as User;
-    setTraceStatus({ type: 'loading', message: 'Enabling trace flag...' });
+    updateTraceStatus('Enabling trace flag...', 'loading');
 
     try {
       await enableTraceFlagForUser(userObj.Id);
-      setTraceStatus({ type: 'success', message: 'Trace flag enabled for 30 minutes' });
+      updateTraceStatus('Trace flag enabled for 30 minutes', 'success');
     } catch (error) {
-      setTraceStatus({ type: 'error', message: (error as Error).message });
+      updateTraceStatus((error as Error).message, 'error');
     }
-  }, []);
+  }, [updateTraceStatus]);
 
   const renderUserSearch = useCallback((user: unknown): SearchBoxRenderData => {
     const userObj = user as User;
@@ -106,22 +99,19 @@ export function DebugLogs() {
       return;
     }
 
-    setDeleteStatus({ type: 'loading', message: 'Deleting trace flags...' });
+    updateDeleteStatus('Deleting trace flags...', 'loading');
     setDeleteFlagsLoading(true);
 
     try {
       const result = (await deleteAllTraceFlags()) as DeleteResult;
       const count = result.deletedCount;
-      setDeleteStatus({
-        type: 'success',
-        message: `Deleted ${count} trace flag${count !== 1 ? 's' : ''}`,
-      });
+      updateDeleteStatus(`Deleted ${count} trace flag${count !== 1 ? 's' : ''}`, 'success');
     } catch (error) {
-      setDeleteStatus({ type: 'error', message: (error as Error).message });
+      updateDeleteStatus((error as Error).message, 'error');
     } finally {
       setDeleteFlagsLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, updateDeleteStatus]);
 
   const formatBytes = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -137,7 +127,7 @@ export function DebugLogs() {
       return;
     }
 
-    setDeleteStatus({ type: 'loading', message: 'Checking logs...' });
+    updateDeleteStatus('Checking logs...', 'loading');
     setDeleteLogsLoading(true);
 
     try {
@@ -145,31 +135,28 @@ export function DebugLogs() {
       const stats = await getDebugLogStats();
 
       if (stats.count === 0) {
-        setDeleteStatus({ type: 'success', message: 'No logs to delete' });
+        updateDeleteStatus('No logs to delete', 'success');
         return;
       }
 
       const sizeStr = formatBytes(stats.totalSize);
       if (!confirm(`Delete ${stats.count} debug log${stats.count !== 1 ? 's' : ''} (${sizeStr})? This cannot be undone.`)) {
-        setDeleteStatus(null);
+        clearDeleteStatus();
         return;
       }
 
-      setDeleteStatus({ type: 'loading', message: 'Deleting logs...' });
+      updateDeleteStatus('Deleting logs...', 'loading');
 
       // Delete the specific logs we queried
       const result = await deleteDebugLogs(stats.logIds);
       const count = result.deletedCount;
-      setDeleteStatus({
-        type: 'success',
-        message: `Deleted ${count} log${count !== 1 ? 's' : ''} (${sizeStr})`,
-      });
+      updateDeleteStatus(`Deleted ${count} log${count !== 1 ? 's' : ''} (${sizeStr})`, 'success');
     } catch (error) {
-      setDeleteStatus({ type: 'error', message: (error as Error).message });
+      updateDeleteStatus((error as Error).message, 'error');
     } finally {
       setDeleteLogsLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, updateDeleteStatus, clearDeleteStatus]);
 
   return (
     <div className="card" data-testid="debug-logs">
@@ -197,10 +184,10 @@ export function DebugLogs() {
             inputTestId="debug-logs-user-search"
             dropdownTestId="debug-logs-user-results"
           />
-          {traceStatus && (
+          {traceStatusText && (
             <div className="tool-status" data-testid="debug-logs-trace-status">
-              <span className={`status-indicator status-${traceStatus.type}`}></span>
-              <span className="tool-status-text">{traceStatus.message}</span>
+              <span className={`status-indicator status-${traceStatusType}`}></span>
+              <span className="tool-status-text">{traceStatusText}</span>
             </div>
           )}
         </div>
@@ -209,10 +196,10 @@ export function DebugLogs() {
 
         <div className={styles.section}>
           <h3 className="tool-section-title">Cleanup</h3>
-          {deleteStatus && (
+          {deleteStatusText && (
             <div className="tool-status" data-testid="debug-logs-delete-status">
-              <span className={`status-indicator status-${deleteStatus.type}`}></span>
-              <span className="tool-status-text">{deleteStatus.message}</span>
+              <span className={`status-indicator status-${deleteStatusType}`}></span>
+              <span className="tool-status-text">{deleteStatusText}</span>
             </div>
           )}
           <div className="debug-logs-buttons">

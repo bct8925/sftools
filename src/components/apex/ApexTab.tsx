@@ -2,8 +2,9 @@ import { useState, useRef, useCallback } from 'react';
 import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/MonacoEditor';
 import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
 import { ApexOutput } from './ApexOutput';
-import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
+import { StatusBadge } from '../status-badge/StatusBadge';
 import { useConnection } from '../../contexts/ConnectionContext';
+import { useStatusBadge } from '../../hooks';
 import { executeAnonymousApex } from '../../lib/salesforce';
 import { formatOutput } from '../../lib/apex-utils';
 import type { ApexExecutionResult } from '../../types/salesforce';
@@ -28,14 +29,7 @@ export function ApexTab() {
 
   const [isExecuting, setIsExecuting] = useState(false);
   const [output, setOutput] = useState('// Output will appear here after execution');
-  const [statusText, setStatusText] = useState('');
-  const [statusType, setStatusType] = useState<StatusType>('');
-
-  // Update status badge
-  const updateStatus = useCallback((text: string, type: StatusType = '') => {
-    setStatusText(text);
-    setStatusType(type);
-  }, []);
+  const { statusText, statusType, updateStatus } = useStatusBadge();
 
   // Set editor markers for compile/runtime errors
   const setEditorMarkers = useCallback((result: ApexExecutionResult) => {

@@ -3,6 +3,7 @@
 
 import type { SalesforceConnection } from '../types/salesforce';
 import { debugInfo } from './debug.js';
+import { isExpired } from './date-utils.js';
 
 // --- Types ---
 
@@ -320,8 +321,7 @@ export async function consumePendingAuth(): Promise<PendingAuth | null> {
     if (!pendingAuth) return null;
 
     // Expire after 5 minutes
-    const EXPIRATION_MS = 5 * 60 * 1000;
-    if (pendingAuth.createdAt && Date.now() - pendingAuth.createdAt > EXPIRATION_MS) {
+    if (pendingAuth.createdAt && isExpired(pendingAuth.createdAt, 5)) {
         debugInfo('OAuth pending auth expired');
         return null;
     }
@@ -342,8 +342,7 @@ export async function validateOAuthState(receivedState: string): Promise<OAuthVa
     }
 
     // Check expiration
-    const EXPIRATION_MS = 5 * 60 * 1000;
-    if (pendingAuth.createdAt && Date.now() - pendingAuth.createdAt > EXPIRATION_MS) {
+    if (pendingAuth.createdAt && isExpired(pendingAuth.createdAt, 5)) {
         await chrome.storage.local.remove(['pendingAuth']);
         return { valid: false, pendingAuth: null };
     }

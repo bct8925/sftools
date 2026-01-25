@@ -8,14 +8,14 @@ export type { StatusType };
  * Return type for the useStatusBadge hook.
  */
 export interface UseStatusBadgeReturn {
-  /** Current status text to display */
-  statusText: string;
-  /** Current status type (loading, success, error, or empty) */
-  statusType: StatusType;
-  /** Update the status text and type */
-  updateStatus: (text: string, type?: StatusType) => void;
-  /** Clear the status (set to empty) */
-  clearStatus: () => void;
+    /** Current status text to display */
+    statusText: string;
+    /** Current status type (loading, success, error, or empty) */
+    statusType: StatusType;
+    /** Update the status text and type */
+    updateStatus: (text: string, type?: StatusType) => void;
+    /** Clear the status (set to empty) */
+    clearStatus: () => void;
 }
 
 /**
@@ -47,23 +47,23 @@ export interface UseStatusBadgeReturn {
  * ```
  */
 export function useStatusBadge(): UseStatusBadgeReturn {
-  const [statusText, setStatusText] = useState('');
-  const [statusType, setStatusType] = useState<StatusType>('');
+    const [statusText, setStatusText] = useState('');
+    const [statusType, setStatusType] = useState<StatusType>('');
 
-  const updateStatus = useCallback((text: string, type: StatusType = '') => {
-    setStatusText(text);
-    setStatusType(type);
-  }, []);
+    const updateStatus = useCallback((text: string, type: StatusType = '') => {
+        setStatusText(text);
+        setStatusType(type);
+    }, []);
 
-  const clearStatus = useCallback(() => {
-    setStatusText('');
-    setStatusType('');
-  }, []);
+    const clearStatus = useCallback(() => {
+        setStatusText('');
+        setStatusType('');
+    }, []);
 
-  return {
-    statusText,
-    statusType,
-    updateStatus,
-    clearStatus,
-  };
+    return {
+        statusText,
+        statusType,
+        updateStatus,
+        clearStatus,
+    };
 }

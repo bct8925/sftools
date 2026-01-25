@@ -165,8 +165,18 @@ describe('fetch', () => {
     });
 
     describe('smartFetch', () => {
+        const originalRuntimeId = 'test-extension-id';
+
         beforeEach(() => {
             authModule.setActiveConnection(createMockConnection({ id: 'active-conn' }));
+            // Override runtime.id to simulate real extension context
+            // This makes isExtensionContext() return true so smartFetch uses extension/proxy fetch
+            (chrome.runtime as { id: string }).id = 'real-extension-id-abc123';
+        });
+
+        afterEach(() => {
+            // Restore original test extension ID
+            (chrome.runtime as { id: string }).id = originalRuntimeId;
         });
 
         it('FE-U-006: uses extensionFetch when proxy is not connected', async () => {

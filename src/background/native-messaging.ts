@@ -18,6 +18,7 @@ let requestId = 0;
 // HTTP server info for large payloads (received during init)
 let proxyHttpPort: number | null = null;
 let proxySecret: string | null = null;
+let proxyVersion: string | null = null;
 
 interface StreamEvent {
     type: 'streamEvent' | 'streamError' | 'streamEnd';
@@ -116,6 +117,7 @@ export function connectNative(): Promise<InitResponse> {
                 nativePort = null;
                 proxyHttpPort = null;
                 proxySecret = null;
+                proxyVersion = null;
 
                 for (const [_id, pending] of pendingRequests) {
                     pending.reject(new Error('Native host disconnected'));
@@ -129,6 +131,7 @@ export function connectNative(): Promise<InitResponse> {
                     if (initResponse.success) {
                         proxyHttpPort = initResponse.httpPort || null;
                         proxySecret = initResponse.secret || null;
+                        proxyVersion = initResponse.version || null;
                         debugInfo(`Proxy connected: HTTP server on port ${proxyHttpPort}`);
 
                         chrome.storage.local.set({ proxyConnected: true });
@@ -159,6 +162,7 @@ export function disconnectNative(): void {
     }
     proxyHttpPort = null;
     proxySecret = null;
+    proxyVersion = null;
     chrome.storage.local.set({ proxyConnected: false });
 }
 
@@ -240,11 +244,13 @@ export function isProxyConnected(): boolean {
 export function getProxyInfo(): {
     connected: boolean;
     httpPort: number | null;
+    version: string | undefined;
     hasSecret: boolean;
 } {
     return {
         connected: isProxyConnected(),
         httpPort: proxyHttpPort,
+        version: proxyVersion ?? undefined,
         hasSecret: !!proxySecret,
     };
 }

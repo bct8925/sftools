@@ -6,7 +6,6 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import { checkProxyStatus, isProxyConnected } from '../lib/fetch.js';
 
 interface ProxyContextType {
   isConnected: boolean;
@@ -40,8 +39,23 @@ export function ProxyProvider({ children }: ProxyProviderProps) {
   const [error, setError] = useState<string | null>(null);
 
   const checkStatus = useCallback(async () => {
-    const connected = await checkProxyStatus();
-    setIsConnected(connected);
+    if (typeof chrome === 'undefined' || !chrome.runtime) {
+      return;
+    }
+
+    try {
+      const response = (await chrome.runtime.sendMessage({
+        type: 'getProxyInfo',
+      })) as { success: boolean; connected: boolean; httpPort?: number; version?: string };
+
+      setIsConnected(response.connected);
+      setHttpPort(response.httpPort ?? null);
+      setVersion(response.version ?? null);
+    } catch {
+      setIsConnected(false);
+      setHttpPort(null);
+      setVersion(null);
+    }
   }, []);
 
   useEffect(() => {

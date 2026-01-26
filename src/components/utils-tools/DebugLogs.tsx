@@ -11,6 +11,7 @@ import {
 } from '../../lib/salesforce.js';
 import type { SObject } from '../../types/salesforce';
 import { SearchBox, type SearchBoxRenderData } from './SearchBox.js';
+import sharedStyles from './utils-tools.module.css';
 import styles from './DebugLogs.module.css';
 
 interface User extends SObject {
@@ -166,14 +167,14 @@ export function DebugLogs() {
         <h2>Debug Logs</h2>
       </div>
       <div className="card-body">
-        <p className="tool-description">Manage debug logging and trace flags.</p>
+        <p className={sharedStyles.toolDescription}>Manage debug logging and trace flags.</p>
 
         <div className={styles.section}>
-          <h3 className="tool-section-title">Enable Trace Flag</h3>
+          <h3 className={sharedStyles.toolSectionTitle}>Enable Trace Flag</h3>
           <button className="button-brand" onClick={handleEnableForMe} disabled={enableForMeLoading} data-testid="debug-logs-enable-for-me-btn">
             Enable for Me
           </button>
-          <div className="tool-divider"></div>
+          <div className={sharedStyles.toolDivider}></div>
           <SearchBox
             searchFn={searchUsers}
             renderFn={renderUserSearch}
@@ -184,24 +185,24 @@ export function DebugLogs() {
             dropdownTestId="debug-logs-user-results"
           />
           {traceStatusText && (
-            <div className="tool-status" data-testid="debug-logs-trace-status">
+            <div className={sharedStyles.toolStatus} data-testid="debug-logs-trace-status">
               <span className={`status-indicator status-${traceStatusType}`}></span>
-              <span className="tool-status-text">{traceStatusText}</span>
+              <span className={sharedStyles.toolStatusText} data-testid="debug-logs-trace-status-text">{traceStatusText}</span>
             </div>
           )}
         </div>
 
-        <div className="tool-divider"></div>
+        <div className={sharedStyles.toolDivider}></div>
 
         <div className={styles.section}>
-          <h3 className="tool-section-title">Cleanup</h3>
+          <h3 className={sharedStyles.toolSectionTitle}>Cleanup</h3>
           {deleteStatusText && (
-            <div className="tool-status" data-testid="debug-logs-delete-status">
+            <div className={sharedStyles.toolStatus} data-testid="debug-logs-delete-status">
               <span className={`status-indicator status-${deleteStatusType}`}></span>
-              <span className="tool-status-text">{deleteStatusText}</span>
+              <span className={sharedStyles.toolStatusText} data-testid="debug-logs-delete-status-text">{deleteStatusText}</span>
             </div>
           )}
-          <div className="debug-logs-buttons">
+          <div className={sharedStyles.debugLogsButtons}>
             <button className="button-neutral" onClick={handleDeleteLogs} disabled={deleteLogsLoading} data-testid="debug-logs-delete-logs-btn">
               Delete All Logs
             </button>

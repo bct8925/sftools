@@ -7,6 +7,7 @@ import {
 } from '../../lib/salesforce.js';
 import type { SObject } from '../../types/salesforce';
 import { SearchBox, type SearchBoxRenderData } from './SearchBox.js';
+import sharedStyles from './utils-tools.module.css';
 import styles from './FlowCleanup.module.css';
 
 interface Flow extends SObject {
@@ -110,7 +111,7 @@ export function FlowCleanup() {
         <h2>Flow Version Cleanup</h2>
       </div>
       <div className="card-body">
-        <p className="tool-description">Delete inactive flow versions to reduce metadata size.</p>
+        <p className={sharedStyles.toolDescription}>Delete inactive flow versions to reduce metadata size.</p>
         <SearchBox
           searchFn={searchFlows}
           renderFn={renderFlowSearch}
@@ -122,7 +123,7 @@ export function FlowCleanup() {
         />
         {showVersions && (
           <div className={styles.versions} data-testid="flow-cleanup-versions">
-            <div className="tool-summary" data-testid="flow-cleanup-info">
+            <div className={sharedStyles.toolSummary} data-testid="flow-cleanup-info">
               <strong>{selectedFlowName}</strong>
               <br />
               Total versions: {versions.length}
@@ -144,9 +145,9 @@ export function FlowCleanup() {
           </div>
         )}
         {status && (
-          <div className="tool-status" data-testid="flow-cleanup-status">
+          <div className={sharedStyles.toolStatus} data-testid="flow-cleanup-status">
             <span className={`status-indicator status-${status.type}`}></span>
-            <span className="tool-status-text">{status.message}</span>
+            <span className={sharedStyles.toolStatusText} data-testid="flow-cleanup-status-text">{status.message}</span>
           </div>
         )}
       </div>

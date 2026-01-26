@@ -39,18 +39,14 @@ export class UtilsTabPage extends BasePage {
         this.traceStatusIndicator = page.locator(
             '[data-testid="debug-logs-trace-status"] .status-indicator'
         );
-        this.traceStatusText = page.locator(
-            '[data-testid="debug-logs-trace-status"] .tool-status-text'
-        );
+        this.traceStatusText = page.locator('[data-testid="debug-logs-trace-status-text"]');
         this.deleteLogsBtn = page.locator('[data-testid="debug-logs-delete-logs-btn"]');
         this.deleteFlagsBtn = page.locator('[data-testid="debug-logs-delete-flags-btn"]');
         this.deleteStatus = page.locator('[data-testid="debug-logs-delete-status"]');
         this.deleteStatusIndicator = page.locator(
             '[data-testid="debug-logs-delete-status"] .status-indicator'
         );
-        this.deleteStatusText = page.locator(
-            '[data-testid="debug-logs-delete-status"] .tool-status-text'
-        );
+        this.deleteStatusText = page.locator('[data-testid="debug-logs-delete-status-text"]');
 
         // Flow Cleanup elements
         this.flowSearchInput = page.locator('[data-testid="flow-cleanup-search"]');
@@ -62,9 +58,7 @@ export class UtilsTabPage extends BasePage {
         this.flowCleanupStatusIndicator = page.locator(
             '[data-testid="flow-cleanup-status"] .status-indicator'
         );
-        this.flowCleanupStatusText = page.locator(
-            '[data-testid="flow-cleanup-status"] .tool-status-text'
-        );
+        this.flowCleanupStatusText = page.locator('[data-testid="flow-cleanup-status-text"]');
 
         // Schema Browser Link
         this.openSchemaBtn = page.locator('[data-testid="open-schema-btn"]');

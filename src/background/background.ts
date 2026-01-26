@@ -3,7 +3,7 @@
 import {
     parseLightningUrl,
     findConnectionByDomain as findConnectionByDomainUtil,
-} from '../lib/background-utils.js';
+} from '../lib/background-utils';
 import type { SalesforceConnection } from '../types/salesforce';
 import {
     connectNative,
@@ -11,9 +11,9 @@ import {
     sendProxyRequest,
     isProxyConnected,
     getProxyInfo,
-} from './native-messaging.js';
-import { exchangeCodeForTokens, refreshAccessToken, updateConnectionToken } from './auth.js';
-import { debugInfo } from './debug.js';
+} from './native-messaging';
+import { exchangeCodeForTokens, refreshAccessToken, updateConnectionToken } from './auth';
+import { debugInfo } from './debug';
 
 // ============================================================================
 // Message Types

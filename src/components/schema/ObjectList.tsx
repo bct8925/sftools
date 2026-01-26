@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { SObjectDescribe } from '../../types/salesforce';
-import { filterObjects } from '../../lib/schema-utils.js';
+import { filterObjects } from '../../lib/schema-utils';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import styles from './SchemaPage.module.css';
 

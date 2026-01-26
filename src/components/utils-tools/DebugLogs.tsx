@@ -8,9 +8,9 @@ import {
   getDebugLogStats,
   deleteDebugLogs,
   deleteAllTraceFlags,
-} from '../../lib/salesforce.js';
+} from '../../lib/salesforce';
 import type { SObject } from '../../types/salesforce';
-import { SearchBox, type SearchBoxRenderData } from './SearchBox.js';
+import { SearchBox, type SearchBoxRenderData } from './SearchBox';
 import sharedStyles from './utils-tools.module.css';
 import styles from './DebugLogs.module.css';
 

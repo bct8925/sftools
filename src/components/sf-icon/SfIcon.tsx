@@ -1,4 +1,4 @@
-import { icons, type IconName } from '../../lib/icons.js';
+import { icons, type IconName } from '../../lib/icons';
 import styles from './SfIcon.module.css';
 
 interface SfIconProps {

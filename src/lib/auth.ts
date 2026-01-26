@@ -2,8 +2,8 @@
 // Used by content scripts (app.js, etc.) - NOT the service worker
 
 import type { SalesforceConnection } from '../types/salesforce';
-import { debugInfo } from './debug.js';
-import { isExpired } from './date-utils.js';
+import { debugInfo } from './debug';
+import { isExpired } from './date-utils';
 
 // --- Types ---
 
@@ -359,7 +359,7 @@ export async function validateOAuthState(receivedState: string): Promise<OAuthVa
 // --- OAuth Credentials ---
 
 // Re-export OAuth credentials helper (shared with service worker)
-export { getOAuthCredentials } from './oauth-credentials.js';
+export { getOAuthCredentials } from './oauth-credentials';
 
 /**
  * Load custom connected app config from storage

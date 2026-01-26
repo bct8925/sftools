@@ -5,10 +5,10 @@
 
 /**
  * Detects Salesforce login domain from a URL
- * @param {string} url - The URL to parse
- * @returns {string|null} - The login domain or null if not a Salesforce URL
+ * @param url - The URL to parse
+ * @returns The login domain or null if not a Salesforce URL
  */
-export function detectLoginDomain(url) {
+export function detectLoginDomain(url: string): string | null {
     try {
         const urlObj = new URL(url);
 
@@ -32,14 +32,20 @@ export function detectLoginDomain(url) {
 
 /**
  * Builds OAuth authorization URL
- * @param {string} loginDomain - The Salesforce login domain
- * @param {string} clientId - OAuth client ID
- * @param {string} redirectUri - OAuth redirect URI
- * @param {string} state - CSRF state parameter
- * @param {boolean} useCodeFlow - Use authorization code flow instead of implicit
- * @returns {string} - The complete OAuth authorization URL
+ * @param loginDomain - The Salesforce login domain
+ * @param clientId - OAuth client ID
+ * @param redirectUri - OAuth redirect URI
+ * @param state - CSRF state parameter
+ * @param useCodeFlow - Use authorization code flow instead of implicit
+ * @returns The complete OAuth authorization URL
  */
-export function buildOAuthUrl(loginDomain, clientId, redirectUri, state, useCodeFlow = false) {
+export function buildOAuthUrl(
+    loginDomain: string,
+    clientId: string,
+    redirectUri: string,
+    state: string,
+    useCodeFlow = false
+): string {
     const responseType = useCodeFlow ? 'code' : 'token';
     return (
         `${loginDomain}/services/oauth2/authorize` +

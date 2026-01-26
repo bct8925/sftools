@@ -2,9 +2,9 @@
 import { useState, useCallback, useMemo, Fragment } from 'react';
 import type { SObject, FieldDescribe } from '../../types/salesforce';
 import { flattenColumnMetadata, type QueryColumn } from '../../lib/column-utils';
-import { getActiveConnectionId } from '../../lib/auth.js';
-import { getValueByPath, formatCellValue } from '../../lib/csv-utils.js';
-import { parseFieldValue } from '../../lib/value-utils.js';
+import { getActiveConnectionId } from '../../lib/auth';
+import { getValueByPath, formatCellValue } from '../../lib/csv-utils';
+import { parseFieldValue } from '../../lib/value-utils';
 import styles from './QueryTab.module.css';
 
 interface QueryResultsTableProps {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useProxy } from '../../contexts/ProxyContext.jsx';
+import { useProxy } from '../../contexts/ProxyContext';
 import styles from './ProxySettings.module.css';
 
 export function ProxySettings() {

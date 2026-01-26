@@ -5,7 +5,7 @@
 export const API_VERSION = '62.0';
 
 // --- Auth Functions ---
-// Re-exported from auth.js for convenient access
+// Re-exported from auth.ts for convenient access
 export {
     // Core auth
     getAccessToken,
@@ -35,22 +35,22 @@ export {
     loadCustomConnectedApp,
     saveCustomConnectedApp,
     clearCustomConnectedApp,
-} from './auth.js';
+} from './auth';
 
 // --- Fetch Utilities ---
-// Re-exported from fetch.js for convenient access
+// Re-exported from fetch.ts for convenient access
 export {
     extensionFetch,
     proxyFetch,
     smartFetch,
     isProxyConnected,
     checkProxyStatus,
-} from './fetch.js';
+} from './fetch';
 
 // --- Salesforce API Request ---
-// Re-exported from salesforce-request.js for convenient access
-export { salesforceRequest } from './salesforce-request.js';
+// Re-exported from salesforce-request.ts for convenient access
+export { salesforceRequest } from './salesforce-request';
 
 // --- Cache Utilities ---
-// Re-exported from salesforce.js for convenient access
-export { migrateDescribeCache } from './salesforce.js';
+// Re-exported from salesforce.ts for convenient access
+export { migrateDescribeCache } from './salesforce';

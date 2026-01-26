@@ -1,7 +1,7 @@
 // Fetch routing and proxy connection utilities
 
-import { getActiveConnectionId, triggerAuthExpired } from './auth.js';
-import { debugInfo } from './debug.js';
+import { getActiveConnectionId, triggerAuthExpired } from './auth';
+import { debugInfo } from './debug';
 
 // Test extension ID used by headless test mode
 const TEST_EXTENSION_ID = 'test-extension-id';

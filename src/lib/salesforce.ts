@@ -13,11 +13,11 @@ import type {
     FlowDefinition,
     FlowVersion,
 } from '../types/salesforce';
-import { API_VERSION } from './utils.js';
-import { getAccessToken, getInstanceUrl, getActiveConnectionId } from './auth.js';
-import { smartFetch } from './fetch.js';
-import { salesforceRequest } from './salesforce-request.js';
-import { ensureTraceFlag, getLatestAnonymousLog } from './debug-logs.js';
+import { API_VERSION } from './utils';
+import { getAccessToken, getInstanceUrl, getActiveConnectionId } from './auth';
+import { smartFetch } from './fetch';
+import { salesforceRequest } from './salesforce-request';
+import { ensureTraceFlag, getLatestAnonymousLog } from './debug-logs';
 
 // ============================================================
 // Tooling API Utilities
@@ -472,7 +472,7 @@ export {
     publishPlatformEvent,
     type StreamingChannels,
     type PublishEventResult,
-} from './streaming.js';
+} from './streaming';
 
 // ============================================================
 // Utils Tab - API Helpers
@@ -486,7 +486,7 @@ export {
     enableTraceFlagForUser,
     deleteAllTraceFlags,
     type DebugLogStats,
-} from './debug-logs.js';
+} from './debug-logs';
 
 interface User {
     Id: string;
@@ -579,7 +579,7 @@ export {
     abortBulkQueryJob,
     executeBulkQueryExport,
     type BulkQueryJob,
-} from './bulk-query.js';
+} from './bulk-query';
 
 // ============================================================
 // Formula Field Editor

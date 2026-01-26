@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
-import { icons, type IconName } from '../../lib/icons.js';
+import { icons, type IconName } from '../../lib/icons';
 import styles from './ButtonIcon.module.css';
 
 interface ButtonIconProps {

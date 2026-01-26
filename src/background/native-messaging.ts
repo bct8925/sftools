@@ -1,7 +1,7 @@
 // Native Messaging Module for sftools Chrome Extension
 // Handles communication with the local proxy via Chrome Native Messaging
 
-import { debugInfo } from './debug.js';
+import { debugInfo } from './debug';
 
 const NATIVE_HOST_NAME = 'com.sftools.proxy';
 

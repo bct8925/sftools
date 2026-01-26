@@ -2,7 +2,7 @@
 // Pure functions for field manipulation, formatting, and parsing
 
 import type { FieldDescribe, SObject } from '../types/salesforce';
-import { parseFieldValue } from './value-utils.js';
+import { parseFieldValue } from './value-utils';
 
 // Re-export for backwards compatibility
 export { parseFieldValue as parseValue };

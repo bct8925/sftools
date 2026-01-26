@@ -9,16 +9,16 @@ import { QueryResults } from './QueryResults';
 import { QueryHistory, useSaveToHistory } from './QueryHistory';
 import { useQueryState, normalizeQuery } from './useQueryState';
 import { useQueryExecution } from './useQueryExecution';
-import { executeBulkQueryExport, updateRecord } from '../../lib/salesforce.js';
+import { executeBulkQueryExport, updateRecord } from '../../lib/salesforce';
 import {
   getValueByPath,
   formatCellValue,
   escapeCsvField,
   getExportFilename,
   downloadCsv,
-} from '../../lib/csv-utils.js';
+} from '../../lib/csv-utils';
 import { StatusBadge } from '../status-badge/StatusBadge';
-import type { HistoryManager } from '../../lib/history-manager.js';
+import type { HistoryManager } from '../../lib/history-manager';
 import styles from './QueryTab.module.css';
 
 const DEFAULT_QUERY = `SELECT

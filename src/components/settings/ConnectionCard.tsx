@@ -1,5 +1,5 @@
 import type { SalesforceConnection } from '../../types/salesforce';
-import { icons } from '../../lib/icons.js';
+import { icons } from '../../lib/icons';
 import styles from './ConnectionCard.module.css';
 
 interface ConnectionCardProps {

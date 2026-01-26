@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { FieldDescribe } from '../../types/salesforce';
-import { filterFields, getFieldTypeDisplay } from '../../lib/schema-utils.js';
-import { icons } from '../../lib/icons.js';
+import { filterFields, getFieldTypeDisplay } from '../../lib/schema-utils';
+import { icons } from '../../lib/icons';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { SfIcon } from '../sf-icon/SfIcon';
 import styles from './SchemaPage.module.css';

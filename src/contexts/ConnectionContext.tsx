@@ -17,7 +17,7 @@ import {
   getActiveConnectionId,
   isAuthenticated as checkAuth,
   type ConnectionData,
-} from '../lib/auth.js';
+} from '../lib/auth';
 
 interface ConnectionContextType {
   connections: SalesforceConnection[];

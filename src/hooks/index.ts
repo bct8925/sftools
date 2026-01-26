@@ -1,9 +1,9 @@
 // Re-export hooks from contexts for convenience
-export { useConnection } from '../contexts/ConnectionContext.js';
-export { useTheme } from '../contexts/ThemeContext.js';
-export { useProxy } from '../contexts/ProxyContext.js';
+export { useConnection } from '../contexts/ConnectionContext';
+export { useTheme } from '../contexts/ThemeContext';
+export { useProxy } from '../contexts/ProxyContext';
 
 // Utility hooks
-export { useStatusBadge } from './useStatusBadge.js';
-export type { UseStatusBadgeReturn, StatusType } from './useStatusBadge.js';
-export { useFilteredResults } from './useFilteredResults.js';
+export { useStatusBadge } from './useStatusBadge';
+export type { UseStatusBadgeReturn, StatusType } from './useStatusBadge';
+export { useFilteredResults } from './useFilteredResults';

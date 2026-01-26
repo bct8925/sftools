@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { escapeHtml } from '../../lib/text-utils.js';
+import { escapeHtml } from '../../lib/text-utils';
 import styles from './SearchBox.module.css';
 
 export interface SearchBoxRenderData {

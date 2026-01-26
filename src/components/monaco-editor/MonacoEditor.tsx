@@ -6,7 +6,7 @@ import {
 } from 'react';
 import Editor, { loader, type OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
-import { monaco } from '../../lib/monaco-custom.js';
+import { monaco } from '../../lib/monaco-custom';
 import { useMonacoTheme } from './useMonacoTheme';
 import styles from './MonacoEditor.module.css';
 

@@ -4,8 +4,8 @@ import type {
   FieldDescribe,
   SalesforceConnection,
 } from '../../types/salesforce';
-import { getGlobalDescribe, getObjectDescribe } from '../../lib/salesforce.js';
-import { setActiveConnection } from '../../lib/auth.js';
+import { getGlobalDescribe, getObjectDescribe } from '../../lib/salesforce';
+import { setActiveConnection } from '../../lib/auth';
 import { ObjectList } from './ObjectList';
 import { FieldList } from './FieldList';
 import { FormulaEditor } from './FormulaEditor';

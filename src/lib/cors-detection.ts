@@ -1,6 +1,6 @@
 // CORS error detection and handling utilities
 
-import type { FetchResponse } from './fetch.js';
+import type { FetchResponse } from './fetch';
 
 /**
  * Detect if an error is caused by CORS

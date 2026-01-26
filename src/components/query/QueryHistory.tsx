@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { Modal } from '../modal/Modal';
 import { HistoryList, FavoritesList, FavoriteModal } from '../script-list';
-import { HistoryManager, type HistoryEntry, type FavoriteEntry } from '../../lib/history-manager.js';
+import { HistoryManager, type HistoryEntry, type FavoriteEntry } from '../../lib/history-manager';
 import styles from './QueryTab.module.css';
 
 interface QueryHistoryProps {

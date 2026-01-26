@@ -1,11 +1,11 @@
 // Debug Logs - Trace flag and debug log management
 
 import type { QueryResult } from '../types/salesforce';
-import { API_VERSION } from './utils.js';
-import { getInstanceUrl, getAccessToken } from './auth.js';
-import { smartFetch } from './fetch.js';
-import { salesforceRequest } from './salesforce-request.js';
-import { getNowISO, getISODateFromNow, getFutureDate } from './date-utils.js';
+import { API_VERSION } from './utils';
+import { getInstanceUrl, getAccessToken } from './auth';
+import { smartFetch } from './fetch';
+import { salesforceRequest } from './salesforce-request';
+import { getNowISO, getISODateFromNow, getFutureDate } from './date-utils';
 
 // ============================================================
 // Constants

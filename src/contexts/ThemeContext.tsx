@@ -7,7 +7,7 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
-import { initTheme, getTheme, setTheme as setThemeStorage } from '../lib/theme.js';
+import { initTheme, getTheme, setTheme as setThemeStorage } from '../lib/theme';
 
 type ThemeValue = 'light' | 'dark' | 'system';
 

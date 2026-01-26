@@ -1,6 +1,6 @@
 import { useCallback, type ChangeEvent } from 'react';
 import type { FieldDescribe, SObject } from '../../types/salesforce';
-import { formatValue, parseValue, formatPreviewHtml } from '../../lib/record-utils.js';
+import { formatValue, parseValue, formatPreviewHtml } from '../../lib/record-utils';
 import styles from './RecordPage.module.css';
 
 interface FieldRowProps {

@@ -7,8 +7,8 @@ import {
     updateConnection,
     getOAuthCredentials,
     validateOAuthState,
-} from '../../lib/auth.js';
-import { escapeHtml } from '../../lib/text-utils.js';
+} from '../../lib/auth';
+import { escapeHtml } from '../../lib/text-utils';
 import type { SalesforceConnection } from '../../types/salesforce';
 
 interface _PendingAuth {

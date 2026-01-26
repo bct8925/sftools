@@ -1,4 +1,4 @@
-import { useTheme } from '../../contexts/ThemeContext.jsx';
+import { useTheme } from '../../contexts/ThemeContext';
 import styles from './ThemeSettings.module.css';
 
 export function ThemeSettings() {

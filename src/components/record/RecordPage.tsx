@@ -4,9 +4,9 @@ import {
   getObjectDescribe,
   getRecordWithRelationships,
   updateRecord,
-} from '../../lib/salesforce.js';
-import { setActiveConnection } from '../../lib/auth.js';
-import { sortFields, filterFields, getChangedFields } from '../../lib/record-utils.js';
+} from '../../lib/salesforce';
+import { setActiveConnection } from '../../lib/auth';
+import { sortFields, filterFields, getChangedFields } from '../../lib/record-utils';
 import { FieldRow } from './FieldRow';
 import { RichTextModal } from './RichTextModal';
 import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';

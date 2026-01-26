@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { monaco } from '../../lib/monaco-custom.js';
+import { monaco } from '../../lib/monaco-custom';
 
 /**
  * Define custom Monaco themes that read from CSS variables.

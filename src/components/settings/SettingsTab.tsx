@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { ConnectionList } from './ConnectionList.jsx';
-import { ThemeSettings } from './ThemeSettings.jsx';
-import { ProxySettings } from './ProxySettings.jsx';
-import { CacheSettings } from './CacheSettings.jsx';
-import { EditConnectionModal } from './EditConnectionModal.jsx';
+import { ConnectionList } from './ConnectionList';
+import { ThemeSettings } from './ThemeSettings';
+import { ProxySettings } from './ProxySettings';
+import { CacheSettings } from './CacheSettings';
+import { EditConnectionModal } from './EditConnectionModal';
 import styles from './SettingsTab.module.css';
 
 export function SettingsTab() {

@@ -1,6 +1,6 @@
 // Query Tabs - Tab bar for multiple query result tabs
 import { useCallback } from 'react';
-import { icons } from '../../lib/icons.js';
+import { icons } from '../../lib/icons';
 import type { QueryTabState } from './useQueryState';
 import styles from './QueryTab.module.css';
 

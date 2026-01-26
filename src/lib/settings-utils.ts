@@ -4,8 +4,8 @@
  */
 
 import type { SalesforceConnection } from '../types/salesforce';
-import { icons } from './icons.js';
-import { escapeHtml } from './text-utils.js';
+import { icons } from './icons';
+import { escapeHtml } from './text-utils';
 
 export interface ConnectionCardData {
     isActive: boolean;

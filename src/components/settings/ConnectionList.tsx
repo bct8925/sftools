@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { useConnection } from '../../contexts/ConnectionContext.jsx';
-import { startAuthorization } from '../../lib/start-authorization.js';
-import { ConnectionCard } from './ConnectionCard.jsx';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { startAuthorization } from '../../lib/start-authorization';
+import { ConnectionCard } from './ConnectionCard';
 import styles from './ConnectionList.module.css';
 
 interface ConnectionListProps {

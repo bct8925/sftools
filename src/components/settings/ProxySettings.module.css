@@ -46,7 +46,7 @@
 
 .indicator.connected {
     background-color: var(--indicator-success);
-    box-shadow: 0 0 6px rgba(75, 202, 129, 0.5);
+    box-shadow: 0 0 6px var(--shadow-md);
 }
 
 .indicator.disconnected {

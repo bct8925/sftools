@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { useConnection } from '../../contexts/ConnectionContext.js';
+import { useConnection } from '../../contexts';
+import styles from './SchemaBrowserLink.module.css';
 
 /**
  * Schema Browser Link component.
@@ -21,7 +22,7 @@ export function SchemaBrowserLink() {
   return (
     <div className="card">
       <div className="card-header">
-        <div className="card-header-icon" style={{ backgroundColor: '#0070d2' }}>
+        <div className={`card-header-icon ${styles.headerIcon}`}>
           S
         </div>
         <h2>Schema Browser</h2>

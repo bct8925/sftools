@@ -1,5 +1,10 @@
 /* Record Viewer Page Styles */
 
+/* Header Icon */
+.headerIcon {
+    background-color: var(--icon-query);
+}
+
 /* Record Info */
 .recordInfo {
     display: flex;

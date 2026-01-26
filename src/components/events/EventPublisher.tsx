@@ -3,6 +3,7 @@ import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEdito
 import { ChannelSelector } from './ChannelSelector';
 import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import { publishPlatformEvent } from '../../lib/salesforce';
+import styles from './EventsTab.module.css';
 
 interface EventPublisherProps {
   /** Available platform events */
@@ -75,7 +76,7 @@ export function EventPublisher({
   return (
     <div className="card">
       <div className="card-header">
-        <div className="card-header-icon" style={{ backgroundColor: '#706e6b' }}>
+        <div className={`card-header-icon ${styles.headerIconPublish}`}>
           P
         </div>
         <h2>Publish Event</h2>

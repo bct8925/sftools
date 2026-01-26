@@ -203,7 +203,7 @@ export function RecordPage() {
         <main className="content-area">
           <div className="card">
             <div className="card-header">
-              <div className="card-header-icon" style={{ backgroundColor: '#0070d2' }}>
+              <div className={`card-header-icon ${styles.headerIcon}`}>
                 R
               </div>
               <h2>Record Details</h2>
@@ -233,7 +233,7 @@ export function RecordPage() {
       <main className="content-area">
         <div className="card">
           <div className="card-header">
-            <div className="card-header-icon" style={{ backgroundColor: '#0070d2' }}>
+            <div className={`card-header-icon ${styles.headerIcon}`}>
               R
             </div>
             <h2>Record Details</h2>

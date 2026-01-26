@@ -3,3 +3,7 @@
 .section {
     /* Debug logs sections */
 }
+
+.headerIcon {
+    background-color: var(--icon-success);
+}

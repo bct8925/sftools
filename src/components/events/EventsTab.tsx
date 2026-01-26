@@ -2,8 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { ChannelSelector } from './ChannelSelector';
 import { EventPublisher } from './EventPublisher';
-import { useConnection } from '../../contexts/ConnectionContext';
-import { useProxy } from '../../contexts/ProxyContext';
+import { useConnection, useProxy } from '../../contexts';
 import { useStatusBadge } from '../../hooks';
 import { getAllStreamingChannels } from '../../lib/salesforce';
 import { formatSystemMessage } from '../../lib/events-utils';
@@ -129,7 +128,7 @@ export function EventsTab() {
     <div className={styles.eventsTab} data-testid="events-tab">
       <div className="card">
         <div className="card-header">
-          <div className="card-header-icon" style={{ backgroundColor: '#e96d63' }}>
+          <div className={`card-header-icon ${styles.headerIconEvents}`}>
             E
           </div>
           <h2>Streaming Events</h2>

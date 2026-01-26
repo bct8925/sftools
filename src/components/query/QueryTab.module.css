@@ -122,7 +122,7 @@
 .tabActive {
     background: var(--primary-color);
     border-color: var(--primary-color);
-    color: #fff;
+    color: var(--text-inverse);
 }
 
 .tabLabel {
@@ -155,7 +155,7 @@
 
 .tabActive .tabRefresh,
 .tabActive .tabClose {
-    color: #fff;
+    color: var(--text-inverse);
 }
 
 .editor {
@@ -406,4 +406,16 @@
 
 .modified .fieldInput {
     background-color: var(--bg-selected);
+}
+
+/* ============================================================
+   Header Icon Styles
+   ============================================================ */
+
+.headerIconQuery {
+    background-color: var(--icon-query);
+}
+
+.headerIconSuccess {
+    background-color: var(--icon-success);
 }

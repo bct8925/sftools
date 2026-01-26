@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useConnection } from '../../contexts/ConnectionContext.js';
+import { useConnection } from '../../contexts';
 import { useStatusBadge } from '../../hooks';
 import {
   getCurrentUserId,
@@ -11,7 +11,6 @@ import {
 } from '../../lib/salesforce.js';
 import type { SObject } from '../../types/salesforce';
 import { SearchBox, type SearchBoxRenderData } from './SearchBox.js';
-import './utils-tools.css';
 import styles from './DebugLogs.module.css';
 
 interface User extends SObject {
@@ -161,7 +160,7 @@ export function DebugLogs() {
   return (
     <div className="card" data-testid="debug-logs">
       <div className="card-header">
-        <div className="card-header-icon" style={{ backgroundColor: '#4bca81' }}>
+        <div className={`card-header-icon ${styles.headerIcon}`}>
           D
         </div>
         <h2>Debug Logs</h2>

@@ -60,7 +60,7 @@ export function ApexOutput({ output }: ApexOutputProps) {
   return (
     <div className="card" data-testid="apex-output">
       <div className="card-header">
-        <div className="card-header-icon" style={{ backgroundColor: '#3ba755' }}>
+        <div className={`card-header-icon ${styles.outputHeaderIcon}`}>
           L
         </div>
         <h2>Debug Log</h2>

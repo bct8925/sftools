@@ -33,6 +33,19 @@
     --indicator-error: #c23934;
     --indicator-loading: #f4b400;
 
+    /* Icon background colors */
+    --icon-apex: #6a67ce;
+    --icon-apex-output: #3ba755;
+    --icon-events: #e96d63;
+    --icon-events-publish: #706e6b;
+    --icon-query: #0070d2;
+    --icon-success: #4bca81;
+    --icon-appearance: #6366f1;
+    --icon-warning: #ff9a3c;
+
+    /* Text colors */
+    --text-inverse: #ffffff;
+
     /* Card header */
     --card-header-bg: #f8f9fa;
 
@@ -97,6 +110,19 @@
     --indicator-success: #4bca81;
     --indicator-error: #ff6b6b;
     --indicator-loading: #f4b400;
+
+    /* Icon background colors */
+    --icon-apex: #6a67ce;
+    --icon-apex-output: #3ba755;
+    --icon-events: #e96d63;
+    --icon-events-publish: #706e6b;
+    --icon-query: #0070d2;
+    --icon-success: #4bca81;
+    --icon-appearance: #6366f1;
+    --icon-warning: #ff9a3c;
+
+    /* Text colors */
+    --text-inverse: #ffffff;
 
     /* Card header */
     --card-header-bg: #1a1a2e;

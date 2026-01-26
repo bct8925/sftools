@@ -3,7 +3,7 @@ import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/Mon
 import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
 import { ApexOutput } from './ApexOutput';
 import { StatusBadge } from '../status-badge/StatusBadge';
-import { useConnection } from '../../contexts/ConnectionContext';
+import { useConnection } from '../../contexts';
 import { useStatusBadge } from '../../hooks';
 import { executeAnonymousApex } from '../../lib/salesforce';
 import { formatOutput } from '../../lib/apex-utils';
@@ -127,7 +127,7 @@ export function ApexTab() {
     <div className={styles.apexTab} data-testid="apex-tab">
       <div className="card">
         <div className="card-header">
-          <div className="card-header-icon" style={{ backgroundColor: '#6a67ce' }}>
+          <div className={`card-header-icon ${styles.headerIcon}`}>
             A
           </div>
           <h2>Anonymous Apex</h2>

@@ -165,7 +165,7 @@ export function SchemaPage() {
         <main className="content-area">
           <div className="card schema-card">
             <div className="card-header">
-              <div className="card-header-icon" style={{ backgroundColor: '#0070d2' }}>
+              <div className={`card-header-icon ${styles.headerIcon}`}>
                 S
               </div>
               <h2>Schema Browser</h2>
@@ -195,7 +195,7 @@ export function SchemaPage() {
       <main className="content-area">
         <div className="card schema-card">
           <div className="card-header">
-            <div className="card-header-icon" style={{ backgroundColor: '#0070d2' }}>
+            <div className={`card-header-icon ${styles.headerIcon}`}>
               S
             </div>
             <h2>Schema Browser</h2>

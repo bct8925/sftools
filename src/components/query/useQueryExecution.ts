@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useConnection } from '../../contexts/ConnectionContext';
+import { useConnection } from '../../contexts';
 import { flattenColumnMetadata, type QueryColumn } from '../../lib/column-utils';
 import { executeQueryWithColumns, getObjectDescribe } from '../../lib/salesforce';
 import type { FieldDescribe, SObject } from '../../types/salesforce';

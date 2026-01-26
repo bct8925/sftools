@@ -77,3 +77,15 @@
     overflow-y: auto;
     min-height: 0;
 }
+
+/* ============================================================
+   Header Icons
+   ============================================================ */
+
+.headerIcon {
+    background-color: var(--icon-apex);
+}
+
+.outputHeaderIcon {
+    background-color: var(--icon-apex-output);
+}

@@ -1,5 +1,5 @@
 // Query Results Table - Data table with inline editing and subquery support
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, Fragment } from 'react';
 import type { SObject, FieldDescribe } from '../../types/salesforce';
 import { flattenColumnMetadata, type QueryColumn } from '../../lib/column-utils';
 import { getActiveConnectionId } from '../../lib/auth.js';
@@ -327,15 +327,15 @@ export function QueryResultsTable({
           const subqueryColumns = columns.filter((c) => c.isSubquery);
 
           return (
-            <>
-              <tr key={recordId} data-record-id={recordId}>
+            <Fragment key={recordId}>
+              <tr data-record-id={recordId}>
                 {columns.map((col) => renderCell(record, col, recordId, modifiedFields))}
               </tr>
               {/* Render expanded subquery rows */}
               {subqueryColumns.map((col) =>
                 renderSubqueryDetailRow(record, col, columns.length)
               )}
-            </>
+            </Fragment>
           );
         })}
       </tbody>

@@ -3,3 +3,7 @@
 .versions {
     margin-top: 1rem;
 }
+
+.headerIcon {
+    background-color: var(--icon-warning);
+}

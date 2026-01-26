@@ -11,3 +11,11 @@
 .responseEditor {
     height: 400px;
 }
+
+.headerIconRest {
+    background-color: var(--icon-query);
+}
+
+.headerIconSuccess {
+    background-color: var(--icon-success);
+}

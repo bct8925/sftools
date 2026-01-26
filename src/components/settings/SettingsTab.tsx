@@ -13,7 +13,7 @@ export function SettingsTab() {
     <div className={styles.settingsContent} data-testid="settings-tab">
       <div className="card">
         <div className="card-header">
-          <div className="card-header-icon" style={{ backgroundColor: '#4bca81' }}>
+          <div className={`card-header-icon ${styles.headerIconConnections}`}>
             C
           </div>
           <h2>Connections</h2>
@@ -28,7 +28,7 @@ export function SettingsTab() {
 
       <div className="card">
         <div className="card-header">
-          <div className="card-header-icon" style={{ backgroundColor: '#6366f1' }}>
+          <div className={`card-header-icon ${styles.headerIconAppearance}`}>
             A
           </div>
           <h2>Appearance</h2>
@@ -41,7 +41,7 @@ export function SettingsTab() {
 
       <div className="card">
         <div className="card-header">
-          <div className="card-header-icon" style={{ backgroundColor: '#0070d2' }}>
+          <div className={`card-header-icon ${styles.headerIconProxy}`}>
             P
           </div>
           <h2>Local Proxy</h2>
@@ -53,7 +53,7 @@ export function SettingsTab() {
 
       <div className="card">
         <div className="card-header">
-          <div className="card-header-icon" style={{ backgroundColor: '#ff9a3c' }}>
+          <div className={`card-header-icon ${styles.headerIconCache}`}>
             D
           </div>
           <h2>Data</h2>

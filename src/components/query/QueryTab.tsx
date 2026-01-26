@@ -1,6 +1,6 @@
 // Query Tab - SOQL Query Editor with tabbed results (React version)
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useConnection } from '../../contexts/ConnectionContext';
+import { useConnection } from '../../contexts';
 import { useStatusBadge, useFilteredResults } from '../../hooks';
 import { ButtonIcon, ButtonIconOption, ButtonIconCheckbox } from '../button-icon/ButtonIcon';
 import { QueryEditor, clearQueryAutocompleteState, type QueryEditorRef } from './QueryEditor';
@@ -272,7 +272,7 @@ export function QueryTab() {
       {/* Query Editor Card */}
       <div className="card">
         <div className="card-header">
-          <div className="card-header-icon" style={{ backgroundColor: '#0070d2' }}>
+          <div className={`card-header-icon ${styles.headerIconQuery}`}>
             S
           </div>
           <h2>SOQL Query</h2>
@@ -312,7 +312,7 @@ export function QueryTab() {
       {/* Results Card */}
       <div className="card">
         <div className="card-header">
-          <div className="card-header-icon" style={{ backgroundColor: '#4bca81' }}>
+          <div className={`card-header-icon ${styles.headerIconSuccess}`}>
             Q
           </div>
           <h2>Results</h2>

@@ -1,5 +1,10 @@
 /* Schema Browser Page Styles */
 
+/* Header Icon */
+.headerIcon {
+    background-color: var(--icon-query);
+}
+
 /* Schema-specific card override */
 .schemaCardBody {
     padding: 0;

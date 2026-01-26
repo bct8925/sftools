@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
-import { useConnection } from '../../contexts/ConnectionContext';
+import { useConnection } from '../../contexts';
 import { executeRestRequest } from '../../lib/salesforce';
 import { shouldShowBody } from '../../lib/rest-api-utils';
 import type { RestApiResponse } from '../../types/salesforce';
@@ -88,7 +88,7 @@ export function RestApiTab() {
       {/* Request Card */}
       <div className="card">
         <div className="card-header">
-          <div className="card-header-icon" style={{ backgroundColor: '#0070d2' }}>
+          <div className={`card-header-icon ${styles.headerIconRest}`}>
             R
           </div>
           <h2>Request</h2>
@@ -150,7 +150,7 @@ export function RestApiTab() {
       {/* Response Card */}
       <div className="card">
         <div className="card-header">
-          <div className="card-header-icon" style={{ backgroundColor: '#4bca81' }}>
+          <div className={`card-header-icon ${styles.headerIconSuccess}`}>
             ✓
           </div>
           <h2>Response</h2>

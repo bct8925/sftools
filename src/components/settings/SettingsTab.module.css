@@ -8,3 +8,19 @@
     margin-bottom: 1rem;
     color: var(--text-muted);
 }
+
+.headerIconConnections {
+    background-color: var(--icon-success);
+}
+
+.headerIconAppearance {
+    background-color: var(--icon-appearance);
+}
+
+.headerIconProxy {
+    background-color: var(--icon-query);
+}
+
+.headerIconCache {
+    background-color: var(--icon-warning);
+}

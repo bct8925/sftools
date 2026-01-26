@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useConnection } from '../../contexts/ConnectionContext.js';
+import { useConnection } from '../../contexts';
 import {
   searchFlows,
   getFlowVersions,
@@ -104,7 +104,7 @@ export function FlowCleanup() {
   return (
     <div className="card" data-testid="flow-cleanup">
       <div className="card-header">
-        <div className="card-header-icon" style={{ backgroundColor: '#ff9a3c' }}>
+        <div className={`card-header-icon ${styles.headerIcon}`}>
           F
         </div>
         <h2>Flow Version Cleanup</h2>

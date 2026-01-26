@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "for file in $CLAUDE_FILE_PATHS; do if [[ \"$file\" =~ \\.(js|css|html|json)$ ]]; then npx prettier --write \"$file\" 2>/dev/null || true; fi; done"
+            "command": "for file in $CLAUDE_FILE_PATHS; do if [[ \"$file\" =~ \\.(ts|tsx|js|jsx|css|html|json)$ ]]; then npx prettier --write \"$file\" 2>/dev/null || true; fi; done"
           }
         ]
       }

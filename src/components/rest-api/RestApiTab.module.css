@@ -1,0 +1,21 @@
+/* REST API Tab Component */
+
+.restApiTab {
+    display: block;
+}
+
+.requestEditor {
+    height: 150px;
+}
+
+.responseEditor {
+    height: 400px;
+}
+
+.headerIconRest {
+    background-color: var(--icon-query);
+}
+
+.headerIconSuccess {
+    background-color: var(--icon-success);
+}

@@ -1,0 +1,178 @@
+/* Shared styles for utility tools */
+
+.toolDescription {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Status Row */
+.toolStatus {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+}
+
+.toolStatusText {
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+/* Search Results */
+.toolResults {
+    margin-top: 0.75rem;
+}
+
+.toolResultItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.toolResultItem:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-selected);
+}
+
+.noHover {
+    cursor: default;
+}
+
+.noHover:hover {
+    border-color: var(--border-color);
+    background: transparent;
+}
+
+.toolResultName {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.toolResultDetail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.toolNoResults {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+}
+
+/* Links in results */
+.toolLink {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.toolLink:hover {
+    text-decoration: underline;
+}
+
+/* Summary box */
+.toolSummary {
+    padding: 1rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+/* Selected item display */
+.toolSelected {
+    padding: 0.75rem;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+}
+
+/* Divider */
+.toolDivider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 1rem 0;
+}
+
+/* Section title within a card */
+.toolSectionTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 0 0 0.75rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Button row */
+.debugLogsButtons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Search Box Component */
+.searchBox {
+    position: relative;
+}
+
+.searchBox .formElement {
+    margin-bottom: 0;
+}
+
+.searchBoxDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: var(--z-dropdown);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    box-shadow: 0 4px 8px var(--shadow-md);
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.searchBoxItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.searchBoxItem:hover {
+    background: var(--bg-selected);
+}
+
+.searchBoxItemName {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.searchBoxItemDetail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-left: 1rem;
+}
+
+.searchBoxNoResults {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+}

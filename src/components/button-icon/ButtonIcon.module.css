@@ -1,0 +1,101 @@
+/* Button Icon Component */
+
+.buttonIcon {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.trigger {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 18px;
+    transition: all 0.2s;
+}
+
+.trigger:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.trigger svg {
+    vertical-align: middle;
+    fill: currentColor;
+}
+
+.menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    min-width: 140px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px var(--shadow-lg);
+    z-index: 200;
+    overflow: hidden;
+}
+
+.open .menu {
+    display: block;
+}
+
+/* Common menu item styles */
+.option {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 13px;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.option:hover:not(:disabled) {
+    background-color: var(--bg-hover);
+}
+
+.option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Checkbox option style */
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.checkbox:hover {
+    background-color: var(--bg-hover);
+}
+
+.checkbox input {
+    margin: 0;
+    cursor: pointer;
+}

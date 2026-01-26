@@ -8,66 +8,65 @@ import { MockRouter } from '../../../shared/mocks/index.js';
  * - RV-F-016: Refresh record - Data reloaded
  */
 export default class RecordRefreshTest extends SftoolsTest {
-  configureMocks() {
-    const router = new MockRouter();
+    configureMocks() {
+        const router = new MockRouter();
 
-    // Mock describe for Account object
-    router.onDescribe('Account', [
-      { name: 'Id', label: 'Record ID', type: 'id', updateable: false },
-      { name: 'Name', label: 'Account Name', type: 'string', updateable: true },
-      { name: 'Phone', label: 'Phone', type: 'phone', updateable: true }
-    ]);
+        // Mock describe for Account object
+        router.onDescribe('Account', [
+            { name: 'Id', label: 'Record ID', type: 'id', updateable: false },
+            { name: 'Name', label: 'Account Name', type: 'string', updateable: true },
+            { name: 'Phone', label: 'Phone', type: 'phone', updateable: true },
+        ]);
 
-    // Mock SOQL query for record retrieval (used by getRecordWithRelationships)
-    // Pattern matches URL-encoded SOQL: "FROM%20Account%20WHERE%20Id"
-    router.onQuery(
-      /\/query\/?\?q=.*FROM%20Account%20WHERE%20Id/,
-      [{
-        attributes: { type: 'Account' },
-        Id: '001MOCKACCOUNT01',
-        Name: 'Original Name',
-        Phone: '555-1234'
-      }]
-    );
+        // Mock SOQL query for record retrieval (used by getRecordWithRelationships)
+        // Pattern matches URL-encoded SOQL: "FROM%20Account%20WHERE%20Id"
+        router.onQuery(/\/query\/?\?q=.*FROM%20Account%20WHERE%20Id/, [
+            {
+                attributes: { type: 'Account' },
+                Id: '001MOCKACCOUNT01',
+                Name: 'Original Name',
+                Phone: '555-1234',
+            },
+        ]);
 
-    return router;
-  }
+        return router;
+    }
 
-  async test(): Promise<void> {
-    // Navigate to record viewer
-    await this.navigateToRecord('Account', '001MOCKACCOUNT01');
+    async test(): Promise<void> {
+        // Navigate to record viewer
+        await this.navigateToRecord('Account', '001MOCKACCOUNT01');
 
-    // Wait for record to load
-    await this.recordPage.waitForLoad();
+        // Wait for record to load
+        await this.recordPage.waitForLoad();
 
-    // Get original name value
-    const initialValue = await this.recordPage.getFieldValue('Name');
-    await this.expect(initialValue).toBe('Original Name');
+        // Get original name value
+        const initialValue = await this.recordPage.getFieldValue('Name');
+        await this.expect(initialValue).toBe('Original Name');
 
-    // Set field value to a different name
-    const modifiedName = 'Modified Name';
-    await this.recordPage.setFieldValue('Name', modifiedName);
+        // Set field value to a different name
+        const modifiedName = 'Modified Name';
+        await this.recordPage.setFieldValue('Name', modifiedName);
 
-    // Verify field value changed in UI
-    const modifiedValue = await this.recordPage.getFieldValue('Name');
-    await this.expect(modifiedValue).toBe(modifiedName);
+        // Verify field value changed in UI
+        const modifiedValue = await this.recordPage.getFieldValue('Name');
+        await this.expect(modifiedValue).toBe(modifiedName);
 
-    // Verify field is marked as modified
-    const isModified = await this.recordPage.isFieldModified('Name');
-    await this.expect(isModified).toBe(true);
+        // Verify field is marked as modified
+        const isModified = await this.recordPage.isFieldModified('Name');
+        await this.expect(isModified).toBe(true);
 
-    // Click refresh
-    await this.recordPage.refresh();
+        // Click refresh
+        await this.recordPage.refresh();
 
-    // Wait for load after refresh
-    await this.recordPage.waitForLoad();
+        // Wait for load after refresh
+        await this.recordPage.waitForLoad();
 
-    // Verify name field reverted to original value
-    const revertedValue = await this.recordPage.getFieldValue('Name');
-    await this.expect(revertedValue).toBe('Original Name');
+        // Verify name field reverted to original value
+        const revertedValue = await this.recordPage.getFieldValue('Name');
+        await this.expect(revertedValue).toBe('Original Name');
 
-    // Verify field is no longer modified
-    const isStillModified = await this.recordPage.isFieldModified('Name');
-    await this.expect(isStillModified).toBe(false);
-  }
+        // Verify field is no longer modified
+        const isStillModified = await this.recordPage.isFieldModified('Name');
+        await this.expect(isStillModified).toBe(false);
+    }
 }

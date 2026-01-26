@@ -1,0 +1,72 @@
+/* Search box component styles */
+
+.searchBox {
+    position: relative;
+}
+
+.formElement {
+    margin-bottom: 0;
+}
+
+.label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input {
+    width: 100%;
+}
+
+.dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: var(--z-dropdown);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    box-shadow: 0 4px 8px var(--shadow-md);
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.results {
+    /* Container for items */
+}
+
+.item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.item:hover {
+    background: var(--bg-selected);
+}
+
+.itemName {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.itemDetail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-left: 1rem;
+}
+
+.noResults {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+}

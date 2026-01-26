@@ -11,72 +11,72 @@ import { MockRouter } from '../../../shared/mocks/index.js';
  * - Q-F-026: Close tab - Tab removed from list
  */
 export default class QueryTabsTest extends SftoolsTest {
-  configureMocks() {
-    const router = new MockRouter();
+    configureMocks() {
+        const router = new MockRouter();
 
-    // Mock query responses for both queries
-    router.onQuery(
-      /\/query/,
-      [{ Id: '001MOCKACCOUNT01', Name: 'Tab Test Alpha' }],
-      [
-        { columnName: 'Id', displayName: 'Id', aggregate: false },
-        { columnName: 'Name', displayName: 'Name', aggregate: false }
-      ]
-    );
+        // Mock query responses for both queries
+        router.onQuery(
+            /\/query/,
+            [{ Id: '001MOCKACCOUNT01', Name: 'Tab Test Alpha' }],
+            [
+                { columnName: 'Id', displayName: 'Id', aggregate: false },
+                { columnName: 'Name', displayName: 'Name', aggregate: false },
+            ]
+        );
 
-    return router;
-  }
+        return router;
+    }
 
-  async test(): Promise<void> {
-    // Navigate to extension
-    await this.navigateToExtension();
+    async test(): Promise<void> {
+        // Navigate to extension
+        await this.navigateToExtension();
 
-    // Navigate to Query tab
-    await this.queryTab.navigateTo();
+        // Navigate to Query tab
+        await this.queryTab.navigateTo();
 
-    // Execute first query
-    const query1 = `SELECT Id, Name FROM Account WHERE Name LIKE 'Alpha%'`;
-    await this.queryTab.executeQuery(query1);
+        // Execute first query
+        const query1 = `SELECT Id, Name FROM Account WHERE Name LIKE 'Alpha%'`;
+        await this.queryTab.executeQuery(query1);
 
-    // Verify success
-    const status1 = await this.queryTab.getStatus();
-    await this.expect(status1.type).toBe('success');
+        // Verify success
+        const status1 = await this.queryTab.getStatus();
+        await this.expect(status1.type).toBe('success');
 
-    // Verify 1 tab is open
-    const tabs1 = await this.queryTab.getOpenTabs();
-    await this.expect(tabs1.length).toBe(1);
+        // Verify 1 tab is open
+        const tabs1 = await this.queryTab.getOpenTabs();
+        await this.expect(tabs1.length).toBe(1);
 
-    // Execute second query
-    const query2 = `SELECT Id, Name FROM Account WHERE Name LIKE 'Beta%'`;
-    await this.queryTab.executeQuery(query2);
+        // Execute second query
+        const query2 = `SELECT Id, Name FROM Account WHERE Name LIKE 'Beta%'`;
+        await this.queryTab.executeQuery(query2);
 
-    // Verify success
-    const status2 = await this.queryTab.getStatus();
-    await this.expect(status2.type).toBe('success');
+        // Verify success
+        const status2 = await this.queryTab.getStatus();
+        await this.expect(status2.type).toBe('success');
 
-    // Verify 2 tabs are open
-    const tabs2 = await this.queryTab.getOpenTabs();
-    await this.expect(tabs2.length).toBe(2);
+        // Verify 2 tabs are open
+        const tabs2 = await this.queryTab.getOpenTabs();
+        await this.expect(tabs2.length).toBe(2);
 
-    // Switch to first tab
-    await this.queryTab.switchToTab(0);
+        // Switch to first tab
+        await this.queryTab.switchToTab(0);
 
-    // Verify first tab is active
-    const activeTab1 = await this.queryTab.getActiveTab();
-    await this.expect(activeTab1).toBe(0);
+        // Verify first tab is active
+        const activeTab1 = await this.queryTab.getActiveTab();
+        await this.expect(activeTab1).toBe(0);
 
-    // Switch to second tab
-    await this.queryTab.switchToTab(1);
+        // Switch to second tab
+        await this.queryTab.switchToTab(1);
 
-    // Verify second tab is active
-    const activeTab2 = await this.queryTab.getActiveTab();
-    await this.expect(activeTab2).toBe(1);
+        // Verify second tab is active
+        const activeTab2 = await this.queryTab.getActiveTab();
+        await this.expect(activeTab2).toBe(1);
 
-    // Close first tab by index
-    await this.queryTab.closeTab(0);
+        // Close first tab by index
+        await this.queryTab.closeTab(0);
 
-    // Verify only 1 tab remains
-    const tabs3 = await this.queryTab.getOpenTabs();
-    await this.expect(tabs3.length).toBe(1);
-  }
+        // Verify only 1 tab remains
+        const tabs3 = await this.queryTab.getOpenTabs();
+        await this.expect(tabs3.length).toBe(1);
+    }
 }

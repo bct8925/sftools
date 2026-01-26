@@ -1,0 +1,13 @@
+.eventsTab {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.headerIconEvents {
+    background-color: var(--icon-events);
+}
+
+.headerIconPublish {
+    background-color: var(--icon-events-publish);
+}

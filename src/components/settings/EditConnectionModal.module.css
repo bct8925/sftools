@@ -1,0 +1,42 @@
+/* Edit Connection Modal Styles */
+
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 20px var(--shadow-lg);
+    width: 400px;
+    max-width: 90vw;
+}
+
+.modalContent h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: var(--text-main);
+}
+
+.modalContent :global(.form-element) {
+    margin-bottom: 1rem;
+}
+
+.fieldHint {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.buttonRow {
+    display: flex;
+    gap: 0.5rem;
+}

@@ -1,0 +1,30 @@
+/* Monaco Editor React Component */
+
+.container {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 200px;
+}
+
+/* Resize handle at bottom of editor */
+.resizeHandle {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+    background: transparent;
+    z-index: 10;
+}
+
+.resizeHandle:hover {
+    background: var(--brand-color);
+    opacity: 0.3;
+}
+
+.resizeHandle:active {
+    background: var(--brand-color);
+    opacity: 0.5;
+}

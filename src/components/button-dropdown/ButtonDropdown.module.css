@@ -1,0 +1,59 @@
+/* Button Dropdown Component */
+
+.buttonDropdown {
+    display: inline-flex;
+    position: relative;
+}
+
+.main {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: 1px solid var(--border-color);
+}
+
+.trigger {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding: 8px 10px;
+    font-size: 10px;
+}
+
+.menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 12px var(--shadow-lg);
+    z-index: var(--z-dropdown);
+    overflow: hidden;
+}
+
+.open .menu {
+    display: block;
+}
+
+.option {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 13px;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.option:hover:not(:disabled) {
+    background-color: var(--bg-hover);
+}
+
+.option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

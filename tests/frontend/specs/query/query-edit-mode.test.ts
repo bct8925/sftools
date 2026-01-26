@@ -11,86 +11,97 @@ import { MockRouter } from '../../../shared/mocks/index.js';
  * - Q-F-011: Clear changes - Clears pending changes, cells return to original values
  */
 export default class QueryEditModeTest extends SftoolsTest {
-  configureMocks() {
-    const router = new MockRouter();
+    configureMocks() {
+        const router = new MockRouter();
 
-    // Mock initial query response with entityName
-    router.onQuery(
-      /\/query/,
-      [{
-        Id: '001MOCKACCOUNT01',
-        Name: 'Original Name',
-        attributes: { type: 'Account', url: '/services/data/v59.0/sobjects/Account/001MOCKACCOUNT01' }
-      }],
-      [
-        { columnName: 'Id', displayName: 'Id', aggregate: false },
-        { columnName: 'Name', displayName: 'Name', aggregate: false }
-      ],
-      'Account'
-    );
+        // Mock initial query response with entityName
+        router.onQuery(
+            /\/query/,
+            [
+                {
+                    Id: '001MOCKACCOUNT01',
+                    Name: 'Original Name',
+                    attributes: {
+                        type: 'Account',
+                        url: '/services/data/v59.0/sobjects/Account/001MOCKACCOUNT01',
+                    },
+                },
+            ],
+            [
+                { columnName: 'Id', displayName: 'Id', aggregate: false },
+                { columnName: 'Name', displayName: 'Name', aggregate: false },
+            ],
+            'Account'
+        );
 
-    // Mock object describe for field metadata (needed for edit mode)
-    router.onDescribe('Account', [
-      { name: 'Id', label: 'Account ID', type: 'id', updateable: false, calculated: false },
-      { name: 'Name', label: 'Account Name', type: 'string', updateable: true, calculated: false }
-    ]);
+        // Mock object describe for field metadata (needed for edit mode)
+        router.onDescribe('Account', [
+            { name: 'Id', label: 'Account ID', type: 'id', updateable: false, calculated: false },
+            {
+                name: 'Name',
+                label: 'Account Name',
+                type: 'string',
+                updateable: true,
+                calculated: false,
+            },
+        ]);
 
-    // Mock update success
-    router.onUpdateRecord('Account', '001MOCKACCOUNT01');
+        // Mock update success
+        router.onUpdateRecord('Account', '001MOCKACCOUNT01');
 
-    return router;
-  }
+        return router;
+    }
 
-  async test(): Promise<void> {
-    // Navigate to extension
-    await this.navigateToExtension();
+    async test(): Promise<void> {
+        // Navigate to extension
+        await this.navigateToExtension();
 
-    // Navigate to Query tab
-    await this.queryTab.navigateTo();
+        // Navigate to Query tab
+        await this.queryTab.navigateTo();
 
-    // Execute query
-    const query = `SELECT Id, Name FROM Account LIMIT 10`;
-    await this.queryTab.executeQuery(query);
+        // Execute query
+        const query = `SELECT Id, Name FROM Account LIMIT 10`;
+        await this.queryTab.executeQuery(query);
 
-    // Verify query succeeded
-    const status = await this.queryTab.getStatus();
-    await this.expect(status.type).toBe('success');
+        // Verify query succeeded
+        const status = await this.queryTab.getStatus();
+        await this.expect(status.type).toBe('success');
 
-    // @test Q-F-008: Toggle edit mode on
-    await this.queryTab.enableEditMode();
+        // @test Q-F-008: Toggle edit mode on
+        await this.queryTab.enableEditMode();
 
-    // Verify edit mode is enabled
-    const editingEnabled = await this.queryTab.editingCheckbox.isChecked();
-    await this.expect(editingEnabled).toBe(true);
+        // Verify edit mode is enabled
+        const editingEnabled = await this.queryTab.editingCheckbox.isChecked();
+        await this.expect(editingEnabled).toBe(true);
 
-    // @test Q-F-009: Edit a field value
-    const newName = `Updated ${Date.now()}`;
-    await this.queryTab.editCell(0, 'Name', newName);
+        // @test Q-F-009: Edit a field value
+        const newName = `Updated ${Date.now()}`;
+        await this.queryTab.editCell(0, 'Name', newName);
 
-    // Verify at least one change is tracked
-    const changesCount = await this.queryTab.getChangesCount();
-    await this.expect(changesCount).toBeGreaterThan(0);
+        // Verify at least one change is tracked
+        const changesCount = await this.queryTab.getChangesCount();
+        await this.expect(changesCount).toBeGreaterThan(0);
 
-    // @test Q-F-010: Save changes
-    await this.queryTab.saveChanges();
+        // @test Q-F-010: Save changes
+        await this.queryTab.saveChanges();
 
-    // Verify save succeeded
-    const saveStatus = await this.queryTab.getStatus();
-    await this.expect(saveStatus.type).toBe('success');
+        // Verify save succeeded
+        const saveStatus = await this.queryTab.getStatus();
+        await this.expect(saveStatus.type).toBe('success');
 
-    // @test Q-F-011: Edit again and clear changes
-    const anotherName = `Another Update ${Date.now()}`;
-    await this.queryTab.editCell(0, 'Name', anotherName);
+        // @test Q-F-011: Edit again and clear changes
+        const anotherName = `Another Update ${Date.now()}`;
+        await this.queryTab.editCell(0, 'Name', anotherName);
 
-    // Verify change is tracked
-    const changesBeforeClear = await this.queryTab.getChangesCount();
-    await this.expect(changesBeforeClear).toBeGreaterThan(0);
+        // Verify change is tracked
+        const changesBeforeClear = await this.queryTab.getChangesCount();
+        await this.expect(changesBeforeClear).toBeGreaterThan(0);
 
-    // Clear changes
-    await this.queryTab.clearChanges();
+        // Clear changes
+        await this.queryTab.clearChanges();
 
-    // Verify no pending changes
-    const changesAfterClear = await this.queryTab.getChangesCount();
-    await this.expect(changesAfterClear).toBe(0);
-  }
+        // Verify no pending changes
+        const changesAfterClear = await this.queryTab.getChangesCount();
+        await this.expect(changesAfterClear).toBe(0);
+    }
 }

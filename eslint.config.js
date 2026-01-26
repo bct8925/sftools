@@ -1,6 +1,7 @@
 import globals from 'globals';
 import eslintPluginImport from 'eslint-plugin-import';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import tseslint from 'typescript-eslint';
 
 export default [
     // Global ignores
@@ -12,6 +13,52 @@ export default [
             'coverage/**',
             '*.min.js',
         ],
+    },
+
+    // TypeScript source files
+    ...tseslint.configs.recommended.map((config) => ({
+        ...config,
+        files: ['src/**/*.ts'],
+    })),
+    {
+        files: ['src/**/*.ts'],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            parser: tseslint.parser,
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+            },
+            globals: {
+                ...globals.browser,
+                chrome: 'readonly',
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tseslint.plugin,
+            import: eslintPluginImport,
+        },
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                },
+            ],
+            // Import rules
+            'import/first': 'error',
+            'import/no-duplicates': 'error',
+            'import/order': [
+                'warn',
+                {
+                    groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+                    'newlines-between': 'never',
+                },
+            ],
+        },
     },
 
     // Main source files
@@ -82,7 +129,45 @@ export default [
         },
     },
 
-    // Test files - more relaxed rules
+    // TypeScript test files (no projectService - tests not in tsconfig)
+    ...tseslint.configs.recommended.map((config) => ({
+        ...config,
+        files: ['tests/**/*.ts'],
+    })),
+    {
+        files: ['tests/**/*.ts'],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            parser: tseslint.parser,
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+                chrome: 'readonly',
+                vi: 'readonly',
+                describe: 'readonly',
+                it: 'readonly',
+                test: 'readonly',
+                expect: 'readonly',
+                beforeEach: 'readonly',
+                afterEach: 'readonly',
+                beforeAll: 'readonly',
+                afterAll: 'readonly',
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tseslint.plugin,
+        },
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off', // Tests often need any
+            '@typescript-eslint/no-unused-vars': 'off', // Relaxed for tests
+            '@typescript-eslint/no-require-imports': 'off', // Dynamic test loading
+            'no-unused-expressions': 'off', // Allow expect().toBe() chains
+            'no-empty-function': 'off',
+        },
+    },
+
+    // JavaScript test files - more relaxed rules
     {
         files: ['tests/**/*.js', '**/*.test.js', '**/*.spec.js'],
         languageOptions: {

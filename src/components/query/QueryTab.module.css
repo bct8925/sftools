@@ -1,0 +1,421 @@
+/* Query Tab Styles - CSS Module */
+
+/* ============================================================
+   Results Search
+   ============================================================ */
+
+.resultsSearch {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.resultsBtn {
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   History/Favorites Button & Modal
+   ============================================================ */
+
+.historyBtn {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.settingsBtn {
+    flex-shrink: 0;
+}
+
+.historyModal {
+    width: 320px;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ============================================================
+   Modal Tabs
+   ============================================================ */
+
+.dropdownTabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-bg);
+}
+
+.dropdownTab {
+    flex: 1;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.dropdownTab:hover {
+    color: var(--text-main);
+    background: var(--bg-hover);
+}
+
+.dropdownTabActive {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    margin-bottom: -1px;
+}
+
+.dropdownContent {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* ============================================================
+   Query Card Body & Tabs
+   ============================================================ */
+
+.cardBody {
+    padding: 0;
+}
+
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 10px 15px;
+    background-color: var(--card-header-bg);
+    border-bottom: 1px solid var(--border-color);
+    min-height: 40px;
+    align-items: center;
+}
+
+.tabsEmpty {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-style: italic;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 4px 8px;
+    font-size: 12px;
+    max-width: 200px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.tab:hover {
+    border-color: var(--primary-color);
+}
+
+.tabActive {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-inverse);
+}
+
+.tabLabel {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 6px;
+}
+
+.tabRefresh,
+.tabClose {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    opacity: 0.6;
+    color: inherit;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tabRefresh:hover,
+.tabClose:hover {
+    opacity: 1;
+}
+
+.tabActive .tabRefresh,
+.tabActive .tabClose {
+    color: var(--text-inverse);
+}
+
+.editor {
+    height: 120px;
+}
+
+.footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* ============================================================
+   Query Results
+   ============================================================ */
+
+.results {
+    overflow-x: auto;
+    max-height: 370px;
+    overflow-y: auto;
+}
+
+.resultsEmpty,
+.resultsError,
+.resultsLoading {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
+}
+
+.resultsError {
+    color: var(--status-error-text);
+    background-color: var(--status-error-bg);
+    border-radius: var(--radius-md);
+    font-style: normal;
+}
+
+.resultsLoading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    font-style: normal;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================================
+   Results Table
+   ============================================================ */
+
+.resultsTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+}
+
+.resultsTable th,
+.resultsTable td {
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    padding: 8px 10px;
+    text-align: left;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resultsTable td {
+    font-family: var(--font-mono);
+}
+
+.resultsTable th {
+    border-bottom: 0;
+    background-color: var(--card-header-bg);
+    font-weight: 600;
+    color: var(--text-main);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 1px 0 var(--border-color);
+}
+
+.resultsTable th:last-child,
+.resultsTable td:last-child {
+    border-right: 0;
+}
+
+.resultsTable tr:hover {
+    background-color: var(--bg-hover);
+}
+
+/* ============================================================
+   Id Link Styles
+   ============================================================ */
+
+.idLink {
+    color: var(--primary-color);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.idLink:hover {
+    text-decoration: underline;
+}
+
+/* ============================================================
+   Subquery Rendering
+   ============================================================ */
+
+.subqueryCell {
+    padding: 4px 8px !important;
+}
+
+.subqueryToggle {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.subqueryToggle:hover {
+    background: var(--primary-hover);
+}
+
+.subqueryEmpty {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.subqueryDetail {
+    background-color: var(--card-header-bg);
+}
+
+.subqueryDetail td {
+    padding: 12px !important;
+}
+
+.subqueryTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.subqueryTable th,
+.subqueryTable td {
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    padding: 6px 10px;
+    text-align: left;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.subqueryTable td {
+    font-family: var(--font-mono);
+}
+
+.subqueryTable th {
+    background-color: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.subqueryTable th:last-child,
+.subqueryTable td:last-child {
+    border-right: 0;
+}
+
+.subqueryTable tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.subqueryTable tr:hover {
+    background-color: var(--bg-hover);
+}
+
+/* ============================================================
+   Editable Table Styles
+   ============================================================ */
+
+.resultsEditable td {
+    padding: 4px 6px;
+}
+
+.fieldInput {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--input-bg);
+    color: var(--text-main);
+    box-sizing: border-box;
+}
+
+.fieldInput:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color) inset;
+}
+
+.fieldInput[type='checkbox'] {
+    width: auto;
+    cursor: pointer;
+}
+
+.modified {
+    background-color: var(--bg-selected);
+    border-left: 3px solid var(--indicator-loading);
+}
+
+.modified .fieldInput {
+    background-color: var(--bg-selected);
+}
+
+/* ============================================================
+   Header Icon Styles
+   ============================================================ */
+
+.headerIconQuery {
+    background-color: var(--icon-query);
+}
+
+.headerIconSuccess {
+    background-color: var(--icon-success);
+}

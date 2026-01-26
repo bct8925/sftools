@@ -9,28 +9,33 @@ import { EventsChannelsScenario } from '../../../shared/mocks/mock-scenarios.js'
  * - E-F-014: Proxy not connected - tab disabled with overlay
  */
 export default class EventsProxyTest extends SftoolsTest {
-  configureMocks() {
-    const router = new MockRouter();
-    router.usePreset(EventsChannelsScenario);
-    return router;
-  }
+    configureMocks() {
+        const router = new MockRouter();
+        router.usePreset(EventsChannelsScenario);
+        return router;
+    }
 
-  async setup(): Promise<void> {
-    // DO NOT mock proxy connection in setup() - this test needs proxy to be disconnected
-    // The tab should show an overlay indicating the proxy is not connected
-  }
+    async setup(): Promise<void> {
+        // Set proxy status to disconnected for this test
+        // This test verifies the "proxy not connected" overlay behavior
+    }
 
-  async test(): Promise<void> {
-    // Navigate to extension
-    await this.navigateToExtension();
+    async test(): Promise<void> {
+        // Set proxy to disconnected before navigation
+        await this.page.addInitScript(() => {
+            window.__testProxyConnected = false;
+        });
 
-    // Navigate to Events tab
-    await this.eventsTab.navigateTo();
+        // Navigate to extension
+        await this.navigateToExtension();
 
-    // Wait for tab to render and check for overlay
-    await this.wait(1000);
+        // Open hamburger menu
+        await this.page.locator('[data-testid="hamburger-btn"]').click();
+        const navItem = this.page.locator('[data-testid="mobile-nav-events"]');
+        await navItem.waitFor({ state: 'visible', timeout: 5000 });
 
-    // Verify tab overlay is visible (feature gating overlay when proxy not connected)
-    await this.expect(await this.eventsTab.isTabDisabled()).toBe(true);
-  }
+        // Verify Events nav item is disabled when proxy is not connected
+        const isDisabled = await navItem.isDisabled();
+        await this.expect(isDisabled).toBe(true);
+    }
 }

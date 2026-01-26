@@ -1,5 +1,10 @@
 {
+  "type": "module",
   "devDependencies": {
+    "@types/chrome": "^0.1.36",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^2.0.0",
     "dotenv": "^16.4.7",
     "eslint": "^9.39.2",
@@ -11,31 +16,42 @@
     "playwright": "^1.50.0",
     "prettier": "^3.8.1",
     "tsx": "^4.19.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.53.1",
     "vite": "^7.2.7",
     "vitest": "^2.0.0"
   },
   "dependencies": {
     "@jetstreamapp/soql-parser-js": "^6.3.1",
+    "@monaco-editor/react": "^4.7.0",
     "@salesforce-ux/icons": "^10.5.4",
     "dompurify": "^3.3.1",
-    "monaco-editor": "^0.55.1"
+    "monaco-editor": "^0.55.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "scripts": {
     "build": "SFTOOLS_PRODUCTION=false vite build",
     "watch": "SFTOOLS_PRODUCTION=false vite build --watch",
     "package": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage",
-    "test:integration": "vitest run --config vitest.config.integration.js",
-    "test:integration:watch": "vitest --config vitest.config.integration.js",
+    "test:integration": "vitest run --config vitest.config.integration.ts",
+    "test:integration:watch": "vitest --config vitest.config.integration.ts",
     "test:frontend": "tsx tests/frontend/run-tests.ts",
+    "test:frontend:extension": "tsx tests/frontend/run-tests.ts --extension",
     "test:frontend:slow": "tsx tests/frontend/run-tests.ts --slow",
     "test:validate-ids": "node scripts/validate-test-ids.js",
     "test:refresh-token": "node scripts/refresh-test-token.js",
     "lint": "eslint src tests scripts",
     "lint:fix": "eslint src tests scripts --fix",
-    "format": "prettier --write \"src/**/*.{js,css,html}\" \"tests/**/*.js\" \"scripts/**/*.js\"",
-    "format:check": "prettier --check \"src/**/*.{js,css,html}\" \"tests/**/*.js\" \"scripts/**/*.js\""
+    "format": "prettier --write \"src/**/*.{js,ts,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.{js,ts,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.js\"",
+    "fix": "npm run lint:fix && npm run format",
+    "check": "npm run typecheck && npm run lint && npm run format:check",
+    "validate": "npm run lint:fix && npm run format && npm run typecheck && npm run lint && npm run format:check"
   }
 }

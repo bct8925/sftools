@@ -487,17 +487,30 @@ async test(): Promise<void> {
 }
 ```
 
-### Screenshot on Failure
+### Automatic Failure Artifacts
 
-Add to your test:
+When a test fails, the runner automatically captures debugging artifacts:
 
+| Artifact | Location | Content |
+|----------|----------|---------|
+| Screenshot | `/tmp/test-failure-{TestName}.png` | Visual state at failure |
+| HTML dump | `/tmp/test-failure-{TestName}.html` | Full page DOM |
+
+Console output on failure:
+```
+  Failed: <error message>
+  Screenshot saved: /tmp/test-failure-MyTest.png
+  Current URL: chrome-extension://...
+  HTML saved: /tmp/test-failure-MyTest.html
+```
+
+Use these artifacts to debug failures:
+- **Screenshot**: See what the UI looked like when the test failed
+- **HTML dump**: Inspect the DOM structure, find missing elements, check attribute values
+
+For additional screenshots during test execution:
 ```typescript
-try {
-  await this.queryTab.executeQuery('...');
-} catch (error) {
-  await this.page.screenshot({ path: 'debug-screenshot.png' });
-  throw error;
-}
+await this.page.screenshot({ path: 'debug-screenshot.png' });
 ```
 
 ## Adding New Tests

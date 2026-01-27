@@ -354,11 +354,21 @@ export async function getDebugLogsSince(sinceISO: string): Promise<DebugLogEntry
 
 /**
  * Get the body content of a specific debug log
+ * Uses smartFetch directly since the response is plain text, not JSON
  */
 export async function getLogBody(logId: string): Promise<string> {
-    const response = await salesforceRequest(
-        `/services/data/v${API_VERSION}/tooling/sobjects/ApexLog/${logId}/Body`
-    );
+    const url = `${getInstanceUrl()}/services/data/v${API_VERSION}/tooling/sobjects/ApexLog/${logId}/Body`;
+    const response = await smartFetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+            Accept: 'text/plain',
+        },
+    });
+
+    if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch log body');
+    }
 
     return response.data ?? '';
 }

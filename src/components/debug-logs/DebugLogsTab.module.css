@@ -12,27 +12,32 @@
 }
 
 /* ============================================================
-   Header Controls (like ApexOutput)
+   Header Layout (Two-row pattern)
    ============================================================ */
+
+.header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.headerRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.headerRow h2 {
+    margin: 0;
+    white-space: nowrap;
+}
 
 .headerControls {
     margin-left: auto;
     display: flex;
     align-items: center;
     gap: 8px;
-    flex: 0 1 auto;
-    min-width: 0;
-}
-
-.watchingStatus {
-    font-size: 13px;
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-
-.watchingTime {
-    color: var(--primary-color);
-    font-weight: 500;
+    flex-shrink: 0;
 }
 
 /* ============================================================
@@ -90,6 +95,14 @@
 
 .logTable tbody tr:hover {
     background: var(--bg-hover);
+}
+
+.rowOpened {
+    opacity: 0.5;
+}
+
+.rowOpened:hover {
+    opacity: 0.7;
 }
 
 .logTable td.time {

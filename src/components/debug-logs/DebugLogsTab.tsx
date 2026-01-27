@@ -27,6 +27,7 @@ export function DebugLogsTab() {
     const [selectedLogBody, setSelectedLogBody] = useState<string>('');
     const [filterText, setFilterText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [openedLogIds, setOpenedLogIds] = useState<Set<string>>(new Set());
 
     // CometD subscription state
     const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
@@ -56,6 +57,7 @@ export function DebugLogsTab() {
         setFilterText('');
         setSubscriptionId(null);
         setIsAutoRefreshEnabled(false);
+        setOpenedLogIds(new Set());
         clearStatus();
     }, [activeConnection?.id, clearStatus]);
 
@@ -152,6 +154,7 @@ export function DebugLogsTab() {
             const body = await getLogBody(logId);
             setSelectedLogBody(body);
             editorRef.current?.setValue(body);
+            setOpenedLogIds(prev => new Set(prev).add(logId));
             clearStatus();
         } catch (error) {
             updateStatus((error as Error).message, 'error');
@@ -237,65 +240,55 @@ export function DebugLogsTab() {
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
     };
 
-    // Format watching time for display
-    const formatWatchingTime = (isoString: string): string => {
-        const date = new Date(isoString);
-        return date.toLocaleTimeString(undefined, {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
     return (
         <div className={styles.debugLogsTab} data-testid="debug-logs-tab">
             {/* Log Viewer Card */}
             <div className="card">
-                <div className="card-header">
-                    <div className={`card-header-icon ${styles.headerIcon}`}>
-                        L
+                <div className={`card-header ${styles.header}`}>
+                    <div className={styles.headerRow}>
+                        <div className={`card-header-icon ${styles.headerIcon}`}>
+                            L
+                        </div>
+                        <h2>Debug Logs</h2>
+                        <div className={styles.headerControls}>
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Filter..."
+                                value={filterText}
+                                onChange={(e) => setFilterText(e.target.value)}
+                                data-testid="debug-logs-filter-input"
+                            />
+                        </div>
                     </div>
-                    <h2>Debug Log</h2>
-                    <div className={styles.headerControls}>
-                        <input
-                            type="text"
-                            className="search-input"
-                            placeholder="Filter..."
-                            value={filterText}
-                            onChange={(e) => setFilterText(e.target.value)}
-                            data-testid="debug-logs-filter-input"
-                        />
+                    <div className={styles.headerRow}>
                         {statusText && (
                             <StatusBadge type={statusType} data-testid="debug-logs-status">
                                 {statusText}
                             </StatusBadge>
                         )}
-                        {watchingSince && (
-                            <span className={styles.watchingStatus}>
-                                since <span className={styles.watchingTime}>{formatWatchingTime(watchingSince)}</span>
-                            </span>
-                        )}
-                        {watchingSince && (
+                        <div className={styles.headerControls}>
+                            <ButtonIcon
+                                icon={watchingSince ? 'stop' : 'play'}
+                                title={watchingSince ? 'Stop watching' : 'Start watching'}
+                                onClick={watchingSince ? handleStop : handleWatch}
+                                disabled={!isAuthenticated}
+                                data-testid="debug-logs-watch-btn"
+                            />
                             <ButtonIcon
                                 icon="refresh"
                                 title="Refresh logs"
                                 onClick={handleRefresh}
-                                disabled={isLoading}
+                                disabled={isLoading || !watchingSince}
                                 data-testid="debug-logs-refresh-btn"
                             />
-                        )}
-                        <ButtonIcon
-                            icon={watchingSince ? 'stop' : 'play'}
-                            title={watchingSince ? 'Stop watching' : 'Start watching'}
-                            onClick={watchingSince ? handleStop : handleWatch}
-                            disabled={!isAuthenticated}
-                            data-testid="debug-logs-watch-btn"
-                        />
-                        <ButtonIcon
-                            icon="settings"
-                            title="Settings"
-                            onClick={() => setIsSettingsOpen(true)}
-                            data-testid="debug-logs-settings-btn"
-                        />
+                            <ButtonIcon
+                                icon="settings"
+                                title="Settings"
+                                onClick={() => setIsSettingsOpen(true)}
+                                data-testid="debug-logs-settings-btn"
+                            />
+                        </div>
                     </div>
                 </div>
                 <div className="card-body">
@@ -334,7 +327,11 @@ export function DebugLogsTab() {
                                     </thead>
                                     <tbody>
                                         {logs.map((log) => (
-                                            <tr key={log.Id} data-testid={`debug-log-row-${log.Id}`}>
+                                            <tr
+                                                key={log.Id}
+                                                className={openedLogIds.has(log.Id) ? styles.rowOpened : ''}
+                                                data-testid={`debug-log-row-${log.Id}`}
+                                            >
                                                 <td className={styles.time}>{formatTime(log.StartTime)}</td>
                                                 <td>{log.LogUser?.Name ?? 'Unknown'}</td>
                                                 <td>{log.Operation}</td>

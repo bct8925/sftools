@@ -11,7 +11,8 @@ import {
 } from '../../lib/salesforce';
 import type { SObject } from '../../types/salesforce';
 import { SearchBox, type SearchBoxRenderData } from '../utils-tools/SearchBox';
-import sharedStyles from '../utils-tools/utils-tools.module.css';
+import { ButtonIcon } from '../button-icon/ButtonIcon';
+import styles from './DebugLogsSettingsModal.module.css';
 
 interface User extends SObject {
     Name: string;
@@ -156,66 +157,73 @@ export function DebugLogsSettingsModal({ onClose }: DebugLogsSettingsModalProps)
     }, [isAuthenticated, updateDeleteStatus, clearDeleteStatus]);
 
     return (
-        <div className="card" data-testid="debug-logs-settings-modal">
-            <div className="card-header">
-                <h2>Debug Logs Settings</h2>
-                <button className="button-icon" onClick={onClose} title="Close">&times;</button>
-            </div>
-            <div className="card-body">
-                {/* Enable Trace Flag Section */}
-                <h3 className={sharedStyles.toolSectionTitle}>Enable Trace Flag</h3>
-                <button
-                    className="button-brand"
-                    onClick={handleEnableForMe}
-                    disabled={enableForMeLoading}
-                    data-testid="debug-logs-enable-for-me-btn"
-                >
-                    Enable for Me
-                </button>
-                <div className={sharedStyles.toolDivider}></div>
-                <SearchBox
-                    searchFn={searchUsers}
-                    renderFn={renderUserSearch}
-                    label="USER LOOKUP"
-                    placeholder="Search by name or username..."
-                    onSelect={handleUserSelect}
-                    inputTestId="debug-logs-user-search"
-                    dropdownTestId="debug-logs-user-results"
+        <div className={styles.settingsModal} data-testid="debug-logs-settings-modal">
+            <div className={styles.header}>
+                <h3>Debug Logs Settings</h3>
+                <ButtonIcon
+                    icon="close"
+                    title="Close"
+                    onClick={onClose}
+                    data-testid="debug-logs-settings-close-btn"
                 />
-                {traceStatusText && (
-                    <div className={sharedStyles.toolStatus} data-testid="debug-logs-trace-status">
-                        <span className={`status-indicator status-${traceStatusType}`}></span>
-                        <span className={sharedStyles.toolStatusText} data-testid="debug-logs-trace-status-text">{traceStatusText}</span>
-                    </div>
-                )}
-
-                <div className={sharedStyles.toolDivider}></div>
+            </div>
+            <div className={styles.content}>
+                {/* Enable Trace Flag Section */}
+                <div className={styles.section}>
+                    <h4 className={styles.sectionTitle}>Enable Trace Flag</h4>
+                    <button
+                        className="button-brand"
+                        onClick={handleEnableForMe}
+                        disabled={enableForMeLoading}
+                        data-testid="debug-logs-enable-for-me-btn"
+                    >
+                        Enable for Me
+                    </button>
+                    <div className={styles.divider}></div>
+                    <SearchBox
+                        searchFn={searchUsers}
+                        renderFn={renderUserSearch}
+                        label="USER LOOKUP"
+                        placeholder="Search by name or username..."
+                        onSelect={handleUserSelect}
+                        inputTestId="debug-logs-user-search"
+                        dropdownTestId="debug-logs-user-results"
+                    />
+                    {traceStatusText && (
+                        <div className={styles.status} data-testid="debug-logs-trace-status">
+                            <span className={`status-indicator status-${traceStatusType}`}></span>
+                            <span className={styles.statusText} data-testid="debug-logs-trace-status-text">{traceStatusText}</span>
+                        </div>
+                    )}
+                </div>
 
                 {/* Cleanup Section */}
-                <h3 className={sharedStyles.toolSectionTitle}>Cleanup</h3>
-                {deleteStatusText && (
-                    <div className={sharedStyles.toolStatus} data-testid="debug-logs-delete-status">
-                        <span className={`status-indicator status-${deleteStatusType}`}></span>
-                        <span className={sharedStyles.toolStatusText} data-testid="debug-logs-delete-status-text">{deleteStatusText}</span>
+                <div className={styles.section}>
+                    <h4 className={styles.sectionTitle}>Cleanup</h4>
+                    {deleteStatusText && (
+                        <div className={styles.status} data-testid="debug-logs-delete-status">
+                            <span className={`status-indicator status-${deleteStatusType}`}></span>
+                            <span className={styles.statusText} data-testid="debug-logs-delete-status-text">{deleteStatusText}</span>
+                        </div>
+                    )}
+                    <div className={styles.buttonGroup}>
+                        <button
+                            className="button-neutral"
+                            onClick={handleDeleteLogs}
+                            disabled={deleteLogsLoading}
+                            data-testid="debug-logs-delete-logs-btn"
+                        >
+                            Delete All Logs
+                        </button>
+                        <button
+                            className="button-neutral"
+                            onClick={handleDeleteFlags}
+                            disabled={deleteFlagsLoading}
+                            data-testid="debug-logs-delete-flags-btn"
+                        >
+                            Delete All Trace Flags
+                        </button>
                     </div>
-                )}
-                <div className={sharedStyles.debugLogsButtons}>
-                    <button
-                        className="button-neutral"
-                        onClick={handleDeleteLogs}
-                        disabled={deleteLogsLoading}
-                        data-testid="debug-logs-delete-logs-btn"
-                    >
-                        Delete All Logs
-                    </button>
-                    <button
-                        className="button-neutral"
-                        onClick={handleDeleteFlags}
-                        disabled={deleteFlagsLoading}
-                        data-testid="debug-logs-delete-flags-btn"
-                    >
-                        Delete All Trace Flags
-                    </button>
                 </div>
             </div>
         </div>

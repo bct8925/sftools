@@ -4,15 +4,19 @@ import {
     DebugLogsUserSearchScenario,
     DebugLogsTraceSuccessScenario,
 } from '../../../shared/mocks/mock-scenarios.js';
+import { DebugLogsTabPage } from '../../pages/debug-logs-tab.page';
 
 /**
  * Test Debug Logs user search and trace flag enablement
+ * NOTE: These operations moved from Utils tab to Debug Logs tab Settings modal
  *
- * Test IDs: U-DL-F-002, U-DL-F-003
- * - U-DL-F-002: Search for other users - results dropdown shown
- * - U-DL-F-003: Enable trace flag for selected user - success status shown
+ * Test IDs: DL-F-007, DL-F-008
+ * - DL-F-007: Search for other users - results dropdown shown
+ * - DL-F-008: Enable trace flag for selected user - success status shown
  */
 export default class DebugLogsSearchTest extends SftoolsTest {
+    debugLogsTab!: DebugLogsTabPage;
+
     configureMocks() {
         const router = new MockRouter();
         router.usePreset(DebugLogsUserSearchScenario);
@@ -20,21 +24,32 @@ export default class DebugLogsSearchTest extends SftoolsTest {
         return router;
     }
 
+    async setup(): Promise<void> {
+        this.debugLogsTab = new DebugLogsTabPage(this.page);
+        this.debugLogsTab.setConfig(this.config);
+    }
+
     async test(): Promise<void> {
         // Navigate to extension
         await this.navigateToExtension();
 
-        // Navigate to Utils tab
-        await this.utilsTab.navigateTo();
+        // Navigate to Debug Logs tab
+        await this.debugLogsTab.navigateTo();
 
-        // Wait for tab to fully load
+        // Open settings modal
+        await this.debugLogsTab.openSettings();
+
+        // Wait for modal to fully load
         await this.wait(500);
 
         // Search for user "john"
-        await this.utilsTab.searchUsers('john');
+        const userSearchInput = this.page.locator('[data-testid="debug-logs-user-search"]');
+        await userSearchInput.fill('john');
+        await this.wait(300);
 
         // Wait for user results to become visible
-        await this.utilsTab.userResults.waitFor({ state: 'visible', timeout: 5000 });
+        const userResults = this.page.locator('[data-testid="debug-logs-user-results"]');
+        await userResults.waitFor({ state: 'visible', timeout: 5000 });
 
         // Verify specific user is in the results
         const userItem = this.page.locator(
@@ -43,16 +58,17 @@ export default class DebugLogsSearchTest extends SftoolsTest {
                 has: this.page.locator('.search-box-item-name', { hasText: 'John Developer' }),
             }
         );
-        await this.expect(await userItem.count()).toBeGreaterThan(0);
+        const userCount = await userItem.count();
+        await this.expect(userCount).toBeGreaterThan(0);
 
         // Select the user
-        await this.utilsTab.selectUser('John Developer');
-
-        // Get status after selection
-        const status = await this.utilsTab.getDebugLogsStatus();
+        await userItem.first().click();
+        await this.wait(500);
 
         // Verify success status is shown
-        await this.expect(status.type).toBe('success');
-        await this.expect(status.text).toContain('enabled');
+        const statusText = this.page.locator('[data-testid="debug-logs-trace-status-text"]');
+        await statusText.waitFor({ state: 'visible', timeout: 5000 });
+        const status = await statusText.textContent();
+        await this.expect(status || '').toContain('enabled');
     }
 }

@@ -1,0 +1,144 @@
+/* Debug Logs Tab Styles */
+
+/* ============================================================
+   Main Container
+   ============================================================ */
+
+.debugLogsTab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+}
+
+/* ============================================================
+   Header Controls (like ApexOutput)
+   ============================================================ */
+
+.headerControls {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.watchingStatus {
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.watchingTime {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* ============================================================
+   Viewer Layout (Monaco + Table)
+   ============================================================ */
+
+.viewer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+}
+
+.viewerEditor {
+    flex: 2;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.viewerTable {
+    flex: 1;
+    min-height: 150px;
+    overflow: auto;
+}
+
+/* ============================================================
+   Log Table
+   ============================================================ */
+
+.logTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.logTable th,
+.logTable td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.logTable th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+}
+
+.logTable tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.logTable td.time {
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.logTable td.size {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.logTable td.status {
+    white-space: nowrap;
+}
+
+.statusSuccess {
+    color: var(--color-success);
+}
+
+.statusError {
+    color: var(--color-error);
+}
+
+/* ============================================================
+   Empty State
+   ============================================================ */
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    color: var(--text-muted);
+    text-align: center;
+    gap: 8px;
+}
+
+.emptyStateIcon {
+    font-size: 32px;
+    opacity: 0.5;
+}
+
+/* ============================================================
+   Header Icons
+   ============================================================ */
+
+.headerIcon {
+    background-color: var(--icon-apex-output);
+}

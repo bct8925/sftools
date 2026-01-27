@@ -2,7 +2,7 @@ import { useProxy } from '../contexts/ProxyContext';
 import { useConnection } from '../contexts/ConnectionContext';
 import styles from './TabNavigation.module.css';
 
-export type TabId = 'query' | 'apex' | 'rest-api' | 'events' | 'utils' | 'settings';
+export type TabId = 'query' | 'apex' | 'logs' | 'rest-api' | 'events' | 'utils' | 'settings';
 
 interface Tab {
   id: TabId;
@@ -14,6 +14,7 @@ interface Tab {
 const TABS: Tab[] = [
   { id: 'query', label: 'Query', requiresAuth: true, requiresProxy: false },
   { id: 'apex', label: 'Apex', requiresAuth: true, requiresProxy: false },
+  { id: 'logs', label: 'Debug Logs', requiresAuth: true, requiresProxy: false },
   { id: 'rest-api', label: 'REST API', requiresAuth: true, requiresProxy: false },
   { id: 'events', label: 'Platform Events', requiresAuth: true, requiresProxy: true },
   { id: 'utils', label: 'Utils', requiresAuth: true, requiresProxy: false },

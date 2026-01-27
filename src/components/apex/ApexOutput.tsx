@@ -78,7 +78,7 @@ export function ApexOutput({ output }: ApexOutputProps) {
       <div className="card-body">
         <MonacoEditor
           ref={editorRef}
-          language="text"
+          language="apex"
           readonly
           className="monaco-container monaco-container-lg"
           data-testid="apex-output-editor"

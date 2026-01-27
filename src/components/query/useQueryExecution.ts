@@ -64,8 +64,9 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
     }, []);
 
     // Execute query and fetch data
+    // Returns true if successful, false if there was an error
     const fetchQueryData = useCallback(
-        async (tabId: string, query: string) => {
+        async (tabId: string, query: string): Promise<boolean> => {
             options.setLoading(tabId, true);
             options.updateStatus('Loading...', 'loading');
 
@@ -114,9 +115,11 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
 
                 // Clear filter
                 options.setFilterText('');
+                return true;
             } catch (error) {
                 options.setError(tabId, (error as Error).message);
                 options.updateStatus('Error', 'error');
+                return false;
             }
         },
         [
@@ -151,15 +154,19 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
         const existingTab = options.findTabByQuery(normalized);
         if (existingTab) {
             options.setActiveTab(existingTab.id);
-            await fetchQueryData(existingTab.id, query);
-            await options.saveToHistory(query);
+            const success = await fetchQueryData(existingTab.id, query);
+            if (success) {
+                await options.saveToHistory(query);
+            }
             return;
         }
 
         // Create new tab
         const tabId = options.addTab(query);
-        await fetchQueryData(tabId, query);
-        await options.saveToHistory(query);
+        const success = await fetchQueryData(tabId, query);
+        if (success) {
+            await options.saveToHistory(query);
+        }
     }, [
         options.editorValue,
         options.editorRef,

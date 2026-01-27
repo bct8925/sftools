@@ -1,0 +1,5 @@
+{
+  "vitest.enable": true,
+  "vitest.include": ["tests/unit/**/*.test.{js,ts}"],
+  "vitest.exclude": ["**/node_modules/**", "**/dist/**"]
+}

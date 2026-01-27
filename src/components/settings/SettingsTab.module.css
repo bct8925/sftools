@@ -24,3 +24,7 @@
 .headerIconCache {
     background-color: var(--icon-warning);
 }
+
+.headerIconDeveloper {
+    background-color: var(--icon-events);
+}

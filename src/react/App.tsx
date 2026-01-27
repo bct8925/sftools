@@ -9,6 +9,7 @@ import { type TabId } from './TabNavigation';
 // Import React tab components
 import { QueryTab } from '../components/query/QueryTab';
 import { ApexTab } from '../components/apex/ApexTab';
+import { DebugLogsTab } from '../components/debug-logs/DebugLogsTab';
 import { RestApiTab } from '../components/rest-api/RestApiTab';
 import { EventsTab } from '../components/events/EventsTab';
 import { UtilsTab } from '../components/utils/UtilsTab';
@@ -36,6 +37,7 @@ function AppContent() {
   const tabs: { id: TabId; component: ReactNode }[] = [
     { id: 'query', component: <QueryTab /> },
     { id: 'apex', component: <ApexTab /> },
+    { id: 'logs', component: <DebugLogsTab /> },
     { id: 'rest-api', component: <RestApiTab /> },
     { id: 'events', component: <EventsTab /> },
     { id: 'utils', component: <UtilsTab /> },

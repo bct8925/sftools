@@ -51,6 +51,19 @@ export interface DebugLogStats {
     logIds: string[];
 }
 
+/**
+ * Debug log entry for the log viewer table
+ */
+export interface DebugLogEntry {
+    Id: string;
+    LogUser: { Name: string };
+    LogLength: number;
+    Operation: string;
+    Request: string;
+    Status: string;
+    StartTime: string;
+}
+
 // ============================================================
 // Private Helpers
 // ============================================================
@@ -199,17 +212,7 @@ export async function getLatestAnonymousLog(): Promise<string | null> {
     }
 
     const logId = response.json.records[0].Id;
-
-    const logResponse = await smartFetch(
-        `${getInstanceUrl()}/services/data/v${API_VERSION}/tooling/sobjects/ApexLog/${logId}/Body`,
-        {
-            headers: {
-                Authorization: `Bearer ${getAccessToken()}`,
-            },
-        }
-    );
-
-    return logResponse.data ?? null;
+    return getLogBody(logId);
 }
 
 /**
@@ -328,4 +331,44 @@ export async function deleteAllTraceFlags(): Promise<{ deletedCount: number }> {
 
     const deletedCount = await bulkDeleteTooling('TraceFlag', flagIds);
     return { deletedCount };
+}
+
+// ============================================================
+// Log Viewer Functions
+// ============================================================
+
+/**
+ * Get debug logs created since a specific time
+ * Results ordered by StartTime descending (newest first)
+ */
+export async function getDebugLogsSince(sinceISO: string): Promise<DebugLogEntry[]> {
+    const query = encodeURIComponent(
+        `SELECT Id, LogUser.Name, LogLength, Operation, Request, Status, StartTime FROM ApexLog WHERE StartTime >= ${sinceISO} ORDER BY StartTime DESC`
+    );
+    const response = await salesforceRequest<QueryResult<DebugLogEntry>>(
+        `/services/data/v${API_VERSION}/tooling/query/?q=${query}`
+    );
+
+    return response.json?.records ?? [];
+}
+
+/**
+ * Get the body content of a specific debug log
+ * Uses smartFetch directly since the response is plain text, not JSON
+ */
+export async function getLogBody(logId: string): Promise<string> {
+    const url = `${getInstanceUrl()}/services/data/v${API_VERSION}/tooling/sobjects/ApexLog/${logId}/Body`;
+    const response = await smartFetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+            Accept: 'text/plain',
+        },
+    });
+
+    if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch log body');
+    }
+
+    return response.data ?? '';
 }

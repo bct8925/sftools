@@ -10,6 +10,8 @@ import editIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-syst
 import deleteIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/delete.svg?raw';
 import clockIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/clock.svg?raw';
 import settingsIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/settings.svg?raw';
+import playIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/play.svg?raw';
+import stopIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/stop.svg?raw';
 
 interface ProcessSvgOptions {
     size?: number;
@@ -48,6 +50,8 @@ export const icons = {
     // Button-icon replacements (for HTML entity migration)
     clock: processSvg(clockIcon, { size: 16 }),
     settings: processSvg(settingsIcon, { size: 16 }),
+    play: processSvg(playIcon, { size: 16 }),
+    stop: processSvg(stopIcon, { size: 16 }),
 } as const;
 
 export type IconName = keyof typeof icons;

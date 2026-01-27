@@ -105,6 +105,7 @@ describe('debug-logs', () => {
                 '12:00:00.001|USER_DEBUG|[5]|DEBUG|Hello World\n12:00:00.002|EXECUTION_FINISHED';
 
             smartFetch.mockResolvedValue({
+                success: true,
                 data: mockLogBody,
             });
 
@@ -114,7 +115,7 @@ describe('debug-logs', () => {
         });
 
         it('DL-U-004: calls correct endpoint with auth header', async () => {
-            smartFetch.mockResolvedValue({ data: 'log content' });
+            smartFetch.mockResolvedValue({ success: true, data: 'log content' });
 
             await getLogBody('07L123');
 
@@ -129,7 +130,7 @@ describe('debug-logs', () => {
         });
 
         it('returns empty string when no data', async () => {
-            smartFetch.mockResolvedValue({ data: null });
+            smartFetch.mockResolvedValue({ success: true, data: null });
 
             const result = await getLogBody('07L999');
 

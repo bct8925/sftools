@@ -58,8 +58,14 @@ export class DebugLogsTabPage extends BasePage {
      */
     async startWatching(): Promise<void> {
         await this.slowClick(this.watchBtn);
-        // Wait for refresh button to appear (indicates watching)
-        await this.refreshBtn.waitFor({ state: 'visible', timeout: 5000 });
+        // Wait for button title to change to "Stop watching" (indicates watching)
+        await this.page.waitForFunction(
+            () => {
+                const btn = document.querySelector('[data-testid="debug-logs-watch-btn"]');
+                return btn?.getAttribute('title') === 'Stop watching';
+            },
+            { timeout: 5000 }
+        );
     }
 
     /**
@@ -67,8 +73,14 @@ export class DebugLogsTabPage extends BasePage {
      */
     async stopWatching(): Promise<void> {
         await this.slowClick(this.watchBtn);
-        // Wait for refresh button to disappear
-        await this.refreshBtn.waitFor({ state: 'hidden', timeout: 5000 });
+        // Wait for button title to change to "Start watching" (indicates not watching)
+        await this.page.waitForFunction(
+            () => {
+                const btn = document.querySelector('[data-testid="debug-logs-watch-btn"]');
+                return btn?.getAttribute('title') === 'Start watching';
+            },
+            { timeout: 5000 }
+        );
     }
 
     /**
@@ -113,8 +125,8 @@ export class DebugLogsTabPage extends BasePage {
      * Close the settings modal
      */
     async closeSettings(): Promise<void> {
-        // Use the button-icon close button in the modal header
-        const closeBtn = this.settingsModal.locator('.button-icon');
+        // Use the close button with data-testid
+        const closeBtn = this.page.locator('[data-testid="debug-logs-settings-close-btn"]');
         await this.slowClick(closeBtn);
         await this.settingsModal.waitFor({ state: 'hidden', timeout: 5000 });
     }
@@ -138,9 +150,10 @@ export class DebugLogsTabPage extends BasePage {
     }
 
     /**
-     * Check if watching is active (refresh button visible means watching)
+     * Check if watching is active (button title says "Stop watching")
      */
     async isWatching(): Promise<boolean> {
-        return await this.refreshBtn.isVisible();
+        const title = await this.watchBtn.getAttribute('title');
+        return title === 'Stop watching';
     }
 }

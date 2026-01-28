@@ -233,8 +233,16 @@ export async function executeAnonymousApex(
 export interface QueryWithColumnsResult {
     records: SObject[];
     totalSize: number;
+    done: boolean;
+    nextRecordsUrl: string | null;
     columnMetadata: ColumnMetadata[];
     entityName: string | null;
+}
+
+export interface QueryMoreResult {
+    records: SObject[];
+    done: boolean;
+    nextRecordsUrl: string | null;
 }
 
 /**
@@ -263,8 +271,24 @@ export async function executeQueryWithColumns(
     return {
         records: queryData.records ?? [],
         totalSize: queryData.totalSize ?? 0,
+        done: queryData.done ?? true,
+        nextRecordsUrl: queryData.nextRecordsUrl ?? null,
         columnMetadata: columnData.columnMetadata ?? [],
         entityName: columnData.entityName ?? null,
+    };
+}
+
+/**
+ * Fetch more results from a paginated query using nextRecordsUrl
+ */
+export async function fetchQueryMore(nextRecordsUrl: string): Promise<QueryMoreResult> {
+    const response = await salesforceRequest<QueryResult>(nextRecordsUrl);
+    const data = response.json;
+
+    return {
+        records: data?.records ?? [],
+        done: data?.done ?? true,
+        nextRecordsUrl: data?.nextRecordsUrl ?? null,
     };
 }
 

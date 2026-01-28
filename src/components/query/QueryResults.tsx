@@ -13,6 +13,8 @@ interface QueryResultsProps {
   onFieldChange: (recordId: string, fieldName: string, value: unknown, originalValue: unknown) => void;
   /** Filter text for rows */
   filterText: string;
+  /** Called to load more results */
+  onLoadMore?: () => void;
 }
 
 /**
@@ -24,6 +26,7 @@ export function QueryResults({
   editingEnabled,
   onFieldChange,
   filterText,
+  onLoadMore,
 }: QueryResultsProps) {
   // Determine what to render based on tab state
   const content = useMemo(() => {
@@ -60,20 +63,46 @@ export function QueryResults({
 
     // Render results table
     const isEditMode = editingEnabled && activeTab.isEditable;
+    const showingCount = activeTab.records.length;
+    const totalCount = activeTab.totalSize;
+    const hasMore = !activeTab.done && activeTab.nextRecordsUrl;
 
     return (
-      <QueryResultsTable
-        records={activeTab.records}
-        columns={activeTab.columns}
-        objectName={activeTab.objectName}
-        fieldDescribe={activeTab.fieldDescribe}
-        modifiedRecords={activeTab.modifiedRecords}
-        isEditMode={isEditMode}
-        onFieldChange={onFieldChange}
-        filterText={filterText}
-      />
+      <>
+        <QueryResultsTable
+          records={activeTab.records}
+          columns={activeTab.columns}
+          objectName={activeTab.objectName}
+          fieldDescribe={activeTab.fieldDescribe}
+          modifiedRecords={activeTab.modifiedRecords}
+          isEditMode={isEditMode}
+          onFieldChange={onFieldChange}
+          filterText={filterText}
+        />
+        <div className={styles.resultsFooter} data-testid="query-results-footer">
+          <span className={styles.recordCount} data-testid="query-record-count">
+            Showing {showingCount.toLocaleString()} of {totalCount.toLocaleString()} records
+          </span>
+          {hasMore && onLoadMore && (
+            activeTab.isLoadingMore ? (
+              <div className={styles.loadMoreSpinner} data-testid="query-load-more-spinner">
+                <div className={styles.spinnerSmall} />
+                <span>Loading...</span>
+              </div>
+            ) : (
+              <button
+                className={`button-neutral ${styles.loadMoreBtn}`}
+                onClick={onLoadMore}
+                data-testid="query-load-more-btn"
+              >
+                Load More
+              </button>
+            )
+          )}
+        </div>
+      </>
     );
-  }, [activeTab, editingEnabled, onFieldChange, filterText]);
+  }, [activeTab, editingEnabled, onFieldChange, filterText, onLoadMore]);
 
   return (
     <div className={styles.results}>

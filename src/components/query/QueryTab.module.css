@@ -409,6 +409,46 @@
 }
 
 /* ============================================================
+   Results Footer
+   ============================================================ */
+
+.resultsFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--card-header-bg);
+}
+
+.recordCount {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.loadMoreBtn {
+    padding: 6px 16px;
+    font-size: 13px;
+}
+
+.loadMoreSpinner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.spinnerSmall {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* ============================================================
    Header Icon Styles
    ============================================================ */
 

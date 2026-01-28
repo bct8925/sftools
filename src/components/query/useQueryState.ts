@@ -12,10 +12,13 @@ export interface QueryTabState {
     records: SObject[];
     columns: QueryColumn[];
     totalSize: number;
+    done: boolean;
+    nextRecordsUrl: string | null;
     fieldDescribe: Record<string, FieldDescribe> | null;
     modifiedRecords: Map<string, Record<string, unknown>>;
     isEditable: boolean;
     isLoading: boolean;
+    isLoadingMore: boolean;
     error: string | null;
 }
 
@@ -33,6 +36,7 @@ export type QueryAction =
     | { type: 'SET_ACTIVE_TAB'; id: string }
     | { type: 'UPDATE_QUERY'; id: string; query: string }
     | { type: 'SET_LOADING'; id: string; isLoading: boolean }
+    | { type: 'SET_LOADING_MORE'; id: string; isLoadingMore: boolean }
     | { type: 'SET_ERROR'; id: string; error: string }
     | {
           type: 'SET_RESULTS';
@@ -40,9 +44,18 @@ export type QueryAction =
           records: SObject[];
           columns: QueryColumn[];
           totalSize: number;
+          done: boolean;
+          nextRecordsUrl: string | null;
           objectName: string | null;
           isEditable: boolean;
           fieldDescribe: Record<string, FieldDescribe> | null;
+      }
+    | {
+          type: 'APPEND_RESULTS';
+          id: string;
+          records: SObject[];
+          done: boolean;
+          nextRecordsUrl: string | null;
       }
     | { type: 'SET_MODIFIED'; id: string; recordId: string; fieldName: string; value: unknown }
     | { type: 'CLEAR_MODIFIED'; id: string; recordId: string; fieldName: string }
@@ -74,10 +87,13 @@ function queryReducer(state: QueryState, action: QueryAction): QueryState {
                 records: [],
                 columns: [],
                 totalSize: 0,
+                done: true,
+                nextRecordsUrl: null,
                 fieldDescribe: null,
                 modifiedRecords: new Map(),
                 isEditable: false,
                 isLoading: false,
+                isLoadingMore: false,
                 error: null,
             };
             return {
@@ -138,6 +154,20 @@ function queryReducer(state: QueryState, action: QueryAction): QueryState {
             };
         }
 
+        case 'SET_LOADING_MORE': {
+            return {
+                ...state,
+                tabs: state.tabs.map(tab =>
+                    tab.id === action.id
+                        ? {
+                              ...tab,
+                              isLoadingMore: action.isLoadingMore,
+                          }
+                        : tab
+                ),
+            };
+        }
+
         case 'SET_ERROR': {
             return {
                 ...state,
@@ -165,12 +195,31 @@ function queryReducer(state: QueryState, action: QueryAction): QueryState {
                               records: action.records,
                               columns: action.columns,
                               totalSize: action.totalSize,
+                              done: action.done,
+                              nextRecordsUrl: action.nextRecordsUrl,
                               objectName: action.objectName,
                               isEditable: action.isEditable,
                               fieldDescribe: action.fieldDescribe,
                               isLoading: false,
                               error: null,
                               modifiedRecords: new Map(), // Clear modifications on new results
+                          }
+                        : tab
+                ),
+            };
+        }
+
+        case 'APPEND_RESULTS': {
+            return {
+                ...state,
+                tabs: state.tabs.map(tab =>
+                    tab.id === action.id
+                        ? {
+                              ...tab,
+                              records: [...tab.records, ...action.records],
+                              done: action.done,
+                              nextRecordsUrl: action.nextRecordsUrl,
+                              isLoadingMore: false,
                           }
                         : tab
                 ),
@@ -292,6 +341,10 @@ export function useQueryState() {
         dispatch({ type: 'SET_LOADING', id, isLoading });
     }, []);
 
+    const setLoadingMore = useCallback((id: string, isLoadingMore: boolean) => {
+        dispatch({ type: 'SET_LOADING_MORE', id, isLoadingMore });
+    }, []);
+
     const setError = useCallback((id: string, error: string) => {
         dispatch({ type: 'SET_ERROR', id, error });
     }, []);
@@ -303,12 +356,28 @@ export function useQueryState() {
                 records: SObject[];
                 columns: QueryColumn[];
                 totalSize: number;
+                done: boolean;
+                nextRecordsUrl: string | null;
                 objectName: string | null;
                 isEditable: boolean;
                 fieldDescribe: Record<string, FieldDescribe> | null;
             }
         ) => {
             dispatch({ type: 'SET_RESULTS', id, ...data });
+        },
+        []
+    );
+
+    const appendResults = useCallback(
+        (
+            id: string,
+            data: {
+                records: SObject[];
+                done: boolean;
+                nextRecordsUrl: string | null;
+            }
+        ) => {
+            dispatch({ type: 'APPEND_RESULTS', id, ...data });
         },
         []
     );
@@ -344,8 +413,10 @@ export function useQueryState() {
         setActiveTab,
         updateQuery,
         setLoading,
+        setLoadingMore,
         setError,
         setResults,
+        appendResults,
         setModified,
         clearModified,
         clearAllModified,

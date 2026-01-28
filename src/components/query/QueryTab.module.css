@@ -87,13 +87,13 @@
 
 .tabs {
     display: flex;
-    flex-wrap: wrap;
     gap: 2px;
     padding: 10px 15px;
     background-color: var(--card-header-bg);
     border-bottom: 1px solid var(--border-color);
     min-height: 40px;
     align-items: center;
+    overflow-x: auto;
 }
 
 .tabsEmpty {

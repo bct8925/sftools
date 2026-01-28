@@ -1,12 +1,15 @@
-name: Unit Tests
+name: Build & Test
 
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
 
 jobs:
-  unit-tests:
+  build-and-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
 
     steps:
       - name: Checkout repository
@@ -24,8 +27,13 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit -- --reporter=github-actions --reporter=junit --outputFile=test-results.xml
 
-      - name: Test Summary
-        uses: test-summary/action@v2
+      - name: Test Report
+        uses: dorny/test-reporter@v1
         if: always()
         with:
-          paths: test-results.xml
+          name: Unit Test Results
+          path: test-results.xml
+          reporter: java-junit
+
+      - name: Build
+        run: npm run build

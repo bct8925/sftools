@@ -148,19 +148,20 @@ export function RestApiTab() {
       </div>
 
       {/* Response Card */}
-      <div className="card">
+      <div className={`card ${styles.responseCard}`}>
         <div className="card-header">
           <div className={`card-header-icon ${styles.headerIconSuccess}`}>
             ✓
           </div>
           <h2>Response</h2>
         </div>
-        <div className="card-body">
+        <div className={`card-body ${styles.responseCardBody}`}>
           <MonacoEditor
             ref={responseEditorRef}
             language="json"
             value="// Response will appear here"
             readonly
+            resizable={false}
             className={styles.responseEditor}
             data-testid="rest-response-editor"
           />

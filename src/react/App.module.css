@@ -2,8 +2,7 @@
 .appContainer {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
 }
 
 /* Tab Navigation */
@@ -25,21 +24,16 @@
 .contentArea {
     flex: 1;
     padding: 20px;
+    padding-bottom: 0;
     width: 100%;
     margin: 0 auto;
     box-sizing: border-box;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
 }
 
 /* Tab Panel States - keeps components mounted to retain state */
 .tabPanelActive {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
+    display: block;
+    height: 100%;
 }
 
 .tabPanelHidden {

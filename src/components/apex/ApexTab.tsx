@@ -158,7 +158,7 @@ export function ApexTab() {
         </div>
       </div>
 
-      <ApexOutput output={output} />
+      <ApexOutput output={output} className={styles.outputCard} />
     </div>
   );
 }

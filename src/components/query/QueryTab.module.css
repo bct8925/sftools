@@ -7,9 +7,9 @@
 .queryTab {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    gap: 20px;
+    /* 100vh minus: nav(50px) + padding(20px top) + padding(20px bottom) */
+    height: calc(100vh - 90px);
+    overflow: hidden;
 }
 
 .resultsCard {

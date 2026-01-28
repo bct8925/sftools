@@ -9,7 +9,7 @@ jobs:
     runs-on: self-hosted
     permissions:
       contents: read
-      checks: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -19,15 +19,21 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
-        run: npm run test:unit -- --reporter=github-actions --reporter=junit --outputFile=test-results.xml
+        id: tests
+        run: npm run test:unit -- --reporter=github-actions --reporter=json --outputFile=test-results.json
+        continue-on-error: true
 
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: Unit Test Results
-          path: test-results.xml
-          reporter: java-junit
+      - name: Post test results comment
+        if: always() && steps.tests.outcome != 'skipped'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node ~/.claude-ci/scripts/post-test-results.mjs test-results.json
+
+      - name: Fail if tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
 
       - name: Build and package
         run: npm run package

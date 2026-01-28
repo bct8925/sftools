@@ -60,9 +60,41 @@ export function QueryTab() {
   // Filter hook
   const { filterText, setFilterText, handleFilterChange } = useFilteredResults();
 
-  // Editor state
+  // Editor state - load last query from history on mount
   const [editorValue, setEditorValue] = useState(DEFAULT_QUERY);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const editorRef = useRef<QueryEditorRef>(null);
+
+  // Load last query from history or favorites on mount (whichever is more recent)
+  useEffect(() => {
+    if (initialLoadComplete) return;
+
+    chrome.storage.local.get(['queryHistory', 'queryFavorites']).then((data) => {
+      const history = data.queryHistory as Array<{ query: string; timestamp: number }> | undefined;
+      const favorites = data.queryFavorites as Array<{ query: string; timestamp: number }> | undefined;
+
+      // Find most recent from both arrays
+      const lastHistory = history?.[0];
+      const lastFavorite = favorites?.reduce((latest, fav) =>
+        !latest || fav.timestamp > latest.timestamp ? fav : latest
+      , undefined as typeof favorites[0] | undefined);
+
+      let lastQuery: string | undefined;
+      if (lastHistory && lastFavorite) {
+        lastQuery = lastHistory.timestamp > lastFavorite.timestamp ? lastHistory.query : lastFavorite.query;
+      } else if (lastHistory) {
+        lastQuery = lastHistory.query;
+      } else if (lastFavorite) {
+        lastQuery = lastFavorite.query;
+      }
+
+      if (lastQuery) {
+        setEditorValue(lastQuery);
+        editorRef.current?.setValue(lastQuery);
+      }
+      setInitialLoadComplete(true);
+    });
+  }, [initialLoadComplete]);
 
   // History manager ref
   const historyManagerRef = useRef<HistoryManager | null>(null);

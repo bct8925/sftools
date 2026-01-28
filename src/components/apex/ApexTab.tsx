@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/MonacoEditor';
 import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
 import { ApexOutput } from './ApexOutput';
@@ -29,7 +29,40 @@ export function ApexTab() {
 
   const [isExecuting, setIsExecuting] = useState(false);
   const [output, setOutput] = useState('// Output will appear here after execution');
+  const [initialCode, setInitialCode] = useState(DEFAULT_CODE);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const { statusText, statusType, updateStatus } = useStatusBadge();
+
+  // Load last Apex code from history or favorites on mount (whichever is more recent)
+  useEffect(() => {
+    if (initialLoadComplete) return;
+
+    chrome.storage.local.get(['apexHistory', 'apexFavorites']).then((data) => {
+      const history = data.apexHistory as Array<{ code: string; timestamp: number }> | undefined;
+      const favorites = data.apexFavorites as Array<{ code: string; timestamp: number }> | undefined;
+
+      // Find most recent from both arrays
+      const lastHistory = history?.[0];
+      const lastFavorite = favorites?.reduce((latest, fav) =>
+        !latest || fav.timestamp > latest.timestamp ? fav : latest
+      , undefined as typeof favorites[0] | undefined);
+
+      let lastCode: string | undefined;
+      if (lastHistory && lastFavorite) {
+        lastCode = lastHistory.timestamp > lastFavorite.timestamp ? lastHistory.code : lastFavorite.code;
+      } else if (lastHistory) {
+        lastCode = lastHistory.code;
+      } else if (lastFavorite) {
+        lastCode = lastFavorite.code;
+      }
+
+      if (lastCode) {
+        setInitialCode(lastCode);
+        codeEditorRef.current?.setValue(lastCode);
+      }
+      setInitialLoadComplete(true);
+    });
+  }, [initialLoadComplete]);
 
   // Set editor markers for compile/runtime errors
   const setEditorMarkers = useCallback((result: ApexExecutionResult) => {
@@ -138,7 +171,7 @@ export function ApexTab() {
             <MonacoEditor
               ref={codeEditorRef}
               language="apex"
-              value={DEFAULT_CODE}
+              value={initialCode}
               onExecute={handleExecute}
               className="monaco-container"
               data-testid="apex-editor"

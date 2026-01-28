@@ -2,7 +2,6 @@
 import { useState, useCallback, useMemo, Fragment } from 'react';
 import type { SObject, FieldDescribe } from '../../types/salesforce';
 import { flattenColumnMetadata, type QueryColumn } from '../../lib/column-utils';
-import { getActiveConnectionId } from '../../lib/auth';
 import { getValueByPath, formatCellValue } from '../../lib/csv-utils';
 import { parseFieldValue } from '../../lib/value-utils';
 import styles from './QueryTab.module.css';
@@ -24,6 +23,8 @@ interface QueryResultsTableProps {
   onFieldChange: (recordId: string, fieldName: string, value: unknown, originalValue: unknown) => void;
   /** Filter text for row visibility */
   filterText: string;
+  /** Instance URL for opening records in org */
+  instanceUrl?: string;
 }
 
 /**
@@ -38,6 +39,7 @@ export function QueryResultsTable({
   isEditMode,
   onFieldChange,
   filterText,
+  instanceUrl,
 }: QueryResultsTableProps) {
   // Track expanded subquery rows
   const [expandedSubqueries, setExpandedSubqueries] = useState<Set<string>>(new Set());
@@ -103,13 +105,10 @@ export function QueryResultsTable({
     [fieldDescribe, onFieldChange]
   );
 
-  // Get the connection ID for record links
-  const connectionId = getActiveConnectionId();
-
   // Render ID cell with link
   const renderIdCell = (value: string, objName: string) => {
-    if (connectionId) {
-      const href = `../../pages/record/record.html?objectType=${encodeURIComponent(objName)}&recordId=${encodeURIComponent(value)}&connectionId=${encodeURIComponent(connectionId)}`;
+    if (instanceUrl) {
+      const href = `${instanceUrl}/${encodeURIComponent(value)}`;
       return (
         <a href={href} target="_blank" rel="noopener noreferrer" className={`${styles.idLink} query-id-link`} data-testid="query-id-link">
           {value}

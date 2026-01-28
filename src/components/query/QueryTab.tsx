@@ -412,6 +412,7 @@ export function QueryTab() {
             onFieldChange={handleFieldChange}
             filterText={filterText}
             onLoadMore={handleLoadMore}
+            instanceUrl={activeConnection?.instanceUrl}
           />
         </div>
       </div>

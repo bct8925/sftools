@@ -43,8 +43,10 @@ export function QueryTab() {
     removeTab,
     setActiveTab,
     setLoading,
+    setLoadingMore,
     setError,
     setResults,
+    appendResults,
     setModified,
     clearModified,
     clearAllModified,
@@ -101,12 +103,14 @@ export function QueryTab() {
   const saveToHistory = useSaveToHistory(historyManagerRef);
 
   // Query execution hook
-  const { fetchQueryData, executeQuery } = useQueryExecution({
+  const { fetchQueryData, executeQuery, loadMore } = useQueryExecution({
     editorRef,
     editorValue,
     useToolingApi,
     setLoading,
     setResults,
+    appendResults,
+    setLoadingMore,
     setError,
     findTabByQuery,
     setActiveTab,
@@ -294,13 +298,20 @@ export function QueryTab() {
     editorRef.current?.setValue(query);
   }, []);
 
+  // Handle load more results
+  const handleLoadMore = useCallback(() => {
+    if (activeTab && activeTab.nextRecordsUrl) {
+      loadMore(activeTab.id, activeTab.nextRecordsUrl);
+    }
+  }, [activeTab, loadMore]);
+
   // Derived state
   const hasResults = activeTab && activeTab.records.length > 0 && !activeTab.error;
   const hasModifications = activeTab && activeTab.modifiedRecords.size > 0;
   const isEditMode = editingEnabled && activeTab?.isEditable;
 
   return (
-    <div data-testid="query-tab">
+    <div className={styles.queryTab} data-testid="query-tab">
       {/* Query Editor Card */}
       <div className="card">
         <div className="card-header">
@@ -342,7 +353,7 @@ export function QueryTab() {
       </div>
 
       {/* Results Card */}
-      <div className="card">
+      <div className={`card ${styles.resultsCard}`}>
         <div className="card-header">
           <div className={`card-header-icon ${styles.headerIconSuccess}`}>
             Q
@@ -400,6 +411,7 @@ export function QueryTab() {
             editingEnabled={editingEnabled}
             onFieldChange={handleFieldChange}
             filterText={filterText}
+            onLoadMore={handleLoadMore}
           />
         </div>
       </div>

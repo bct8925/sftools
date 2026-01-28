@@ -1,5 +1,4 @@
 // Query Results - Results container with loading/error/empty states
-import { useMemo } from 'react';
 import type { QueryTabState } from './useQueryState';
 import { QueryResultsTable } from './QueryResultsTable';
 import styles from './QueryTab.module.css';
@@ -13,6 +12,8 @@ interface QueryResultsProps {
   onFieldChange: (recordId: string, fieldName: string, value: unknown, originalValue: unknown) => void;
   /** Filter text for rows */
   filterText: string;
+  /** Called to load more results */
+  onLoadMore?: () => void;
 }
 
 /**
@@ -24,60 +25,88 @@ export function QueryResults({
   editingEnabled,
   onFieldChange,
   filterText,
+  onLoadMore,
 }: QueryResultsProps) {
-  // Determine what to render based on tab state
-  const content = useMemo(() => {
-    // No active tab
-    if (!activeTab) {
-      return (
+  // No active tab
+  if (!activeTab) {
+    return (
+      <div className={styles.results}>
         <div className={styles.resultsEmpty}>No query results to display</div>
-      );
-    }
+      </div>
+    );
+  }
 
-    // Loading state
-    if (activeTab.isLoading) {
-      return (
+  // Loading state
+  if (activeTab.isLoading) {
+    return (
+      <div className={styles.results}>
         <div className={styles.resultsLoading}>
           <div className={styles.spinner} />
           <div>Loading query results...</div>
         </div>
-      );
-    }
-
-    // Error state
-    if (activeTab.error) {
-      return (
-        <div className={styles.resultsError} data-testid="query-results-error">{activeTab.error}</div>
-      );
-    }
-
-    // Empty results
-    if (activeTab.records.length === 0) {
-      return (
-        <div className={styles.resultsEmpty}>No records found</div>
-      );
-    }
-
-    // Render results table
-    const isEditMode = editingEnabled && activeTab.isEditable;
-
-    return (
-      <QueryResultsTable
-        records={activeTab.records}
-        columns={activeTab.columns}
-        objectName={activeTab.objectName}
-        fieldDescribe={activeTab.fieldDescribe}
-        modifiedRecords={activeTab.modifiedRecords}
-        isEditMode={isEditMode}
-        onFieldChange={onFieldChange}
-        filterText={filterText}
-      />
+      </div>
     );
-  }, [activeTab, editingEnabled, onFieldChange, filterText]);
+  }
+
+  // Error state
+  if (activeTab.error) {
+    return (
+      <div className={styles.results}>
+        <div className={styles.resultsError} data-testid="query-results-error">{activeTab.error}</div>
+      </div>
+    );
+  }
+
+  // Empty results
+  if (activeTab.records.length === 0) {
+    return (
+      <div className={styles.results}>
+        <div className={styles.resultsEmpty}>No records found</div>
+      </div>
+    );
+  }
+
+  // Render results table with footer outside scrollable area
+  const isEditMode = editingEnabled && activeTab.isEditable;
+  const showingCount = activeTab.records.length;
+  const totalCount = activeTab.totalSize;
+  const hasMore = !activeTab.done && activeTab.nextRecordsUrl;
 
   return (
-    <div className={styles.results}>
-      {content}
-    </div>
+    <>
+      <div className={styles.results}>
+        <QueryResultsTable
+          records={activeTab.records}
+          columns={activeTab.columns}
+          objectName={activeTab.objectName}
+          fieldDescribe={activeTab.fieldDescribe}
+          modifiedRecords={activeTab.modifiedRecords}
+          isEditMode={isEditMode}
+          onFieldChange={onFieldChange}
+          filterText={filterText}
+        />
+      </div>
+      <div className={styles.resultsFooter} data-testid="query-results-footer">
+        <span className={styles.recordCount} data-testid="query-record-count">
+          Showing {showingCount.toLocaleString()} of {totalCount.toLocaleString()} records
+        </span>
+        {hasMore && onLoadMore && (
+          activeTab.isLoadingMore ? (
+            <div className={styles.loadMoreSpinner} data-testid="query-load-more-spinner">
+              <div className={styles.spinnerSmall} />
+              <span>Loading...</span>
+            </div>
+          ) : (
+            <button
+              className={`button-neutral ${styles.loadMoreBtn}`}
+              onClick={onLoadMore}
+              data-testid="query-load-more-btn"
+            >
+              Load More
+            </button>
+          )
+        )}
+      </div>
+    </>
   );
 }

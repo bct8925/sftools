@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useConnection } from '../../contexts';
 import { flattenColumnMetadata, type QueryColumn } from '../../lib/column-utils';
-import { executeQueryWithColumns, getObjectDescribe } from '../../lib/salesforce';
+import { executeQueryWithColumns, fetchQueryMore, getObjectDescribe } from '../../lib/salesforce';
 import type { FieldDescribe, SObject } from '../../types/salesforce';
 import type { StatusType } from '../../hooks/useStatusBadge';
 
@@ -16,11 +16,22 @@ interface UseQueryExecutionOptions {
             records: SObject[];
             columns: QueryColumn[];
             totalSize: number;
+            done: boolean;
+            nextRecordsUrl: string | null;
             objectName: string | null;
             isEditable: boolean;
             fieldDescribe: Record<string, FieldDescribe> | null;
         }
     ) => void;
+    appendResults: (
+        tabId: string,
+        results: {
+            records: SObject[];
+            done: boolean;
+            nextRecordsUrl: string | null;
+        }
+    ) => void;
+    setLoadingMore: (tabId: string, isLoadingMore: boolean) => void;
     setError: (tabId: string, error: string) => void;
     findTabByQuery: (query: string) => { id: string; query: string } | undefined;
     setActiveTab: (tabId: string) => void;
@@ -103,6 +114,8 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
                     records: result.records,
                     columns,
                     totalSize: result.totalSize,
+                    done: result.done,
+                    nextRecordsUrl: result.nextRecordsUrl,
                     objectName: result.entityName,
                     isEditable: canEdit && fieldDescribe !== null,
                     fieldDescribe,
@@ -179,5 +192,29 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
         fetchQueryData,
     ]);
 
-    return { fetchQueryData, executeQuery };
+    // Load more results for paginated query
+    const loadMore = useCallback(
+        async (tabId: string, nextRecordsUrl: string) => {
+            options.setLoadingMore(tabId, true);
+            options.updateStatus('Loading more...', 'loading');
+
+            try {
+                const result = await fetchQueryMore(nextRecordsUrl);
+
+                options.appendResults(tabId, {
+                    records: result.records,
+                    done: result.done,
+                    nextRecordsUrl: result.nextRecordsUrl,
+                });
+
+                options.updateStatus(`Loaded ${result.records.length} more records`, 'success');
+            } catch (error) {
+                options.setLoadingMore(tabId, false);
+                options.updateStatus('Error loading more', 'error');
+            }
+        },
+        [options.setLoadingMore, options.appendResults, options.updateStatus]
+    );
+
+    return { fetchQueryData, executeQuery, loadMore };
 }

@@ -1,6 +1,26 @@
 /* Query Tab Styles - CSS Module */
 
 /* ============================================================
+   Query Tab Layout - Fill viewport
+   ============================================================ */
+
+.queryTab {
+    display: flex;
+    flex-direction: column;
+    /* 100vh minus: nav(50px) + padding(20px top) + padding(20px bottom) */
+    height: calc(100vh - 90px);
+    overflow: hidden;
+}
+
+.resultsCard {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin-bottom: 0;
+}
+
+/* ============================================================
    Results Search
    ============================================================ */
 
@@ -84,6 +104,11 @@
 
 .cardBody {
     padding: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .tabs {
@@ -94,6 +119,7 @@
     border-bottom: 1px solid var(--border-color);
     min-height: 40px;
     align-items: center;
+    flex-shrink: 0;
     overflow-x: auto;
 }
 
@@ -175,8 +201,9 @@
    ============================================================ */
 
 .results {
+    flex: 1;
+    min-height: 0;
     overflow-x: auto;
-    max-height: 370px;
     overflow-y: auto;
 }
 
@@ -407,6 +434,53 @@
 
 .modified .fieldInput {
     background-color: var(--bg-selected);
+}
+
+/* ============================================================
+   Results Footer
+   ============================================================ */
+
+.resultsFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    min-height: 52px;
+    box-sizing: border-box;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--card-header-bg);
+    flex-shrink: 0;
+}
+
+.recordCount {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.loadMoreBtn {
+    padding: 6px 16px;
+    font-size: 13px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.loadMoreSpinner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.spinnerSmall {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
 }
 
 /* ============================================================

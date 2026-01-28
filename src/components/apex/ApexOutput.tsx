@@ -5,13 +5,14 @@ import styles from './ApexTab.module.css';
 
 interface ApexOutputProps {
   output: string;
+  className?: string;
 }
 
 /**
  * Debug Log output with search/filter functionality
  * Displays execution results and debug logs with line filtering
  */
-export function ApexOutput({ output }: ApexOutputProps) {
+export function ApexOutput({ output, className }: ApexOutputProps) {
   const [searchText, setSearchText] = useState('');
   const editorRef = useRef<MonacoEditorRef>(null);
   const filterTimeoutRef = useRef<number | null>(null);
@@ -58,7 +59,7 @@ export function ApexOutput({ output }: ApexOutputProps) {
   }, []);
 
   return (
-    <div className="card" data-testid="apex-output">
+    <div className={`card ${className || ''}`} data-testid="apex-output">
       <div className="card-header">
         <div className={`card-header-icon ${styles.outputHeaderIcon}`}>
           L
@@ -75,12 +76,13 @@ export function ApexOutput({ output }: ApexOutputProps) {
           />
         </div>
       </div>
-      <div className="card-body">
+      <div className={`card-body ${styles.outputCardBody}`}>
         <MonacoEditor
           ref={editorRef}
           language="apex"
           readonly
-          className="monaco-container monaco-container-lg"
+          resizable={false}
+          className={styles.outputEditor}
           data-testid="apex-output-editor"
         />
       </div>

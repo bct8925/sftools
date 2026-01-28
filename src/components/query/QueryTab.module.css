@@ -460,6 +460,8 @@
 .loadMoreBtn {
     padding: 6px 16px;
     font-size: 13px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .loadMoreSpinner {
@@ -468,6 +470,8 @@
     gap: 8px;
     font-size: 13px;
     color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .spinnerSmall {

@@ -417,6 +417,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 10px 15px;
+    min-height: 52px;
+    box-sizing: border-box;
     border-top: 1px solid var(--border-color);
     background-color: var(--card-header-bg);
 }

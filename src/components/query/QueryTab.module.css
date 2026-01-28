@@ -1,6 +1,26 @@
 /* Query Tab Styles - CSS Module */
 
 /* ============================================================
+   Query Tab Layout - Fill viewport
+   ============================================================ */
+
+.queryTab {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    gap: 20px;
+}
+
+.resultsCard {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin-bottom: 0;
+}
+
+/* ============================================================
    Results Search
    ============================================================ */
 
@@ -83,6 +103,11 @@
 
 .cardBody {
     padding: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .tabs {
@@ -94,6 +119,7 @@
     border-bottom: 1px solid var(--border-color);
     min-height: 40px;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .tabsEmpty {
@@ -174,8 +200,9 @@
    ============================================================ */
 
 .results {
+    flex: 1;
+    min-height: 0;
     overflow-x: auto;
-    max-height: 370px;
     overflow-y: auto;
 }
 
@@ -421,6 +448,7 @@
     box-sizing: border-box;
     border-top: 1px solid var(--border-color);
     background-color: var(--card-header-bg);
+    flex-shrink: 0;
 }
 
 .recordCount {

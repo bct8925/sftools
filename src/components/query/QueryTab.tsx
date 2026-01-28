@@ -279,7 +279,7 @@ export function QueryTab() {
   const isEditMode = editingEnabled && activeTab?.isEditable;
 
   return (
-    <div data-testid="query-tab">
+    <div className={styles.queryTab} data-testid="query-tab">
       {/* Query Editor Card */}
       <div className="card">
         <div className="card-header">
@@ -321,7 +321,7 @@ export function QueryTab() {
       </div>
 
       {/* Results Card */}
-      <div className="card">
+      <div className={`card ${styles.resultsCard}`}>
         <div className="card-header">
           <div className={`card-header-icon ${styles.headerIconSuccess}`}>
             Q

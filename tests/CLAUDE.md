@@ -1,6 +1,7 @@
 # Testing - sftools
 
 > **Parent context**: This extends [../CLAUDE.md](../CLAUDE.md)
+> **Test coverage matrix**: See [TEST_SCENARIOS.md](TEST_SCENARIOS.md) for all test IDs and scenarios
 
 ## Overview
 

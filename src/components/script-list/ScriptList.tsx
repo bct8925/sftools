@@ -75,14 +75,6 @@ export function HistoryList<T extends HistoryEntry>({
               <div className={styles.scriptActions}>
                 <button
                   className={styles.scriptAction}
-                  title="Load"
-                  onClick={(e) => handleLoad(content, e)}
-                  data-testid="script-action-load"
-                >
-                  &#8629;
-                </button>
-                <button
-                  className={styles.scriptAction}
                   title="Add to favorites"
                   onClick={(e) => handleFavorite(content, e)}
                   data-testid="script-action-favorite"
@@ -161,14 +153,6 @@ export function FavoritesList<T extends FavoriteEntry>({
             <div className={styles.scriptMeta}>
               <span>{formatTime(item.timestamp)}</span>
               <div className={styles.scriptActions}>
-                <button
-                  className={styles.scriptAction}
-                  title="Load"
-                  onClick={(e) => handleLoad(content, e)}
-                  data-testid="script-action-load"
-                >
-                  &#8629;
-                </button>
                 <button
                   className={styles.scriptAction}
                   title="Delete"

@@ -32,7 +32,7 @@
 
 .historyModal {
     width: 320px;
-    max-height: 400px;
+    height: 340px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -53,6 +53,8 @@
     padding: 10px 16px;
     background: transparent;
     border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
     font-size: 13px;
     font-weight: 500;
     color: var(--text-muted);
@@ -67,8 +69,7 @@
 
 .dropdownTabActive {
     color: var(--primary-color);
-    border-bottom: 2px solid var(--primary-color);
-    margin-bottom: -1px;
+    border-bottom-color: var(--primary-color);
 }
 
 .dropdownContent {

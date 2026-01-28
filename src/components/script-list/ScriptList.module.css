@@ -20,6 +20,11 @@
     padding: 10px 16px;
     cursor: pointer;
     transition: background 0.15s;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.scriptItem:last-child {
+    border-bottom: none;
 }
 
 .scriptItem:hover {

@@ -3,27 +3,14 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: write
       issues: read
-      id-token: write
 
     steps:
       - name: Checkout repository
@@ -32,13 +19,19 @@ jobs:
           fetch-depth: 1
 
       - name: Run Claude Code Review
-        id: claude-review
-        uses: anthropics/claude-code-action@v1
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
-
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          claude -p \
+            --add-dir "$GITHUB_WORKSPACE" \
+            --tools "Read,Grep,Glob,Bash,Task" \
+            --allowedTools \
+              "Read" \
+              "Grep" \
+              "Glob" \
+              "Task" \
+            --plugin-dir ~/.claude-ci/plugins \
+            --mcp-config '{"mcpServers":{"github_inline_comment":{"command":"node","args":["'"$HOME"'/.claude-ci/mcp/github-inline-comment-server.mjs"],"env":{"GITHUB_TOKEN":"'"$GITHUB_TOKEN"'","REPO_OWNER":"${{ github.repository_owner }}","REPO_NAME":"${{ github.event.repository.name }}","PR_NUMBER":"${{ github.event.pull_request.number }}"}}}}' \
+            --max-turns 30 \
+            "/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}"

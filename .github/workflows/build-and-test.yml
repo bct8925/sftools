@@ -1,0 +1,58 @@
+name: Build & Test
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+jobs:
+  build-and-test:
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        id: tests
+        run: npm run test:unit -- --reporter=github-actions --reporter=json --outputFile=test-results.json
+        continue-on-error: true
+
+      - name: Build and package
+        id: build
+        if: steps.tests.outcome == 'success'
+        run: npm run package
+        continue-on-error: true
+
+      - name: Upload artifact
+        id: upload
+        if: steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sftools
+          path: |
+            dist
+            manifest.json
+            rules.json
+            sftools-proxy
+          retention-days: 7
+
+      - name: Post test results comment
+        if: always() && steps.tests.outcome != 'skipped'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+        run: node ~/.claude-ci/scripts/post-test-results.mjs test-results.json
+
+      - name: Fail if tests or build failed
+        if: steps.tests.outcome == 'failure' || steps.build.outcome == 'failure'
+        run: exit 1

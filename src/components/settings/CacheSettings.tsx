@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
-import { clearDescribeCache } from '../../lib/salesforce';
+import { clearDescribeCache } from '../../api/salesforce';
 import styles from './CacheSettings.module.css';
 
 export function CacheSettings() {

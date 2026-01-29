@@ -7,7 +7,7 @@ import {
     updateConnection,
     getOAuthCredentials,
     validateOAuthState,
-} from '../../lib/auth';
+} from '../../auth/auth';
 import { escapeHtml } from '../../lib/text-utils';
 import type { SalesforceConnection } from '../../types/salesforce';
 

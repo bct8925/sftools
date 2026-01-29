@@ -4,7 +4,7 @@ import {
   searchFlows,
   getFlowVersions,
   deleteInactiveFlowVersions,
-} from '../../lib/salesforce';
+} from '../../api/salesforce';
 import type { SObject } from '../../types/salesforce';
 import { SearchBox, type SearchBoxRenderData } from './SearchBox';
 import sharedStyles from './utils-tools.module.css';

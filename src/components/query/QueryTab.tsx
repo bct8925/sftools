@@ -9,7 +9,7 @@ import { QueryResults } from './QueryResults';
 import { QueryHistory, useSaveToHistory } from './QueryHistory';
 import { useQueryState, normalizeQuery } from './useQueryState';
 import { useQueryExecution } from './useQueryExecution';
-import { executeBulkQueryExport, updateRecord } from '../../lib/salesforce';
+import { executeBulkQueryExport, updateRecord } from '../../api/salesforce';
 import {
   getValueByPath,
   formatCellValue,

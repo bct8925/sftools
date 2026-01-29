@@ -35,7 +35,7 @@ import {
     setPendingAuth,
     consumePendingAuth,
     migrateFromSingleConnection,
-} from '../../../src/lib/auth.js';
+} from '../../../src/auth/auth.js';
 
 describe('auth', () => {
     beforeEach(() => {

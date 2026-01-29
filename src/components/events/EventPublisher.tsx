@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { ChannelSelector } from './ChannelSelector';
 import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
-import { publishPlatformEvent } from '../../lib/salesforce';
+import { publishPlatformEvent } from '../../api/salesforce';
 import styles from './EventsTab.module.css';
 
 interface EventPublisherProps {

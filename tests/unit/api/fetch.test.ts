@@ -31,8 +31,8 @@ describe('fetch', () => {
         vi.resetModules();
 
         // Reimport both modules so they share the same auth state
-        authModule = await import('../../../src/lib/auth.js');
-        fetchModule = await import('../../../src/lib/fetch.js');
+        authModule = await import('../../../src/auth/auth.js');
+        fetchModule = await import('../../../src/api/fetch.js');
 
         // Clear active connection
         authModule.setActiveConnection(null);

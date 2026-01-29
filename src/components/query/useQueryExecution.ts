@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useConnection } from '../../contexts';
 import { flattenColumnMetadata, type QueryColumn } from '../../lib/column-utils';
-import { executeQueryWithColumns, fetchQueryMore, getObjectDescribe } from '../../lib/salesforce';
+import { executeQueryWithColumns, fetchQueryMore, getObjectDescribe } from '../../api/salesforce';
 import type { FieldDescribe, SObject } from '../../types/salesforce';
 import type { StatusType } from '../../hooks/useStatusBadge';
 

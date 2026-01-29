@@ -7,7 +7,7 @@ import {
   getFormulaFieldMetadata,
   updateFormulaField,
   getObjectDescribe,
-} from '../../lib/salesforce';
+} from '../../api/salesforce';
 import type { languages } from 'monaco-editor';
 import styles from './SchemaPage.module.css';
 

@@ -27,32 +27,32 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock dependencies before importing the module under test
-vi.mock('../../../src/lib/fetch.js', () => ({
+vi.mock('../../../src/api/fetch.js', () => ({
     smartFetch: vi.fn(),
 }));
 
-vi.mock('../../../src/lib/auth.js', () => ({
+vi.mock('../../../src/auth/auth.js', () => ({
     getAccessToken: vi.fn(),
     getInstanceUrl: vi.fn(),
     getActiveConnectionId: vi.fn(),
     triggerAuthExpired: vi.fn(),
 }));
 
-vi.mock('../../../src/lib/cors-detection.js', () => ({
+vi.mock('../../../src/api/cors-detection.js', () => ({
     isCorsError: vi.fn(),
     showCorsErrorModal: vi.fn(),
 }));
 
 // Import after mocking
-import { salesforceRequest } from '../../../src/lib/salesforce-request.js';
-import { smartFetch } from '../../../src/lib/fetch.js';
+import { salesforceRequest } from '../../../src/api/salesforce-request.js';
+import { smartFetch } from '../../../src/api/fetch.js';
 import {
     getAccessToken,
     getInstanceUrl,
     getActiveConnectionId,
     triggerAuthExpired,
-} from '../../../src/lib/auth.js';
-import { isCorsError, showCorsErrorModal } from '../../../src/lib/cors-detection.js';
+} from '../../../src/auth/auth.js';
+import { isCorsError, showCorsErrorModal } from '../../../src/api/cors-detection.js';
 
 describe('salesforce-request', () => {
     beforeEach(() => {

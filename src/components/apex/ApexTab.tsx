@@ -5,7 +5,7 @@ import { ApexOutput } from './ApexOutput';
 import { StatusBadge } from '../status-badge/StatusBadge';
 import { useConnection } from '../../contexts';
 import { useStatusBadge } from '../../hooks';
-import { executeAnonymousApex } from '../../lib/salesforce';
+import { executeAnonymousApex } from '../../api/salesforce';
 import { formatOutput } from '../../lib/apex-utils';
 import type { ApexExecutionResult } from '../../types/salesforce';
 import styles from './ApexTab.module.css';

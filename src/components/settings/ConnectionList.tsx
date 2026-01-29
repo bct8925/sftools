@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
-import { startAuthorization } from '../../lib/start-authorization';
+import { startAuthorization } from '../../auth/start-authorization';
 import { ConnectionCard } from './ConnectionCard';
 import styles from './ConnectionList.module.css';
 

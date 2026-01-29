@@ -46,7 +46,7 @@ vi.mock('../../../src/components/monaco-editor/MonacoEditor', () => ({
 }));
 
 // Mock salesforce.js
-vi.mock('../../../src/lib/salesforce.js', () => ({
+vi.mock('../../../src/api/salesforce.js', () => ({
     getGlobalDescribe: vi.fn(),
     getObjectDescribe: vi.fn(),
 }));
@@ -57,7 +57,7 @@ import {
     clearState,
     registerSOQLCompletionProvider,
 } from '../../../src/lib/soql-autocomplete.js';
-import { getGlobalDescribe, getObjectDescribe } from '../../../src/lib/salesforce.js';
+import { getGlobalDescribe, getObjectDescribe } from '../../../src/api/salesforce.js';
 import { monaco } from '../../../src/components/monaco-editor/MonacoEditor';
 
 describe('soql-autocomplete', () => {
@@ -213,7 +213,7 @@ describe('soql-autocomplete', () => {
                 },
             }));
 
-            vi.doMock('../../../src/lib/salesforce.js', () => ({
+            vi.doMock('../../../src/api/salesforce.js', () => ({
                 getGlobalDescribe: vi.fn(),
                 getObjectDescribe: vi.fn(),
             }));

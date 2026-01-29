@@ -8,7 +8,7 @@ import {
     getDebugLogStats,
     deleteDebugLogs,
     deleteAllTraceFlags,
-} from '../../lib/salesforce';
+} from '../../api/salesforce';
 import type { SObject } from '../../types/salesforce';
 import { SearchBox, type SearchBoxRenderData } from '../utils-tools/SearchBox';
 import { ButtonIcon } from '../button-icon/ButtonIcon';

@@ -33,15 +33,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockConnection } from '../mocks/salesforce.js';
 
 // Mock dependencies
-vi.mock('../../../src/lib/salesforce-request.js', () => ({
+vi.mock('../../../src/api/salesforce-request.js', () => ({
     salesforceRequest: vi.fn(),
 }));
 
-vi.mock('../../../src/lib/fetch.js', () => ({
+vi.mock('../../../src/api/fetch.js', () => ({
     smartFetch: vi.fn(),
 }));
 
-vi.mock('../../../src/lib/auth.js', () => ({
+vi.mock('../../../src/auth/auth.js', () => ({
     getAccessToken: vi.fn(),
     getInstanceUrl: vi.fn(),
     getActiveConnectionId: vi.fn(),
@@ -77,10 +77,10 @@ import {
     executeBulkQueryExport,
     getFormulaFieldMetadata,
     updateFormulaField,
-} from '../../../src/lib/salesforce.js';
-import { salesforceRequest } from '../../../src/lib/salesforce-request.js';
-import { smartFetch } from '../../../src/lib/fetch.js';
-import { getAccessToken, getInstanceUrl, getActiveConnectionId } from '../../../src/lib/auth.js';
+} from '../../../src/api/salesforce.js';
+import { salesforceRequest } from '../../../src/api/salesforce-request.js';
+import { smartFetch } from '../../../src/api/fetch.js';
+import { getAccessToken, getInstanceUrl, getActiveConnectionId } from '../../../src/auth/auth.js';
 
 describe('salesforce', () => {
     beforeEach(async () => {

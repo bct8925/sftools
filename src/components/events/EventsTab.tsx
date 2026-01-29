@@ -4,7 +4,7 @@ import { ChannelSelector } from './ChannelSelector';
 import { EventPublisher } from './EventPublisher';
 import { useConnection, useProxy } from '../../contexts';
 import { useStatusBadge } from '../../hooks';
-import { getAllStreamingChannels } from '../../lib/salesforce';
+import { getAllStreamingChannels } from '../../api/salesforce';
 import { formatSystemMessage } from '../../lib/events-utils';
 import { StatusBadge } from '../status-badge/StatusBadge';
 import { useStreamSubscription } from './useStreamSubscription';

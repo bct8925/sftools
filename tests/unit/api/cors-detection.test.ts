@@ -19,7 +19,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isCorsError, showCorsErrorModal } from '../../../src/lib/cors-detection.js';
+import { isCorsError, showCorsErrorModal } from '../../../src/api/cors-detection.js';
 
 describe('cors-detection', () => {
     describe('isCorsError', () => {

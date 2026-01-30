@@ -272,6 +272,7 @@ async function addOrUpdateConnection(
             });
 
             // Set as active connection temporarily to make the API call work
+            // Set as active connection so user sees the newly connected org
             setActiveConnection(newConnection);
         }
     }

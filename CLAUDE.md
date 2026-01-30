@@ -151,11 +151,11 @@ sftools/
 │   ├── contexts/             # React Context API (3 providers)
 │   │   ├── ConnectionContext.tsx  # Multi-org state
 │   │   ├── ThemeContext.tsx       # Dark/light mode
-│   │   ├── ProxyContext.tsx       # Native messaging proxy
-│   │   └── index.ts               # Barrel exports
+│   │   └── ProxyContext.tsx       # Native messaging proxy
 │   │
 │   ├── hooks/                # Custom React hooks
-│   │   └── index.ts          # Re-exports: useConnection, useTheme, useProxy
+│   │   ├── useFilteredResults.ts # Filtered results hook
+│   │   └── useStatusBadge.ts     # Status badge hook
 │   │
 │   ├── react/                # App shell (8 TSX files)
 │   │   ├── App.tsx                    # Main tabbed interface
@@ -174,14 +174,12 @@ sftools/
 │   │   ├── bulk-query.ts     # Bulk query export
 │   │   ├── debug-logs.ts     # Debug log operations
 │   │   ├── streaming.ts      # Streaming API
-│   │   ├── cors-detection.ts # CORS detection
-│   │   └── index.ts          # Barrel exports
+│   │   └── cors-detection.ts # CORS detection
 │   │
 │   ├── auth/                 # Authentication & OAuth (4 TS files)
 │   │   ├── auth.ts           # Multi-connection storage
 │   │   ├── start-authorization.ts # OAuth flow
-│   │   ├── oauth-credentials.ts # OAuth credentials
-│   │   └── index.ts          # Barrel exports
+│   │   └── oauth-credentials.ts # OAuth credentials
 │   │
 │   ├── lib/                  # Shared utilities
 │   │   ├── query-utils.ts    # SOQL parsing
@@ -189,7 +187,6 @@ sftools/
 │   │   ├── record-utils.ts   # Field manipulation
 │   │   ├── schema-utils.ts   # Metadata operations
 │   │   ├── history-manager.ts # Query/Apex history
-│   │   ├── soql-autocomplete.ts # Editor autocomplete
 │   │   ├── theme.ts          # Dark/light mode
 │   │   └── ...               # More utilities
 │   │

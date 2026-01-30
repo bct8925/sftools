@@ -22,7 +22,6 @@ lib/
 ├── settings-utils.ts     # Settings storage
 ├── events-utils.ts       # Event subscription helpers
 ├── history-manager.ts    # Query/Apex history & favorites
-├── soql-autocomplete.ts  # SOQL editor autocomplete
 ├── theme.ts              # Dark/light mode management
 ├── background-utils.ts   # Service worker helpers
 ├── ui-helpers.ts         # DOM utilities
@@ -151,26 +150,6 @@ const favorites = await history.getFavorites();
 
 // Search
 const results = await history.search('account');
-```
-
-### soql-autocomplete.ts - SOQL Autocomplete
-
-Provides autocomplete suggestions for SOQL queries in Monaco editor.
-
-```typescript
-import { SoqlAutocomplete } from '../lib/soql-autocomplete';
-
-// Create instance (typically one per editor)
-const autocomplete = new SoqlAutocomplete();
-
-// Get suggestions based on position
-const suggestions = await autocomplete.getSuggestions(
-  'SELECT Id FROM Acc',
-  { lineNumber: 1, column: 18 }
-);
-
-// Clear cached metadata (on connection change)
-autocomplete.clearCache();
 ```
 
 ## Adding New Utilities
@@ -387,7 +366,6 @@ account.Name; // TypeScript knows this exists
 | `settings-utils.ts` | Settings | `getSettings`, `updateSettings` |
 | `events-utils.ts` | Events | `parseChannel`, `formatEvent` |
 | `history-manager.ts` | History | `HistoryManager` class |
-| `soql-autocomplete.ts` | Autocomplete | `SoqlAutocomplete` class |
 | `theme.ts` | Theming | `initTheme`, `setTheme`, `getTheme` |
 | `background-utils.ts` | Background | `sendToBackground` |
 | `ui-helpers.ts` | DOM utils | `formatDate`, `formatFileSize` |

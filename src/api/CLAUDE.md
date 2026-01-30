@@ -16,8 +16,7 @@ api/
 ├── bulk-query.ts          # Bulk API v2 query export
 ├── debug-logs.ts          # Trace flags & debug logs
 ├── streaming.ts           # Streaming channel discovery
-├── cors-detection.ts      # CORS error detection
-└── index.ts               # Barrel exports
+└── cors-detection.ts      # CORS error detection
 ```
 
 ## TypeScript Patterns
@@ -745,4 +744,3 @@ try {
 | `debug-logs.ts` | Trace flags & debug logs | `ensureTraceFlag`, `getDebugLogStats`, `deleteDebugLogs`, `getDebugLogsSince`, `getLogBody` |
 | `streaming.ts` | Streaming channel discovery | `getAllStreamingChannels`, `publishPlatformEvent` |
 | `cors-detection.ts` | CORS error detection | `isCorsError`, `showCorsErrorModal` |
-| `index.ts` | Barrel exports | Re-exports all public functions |

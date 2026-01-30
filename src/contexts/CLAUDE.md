@@ -12,8 +12,7 @@ This directory contains **React Context providers** that manage global applicati
 contexts/
 ├── ConnectionContext.tsx  # Multi-org Salesforce connection state
 ├── ThemeContext.tsx       # Dark/light mode management
-├── ProxyContext.tsx       # Native messaging proxy state
-└── index.ts               # Barrel exports
+└── ProxyContext.tsx       # Native messaging proxy state
 ```
 
 ## Usage Pattern

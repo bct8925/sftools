@@ -12,8 +12,7 @@ The `auth/` directory contains authentication, OAuth flow, and multi-connection 
 auth/
 ├── auth.ts                # Multi-connection storage and state
 ├── start-authorization.ts # OAuth flow initiation
-├── oauth-credentials.ts   # OAuth client configuration
-└── index.ts               # Barrel exports
+└── oauth-credentials.ts   # OAuth client configuration
 ```
 
 ## TypeScript Patterns
@@ -496,4 +495,3 @@ expect(validation.pendingAuth?.loginDomain).toBe('https://test.salesforce.com');
 | `auth.ts` | Multi-connection storage & state | `getAccessToken`, `loadConnections`, `setActiveConnection`, `generateOAuthState`, `setPendingAuth`, `validateOAuthState`, `onAuthExpired` |
 | `start-authorization.ts` | OAuth flow initiation | `startAuthorization` |
 | `oauth-credentials.ts` | OAuth client configuration | `getOAuthCredentials` |
-| `index.ts` | Barrel exports | Re-exports all public functions |

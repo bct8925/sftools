@@ -172,6 +172,16 @@ interface ChatterUser {
     name: string;
 }
 
+export interface UserInfo {
+    user_id: string;
+    organization_id: string;
+    preferred_username: string;
+    nickname: string;
+    name: string;
+    email: string;
+    email_verified: boolean;
+}
+
 /**
  * Get current user ID
  */
@@ -183,6 +193,18 @@ export async function getCurrentUserId(): Promise<string> {
         throw new Error('No user data returned from API');
     }
     return response.json.id;
+}
+
+/**
+ * Get current user info including username
+ * Uses the OAuth UserInfo endpoint which works with just an access token
+ */
+export async function getUserInfo(): Promise<UserInfo> {
+    const response = await salesforceRequest<UserInfo>('/services/oauth2/userinfo');
+    if (!response.json) {
+        throw new Error('No user info returned from API');
+    }
+    return response.json;
 }
 
 // ============================================================

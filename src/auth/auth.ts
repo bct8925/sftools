@@ -35,6 +35,7 @@ export interface CustomConnectedApp {
 export type ConnectionData = Partial<SalesforceConnection> & {
     instanceUrl: string;
     accessToken: string;
+    username?: string;
 };
 
 type AuthExpiredCallback = (connectionId: string | null, error?: string) => void;
@@ -169,9 +170,16 @@ export async function saveConnections(connections: SalesforceConnection[]): Prom
  */
 export async function addConnection(connectionData: ConnectionData): Promise<SalesforceConnection> {
     const connections = await loadConnections();
+
+    // Use provided label, or username if available, otherwise fall back to hostname
+    let defaultLabel = new URL(connectionData.instanceUrl).hostname;
+    if (connectionData.username) {
+        defaultLabel = connectionData.username;
+    }
+
     const newConnection: SalesforceConnection = {
         id: crypto.randomUUID(),
-        label: connectionData.label || new URL(connectionData.instanceUrl).hostname,
+        label: connectionData.label || defaultLabel,
         instanceUrl: connectionData.instanceUrl,
         loginDomain: connectionData.loginDomain || 'https://login.salesforce.com',
         accessToken: connectionData.accessToken,

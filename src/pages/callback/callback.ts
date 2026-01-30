@@ -7,9 +7,11 @@ import {
     updateConnection,
     getOAuthCredentials,
     validateOAuthState,
+    setActiveConnection,
 } from '../../auth/auth';
 import { escapeHtml } from '../../lib/text-utils';
-import type { SalesforceConnection } from '../../types/salesforce';
+import { smartFetch } from '../../api/fetch';
+import type { SalesforceConnection, UserInfo } from '../../types/salesforce';
 
 interface _PendingAuth {
     loginDomain?: string;
@@ -197,6 +199,34 @@ function deriveLoginDomain(instanceUrl: string): string {
 }
 
 /**
+ * Fetch username from Salesforce UserInfo endpoint
+ * Returns username or null if fetch fails
+ */
+async function fetchUsername(instanceUrl: string, accessToken: string): Promise<string | null> {
+    try {
+        // Uses smartFetch instead of salesforceRequest because the connection is not yet
+        // stored — there is no active connection for salesforceRequest to authenticate against.
+        // We must pass the access token manually here.
+        const response = await smartFetch(`${instanceUrl}/services/oauth2/userinfo`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+
+        if (!response.success) {
+            console.warn('Failed to fetch user info:', response.status);
+            return null;
+        }
+
+        const userInfo = JSON.parse(response.data || '{}') as UserInfo;
+        return userInfo.preferred_username || null;
+    } catch (error) {
+        console.warn('Error fetching username:', error);
+        return null;
+    }
+}
+
+/**
  * Add a new connection or update existing one
  * @param data - Connection data
  * @param existingConnectionId - If re-authorizing, the connection ID to update
@@ -232,8 +262,18 @@ async function addOrUpdateConnection(
                 clientId: data.clientId ?? existing.clientId,
             });
         } else {
-            // Add new connection
-            await addConnection(data);
+            // Fetch username for new connection
+            const username = await fetchUsername(data.instanceUrl, data.accessToken);
+
+            // Add new connection with username
+            const newConnection = await addConnection({
+                ...data,
+                username: username || undefined,
+            });
+
+            // Set as active connection temporarily to make the API call work
+            // Set as active connection so user sees the newly connected org
+            setActiveConnection(newConnection);
         }
     }
 }

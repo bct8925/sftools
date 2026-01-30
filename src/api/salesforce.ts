@@ -12,6 +12,7 @@ import type {
     RestApiResponse,
     FlowDefinition,
     FlowVersion,
+    UserInfo,
 } from '../types/salesforce';
 import { API_VERSION } from '../lib/utils';
 import { getAccessToken, getInstanceUrl, getActiveConnectionId } from '../auth/auth';
@@ -183,6 +184,18 @@ export async function getCurrentUserId(): Promise<string> {
         throw new Error('No user data returned from API');
     }
     return response.json.id;
+}
+
+/**
+ * Get current user info including username
+ * Uses the OAuth UserInfo endpoint which works with just an access token
+ */
+export async function getUserInfo(): Promise<UserInfo> {
+    const response = await salesforceRequest<UserInfo>('/services/oauth2/userinfo');
+    if (!response.json) {
+        throw new Error('No user info returned from API');
+    }
+    return response.json;
 }
 
 // ============================================================

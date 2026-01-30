@@ -197,3 +197,14 @@ export interface FlowVersion {
     VersionNumber: number;
     Status: string;
 }
+
+// User Info
+export interface UserInfo {
+    user_id: string;
+    organization_id: string;
+    preferred_username: string;
+    nickname: string;
+    name: string;
+    email: string;
+    email_verified: boolean;
+}

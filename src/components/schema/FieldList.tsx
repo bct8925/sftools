@@ -11,6 +11,7 @@ interface FieldListProps {
   objectName: string;
   fields: FieldDescribe[];
   isLoading: boolean;
+  instanceUrl: string;
   onClose: () => void;
   onRefresh: () => void;
   onNavigateToObject: (objectName: string) => void;
@@ -26,6 +27,7 @@ export function FieldList({
   objectName,
   fields,
   isLoading,
+  instanceUrl,
   onClose,
   onRefresh,
   onNavigateToObject,
@@ -126,6 +128,8 @@ export function FieldList({
             <FieldItem
               key={field.name}
               field={field}
+              objectName={objectName}
+              instanceUrl={instanceUrl}
               isMenuOpen={openMenuFieldName === field.name}
               onMenuToggle={handleMenuToggle}
               onReferenceClick={handleReferenceClick}
@@ -140,6 +144,8 @@ export function FieldList({
 
 interface FieldItemProps {
   field: FieldDescribe;
+  objectName: string;
+  instanceUrl: string;
   isMenuOpen: boolean;
   onMenuToggle: (fieldName: string) => void;
   onReferenceClick: (e: React.MouseEvent, objectName: string) => void;
@@ -148,6 +154,8 @@ interface FieldItemProps {
 
 function FieldItem({
   field,
+  objectName,
+  instanceUrl,
   isMenuOpen,
   onMenuToggle,
   onReferenceClick,
@@ -193,6 +201,8 @@ function FieldItem({
     return typeDisplay.text;
   };
 
+  const setupUrl = `${instanceUrl}/lightning/setup/ObjectManager/${objectName}/FieldsAndRelationships/${field.name}/view`;
+
   return (
     <div className={styles.fieldItem} data-testid="schema-field-item" data-field-name={field.name}>
       <div className={styles.fieldItemLabel} data-testid="schema-field-label" title={field.label}>
@@ -205,6 +215,15 @@ function FieldItem({
         {renderTypeCell()}
       </div>
       <div className={styles.fieldItemActions}>
+        <a
+          href={setupUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.fieldItemLink}
+          onClick={(e) => e.stopPropagation()}
+          title="Open in Salesforce Setup"
+          dangerouslySetInnerHTML={{ __html: icons.externalLink }}
+        />
         {isFormulaField && (
           <>
             <button

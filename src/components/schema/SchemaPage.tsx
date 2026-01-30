@@ -35,6 +35,9 @@ export function SchemaPage() {
   // Error state
   const [error, setError] = useState<string | null>(null);
 
+  // Active connection state
+  const [instanceUrl, setInstanceUrl] = useState<string>('');
+
   // Initialize from URL params and load connection
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -54,6 +57,7 @@ export function SchemaPage() {
         return;
       }
       setActiveConnection(connection);
+      setInstanceUrl(connection.instanceUrl);
       loadObjects();
     });
   }, []);
@@ -206,6 +210,7 @@ export function SchemaPage() {
                 objects={allObjects}
                 selectedObjectName={selectedObject?.name || null}
                 isLoading={isLoadingObjects}
+                instanceUrl={instanceUrl}
                 onSelect={handleSelectObject}
                 onRefresh={handleRefreshObjects}
               />
@@ -216,6 +221,7 @@ export function SchemaPage() {
                   objectName={selectedObject.name}
                   fields={allFields}
                   isLoading={isLoadingFields}
+                  instanceUrl={instanceUrl}
                   onClose={handleCloseFields}
                   onRefresh={handleRefreshFields}
                   onNavigateToObject={handleNavigateToObject}

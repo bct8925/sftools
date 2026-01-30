@@ -78,13 +78,12 @@ describe('Q-F-012: CSV Export', () => {
         // Verify filename is CSV
         expect(filename).toContain('.csv');
 
-        // Read the downloaded CSV content
-        const csvPath = await download.path();
-        if (!csvPath) {
-            throw new Error('Download path is null');
-        }
-
+        // Read the downloaded CSV content (saveAs needed for remote browser connections)
+        const os = await import('os');
+        const path = await import('path');
         const fs = await import('fs/promises');
+        const csvPath = path.join(os.tmpdir(), `test-export-${Date.now()}.csv`);
+        await download.saveAs(csvPath);
         const csvContent = await fs.readFile(csvPath, 'utf-8');
 
         // Parse CSV to verify content

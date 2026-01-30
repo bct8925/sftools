@@ -3,7 +3,7 @@ import { useConnection } from '../contexts/ConnectionContext';
 import { useProxy } from '../contexts/ProxyContext';
 import { TabNavigation, type TabId } from './TabNavigation';
 import { SfIcon } from '../components/sf-icon/SfIcon';
-import { getAccessToken, getInstanceUrl } from '../lib/auth';
+import { getAccessToken, getInstanceUrl } from '../auth/auth';
 import styles from './MobileMenu.module.css';
 
 interface MobileMenuProps {

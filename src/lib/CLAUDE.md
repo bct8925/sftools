@@ -4,16 +4,16 @@
 
 ## Overview
 
-The `lib/` directory contains shared TypeScript utility functions used by all components. Functions are organized by domain and provide type-safe interfaces for Chrome storage, Salesforce API calls, and UI helpers.
+The `lib/` directory contains shared TypeScript utility functions used by all components. Functions are organized by domain and provide type-safe interfaces for query parsing, record manipulation, schema utilities, and UI helpers.
+
+**Note**: API and authentication code has been moved to dedicated directories:
+- **API utilities**: See [../api/CLAUDE.md](../api/CLAUDE.md) for `salesforce-request.ts`, `salesforce.ts`, `fetch.ts`, etc.
+- **Authentication**: See [../auth/CLAUDE.md](../auth/CLAUDE.md) for `auth.ts`, `oauth-credentials.ts`, etc.
 
 ## Directory Structure
 
 ```
 lib/
-├── auth.ts               # Multi-connection storage and state
-├── salesforce.ts         # Salesforce API operations
-├── salesforce-request.ts # Authenticated REST wrapper
-├── fetch.ts              # Smart fetch routing (proxy vs extension)
 ├── query-utils.ts        # SOQL parsing and result formatting
 ├── apex-utils.ts         # Apex execution helpers
 ├── record-utils.ts       # Record field manipulation
@@ -22,15 +22,18 @@ lib/
 ├── settings-utils.ts     # Settings storage
 ├── events-utils.ts       # Event subscription helpers
 ├── history-manager.ts    # Query/Apex history & favorites
-├── soql-autocomplete.ts  # SOQL editor autocomplete
 ├── theme.ts              # Dark/light mode management
 ├── background-utils.ts   # Service worker helpers
 ├── ui-helpers.ts         # DOM utilities
 ├── icons.ts              # Icon mapping
 ├── text-utils.ts         # Text formatting
 ├── debug.ts              # Debug utilities
-├── oauth-credentials.ts  # OAuth client configuration
-├── cors-detection.ts     # CORS error detection
+├── app-utils.ts          # App utilities
+├── column-utils.ts       # Column utilities
+├── csv-utils.ts          # CSV export utilities
+├── date-utils.ts         # Date formatting
+├── value-utils.ts        # Value formatting
+├── monaco-custom.js      # Monaco editor customization
 └── utils.ts              # Central re-export point (deprecated - import directly)
 ```
 
@@ -51,226 +54,9 @@ import type {
 
 ## Key Modules
 
-### auth.ts - Multi-Connection Storage
-
-Manages multiple Salesforce connections with per-instance active connection.
-
-```typescript
-import {
-  loadConnections,
-  setActiveConnection,
-  addConnection,
-  updateConnection,
-  removeConnection,
-  getAccessToken,
-  getInstanceUrl,
-  isAuthenticated,
-  getActiveConnectionId,
-  type ConnectionData,
-} from '../lib/auth';
-```
-
-#### Connection Storage Schema
-
-```typescript
-interface SalesforceConnection {
-  id: string;              // UUID
-  label: string;           // User-editable label
-  instanceUrl: string;     // https://org.my.salesforce.com
-  loginDomain?: string;    // login.salesforce.com or test.salesforce.com
-  accessToken: string;
-  refreshToken: string | null;
-  clientId: string | null; // Per-connection OAuth Client ID
-  createdAt?: number;
-  lastUsedAt?: number;
-}
-```
-
-#### Functions
-
-```typescript
-// Current connection - synchronous getters (use cached state)
-getAccessToken(): string | null
-getInstanceUrl(): string | null
-isAuthenticated(): boolean
-getActiveConnectionId(): string | null
-
-// Connection management - async operations
-loadConnections(): Promise<SalesforceConnection[]>
-setActiveConnection(connection: SalesforceConnection | null): void
-addConnection(data: ConnectionData): Promise<SalesforceConnection>
-updateConnection(id: string, updates: Partial<SalesforceConnection>): Promise<void>
-removeConnection(id: string): Promise<void>
-findConnectionByDomain(hostname: string): SalesforceConnection | undefined
-
-// OAuth helpers
-getOAuthCredentials(connectionId?: string): Promise<OAuthCredentials>
-setPendingAuth(params: PendingAuthParams): Promise<void>
-consumePendingAuth(): Promise<PendingAuthParams | null>
-```
-
-### salesforce-request.ts - Request Wrapper
-
-The primary API for making Salesforce REST calls with automatic auth and error handling.
-
-```typescript
-import { salesforceRequest } from '../lib/salesforce-request';
-
-interface SalesforceRequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE' | 'PUT';
-  params?: Record<string, string>;
-  body?: string;
-  headers?: Record<string, string>;
-}
-
-// GET request with query params
-const result = await salesforceRequest<QueryResult>('/services/data/v62.0/query', {
-  method: 'GET',
-  params: { q: 'SELECT Id FROM Account' }
-});
-
-// POST request with body
-await salesforceRequest('/services/data/v62.0/sobjects/Account', {
-  method: 'POST',
-  body: JSON.stringify({ Name: 'New Account' })
-});
-
-// PATCH request
-await salesforceRequest(`/services/data/v62.0/sobjects/Account/${id}`, {
-  method: 'PATCH',
-  body: JSON.stringify({ Name: 'Updated Name' })
-});
-
-// DELETE request
-await salesforceRequest(`/services/data/v62.0/sobjects/Account/${id}`, {
-  method: 'DELETE'
-});
-```
-
-#### Features
-
-- Automatic auth header injection
-- Smart routing (proxy when connected, extension fetch otherwise)
-- Error response parsing with typed errors
-- Generic return types for type safety
-
-### fetch.ts - Fetch Routing
-
-Routes requests through proxy when available, otherwise uses extension fetch.
-
-```typescript
-import {
-  smartFetch,
-  extensionFetch,
-  isProxyConnected,
-  checkProxyStatus,
-} from '../lib/fetch';
-
-// Automatic routing - use this for Salesforce requests
-const response = await smartFetch(url, options);
-
-// Force extension fetch (bypasses proxy)
-const response = await extensionFetch(url, options);
-
-// Check proxy status
-if (isProxyConnected()) {
-  // Proxy features available (streaming, etc.)
-}
-
-// Async check (pings proxy)
-const connected = await checkProxyStatus();
-```
-
-### salesforce.ts - API Operations
-
-Higher-level Salesforce operations built on `salesforceRequest`.
-
-```typescript
-import {
-  // Query
-  executeQuery,
-  executeQueryWithColumns,
-  executeBulkQueryExport,
-
-  // Describe
-  getGlobalDescribe,
-  getObjectDescribe,
-
-  // Records
-  getRecord,
-  updateRecord,
-  createRecord,
-  deleteRecord,
-
-  // Apex
-  executeApex,
-  getDebugLog,
-
-  // Tooling API
-  enableTraceFlagForUser,
-  deleteAllDebugLogs,
-  searchUsers,
-  searchFlows,
-  getFlowVersions,
-  deleteInactiveFlowVersions,
-
-  // Schema
-  getFormulaFieldMetadata,
-  updateFormulaField,
-} from '../lib/salesforce';
-```
-
-#### Function Signatures
-
-```typescript
-// Query
-executeQuery(soql: string, useToolingApi?: boolean): Promise<QueryResult>
-executeQueryWithColumns(soql: string, useToolingApi?: boolean): Promise<QueryResultWithColumns>
-executeBulkQueryExport(soql: string, onProgress?: (state: string, count: number) => void): Promise<string>
-
-// Describe
-getGlobalDescribe(): Promise<DescribeGlobalResult>
-getObjectDescribe(objectType: string): Promise<SObjectDescribe>
-
-// Records
-getRecord<T extends SObject>(objectType: string, recordId: string, fields?: string[]): Promise<T>
-updateRecord(objectType: string, recordId: string, data: Record<string, unknown>): Promise<void>
-createRecord(objectType: string, data: Record<string, unknown>): Promise<string>
-deleteRecord(objectType: string, recordId: string): Promise<void>
-
-// Apex
-executeApex(code: string): Promise<ApexExecutionResult>
-getDebugLog(logId: string): Promise<string>
-```
-
-#### Common Operations
-
-```typescript
-// Execute SOQL with type safety
-const result = await executeQuery<{ Id: string; Name: string }>(
-  'SELECT Id, Name FROM Account LIMIT 10'
-);
-result.records.forEach(r => console.log(r.Name));
-
-// Get object metadata
-const describe = await getObjectDescribe('Account');
-describe.fields.forEach(f => console.log(f.name, f.type));
-
-// Get record with specific fields
-const account = await getRecord('Account', '001xxxxxxxxxxxx', ['Name', 'Industry']);
-
-// Update record
-await updateRecord('Account', '001xxxxxxxxxxxx', {
-  Name: 'New Name',
-  Industry: 'Technology'
-});
-
-// Execute anonymous Apex
-const result = await executeApex('System.debug(\'Hello\');');
-if (result.success && result.logId) {
-  const log = await getDebugLog(result.logId);
-}
-```
+**Note**: The following modules have been moved to dedicated directories:
+- `auth.ts`, `oauth-credentials.ts` → See [../auth/CLAUDE.md](../auth/CLAUDE.md)
+- `salesforce.ts`, `salesforce-request.ts`, `fetch.ts`, `cors-detection.ts`, `bulk-query.ts`, `debug-logs.ts`, `streaming.ts` → See [../api/CLAUDE.md](../api/CLAUDE.md)
 
 ### query-utils.ts - Query Utilities
 
@@ -366,26 +152,6 @@ const favorites = await history.getFavorites();
 const results = await history.search('account');
 ```
 
-### soql-autocomplete.ts - SOQL Autocomplete
-
-Provides autocomplete suggestions for SOQL queries in Monaco editor.
-
-```typescript
-import { SoqlAutocomplete } from '../lib/soql-autocomplete';
-
-// Create instance (typically one per editor)
-const autocomplete = new SoqlAutocomplete();
-
-// Get suggestions based on position
-const suggestions = await autocomplete.getSuggestions(
-  'SELECT Id FROM Acc',
-  { lineNumber: 1, column: 18 }
-);
-
-// Clear cached metadata (on connection change)
-autocomplete.clearCache();
-```
-
 ## Adding New Utilities
 
 ### 1. Create the TypeScript Module
@@ -393,7 +159,7 @@ autocomplete.clearCache();
 ```typescript
 // src/lib/my-utils.ts
 
-import { salesforceRequest } from './salesforce-request';
+import { salesforceRequest } from '../api/salesforce-request';
 import type { SObject } from '../types/salesforce';
 
 /**
@@ -592,10 +358,6 @@ account.Name; // TypeScript knows this exists
 
 | File | Purpose | Key Exports |
 |------|---------|-------------|
-| `auth.ts` | Connection management | `getAccessToken`, `loadConnections`, `setActiveConnection` |
-| `salesforce.ts` | API operations | `executeQuery`, `getObjectDescribe`, `executeApex` |
-| `salesforce-request.ts` | REST wrapper | `salesforceRequest` |
-| `fetch.ts` | Fetch routing | `smartFetch`, `extensionFetch`, `isProxyConnected` |
 | `query-utils.ts` | Query parsing | `parseQueryResults`, `flattenColumnMetadata` |
 | `apex-utils.ts` | Apex helpers | `parseCompileError`, `formatDebugLog` |
 | `record-utils.ts` | Record helpers | `sortFields`, `getFieldValue` |
@@ -604,9 +366,16 @@ account.Name; // TypeScript knows this exists
 | `settings-utils.ts` | Settings | `getSettings`, `updateSettings` |
 | `events-utils.ts` | Events | `parseChannel`, `formatEvent` |
 | `history-manager.ts` | History | `HistoryManager` class |
-| `soql-autocomplete.ts` | Autocomplete | `SoqlAutocomplete` class |
 | `theme.ts` | Theming | `initTheme`, `setTheme`, `getTheme` |
 | `background-utils.ts` | Background | `sendToBackground` |
 | `ui-helpers.ts` | DOM utils | `formatDate`, `formatFileSize` |
 | `icons.ts` | Icons | `getIconSvg` |
 | `text-utils.ts` | Text formatting | `truncate`, `formatNumber` |
+| `app-utils.ts` | App utilities | App-specific helpers |
+| `column-utils.ts` | Column utilities | Column manipulation |
+| `csv-utils.ts` | CSV export | CSV formatting |
+| `date-utils.ts` | Date formatting | Date helpers |
+| `value-utils.ts` | Value formatting | Value display helpers |
+| `monaco-custom.js` | Monaco editor | Editor customization |
+| `debug.ts` | Debug utilities | Debug helpers |
+| `utils.ts` | Central re-export | Deprecated - import directly |

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getInstanceUrl, getAccessToken } from '../../lib/auth';
+import { getInstanceUrl, getAccessToken } from '../../auth/auth';
 import { formatEventEntry } from '../../lib/events-utils';
 import type { MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import type { StatusType } from '../status-badge/StatusBadge';

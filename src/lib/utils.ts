@@ -35,7 +35,7 @@ export {
     loadCustomConnectedApp,
     saveCustomConnectedApp,
     clearCustomConnectedApp,
-} from './auth';
+} from '../auth/auth';
 
 // --- Fetch Utilities ---
 // Re-exported from fetch.ts for convenient access
@@ -45,12 +45,12 @@ export {
     smartFetch,
     isProxyConnected,
     checkProxyStatus,
-} from './fetch';
+} from '../api/fetch';
 
 // --- Salesforce API Request ---
 // Re-exported from salesforce-request.ts for convenient access
-export { salesforceRequest } from './salesforce-request';
+export { salesforceRequest } from '../api/salesforce-request';
 
 // --- Cache Utilities ---
 // Re-exported from salesforce.ts for convenient access
-export { migrateDescribeCache } from './salesforce';
+export { migrateDescribeCache } from '../api/salesforce';

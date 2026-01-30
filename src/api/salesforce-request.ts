@@ -1,7 +1,7 @@
 // Salesforce REST API request wrapper
 
 import { smartFetch, type FetchResponse } from './fetch';
-import { getAccessToken, getInstanceUrl, getActiveConnectionId, triggerAuthExpired } from './auth';
+import { getAccessToken, getInstanceUrl, getActiveConnectionId, triggerAuthExpired } from '../auth/auth';
 import { isCorsError, showCorsErrorModal } from './cors-detection';
 
 // --- Types ---

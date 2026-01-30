@@ -1,7 +1,7 @@
 // Backend Auth Module for sftools Chrome Extension
 // Handles OAuth token exchange and refresh in the service worker
 
-import { getOAuthCredentials } from '../lib/oauth-credentials';
+import { getOAuthCredentials } from '../auth/oauth-credentials';
 import type { SalesforceConnection } from '../types/salesforce';
 import { isProxyConnected, sendProxyRequest } from './native-messaging';
 import { debugInfo } from './debug';

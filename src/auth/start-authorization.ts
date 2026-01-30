@@ -4,7 +4,7 @@
  */
 
 import { setPendingAuth, generateOAuthState, getOAuthCredentials, CALLBACK_URL } from './auth';
-import { detectLoginDomain, buildOAuthUrl } from './app-utils';
+import { detectLoginDomain, buildOAuthUrl } from '../lib/app-utils';
 
 /**
  * Start OAuth authorization flow

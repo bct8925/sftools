@@ -12,8 +12,7 @@ This directory contains **React Context providers** that manage global applicati
 contexts/
 ├── ConnectionContext.tsx  # Multi-org Salesforce connection state
 ├── ThemeContext.tsx       # Dark/light mode management
-├── ProxyContext.tsx       # Native messaging proxy state
-└── index.ts               # Barrel exports
+└── ProxyContext.tsx       # Native messaging proxy state
 ```
 
 ## Usage Pattern
@@ -41,7 +40,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
 ```typescript
 // In any component
-import { useConnection, useTheme, useProxy } from '../contexts';
+import { useConnection } from '../contexts/ConnectionContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { useProxy } from '../contexts/ProxyContext';
 
 function MyComponent() {
   const { activeConnection, isAuthenticated } = useConnection();
@@ -76,7 +77,7 @@ interface ConnectionContextType {
 ### Usage Examples
 
 ```typescript
-import { useConnection } from '../contexts';
+import { useConnection } from '../contexts/ConnectionContext';
 
 function ConnectionManager() {
   const {
@@ -175,7 +176,7 @@ interface ThemeContextType {
 ### Usage Examples
 
 ```typescript
-import { useTheme } from '../contexts';
+import { useTheme } from '../contexts/ThemeContext';
 
 function ThemeToggle() {
   const { theme, effectiveTheme, setTheme } = useTheme();
@@ -238,7 +239,7 @@ interface ProxyContextType {
 ### Usage Examples
 
 ```typescript
-import { useProxy } from '../contexts';
+import { useProxy } from '../contexts/ProxyContext';
 
 function ProxyStatus() {
   const {
@@ -342,17 +343,7 @@ export function useExample() {
 }
 ```
 
-### 2. Export from Index
-
-```typescript
-// src/contexts/index.ts
-export { ConnectionProvider, useConnection } from './ConnectionContext';
-export { ThemeProvider, useTheme } from './ThemeContext';
-export { ProxyProvider, useProxy } from './ProxyContext';
-export { ExampleProvider, useExample } from './ExampleContext';
-```
-
-### 3. Add to AppProviders
+### 2. Add to AppProviders
 
 ```typescript
 // src/react/AppProviders.tsx
@@ -385,8 +376,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
 ### SHOULD Follow
 
 1. **Keep contexts focused** - One concern per context
-2. **Use barrel exports** - Export all hooks from `index.ts`
-3. **Handle loading states** - Include `isLoading` for async initialization
+2. **Handle loading states** - Include `isLoading` for async initialization
 4. **Handle errors** - Include `error` state for async operations
 
 ### SHOULD NOT

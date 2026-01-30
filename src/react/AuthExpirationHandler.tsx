@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useConnection } from '../contexts/ConnectionContext';
-import { onAuthExpired, loadConnections } from '../lib/auth';
-import { startAuthorization } from '../lib/start-authorization';
+import { onAuthExpired, loadConnections } from '../auth/auth';
+import { startAuthorization } from '../auth/start-authorization';
 import { Modal } from '../components/modal/Modal';
 import type { SalesforceConnection } from '../types/salesforce';
 

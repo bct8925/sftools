@@ -6,6 +6,7 @@ on:
 
 jobs:
   build-and-test:
+    if: github.event.pull_request.draft == false
     runs-on: self-hosted
     permissions:
       contents: read
@@ -20,13 +21,37 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
-        id: tests
+        id: unit-tests
         run: npm run test:unit -- --reporter=github-actions --reporter=json --outputFile=test-results.json
         continue-on-error: true
 
+      - name: Post unit test results comment
+        if: always() && steps.unit-tests.outcome != 'skipped'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+        run: node ~/.claude-ci/scripts/post-test-results.mjs test-results.json "Unit Test Results"
+
+      - name: Run frontend tests
+        id: frontend-tests
+        if: steps.unit-tests.outcome == 'success'
+        run: npm run test:frontend -- --reporter=github-actions --reporter=json --outputFile=frontend-test-results.json
+        continue-on-error: true
+
+      - name: Post frontend test results comment
+        if: always() && steps.frontend-tests.outcome != 'skipped'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+        run: node ~/.claude-ci/scripts/post-test-results.mjs frontend-test-results.json "Frontend Test Results"
+
       - name: Build and package
         id: build
-        if: steps.tests.outcome == 'success'
+        if: steps.unit-tests.outcome == 'success' && steps.frontend-tests.outcome == 'success'
         run: npm run package
         continue-on-error: true
 
@@ -43,16 +68,6 @@ jobs:
             sftools-proxy
           retention-days: 7
 
-      - name: Post test results comment
-        if: always() && steps.tests.outcome != 'skipped'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          RUN_ID: ${{ github.run_id }}
-          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
-        run: node ~/.claude-ci/scripts/post-test-results.mjs test-results.json
-
       - name: Fail if tests or build failed
-        if: steps.tests.outcome == 'failure' || steps.build.outcome == 'failure'
+        if: steps.unit-tests.outcome == 'failure' || steps.frontend-tests.outcome == 'failure' || steps.build.outcome == 'failure'
         run: exit 1

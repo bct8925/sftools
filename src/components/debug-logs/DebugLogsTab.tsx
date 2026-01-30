@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useConnection, useProxy } from '../../contexts';
-import { useStatusBadge } from '../../hooks';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { useProxy } from '../../contexts/ProxyContext';
+import { useStatusBadge } from '../../hooks/useStatusBadge';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { Modal } from '../modal/Modal';
 import { StatusBadge } from '../status-badge/StatusBadge';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { DebugLogsSettingsModal } from './DebugLogsSettingsModal';
-import { getDebugLogsSince, getLogBody, type DebugLogEntry } from '../../lib/debug-logs';
-import { getInstanceUrl, getAccessToken } from '../../lib/auth';
+import { getDebugLogsSince, getLogBody, type DebugLogEntry } from '../../api/debug-logs';
+import { getInstanceUrl, getAccessToken } from '../../auth/auth';
 import { filterLines } from '../../lib/apex-utils';
 import { getNowISO } from '../../lib/date-utils';
 import styles from './DebugLogsTab.module.css';

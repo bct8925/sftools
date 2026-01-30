@@ -1,24 +1,21 @@
 /**
  * Vitest Browser Test Setup
  *
- * Manages Vite server and Playwright browser lifecycle for browser tests.
- * Tests run in Node.js and control the browser via Playwright.
+ * Connects to the shared browser server (started by global-setup.ts)
+ * and manages per-file browser context and per-test page lifecycle.
  */
 
-import { chromium, BrowserContext, Page } from 'playwright';
-import { spawn, ChildProcess } from 'child_process';
+import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { injectChromeMocks } from './services/headless-loader';
 import { SalesforceClient } from './services/salesforce-client';
 
-// Module-level state (persists across all tests in worker)
+// Module-level state (persists across all tests in this worker/file)
+let browser: Browser | null = null;
 let browserContext: BrowserContext | null = null;
-let viteProcess: ChildProcess | null = null;
 let salesforceClient: SalesforceClient | null = null;
 let currentPage: Page | null = null;
 let baseUrl: string = '';
-
-const VITE_PORT = parseInt(process.env.VITE_PORT || '5174');
 
 /**
  * Test context available to tests
@@ -56,117 +53,47 @@ export function getBrowserContext(): BrowserContext {
 }
 
 /**
- * Start Vite dev server
- */
-async function startViteServer(): Promise<void> {
-    console.log(`Starting Vite dev server on port ${VITE_PORT}...`);
-
-    return new Promise((resolve, reject) => {
-        viteProcess = spawn('npx', ['vite', 'dev', '--port', String(VITE_PORT)], {
-            cwd: process.cwd(),
-            stdio: ['ignore', 'pipe', 'pipe'],
-            shell: true,
-        });
-
-        let serverReady = false;
-
-        const handleOutput = (data: Buffer) => {
-            const output = data.toString();
-            // Vite prints "ready in XXXms" when server is ready
-            if (!serverReady && (output.includes('ready in') || output.includes('Local:'))) {
-                serverReady = true;
-                console.log('Vite dev server ready');
-                resolve();
-            }
-        };
-
-        viteProcess.stdout?.on('data', handleOutput);
-        viteProcess.stderr?.on('data', handleOutput);
-
-        viteProcess.on('error', err => {
-            reject(new Error(`Failed to start Vite server: ${err.message}`));
-        });
-
-        viteProcess.on('exit', code => {
-            if (!serverReady) {
-                reject(new Error(`Vite server exited unexpectedly with code ${code}`));
-            }
-        });
-
-        // Timeout after 30 seconds
-        setTimeout(() => {
-            if (!serverReady) {
-                stopViteServer();
-                reject(new Error('Vite server startup timed out after 30 seconds'));
-            }
-        }, 30000);
-    });
-}
-
-/**
- * Stop Vite dev server
- */
-function stopViteServer(): void {
-    if (viteProcess) {
-        console.log('Stopping Vite server...');
-        viteProcess.kill('SIGTERM');
-        viteProcess = null;
-    }
-}
-
-/**
- * Global setup - runs once before all tests
+ * Per-file setup — connect to shared browser, create context
  */
 beforeAll(async () => {
-    // Start Vite dev server
-    await startViteServer();
-    baseUrl = `http://localhost:${VITE_PORT}`;
+    const wsEndpoint = process.env.BROWSER_WS_ENDPOINT;
+    if (!wsEndpoint) {
+        throw new Error(
+            'BROWSER_WS_ENDPOINT not set. Is globalSetup configured in vitest.config.browser.ts?'
+        );
+    }
+
+    baseUrl = process.env.VITE_BASE_URL || 'http://localhost:5174';
+
+    // Connect to the shared browser server
+    browser = await chromium.connect(wsEndpoint);
 
     // Initialize Salesforce client with mock credentials
     salesforceClient = new SalesforceClient();
     salesforceClient.setCredentials('mock-access-token', 'https://test.salesforce.com');
 
-    // Launch browser context
-    console.log('Launching browser...');
-    browserContext = await chromium.launchPersistentContext('', {
-        headless: true,
-        args: [
-            '--no-first-run',
-            '--disable-gpu',
-            '--disable-dev-shm-usage',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-background-timer-throttling',
-            '--disable-hang-monitor',
-            '--disable-popup-blocking',
-            '--disable-prompt-on-repost',
-            '--disable-sync',
-            '--no-default-browser-check',
-        ],
+    // Create a fresh context for this test file
+    browserContext = await browser.newContext({
         viewport: { width: 1280, height: 720 },
     });
-
-    // Set default timeout
     browserContext.setDefaultTimeout(5000);
 
     // Inject Chrome API mocks
     await injectChromeMocks(browserContext, salesforceClient);
-
-    console.log('Browser ready');
 });
 
 /**
- * Global teardown - runs once after all tests
+ * Per-file teardown — close context (not browser)
  */
 afterAll(async () => {
-    console.log('Cleaning up...');
-
     if (browserContext) {
         await browserContext.close();
         browserContext = null;
     }
-
-    stopViteServer();
+    if (browser) {
+        await browser.close();
+        browser = null;
+    }
 });
 
 /**

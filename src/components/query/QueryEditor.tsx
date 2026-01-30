@@ -5,7 +5,7 @@ import {
   registerSOQLCompletionProvider,
   activateSOQLAutocomplete,
   clearState as clearAutocompleteState,
-} from '../../lib/soql-autocomplete';
+} from '../../api/soql-autocomplete';
 
 export interface QueryEditorRef {
   getValue: () => string;

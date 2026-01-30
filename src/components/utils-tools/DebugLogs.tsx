@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useConnection } from '../../contexts';
-import { useStatusBadge } from '../../hooks';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { useStatusBadge } from '../../hooks/useStatusBadge';
 import {
   getCurrentUserId,
   searchUsers,
@@ -8,7 +8,7 @@ import {
   getDebugLogStats,
   deleteDebugLogs,
   deleteAllTraceFlags,
-} from '../../lib/salesforce';
+} from '../../api/salesforce';
 import type { SObject } from '../../types/salesforce';
 import { SearchBox, type SearchBoxRenderData } from './SearchBox';
 import sharedStyles from './utils-tools.module.css';

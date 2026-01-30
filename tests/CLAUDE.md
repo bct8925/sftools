@@ -41,9 +41,16 @@ tests/
 │   ├── mocks/
 │   │   ├── chrome.ts         # Chrome extension API mock
 │   │   └── salesforce.ts     # API response factories
-│   ├── lib/                  # Tests for src/lib/*
+│   ├── api/                  # Tests for src/api/*
+│   │   ├── cors-detection.test.ts
+│   │   ├── debug-logs.test.ts
+│   │   ├── fetch.test.ts
+│   │   ├── salesforce-request.test.ts
+│   │   └── salesforce.test.ts
+│   ├── auth/                 # Tests for src/auth/*
 │   │   ├── auth.test.ts
-│   │   ├── salesforce.test.ts
+│   │   └── oauth-credentials.test.ts
+│   ├── lib/                  # Tests for src/lib/*
 │   │   └── ...
 │   └── proxy/                # Tests for sftools-proxy/src/*
 │
@@ -406,7 +413,10 @@ npm run test:frontend:watch
 
 ### For new src/lib/ function
 
-1. Create `tests/unit/lib/my-function.test.ts`
+1. Create test file based on source location:
+   - `src/api/*` → `tests/unit/api/my-function.test.ts`
+   - `src/auth/*` → `tests/unit/auth/my-function.test.ts`
+   - `src/lib/*` → `tests/unit/lib/my-function.test.ts`
 2. Import the function and mocks
 3. Write tests covering happy path, edge cases, errors
 

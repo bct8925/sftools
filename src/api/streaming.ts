@@ -1,8 +1,8 @@
 // Streaming Channels - Functions for discovering and publishing to streaming channels
 
 import type { QueryResult } from '../types/salesforce';
-import { API_VERSION } from './utils';
-import { getInstanceUrl, getAccessToken } from './auth';
+import { API_VERSION } from '../lib/utils';
+import { getInstanceUrl, getAccessToken } from '../auth/auth';
 import { smartFetch } from './fetch';
 import { salesforceRequest } from './salesforce-request';
 

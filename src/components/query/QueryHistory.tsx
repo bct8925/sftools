@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { Modal } from '../modal/Modal';
-import { HistoryList, FavoritesList, FavoriteModal } from '../script-list';
+import { HistoryList, FavoritesList } from '../script-list/ScriptList';
+import { FavoriteModal } from '../script-list/FavoriteModal';
 import { HistoryManager, type HistoryEntry, type FavoriteEntry } from '../../lib/history-manager';
 import styles from './QueryTab.module.css';
 

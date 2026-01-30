@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useConnection } from '../../contexts';
+import { useConnection } from '../../contexts/ConnectionContext';
 import { flattenColumnMetadata, type QueryColumn } from '../../lib/column-utils';
 import { executeQueryWithColumns, fetchQueryMore, getObjectDescribe } from '../../api/salesforce';
 import type { FieldDescribe, SObject } from '../../types/salesforce';
@@ -208,7 +208,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
                 });
 
                 options.updateStatus(`Loaded ${result.records.length} more records`, 'success');
-            } catch (error) {
+            } catch {
                 options.setLoadingMore(tabId, false);
                 options.updateStatus('Error loading more', 'error');
             }

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useConnection } from '../../contexts';
+import { useConnection } from '../../contexts/ConnectionContext';
 import {
   searchFlows,
   getFlowVersions,

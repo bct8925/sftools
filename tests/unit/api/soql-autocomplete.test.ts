@@ -1,5 +1,5 @@
 /**
- * Tests for src/lib/soql-autocomplete.js
+ * Tests for src/api/soql-autocomplete.js
  *
  * Test IDs: SA-U-001 through SA-U-012
  * - SA-U-001: parseSOQL() - Parses valid query (internal function, tested via provideCompletionItems)
@@ -56,7 +56,7 @@ import {
     deactivateSOQLAutocomplete,
     clearState,
     registerSOQLCompletionProvider,
-} from '../../../src/lib/soql-autocomplete.js';
+} from '../../../src/api/soql-autocomplete.js';
 import { getGlobalDescribe, getObjectDescribe } from '../../../src/api/salesforce.js';
 import { monaco } from '../../../src/components/monaco-editor/MonacoEditor';
 
@@ -218,7 +218,7 @@ describe('soql-autocomplete', () => {
                 getObjectDescribe: vi.fn(),
             }));
 
-            const autocomplete = await import('../../../src/lib/soql-autocomplete.js');
+            const autocomplete = await import('../../../src/api/soql-autocomplete.js');
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.registerSOQLCompletionProvider();
@@ -235,7 +235,7 @@ describe('soql-autocomplete', () => {
                 return;
             }
 
-            const autocomplete = await import('../../../src/lib/soql-autocomplete.js');
+            const autocomplete = await import('../../../src/api/soql-autocomplete.js');
             autocomplete.deactivateSOQLAutocomplete();
 
             const model = {
@@ -255,7 +255,7 @@ describe('soql-autocomplete', () => {
                 return;
             }
 
-            const autocomplete = await import('../../../src/lib/soql-autocomplete.js');
+            const autocomplete = await import('../../../src/api/soql-autocomplete.js');
             autocomplete.activateSOQLAutocomplete();
 
             const model = {
@@ -277,7 +277,7 @@ describe('soql-autocomplete', () => {
                 return;
             }
 
-            const autocomplete = await import('../../../src/lib/soql-autocomplete.js');
+            const autocomplete = await import('../../../src/api/soql-autocomplete.js');
             autocomplete.activateSOQLAutocomplete();
 
             const model = {
@@ -299,7 +299,7 @@ describe('soql-autocomplete', () => {
                 return;
             }
 
-            const autocomplete = await import('../../../src/lib/soql-autocomplete.js');
+            const autocomplete = await import('../../../src/api/soql-autocomplete.js');
             autocomplete.activateSOQLAutocomplete();
 
             const model = {

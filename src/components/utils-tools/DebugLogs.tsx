@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useConnection } from '../../contexts';
-import { useStatusBadge } from '../../hooks';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { useStatusBadge } from '../../hooks/useStatusBadge';
 import {
   getCurrentUserId,
   searchUsers,

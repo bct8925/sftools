@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
-import { useConnection } from '../../contexts';
+import { useConnection } from '../../contexts/ConnectionContext';
 import { executeRestRequest } from '../../api/salesforce';
 import { shouldShowBody } from '../../lib/rest-api-utils';
 import type { RestApiResponse } from '../../types/salesforce';

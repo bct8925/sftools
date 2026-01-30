@@ -1,7 +1,8 @@
 // Query Tab - SOQL Query Editor with tabbed results (React version)
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useConnection } from '../../contexts';
-import { useStatusBadge, useFilteredResults } from '../../hooks';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { useStatusBadge } from '../../hooks/useStatusBadge';
+import { useFilteredResults } from '../../hooks/useFilteredResults';
 import { ButtonIcon, ButtonIconOption, ButtonIconCheckbox } from '../button-icon/ButtonIcon';
 import { QueryEditor, clearQueryAutocompleteState, type QueryEditorRef } from './QueryEditor';
 import { QueryTabs } from './QueryTabs';

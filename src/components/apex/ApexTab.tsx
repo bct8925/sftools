@@ -3,8 +3,8 @@ import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/Mon
 import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
 import { ApexOutput } from './ApexOutput';
 import { StatusBadge } from '../status-badge/StatusBadge';
-import { useConnection } from '../../contexts';
-import { useStatusBadge } from '../../hooks';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { useStatusBadge } from '../../hooks/useStatusBadge';
 import { executeAnonymousApex } from '../../api/salesforce';
 import { formatOutput } from '../../lib/apex-utils';
 import type { ApexExecutionResult } from '../../types/salesforce';

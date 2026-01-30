@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useConnection, useProxy } from '../../contexts';
-import { useStatusBadge } from '../../hooks';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { useProxy } from '../../contexts/ProxyContext';
+import { useStatusBadge } from '../../hooks/useStatusBadge';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { Modal } from '../modal/Modal';
 import { StatusBadge } from '../status-badge/StatusBadge';

@@ -53,12 +53,9 @@ describe('Debug Logs User Search', () => {
         await userResults.waitFor({ state: 'visible', timeout: 5000 });
 
         // Verify specific user is in the results
-        const userItem = page.locator(
-            '[data-testid="debug-logs-user-results"] .search-box-item',
-            {
-                has: page.locator('.search-box-item-name', { hasText: 'John Developer' }),
-            }
-        );
+        const userItem = page.locator('[data-testid="debug-logs-user-results"] .search-box-item', {
+            has: page.locator('.search-box-item-name', { hasText: 'John Developer' }),
+        });
         const userCount = await userItem.count();
         expect(userCount).toBeGreaterThan(0);
 

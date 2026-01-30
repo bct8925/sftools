@@ -3,8 +3,8 @@
  * Shared utility for starting the Salesforce OAuth authorization flow
  */
 
-import { setPendingAuth, generateOAuthState, getOAuthCredentials, CALLBACK_URL } from './auth';
 import { detectLoginDomain, buildOAuthUrl } from '../lib/app-utils';
+import { setPendingAuth, generateOAuthState, getOAuthCredentials, CALLBACK_URL } from './auth';
 
 /**
  * Start OAuth authorization flow

@@ -3,9 +3,9 @@
 import type { QueryResult } from '../types/salesforce';
 import { API_VERSION } from '../lib/utils';
 import { getInstanceUrl, getAccessToken } from '../auth/auth';
+import { getNowISO, getISODateFromNow, getFutureDate } from '../lib/date-utils';
 import { smartFetch } from './fetch';
 import { salesforceRequest } from './salesforce-request';
-import { getNowISO, getISODateFromNow, getFutureDate } from '../lib/date-utils';
 
 // ============================================================
 // Constants

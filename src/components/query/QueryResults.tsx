@@ -14,6 +14,8 @@ interface QueryResultsProps {
   filterText: string;
   /** Called to load more results */
   onLoadMore?: () => void;
+  /** Instance URL for opening records in org */
+  instanceUrl?: string;
 }
 
 /**
@@ -26,6 +28,7 @@ export function QueryResults({
   onFieldChange,
   filterText,
   onLoadMore,
+  instanceUrl,
 }: QueryResultsProps) {
   // No active tab
   if (!activeTab) {
@@ -84,6 +87,7 @@ export function QueryResults({
           isEditMode={isEditMode}
           onFieldChange={onFieldChange}
           filterText={filterText}
+          instanceUrl={instanceUrl}
         />
       </div>
       <div className={styles.resultsFooter} data-testid="query-results-footer">

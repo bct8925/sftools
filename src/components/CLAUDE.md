@@ -108,7 +108,7 @@ components/
 // src/components/example/ExampleTab.tsx
 import { useState, useCallback, useEffect } from 'react';
 import { useConnection } from '../../contexts';
-import { salesforceRequest } from '../../lib/salesforce-request';
+import { salesforceRequest } from '../../api/salesforce-request';
 import styles from './ExampleTab.module.css';
 
 interface ExampleTabProps {
@@ -518,7 +518,7 @@ return (
 ### API Calls
 
 ```typescript
-import { salesforceRequest } from '../../lib/salesforce-request';
+import { salesforceRequest } from '../../api/salesforce-request';
 
 const fetchData = useCallback(async () => {
   try {

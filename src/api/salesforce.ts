@@ -12,6 +12,7 @@ import type {
     RestApiResponse,
     FlowDefinition,
     FlowVersion,
+    UserInfo,
 } from '../types/salesforce';
 import { API_VERSION } from '../lib/utils';
 import { getAccessToken, getInstanceUrl, getActiveConnectionId } from '../auth/auth';
@@ -170,16 +171,6 @@ export async function migrateDescribeCache(): Promise<boolean> {
 interface ChatterUser {
     id: string;
     name: string;
-}
-
-export interface UserInfo {
-    user_id: string;
-    organization_id: string;
-    preferred_username: string;
-    nickname: string;
-    name: string;
-    email: string;
-    email_verified: boolean;
 }
 
 /**

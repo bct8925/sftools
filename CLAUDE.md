@@ -99,7 +99,7 @@ npm run validate && npm run test:unit && npm run test:frontend && npm run build
 - **`src/`** → Extension source code
   - `components/` → React components ([see src/components/CLAUDE.md](src/components/CLAUDE.md))
   - `contexts/` → React Context providers ([see src/contexts/CLAUDE.md](src/contexts/CLAUDE.md))
-  - `hooks/` → Custom React hooks (re-exports from contexts)
+  - `hooks/` → Custom React hooks
   - `api/` → Salesforce API operations ([see src/api/CLAUDE.md](src/api/CLAUDE.md))
   - `auth/` → Authentication & OAuth ([see src/auth/CLAUDE.md](src/auth/CLAUDE.md))
   - `lib/` → Shared utilities ([see src/lib/CLAUDE.md](src/lib/CLAUDE.md))
@@ -311,7 +311,7 @@ All components are React functional components with TypeScript.
 ```typescript
 // src/components/example/ExampleComponent.tsx
 import { useState, useCallback, useEffect } from 'react';
-import { useConnection } from '../../contexts';
+import { useConnection } from '../../contexts/ConnectionContext';
 import { salesforceRequest } from '../../api/salesforce-request';
 import styles from './Example.module.css';
 
@@ -429,7 +429,7 @@ Three React Context providers manage global state:
 ### ConnectionContext
 
 ```typescript
-import { useConnection } from '../contexts';
+import { useConnection } from '../contexts/ConnectionContext';
 
 function MyComponent() {
   const {
@@ -449,7 +449,7 @@ function MyComponent() {
 ### ThemeContext
 
 ```typescript
-import { useTheme } from '../contexts';
+import { useTheme } from '../contexts/ThemeContext';
 
 function MyComponent() {
   const {
@@ -463,7 +463,7 @@ function MyComponent() {
 ### ProxyContext
 
 ```typescript
-import { useProxy } from '../contexts';
+import { useProxy } from '../contexts/ProxyContext';
 
 function MyComponent() {
   const {

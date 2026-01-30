@@ -40,7 +40,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
 ```typescript
 // In any component
-import { useConnection, useTheme, useProxy } from '../contexts';
+import { useConnection } from '../contexts/ConnectionContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { useProxy } from '../contexts/ProxyContext';
 
 function MyComponent() {
   const { activeConnection, isAuthenticated } = useConnection();
@@ -75,7 +77,7 @@ interface ConnectionContextType {
 ### Usage Examples
 
 ```typescript
-import { useConnection } from '../contexts';
+import { useConnection } from '../contexts/ConnectionContext';
 
 function ConnectionManager() {
   const {
@@ -174,7 +176,7 @@ interface ThemeContextType {
 ### Usage Examples
 
 ```typescript
-import { useTheme } from '../contexts';
+import { useTheme } from '../contexts/ThemeContext';
 
 function ThemeToggle() {
   const { theme, effectiveTheme, setTheme } = useTheme();
@@ -237,7 +239,7 @@ interface ProxyContextType {
 ### Usage Examples
 
 ```typescript
-import { useProxy } from '../contexts';
+import { useProxy } from '../contexts/ProxyContext';
 
 function ProxyStatus() {
   const {

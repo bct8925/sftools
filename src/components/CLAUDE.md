@@ -107,7 +107,7 @@ components/
 ```typescript
 // src/components/example/ExampleTab.tsx
 import { useState, useCallback, useEffect } from 'react';
-import { useConnection } from '../../contexts';
+import { useConnection } from '../../contexts/ConnectionContext';
 import { salesforceRequest } from '../../api/salesforce-request';
 import styles from './ExampleTab.module.css';
 
@@ -400,7 +400,9 @@ editorRef.current?.clearMarkers();
 **MUST** use context hooks for global state:
 
 ```typescript
-import { useConnection, useTheme, useProxy } from '../../contexts';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useProxy } from '../../contexts/ProxyContext';
 
 function MyComponent() {
   const { activeConnection, isAuthenticated } = useConnection();

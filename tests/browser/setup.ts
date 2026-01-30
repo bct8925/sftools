@@ -91,7 +91,7 @@ afterAll(async () => {
         browserContext = null;
     }
     if (browser) {
-        browser.close();
+        await browser.close();
         browser = null;
     }
 });

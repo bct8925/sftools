@@ -111,9 +111,7 @@ describe('Debug Logs Cleanup', () => {
         await page.waitForTimeout(500);
 
         // Check that status updated (button should still be visible after operation)
-        const traceDeleteStatus = page.locator(
-            '[data-testid="debug-logs-delete-status-text"]'
-        );
+        const traceDeleteStatus = page.locator('[data-testid="debug-logs-delete-status-text"]');
         await traceDeleteStatus.waitFor({ state: 'visible', timeout: 5000 });
 
         // DL-F-006: Delete all debug logs - confirmation and success

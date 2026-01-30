@@ -5,7 +5,7 @@
  * - Creates test Account
  * - Executes query that returns the account
  * - Clicks Id field in results
- * - Verifies Record Viewer opens with correct record
+ * - Verifies link opens record in Salesforce org
  */
 
 import { describe, it, beforeEach, expect } from 'vitest';
@@ -17,7 +17,7 @@ import {
     MockRouter,
 } from '../../test-utils';
 
-describe('Q-F-015: Click Id Field Opens Record Viewer', () => {
+describe('Q-F-015: Click Id Field Opens Record in Org', () => {
     beforeEach(async () => {
         const router = new MockRouter();
 
@@ -44,7 +44,7 @@ describe('Q-F-015: Click Id Field Opens Record Viewer', () => {
         await setupMocks(router);
     });
 
-    it('opens Record Viewer when Id field is clicked', async () => {
+    it('opens record in org when Id field is clicked', async () => {
         const { page, context } = getTestContext();
         const { queryTab } = createPageObjects(page);
 
@@ -73,10 +73,9 @@ describe('Q-F-015: Click Id Field Opens Record Viewer', () => {
         );
         await idLink.waitFor({ state: 'visible', timeout: 5000 });
 
-        // Verify the link has the correct href structure
+        // Verify the link points to the record in the Salesforce org
         const href = await idLink.getAttribute('href');
-        expect(href || '').toContain('record.html');
-        expect(href || '').toContain(`recordId=001MOCKACCOUNT01`);
+        expect(href || '').toContain('001MOCKACCOUNT01');
 
         // Wait for new tab to open when clicking the Id field
         const pagePromise = context.waitForEvent('page', { timeout: 10000 });
@@ -86,11 +85,9 @@ describe('Q-F-015: Click Id Field Opens Record Viewer', () => {
         // Wait for the page to navigate and load
         await recordPage.waitForLoadState('load', { timeout: 15000 });
 
-        // Verify the URL contains the record ID and object type (Q-F-015: Click Id field opens Record Viewer)
+        // Verify the URL points to the record in the Salesforce org (Q-F-015)
         const url = recordPage.url();
-        expect(url).toContain('record.html');
-        expect(url).toContain(`objectType=Account`);
-        expect(url).toContain(`recordId=001MOCKACCOUNT01`);
+        expect(url).toContain('001MOCKACCOUNT01');
 
         // Close the record page
         await recordPage.close();

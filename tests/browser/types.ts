@@ -27,4 +27,3 @@ export const DEFAULT_CONFIG: TestConfig = {
         afterPageLoad: 0,
     },
 };
-

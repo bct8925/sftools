@@ -34,6 +34,7 @@ export default defineConfig({
         globals: true,
         environment: 'node', // Orchestration in Node, browser via Playwright
         include: ['tests/browser/**/*.test.ts'],
+        globalSetup: ['tests/browser/global-setup.ts'],
         setupFiles: ['tests/browser/setup.ts'],
         testTimeout: 60000,
         hookTimeout: 30000,

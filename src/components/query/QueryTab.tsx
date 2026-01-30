@@ -1,7 +1,8 @@
 // Query Tab - SOQL Query Editor with tabbed results (React version)
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useConnection } from '../../contexts';
-import { useStatusBadge, useFilteredResults } from '../../hooks';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { useStatusBadge } from '../../hooks/useStatusBadge';
+import { useFilteredResults } from '../../hooks/useFilteredResults';
 import { ButtonIcon, ButtonIconOption, ButtonIconCheckbox } from '../button-icon/ButtonIcon';
 import { QueryEditor, clearQueryAutocompleteState, type QueryEditorRef } from './QueryEditor';
 import { QueryTabs } from './QueryTabs';
@@ -9,7 +10,7 @@ import { QueryResults } from './QueryResults';
 import { QueryHistory, useSaveToHistory } from './QueryHistory';
 import { useQueryState, normalizeQuery } from './useQueryState';
 import { useQueryExecution } from './useQueryExecution';
-import { executeBulkQueryExport, updateRecord } from '../../lib/salesforce';
+import { executeBulkQueryExport, updateRecord } from '../../api/salesforce';
 import {
   getValueByPath,
   formatCellValue,

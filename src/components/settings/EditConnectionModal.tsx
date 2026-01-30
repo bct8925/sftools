@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { SalesforceConnection } from '../../types/salesforce';
 import { useConnection } from '../../contexts/ConnectionContext';
-import { startAuthorization } from '../../lib/start-authorization';
+import { startAuthorization } from '../../auth/start-authorization';
 import styles from './EditConnectionModal.module.css';
 
 interface EditConnectionModalProps {

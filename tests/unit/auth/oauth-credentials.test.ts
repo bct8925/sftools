@@ -12,7 +12,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMockConnection } from '../mocks/salesforce.js';
-import { getOAuthCredentials } from '../../../src/lib/oauth-credentials.js';
+import { getOAuthCredentials } from '../../../src/auth/oauth-credentials.js';
 
 describe('oauth-credentials', () => {
     describe('getOAuthCredentials', () => {

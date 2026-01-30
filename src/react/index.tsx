@@ -4,8 +4,8 @@ import { initTheme } from '../lib/theme';
 import {
   migrateFromSingleConnection,
   migrateCustomConnectedApp,
-} from '../lib/auth';
-import { migrateDescribeCache } from '../lib/salesforce';
+} from '../auth/auth';
+import { migrateDescribeCache } from '../api/salesforce';
 
 // Initialize theme before rendering to prevent flash
 initTheme();

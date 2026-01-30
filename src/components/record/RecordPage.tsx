@@ -4,8 +4,8 @@ import {
   getObjectDescribe,
   getRecordWithRelationships,
   updateRecord,
-} from '../../lib/salesforce';
-import { setActiveConnection } from '../../lib/auth';
+} from '../../api/salesforce';
+import { setActiveConnection } from '../../auth/auth';
 import { sortFields, filterFields, getChangedFields } from '../../lib/record-utils';
 import { FieldRow } from './FieldRow';
 import { RichTextModal } from './RichTextModal';

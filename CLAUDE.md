@@ -99,8 +99,10 @@ npm run validate && npm run test:unit && npm run test:frontend && npm run build
 - **`src/`** → Extension source code
   - `components/` → React components ([see src/components/CLAUDE.md](src/components/CLAUDE.md))
   - `contexts/` → React Context providers ([see src/contexts/CLAUDE.md](src/contexts/CLAUDE.md))
-  - `hooks/` → Custom React hooks (re-exports from contexts)
-  - `lib/` → TypeScript utilities ([see src/lib/CLAUDE.md](src/lib/CLAUDE.md))
+  - `hooks/` → Custom React hooks
+  - `api/` → Salesforce API operations ([see src/api/CLAUDE.md](src/api/CLAUDE.md))
+  - `auth/` → Authentication & OAuth ([see src/auth/CLAUDE.md](src/auth/CLAUDE.md))
+  - `lib/` → Shared utilities ([see src/lib/CLAUDE.md](src/lib/CLAUDE.md))
   - `types/` → TypeScript type definitions
   - `pages/` → Entry points (app, callback, record, schema)
   - `react/` → App shell (App.tsx, providers, entry points)
@@ -149,11 +151,11 @@ sftools/
 │   ├── contexts/             # React Context API (3 providers)
 │   │   ├── ConnectionContext.tsx  # Multi-org state
 │   │   ├── ThemeContext.tsx       # Dark/light mode
-│   │   ├── ProxyContext.tsx       # Native messaging proxy
-│   │   └── index.ts               # Barrel exports
+│   │   └── ProxyContext.tsx       # Native messaging proxy
 │   │
 │   ├── hooks/                # Custom React hooks
-│   │   └── index.ts          # Re-exports: useConnection, useTheme, useProxy
+│   │   ├── useFilteredResults.ts # Filtered results hook
+│   │   └── useStatusBadge.ts     # Status badge hook
 │   │
 │   ├── react/                # App shell (8 TSX files)
 │   │   ├── App.tsx                    # Main tabbed interface
@@ -165,19 +167,28 @@ sftools/
 │   │   ├── record.tsx                 # Record page entry
 │   │   └── schema.tsx                 # Schema page entry
 │   │
-│   ├── lib/                  # TypeScript utilities (24 TS files)
-│   │   ├── auth.ts           # Multi-connection storage
+│   ├── api/                  # Salesforce API operations (8 TS files)
 │   │   ├── salesforce.ts     # API operations (executeQuery, executeApex, etc.)
 │   │   ├── salesforce-request.ts # Request wrapper with error handling
 │   │   ├── fetch.ts          # Smart routing (proxy/extension)
+│   │   ├── bulk-query.ts     # Bulk query export
+│   │   ├── debug-logs.ts     # Debug log operations
+│   │   ├── streaming.ts      # Streaming API
+│   │   └── cors-detection.ts # CORS detection
+│   │
+│   ├── auth/                 # Authentication & OAuth (4 TS files)
+│   │   ├── auth.ts           # Multi-connection storage
+│   │   ├── start-authorization.ts # OAuth flow
+│   │   └── oauth-credentials.ts # OAuth credentials
+│   │
+│   ├── lib/                  # Shared utilities
 │   │   ├── query-utils.ts    # SOQL parsing
 │   │   ├── apex-utils.ts     # Apex execution
 │   │   ├── record-utils.ts   # Field manipulation
 │   │   ├── schema-utils.ts   # Metadata operations
 │   │   ├── history-manager.ts # Query/Apex history
-│   │   ├── soql-autocomplete.ts # Editor autocomplete
 │   │   ├── theme.ts          # Dark/light mode
-│   │   └── ...               # 13 more utilities
+│   │   └── ...               # More utilities
 │   │
 │   ├── types/                # TypeScript definitions
 │   │   ├── salesforce.d.ts   # Salesforce API types
@@ -244,13 +255,13 @@ rg -n "^\." src/style.css src/components/**/*.module.css
 
 ```bash
 # Find Salesforce API functions
-rg -n "^export (async )?function" src/lib/salesforce.ts
+rg -n "^export (async )?function" src/api/salesforce.ts
 
 # Find background message handlers
 rg -n "^\s+\w+:" src/background/background.ts
 
 # Find auth functions
-rg -n "^export" src/lib/auth.ts
+rg -n "^export" src/auth/auth.ts
 ```
 
 ### Find Types
@@ -300,8 +311,8 @@ All components are React functional components with TypeScript.
 ```typescript
 // src/components/example/ExampleComponent.tsx
 import { useState, useCallback, useEffect } from 'react';
-import { useConnection } from '../../contexts';
-import { salesforceRequest } from '../../lib/salesforce-request';
+import { useConnection } from '../../contexts/ConnectionContext';
+import { salesforceRequest } from '../../api/salesforce-request';
 import styles from './Example.module.css';
 
 interface ExampleProps {
@@ -418,7 +429,7 @@ Three React Context providers manage global state:
 ### ConnectionContext
 
 ```typescript
-import { useConnection } from '../contexts';
+import { useConnection } from '../contexts/ConnectionContext';
 
 function MyComponent() {
   const {
@@ -438,7 +449,7 @@ function MyComponent() {
 ### ThemeContext
 
 ```typescript
-import { useTheme } from '../contexts';
+import { useTheme } from '../contexts/ThemeContext';
 
 function MyComponent() {
   const {
@@ -452,7 +463,7 @@ function MyComponent() {
 ### ProxyContext
 
 ```typescript
-import { useProxy } from '../contexts';
+import { useProxy } from '../contexts/ProxyContext';
 
 function MyComponent() {
   const {
@@ -473,7 +484,7 @@ function MyComponent() {
 Use `salesforceRequest` for all API operations:
 
 ```typescript
-import { salesforceRequest } from '../lib/salesforce-request';
+import { salesforceRequest } from '../api/salesforce-request';
 
 // Query
 const result = await salesforceRequest('/services/data/v62.0/query', {
@@ -505,7 +516,7 @@ import {
   executeApex,
   updateRecord,
   getRecord,
-} from '../lib/salesforce';
+} from '../api/salesforce';
 ```
 
 ## Monaco Editor Component
@@ -752,7 +763,7 @@ See [tests/CLAUDE.md](tests/CLAUDE.md) for comprehensive testing documentation.
 
 | Source | Test Location |
 |--------|---------------|
-| `src/lib/auth.ts` | `tests/unit/lib/auth.test.ts` |
+| `src/auth/auth.ts` | `tests/unit/auth/auth.test.ts` |
 | `components/query/` | `tests/frontend/specs/query/` |
 
 ## Security Guidelines
@@ -782,7 +793,9 @@ See [tests/CLAUDE.md](tests/CLAUDE.md) for comprehensive testing documentation.
 |-----------|-------|
 | [src/components/CLAUDE.md](src/components/CLAUDE.md) | React component patterns |
 | [src/contexts/CLAUDE.md](src/contexts/CLAUDE.md) | State management patterns |
-| [src/lib/CLAUDE.md](src/lib/CLAUDE.md) | TypeScript utility patterns |
+| [src/api/CLAUDE.md](src/api/CLAUDE.md) | Salesforce API patterns |
+| [src/auth/CLAUDE.md](src/auth/CLAUDE.md) | Authentication & OAuth |
+| [src/lib/CLAUDE.md](src/lib/CLAUDE.md) | Shared utility patterns |
 | [src/types/CLAUDE.md](src/types/CLAUDE.md) | TypeScript type definitions |
 | [src/hooks/CLAUDE.md](src/hooks/CLAUDE.md) | React hooks exports |
 | [src/react/CLAUDE.md](src/react/CLAUDE.md) | App shell and entry points |

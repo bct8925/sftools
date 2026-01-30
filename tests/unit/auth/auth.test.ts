@@ -225,6 +225,36 @@ describe('auth', () => {
             expect(storage.connections).toHaveLength(2);
         });
 
+        it('uses username as default label when provided', async () => {
+            const result = await addConnection({
+                instanceUrl: 'https://myorg.my.salesforce.com',
+                accessToken: 'token',
+                username: 'admin@myorg.com',
+            });
+
+            expect(result.label).toBe('admin@myorg.com');
+        });
+
+        it('falls back to hostname when username is not provided', async () => {
+            const result = await addConnection({
+                instanceUrl: 'https://myorg.my.salesforce.com',
+                accessToken: 'token',
+            });
+
+            expect(result.label).toBe('myorg.my.salesforce.com');
+        });
+
+        it('prefers explicit label over username', async () => {
+            const result = await addConnection({
+                instanceUrl: 'https://myorg.my.salesforce.com',
+                accessToken: 'token',
+                username: 'admin@myorg.com',
+                label: 'My Custom Label',
+            });
+
+            expect(result.label).toBe('My Custom Label');
+        });
+
         it('sets timestamps', async () => {
             const before = Date.now();
             const result = await addConnection({

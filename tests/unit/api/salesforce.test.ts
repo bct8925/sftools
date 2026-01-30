@@ -27,6 +27,7 @@
  * - SF-U-023: bulkDeleteTooling() - Batches in 25s
  * - SF-U-024: escapeSoql() - Escapes special chars (tested via searchFlows, searchUsers)
  * - SF-U-025: clearDescribeCache() - Clears cache
+ * - SF-U-026: getUserInfo() - Returns user info with username
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -51,6 +52,7 @@ vi.mock('../../../src/auth/auth.js', () => ({
 import {
     clearDescribeCache,
     getCurrentUserId,
+    getUserInfo,
     getGlobalDescribe,
     getObjectDescribe,
     getRecord,
@@ -138,6 +140,34 @@ describe('salesforce', () => {
             expect(salesforceRequest).toHaveBeenCalledWith(
                 expect.stringContaining('/chatter/users/me')
             );
+        });
+    });
+
+    describe('getUserInfo', () => {
+        it('SF-U-026: returns user info from userinfo endpoint', async () => {
+            salesforceRequest.mockResolvedValue({
+                json: {
+                    user_id: '005XXXXXXXXXXXXXXX',
+                    organization_id: '00DXXXXXXXXXXXXXXX',
+                    preferred_username: 'user@example.com',
+                    nickname: 'user',
+                    name: 'Test User',
+                    email: 'user@example.com',
+                    email_verified: true,
+                },
+            });
+
+            const userInfo = await getUserInfo();
+
+            expect(userInfo.preferred_username).toBe('user@example.com');
+            expect(userInfo.user_id).toBe('005XXXXXXXXXXXXXXX');
+            expect(salesforceRequest).toHaveBeenCalledWith('/services/oauth2/userinfo');
+        });
+
+        it('throws when no user info returned', async () => {
+            salesforceRequest.mockResolvedValue({ json: null });
+
+            await expect(getUserInfo()).rejects.toThrow('No user info returned from API');
         });
     });
 

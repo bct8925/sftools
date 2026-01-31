@@ -8,3 +8,6 @@ sftools-proxy/sftools-proxy.sh
 .env.test
 test-results/
 coverage/
+
+# dora code context index
+.dora/

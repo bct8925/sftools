@@ -2,12 +2,14 @@ import { useState, useCallback, useMemo, useEffect, useRef, useLayoutEffect } fr
 import type { SObjectDescribe } from '../../types/salesforce';
 import { filterObjects } from '../../lib/schema-utils';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
+import { icons } from '../../lib/icons';
 import styles from './SchemaPage.module.css';
 
 interface ObjectListProps {
   objects: SObjectDescribe[];
   selectedObjectName: string | null;
   isLoading: boolean;
+  instanceUrl: string;
   onSelect: (objectName: string) => void;
   onRefresh: () => void;
 }
@@ -19,6 +21,7 @@ export function ObjectList({
   objects,
   selectedObjectName,
   isLoading,
+  instanceUrl,
   onSelect,
   onRefresh,
 }: ObjectListProps) {
@@ -104,20 +107,34 @@ export function ObjectList({
         ) : filteredObjects.length === 0 ? (
           <div className={styles.loadingContainer}>No objects found</div>
         ) : (
-          filteredObjects.map((obj) => (
-            <div
-              key={obj.name}
-              data-testid="schema-object-item"
-              data-object-name={obj.name}
-              className={`${styles.objectItem}${
-                obj.name === selectedObjectName ? ` ${styles.selected}` : ''
-              }`}
-              onClick={() => handleObjectClick(obj.name)}
-            >
-              <div className={styles.objectItemLabel}>{obj.label}</div>
-              <div className={styles.objectItemName}>{obj.name}</div>
-            </div>
-          ))
+          filteredObjects.map((obj) => {
+            const setupUrl = `${instanceUrl.replace('.salesforce.com', '.salesforce-setup.com')}/lightning/setup/ObjectManager/${obj.name}/Details/view`;
+            return (
+              <div
+                key={obj.name}
+                data-testid="schema-object-item"
+                data-object-name={obj.name}
+                className={`${styles.objectItem}${
+                  obj.name === selectedObjectName ? ` ${styles.selected}` : ''
+                }`}
+                onClick={() => handleObjectClick(obj.name)}
+              >
+                <div className={styles.objectItemContent}>
+                  <div className={styles.objectItemLabel}>{obj.label}</div>
+                  <div className={styles.objectItemName}>{obj.name}</div>
+                </div>
+                <a
+                  href={setupUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.objectItemLink}
+                  onClick={(e) => e.stopPropagation()}
+                  title="Open in Salesforce Setup"
+                  dangerouslySetInnerHTML={{ __html: icons.externalLink }}
+                />
+              </div>
+            );
+          })
         )}
       </div>
     </div>

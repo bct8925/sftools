@@ -14,6 +14,7 @@ describe('icons', () => {
             expect(icons).toHaveProperty('trash');
             expect(icons).toHaveProperty('hamburger');
             expect(icons).toHaveProperty('verticalDots');
+            expect(icons).toHaveProperty('externalLink');
         });
 
         it('icons contain SVG markup', () => {
@@ -43,6 +44,14 @@ describe('icons', () => {
         it('refreshSmall icon has smaller dimensions', () => {
             expect(icons.refreshSmall).toContain('width="12"');
             expect(icons.refreshSmall).toContain('height="12"');
+        });
+
+        it('externalLink icon contains SVG markup with currentColor stroke', () => {
+            expect(icons.externalLink).toContain('<svg');
+            expect(icons.externalLink).toContain('</svg>');
+            expect(icons.externalLink).toContain('currentColor');
+            expect(icons.externalLink).toContain('width="14"');
+            expect(icons.externalLink).toContain('height="14"');
         });
     });
 });

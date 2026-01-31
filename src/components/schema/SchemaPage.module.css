@@ -64,6 +64,10 @@
     cursor: pointer;
     border-bottom: 1px solid var(--border-color);
     transition: background-color 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
 .objectItem:hover {
@@ -76,6 +80,11 @@
     padding-left: 13px;
 }
 
+.objectItemContent {
+    flex: 1;
+    min-width: 0;
+}
+
 .objectItemLabel {
     font-weight: 500;
     color: var(--text-primary);
@@ -86,6 +95,26 @@
     font-size: 12px;
     color: var(--text-secondary);
     font-family: var(--font-mono);
+}
+
+.objectItemLink {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition:
+        opacity 0.15s ease,
+        color 0.15s ease;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+}
+
+.objectItem:hover .objectItemLink {
+    opacity: 1;
+}
+
+.objectItemLink:hover {
+    color: var(--primary-color);
 }
 
 /* Fields Panel */
@@ -181,6 +210,26 @@
 .fieldItemActions {
     display: flex;
     align-items: center;
+    gap: 4px;
+}
+
+.fieldItemLink {
+    color: var(--text-secondary);
+    opacity: 0;
+    transition:
+        opacity 0.15s ease,
+        color 0.15s ease;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+}
+
+.fieldItem:hover .fieldItemLink {
+    opacity: 1;
+}
+
+.fieldItemLink:hover {
+    color: var(--primary-color);
 }
 
 .fieldMenuButton {

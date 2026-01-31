@@ -16,11 +16,15 @@ Promise.all([
   migrateFromSingleConnection(),
   migrateCustomConnectedApp(),
   migrateDescribeCache(),
-]).then(() => {
-  // Mount the React app after migrations complete
-  const rootElement = document.getElementById('root');
-  if (rootElement) {
-    const root = createRoot(rootElement);
-    root.render(<App />);
-  }
-});
+])
+  .catch((error) => {
+    console.error('Migration failed:', error);
+  })
+  .then(() => {
+    // Mount the React app after migrations complete (even if some fail)
+    const rootElement = document.getElementById('root');
+    if (rootElement) {
+      const root = createRoot(rootElement);
+      root.render(<App />);
+    }
+  });

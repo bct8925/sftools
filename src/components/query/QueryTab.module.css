@@ -290,6 +290,11 @@
     border-right: 0;
 }
 
+.resultsTable tbody tr {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 36px;
+}
+
 .resultsTable tr:hover {
     background-color: var(--bg-hover);
 }

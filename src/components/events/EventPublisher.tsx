@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { ChannelSelector } from './ChannelSelector';
 import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
@@ -28,10 +28,10 @@ export function EventPublisher({
   const [statusType, setStatusType] = useState<StatusType>('');
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const updateStatus = (text: string, type: StatusType = '') => {
+  const updateStatus = useCallback((text: string, type: StatusType = '') => {
     setStatus(text);
     setStatusType(type);
-  };
+  }, []);
 
   const handlePublish = async () => {
     if (!selectedChannel) {

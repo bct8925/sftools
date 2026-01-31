@@ -1,4 +1,4 @@
-import { useState, useCallback, type ReactNode } from 'react';
+import { useState, useCallback, lazy, Suspense, type ComponentType } from 'react';
 import { AppProviders } from './AppProviders';
 import { MobileMenu } from './MobileMenu';
 import { ConnectionSelector } from './ConnectionSelector';
@@ -6,16 +6,29 @@ import { AuthExpirationHandler } from './AuthExpirationHandler';
 import { CorsErrorHandler } from './CorsErrorHandler';
 import { type TabId } from './TabNavigation';
 
-// Import React tab components
-import { QueryTab } from '../components/query/QueryTab';
-import { ApexTab } from '../components/apex/ApexTab';
-import { DebugLogsTab } from '../components/debug-logs/DebugLogsTab';
-import { RestApiTab } from '../components/rest-api/RestApiTab';
-import { EventsTab } from '../components/events/EventsTab';
-import { UtilsTab } from '../components/utils/UtilsTab';
-import { SettingsTab } from '../components/settings/SettingsTab';
-
 import styles from './App.module.css';
+
+// Lazy load tab components
+const QueryTab = lazy(() => import('../components/query/QueryTab').then(m => ({ default: m.QueryTab })));
+const ApexTab = lazy(() => import('../components/apex/ApexTab').then(m => ({ default: m.ApexTab })));
+const DebugLogsTab = lazy(() => import('../components/debug-logs/DebugLogsTab').then(m => ({ default: m.DebugLogsTab })));
+const RestApiTab = lazy(() => import('../components/rest-api/RestApiTab').then(m => ({ default: m.RestApiTab })));
+const EventsTab = lazy(() => import('../components/events/EventsTab').then(m => ({ default: m.EventsTab })));
+const UtilsTab = lazy(() => import('../components/utils/UtilsTab').then(m => ({ default: m.UtilsTab })));
+const SettingsTab = lazy(() => import('../components/settings/SettingsTab').then(m => ({ default: m.SettingsTab })));
+
+// Tab component registry
+const TAB_COMPONENTS: Record<TabId, ComponentType> = {
+  'query': QueryTab,
+  'apex': ApexTab,
+  'logs': DebugLogsTab,
+  'rest-api': RestApiTab,
+  'events': EventsTab,
+  'utils': UtilsTab,
+  'settings': SettingsTab,
+};
+
+const TAB_IDS: TabId[] = ['query', 'apex', 'logs', 'rest-api', 'events', 'utils', 'settings'];
 
 /**
  * Main App component that renders the navigation header and tab content.
@@ -32,17 +45,6 @@ function AppContent() {
       new CustomEvent('tab-changed', { detail: { tabId: tab } })
     );
   }, []);
-
-  // Tab configuration for rendering all tabs (memoized)
-  const tabs: { id: TabId; component: ReactNode }[] = [
-    { id: 'query', component: <QueryTab /> },
-    { id: 'apex', component: <ApexTab /> },
-    { id: 'logs', component: <DebugLogsTab /> },
-    { id: 'rest-api', component: <RestApiTab /> },
-    { id: 'events', component: <EventsTab /> },
-    { id: 'utils', component: <UtilsTab /> },
-    { id: 'settings', component: <SettingsTab /> },
-  ];
 
   return (
     <div className={styles.appContainer} data-testid="app-root">
@@ -65,15 +67,20 @@ function AppContent() {
 
       {/* Main Content Area - All tabs rendered, only active visible */}
       <main className={styles.contentArea}>
-        {tabs.map(({ id, component }) => (
-          <div
-            key={id}
-            className={activeTab === id ? styles.tabPanelActive : styles.tabPanelHidden}
-            data-testid={`tab-content-${id}`}
-          >
-            {component}
-          </div>
-        ))}
+        {TAB_IDS.map((id) => {
+          const TabComponent = TAB_COMPONENTS[id];
+          return (
+            <div
+              key={id}
+              className={activeTab === id ? styles.tabPanelActive : styles.tabPanelHidden}
+              data-testid={`tab-content-${id}`}
+            >
+              <Suspense fallback={<div />}>
+                <TabComponent />
+              </Suspense>
+            </div>
+          );
+        })}
       </main>
     </div>
   );

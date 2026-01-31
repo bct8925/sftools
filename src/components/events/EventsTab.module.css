@@ -11,3 +11,9 @@
 .headerIconPublish {
     background-color: var(--icon-events-publish);
 }
+
+.replayRow {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+}

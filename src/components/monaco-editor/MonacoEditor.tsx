@@ -3,6 +3,7 @@ import {
   useImperativeHandle,
   useRef,
   useCallback,
+  useMemo,
 } from 'react';
 import Editor, { loader, type OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
@@ -180,6 +181,15 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
       document.addEventListener('mouseup', handleMouseUp);
     }, []);
 
+    const editorOptions = useMemo(() => ({
+      readOnly: readonly,
+      minimap: { enabled: false },
+      automaticLayout: true,
+      scrollBeyondLastLine: false,
+      lineNumbers: 'on' as const,
+      fontSize: 13,
+    }), [readonly]);
+
     return (
       <div
         ref={containerRef}
@@ -192,14 +202,7 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
           onChange={handleChange}
           onMount={handleMount}
           theme={theme}
-          options={{
-            readOnly: readonly,
-            minimap: { enabled: false },
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
-            lineNumbers: 'on',
-            fontSize: 13,
-          }}
+          options={editorOptions}
         />
         {resizable && (
           <div

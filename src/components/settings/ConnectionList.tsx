@@ -48,7 +48,7 @@ export function ConnectionList({ onEditConnection }: ConnectionListProps) {
     await startAuthorization(connection.instanceUrl, connection.clientId, connectionId);
   }, [connections]);
 
-  const handleDelete = async (connectionId: string) => {
+  const handleDelete = useCallback(async (connectionId: string) => {
     if (!confirm('Remove this connection?')) return;
 
     const wasActive = activeConnection?.id === connectionId;
@@ -57,7 +57,7 @@ export function ConnectionList({ onEditConnection }: ConnectionListProps) {
     }
 
     await removeConnection(connectionId);
-  };
+  }, [activeConnection?.id, setActiveConnection, removeConnection]);
 
   return (
     <div>

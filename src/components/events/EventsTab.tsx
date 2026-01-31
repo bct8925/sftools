@@ -150,7 +150,7 @@ export function EventsTab() {
           </div>
           <div className="form-element">
             <label htmlFor="event-replay-select">Replay From</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px' }}>
+            <div className={styles.replayRow}>
               <select
                 className="select"
                 value={replayPreset}

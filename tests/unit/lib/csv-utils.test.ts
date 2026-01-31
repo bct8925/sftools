@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     getValueByPath,
     formatCellValue,
     escapeCsvField,
     getExportFilename,
     recordsToCsv,
+    downloadCsv,
 } from '../../../src/lib/csv-utils.js';
 
 describe('getValueByPath', () => {
@@ -162,6 +163,59 @@ describe('getExportFilename', () => {
         const timestampPart = filename.replace('Contact_', '').replace('.csv', '');
         // Format: YYYYMMDDTHHMMSS
         expect(timestampPart).toMatch(/^\d{8}T\d{6}$/);
+    });
+});
+
+describe('downloadCsv', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        // Mock URL methods if they don't exist in jsdom
+        if (!global.URL.createObjectURL) {
+            global.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+        }
+        if (!global.URL.revokeObjectURL) {
+            global.URL.revokeObjectURL = vi.fn();
+        }
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.useRealTimers();
+    });
+
+    it('should create blob and trigger download', () => {
+        const mockLink = {
+            href: '',
+            download: '',
+            style: { display: '' },
+            click: vi.fn(),
+        };
+        const mockCreateElement = vi
+            .spyOn(document, 'createElement')
+            .mockReturnValue(mockLink as any);
+        const mockAppendChild = vi
+            .spyOn(document.body, 'appendChild')
+            .mockImplementation(() => mockLink as any);
+        const mockRemoveChild = vi
+            .spyOn(document.body, 'removeChild')
+            .mockImplementation(() => mockLink as any);
+        const mockCreateObjectURL = vi.spyOn(URL, 'createObjectURL');
+        const mockRevokeObjectURL = vi.spyOn(URL, 'revokeObjectURL');
+
+        downloadCsv('Id,Name\n001,Test', 'test.csv');
+
+        expect(mockCreateElement).toHaveBeenCalledWith('a');
+        expect(mockLink.href).toBe('blob:mock-url');
+        expect(mockLink.download).toBe('test.csv');
+        expect(mockLink.style.display).toBe('none');
+        expect(mockAppendChild).toHaveBeenCalledWith(mockLink);
+        expect(mockLink.click).toHaveBeenCalled();
+        expect(mockRemoveChild).toHaveBeenCalledWith(mockLink);
+
+        // Wait for timeout
+        vi.advanceTimersByTime(1000);
+        expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+        expect(mockCreateObjectURL).toHaveBeenCalled();
     });
 });
 

@@ -6,13 +6,6 @@ import type { SalesforceConnection } from '../types/salesforce';
 import { isProxyConnected, sendProxyRequest } from './native-messaging';
 import { debugInfo } from './debug';
 
-interface _TokenExchangeRequest {
-    code: string;
-    redirectUri: string;
-    loginDomain: string;
-    clientId: string;
-}
-
 interface TokenExchangeSuccess {
     success: true;
     accessToken: string;

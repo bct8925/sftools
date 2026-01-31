@@ -24,12 +24,6 @@ import { ensureTraceFlag, getLatestAnonymousLog } from './debug-logs';
 // Tooling API Utilities
 // ============================================================
 
-interface _CompositeRequest {
-    method: string;
-    url: string;
-    referenceId: string;
-}
-
 /**
  * Bulk delete records using Tooling API composite endpoint
  * Batches deletes into groups of 25 (Tooling API composite limit)

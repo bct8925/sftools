@@ -60,10 +60,15 @@ async function bulkDeleteTooling(sobjectType: string, ids: string[]): Promise<nu
 }
 
 /**
- * Escape special characters for SOQL queries
+ * Escape special characters for SOQL LIKE clauses
+ * Handles single quotes (for string literals) and LIKE wildcards
  */
 function escapeSoql(str: string): string {
-    return str.replace(/'/g, "\\'").replace(/%/g, '\\%').replace(/_/g, '\\_');
+    return str
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/%/g, '\\%')
+        .replace(/_/g, '\\_');
 }
 
 // ============================================================

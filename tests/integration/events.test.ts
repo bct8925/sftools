@@ -13,8 +13,8 @@
  * Note: Most Events Tab tests are frontend tests that require browser/proxy interaction.
  * These tests cover the API calls for loading channels and publishing events.
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { salesforce, uniqueName } from './setup.js';
+import { describe, it, expect } from 'vitest';
+import { salesforce } from './setup.js';
 
 describe('Events Tab Integration', () => {
     describe('E-I-007: Query custom Platform Events', () => {

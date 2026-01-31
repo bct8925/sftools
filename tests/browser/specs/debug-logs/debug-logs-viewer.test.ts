@@ -10,13 +10,14 @@ import {
 /**
  * Test Debug Logs tab basic operations
  *
- * Test IDs: DL-F-001 through DL-F-004
- * - DL-F-001: Navigate to Debug Logs tab
- * - DL-F-002: Watch button starts watching
- * - DL-F-003: Refresh fetches logs and displays in table
- * - DL-F-004: Settings modal opens and closes
+ * Test IDs: U-DL-F-002 through U-DL-F-005
+ * - Navigate to Debug Logs tab (Utils tab)
+ * - U-DL-F-002: Search for other users
+ * - U-DL-F-003: Enable trace flag for selected user
+ * - U-DL-F-004: Delete all trace flags
+ * - U-DL-F-005: Delete all debug logs
  */
-describe('Debug Logs Viewer', () => {
+describe('Debug Logs Viewer (U-DL-F-002, U-DL-F-003, U-DL-F-004, U-DL-F-005)', () => {
     beforeEach(async () => {
         const router = new MockRouter();
 

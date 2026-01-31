@@ -14,13 +14,13 @@
  * - U-FC-I-002: Flow with no inactive versions - Delete button disabled
  * - U-FC-I-003: Flow with only active version - No deletable versions
  */
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { salesforce, TestDataManager, uniqueName } from './setup.js';
 
 describe('Utils Tab Integration', () => {
     const testData = new TestDataManager();
 
-    afterAll(async () => {
+    afterEach(async () => {
         await testData.cleanup();
     });
 

@@ -328,4 +328,46 @@ export class ApexTabPage extends BasePage {
             timeout: 5000,
         });
     }
+
+    /**
+     * Get the number of items in history
+     */
+    async getHistoryCount(): Promise<number> {
+        // Make sure we're on the history tab
+        const historyTab = this.page.locator('[data-testid="apex-history-tab"]');
+        const isHistoryActive = await historyTab.evaluate(
+            (el: Element) => el.classList.contains('active') || el.classList.contains('_active_')
+        );
+        if (!isHistoryActive) {
+            await this.slowClick(historyTab);
+        }
+
+        const count = await this.page.$$eval(
+            '[data-testid="apex-history-list"] [data-testid="script-item"]',
+            (items: Element[]) => items.length
+        );
+
+        return count;
+    }
+
+    /**
+     * Get the text of all history items
+     */
+    async getHistoryItems(): Promise<string[]> {
+        // Make sure we're on the history tab
+        const historyTab = this.page.locator('[data-testid="apex-history-tab"]');
+        const isHistoryActive = await historyTab.evaluate(
+            (el: Element) => el.classList.contains('active') || el.classList.contains('_active_')
+        );
+        if (!isHistoryActive) {
+            await this.slowClick(historyTab);
+        }
+
+        const items = await this.page.$$eval(
+            '[data-testid="apex-history-list"] [data-testid="script-preview"]',
+            (previews: Element[]) => previews.map(p => p.textContent?.trim() || '')
+        );
+
+        return items;
+    }
 }

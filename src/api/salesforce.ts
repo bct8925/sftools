@@ -14,8 +14,8 @@ import type {
     FlowVersion,
     UserInfo,
 } from '../types/salesforce';
-import { API_VERSION } from '../lib/utils';
 import { getAccessToken, getInstanceUrl, getActiveConnectionId } from '../auth/auth';
+import { API_VERSION } from './constants';
 import { smartFetch } from './fetch';
 import { salesforceRequest } from './salesforce-request';
 import { ensureTraceFlag, getLatestAnonymousLog } from './debug-logs';

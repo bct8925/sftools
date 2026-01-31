@@ -1,6 +1,6 @@
 # Privacy Policy for sftools
 
-**Last Updated:** January 18, 2025
+**Last Updated:** January 30, 2026
 
 ## Overview
 

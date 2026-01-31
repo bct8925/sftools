@@ -111,16 +111,15 @@ describe('Debug Logs Cleanup', () => {
         await page.waitForTimeout(500);
 
         // Check that status updated (button should still be visible after operation)
-        const traceDeleteStatus = page.locator('[data-testid="debug-logs-delete-status-text"]');
-        await traceDeleteStatus.waitFor({ state: 'visible', timeout: 5000 });
+        await debugLogsTab.waitForDeleteStatus();
 
         // DL-F-006: Delete all debug logs - confirmation and success
         await debugLogsTab.deleteLogsBtn.click();
         await page.waitForTimeout(500);
 
         // Check that status updated
-        await traceDeleteStatus.waitFor({ state: 'visible', timeout: 5000 });
-        const statusText = await traceDeleteStatus.textContent();
-        expect(statusText || '').toContain('Deleted');
+        await debugLogsTab.waitForDeleteStatus();
+        const statusText = await debugLogsTab.getDeleteStatusText();
+        expect(statusText).toContain('Deleted');
     });
 });

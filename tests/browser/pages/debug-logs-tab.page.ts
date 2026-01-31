@@ -156,4 +156,22 @@ export class DebugLogsTabPage extends BasePage {
         const title = await this.watchBtn.getAttribute('title');
         return title === 'Stop watching';
     }
+
+    /**
+     * Get delete status text
+     */
+    async getDeleteStatusText(): Promise<string> {
+        const statusText = this.page.locator('[data-testid="debug-logs-delete-status-text"]');
+        const isVisible = await statusText.isVisible();
+        if (!isVisible) return '';
+        return (await statusText.textContent()) || '';
+    }
+
+    /**
+     * Wait for delete status to be visible
+     */
+    async waitForDeleteStatus(): Promise<void> {
+        const statusText = this.page.locator('[data-testid="debug-logs-delete-status-text"]');
+        await statusText.waitFor({ state: 'visible', timeout: 5000 });
+    }
 }

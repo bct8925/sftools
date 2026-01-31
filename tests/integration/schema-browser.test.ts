@@ -11,13 +11,13 @@
  * - SB-I-008: Identify formula fields - Formula fields marked as calculated
  * - SB-I-009: Get global describe - All org objects returned
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { salesforce, TestDataManager, uniqueName } from './setup.js';
 
 describe('Schema Browser Integration', () => {
     const testData = new TestDataManager();
 
-    afterAll(async () => {
+    afterEach(async () => {
         await testData.cleanup();
     });
 

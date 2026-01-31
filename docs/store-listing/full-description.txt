@@ -7,6 +7,7 @@ SOQL Query Editor
 - Results displayed in formatted tables with relationship field support
 - Subquery results expandable inline
 - Keyboard shortcut: Ctrl/Cmd+Enter
+- Export large results via Bulk API (CSV download)
 
 Anonymous Apex Execution
 - Run anonymous Apex with Monaco editor
@@ -26,13 +27,18 @@ Record Viewer
 - View and edit record field values
 - Right-click extension icon on any Lightning record page to open
 
-Utility Tools
-- Enable trace flags for users
+Debug Logs
+- View and stream debug logs in real time
+- Filter and search log content
+- Manage trace flags for users
 - Bulk delete debug logs
+
+Utility Tools
 - Delete inactive flow versions
 
 Platform Events (requires local proxy)
 - Subscribe to Platform Events via gRPC
+- Publish Platform Events
 - Monitor PushTopics and System Topics via CometD
 
 MULTI-ORG SUPPORT

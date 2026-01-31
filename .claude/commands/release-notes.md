@@ -42,6 +42,7 @@ Based on the commits, write release notes for a **customer audience**. Rules:
 - Format as markdown with bullet points grouped by category (e.g. **Features**, **Improvements**, **Bug Fixes**)
 - Each bullet should describe the change, not the feature (e.g. "Added dark mode support" not "Dark mode lets you switch between light and dark themes")
 - Keep descriptions concise — no commit hashes, no developer jargon
+- If a commit message references a GitHub issue or PR (e.g. `#72`, `(#72)`), link it in the release note using the `#72` shorthand syntax (GitHub auto-links these in release bodies)
 - If there are no customer-facing changes, write: "Maintenance release with internal improvements."
 
 ## Step 6: Create the GitHub release

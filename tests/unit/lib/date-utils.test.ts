@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getFutureDate, getISODateFromNow, getNowISO, isExpired, formatRelativeTime, getFilenameTimestamp } from '../../../src/lib/date-utils.js';
+import {
+    getFutureDate,
+    getISODateFromNow,
+    getNowISO,
+    isExpired,
+    formatRelativeTime,
+    getFilenameTimestamp,
+} from '../../../src/lib/date-utils.js';
 
 describe('date-utils', () => {
     const FIXED_TIME = new Date('2024-06-15T12:00:00.000Z');
@@ -69,7 +76,9 @@ describe('date-utils', () => {
         });
 
         it('returns days ago', () => {
-            expect(formatRelativeTime(FIXED_TIME.getTime() - 3 * 24 * 60 * 60 * 1000)).toBe('3d ago');
+            expect(formatRelativeTime(FIXED_TIME.getTime() - 3 * 24 * 60 * 60 * 1000)).toBe(
+                '3d ago'
+            );
         });
 
         it('returns locale date string for older than 7 days', () => {

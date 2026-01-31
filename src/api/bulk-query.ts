@@ -1,7 +1,7 @@
 // Bulk Query API v2 - Functions for large data exports
 
-import { API_VERSION } from '../lib/utils';
 import { getInstanceUrl, getAccessToken } from '../auth/auth';
+import { API_VERSION } from './constants';
 import { smartFetch } from './fetch';
 import { salesforceRequest } from './salesforce-request';
 

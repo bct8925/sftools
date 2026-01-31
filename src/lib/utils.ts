@@ -1,9 +1,6 @@
 // Shared utilities for sftools
 // Central export point for commonly used functions across the extension
 
-// --- API Configuration ---
-export const API_VERSION = '62.0';
-
 // --- Auth Functions ---
 // Re-exported from auth.ts for convenient access
 export {

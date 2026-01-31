@@ -1,9 +1,9 @@
 // Debug Logs - Trace flag and debug log management
 
 import type { QueryResult } from '../types/salesforce';
-import { API_VERSION } from '../lib/utils';
 import { getInstanceUrl, getAccessToken } from '../auth/auth';
 import { getNowISO, getISODateFromNow, getFutureDate } from '../lib/date-utils';
+import { API_VERSION } from './constants';
 import { smartFetch } from './fetch';
 import { salesforceRequest } from './salesforce-request';
 

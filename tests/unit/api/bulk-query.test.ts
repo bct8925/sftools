@@ -87,10 +87,18 @@ describe('bulk-query', () => {
 
             vi.mocked(salesforceRequest)
                 .mockResolvedValueOnce({ json: { id: 'job-123', state: 'UploadComplete' } })
-                .mockResolvedValueOnce({ json: { id: 'job-123', state: 'InProgress', numberRecordsProcessed: 0 } })
-                .mockResolvedValueOnce({ json: { id: 'job-123', state: 'JobComplete', numberRecordsProcessed: 50 } });
+                .mockResolvedValueOnce({
+                    json: { id: 'job-123', state: 'InProgress', numberRecordsProcessed: 0 },
+                })
+                .mockResolvedValueOnce({
+                    json: { id: 'job-123', state: 'JobComplete', numberRecordsProcessed: 50 },
+                });
 
-            vi.mocked(smartFetch).mockResolvedValue({ success: true, data: 'Id\n001xx', status: 200 });
+            vi.mocked(smartFetch).mockResolvedValue({
+                success: true,
+                data: 'Id\n001xx',
+                status: 200,
+            });
 
             const promise = executeBulkQueryExport('SELECT Id FROM Account');
 
@@ -108,9 +116,13 @@ describe('bulk-query', () => {
         it('throws on failed job', async () => {
             vi.mocked(salesforceRequest)
                 .mockResolvedValueOnce({ json: { id: 'job-123', state: 'UploadComplete' } })
-                .mockResolvedValueOnce({ json: { id: 'job-123', state: 'Failed', errorMessage: 'Bad query' } });
+                .mockResolvedValueOnce({
+                    json: { id: 'job-123', state: 'Failed', errorMessage: 'Bad query' },
+                });
 
-            await expect(executeBulkQueryExport('SELECT Bad FROM Account')).rejects.toThrow('failed');
+            await expect(executeBulkQueryExport('SELECT Bad FROM Account')).rejects.toThrow(
+                'failed'
+            );
         });
 
         it('throws on aborted job', async () => {
@@ -118,7 +130,9 @@ describe('bulk-query', () => {
                 .mockResolvedValueOnce({ json: { id: 'job-123', state: 'UploadComplete' } })
                 .mockResolvedValueOnce({ json: { id: 'job-123', state: 'Aborted' } });
 
-            await expect(executeBulkQueryExport('SELECT Id FROM Account')).rejects.toThrow('aborted');
+            await expect(executeBulkQueryExport('SELECT Id FROM Account')).rejects.toThrow(
+                'aborted'
+            );
         });
 
         it('calls onProgress callback', async () => {
@@ -126,7 +140,9 @@ describe('bulk-query', () => {
 
             vi.mocked(salesforceRequest)
                 .mockResolvedValueOnce({ json: { id: 'job-123', state: 'UploadComplete' } })
-                .mockResolvedValueOnce({ json: { id: 'job-123', state: 'JobComplete', numberRecordsProcessed: 10 } });
+                .mockResolvedValueOnce({
+                    json: { id: 'job-123', state: 'JobComplete', numberRecordsProcessed: 10 },
+                });
 
             vi.mocked(smartFetch).mockResolvedValue({ success: true, data: 'csv', status: 200 });
 

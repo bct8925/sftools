@@ -33,7 +33,12 @@ describe('column-utils', () => {
             const result = flattenColumnMetadata(input);
 
             expect(result).toEqual([
-                { title: 'Account.Name', path: 'Account.Name', aggregate: false, isSubquery: false },
+                {
+                    title: 'Account.Name',
+                    path: 'Account.Name',
+                    aggregate: false,
+                    isSubquery: false,
+                },
             ]);
         });
 
@@ -85,7 +90,12 @@ describe('column-utils', () => {
             const result = flattenColumnMetadata(input);
 
             expect(result).toEqual([
-                { title: 'Account.Owner.Name', path: 'Account.Owner.Name', aggregate: false, isSubquery: false },
+                {
+                    title: 'Account.Owner.Name',
+                    path: 'Account.Owner.Name',
+                    aggregate: false,
+                    isSubquery: false,
+                },
             ]);
         });
 

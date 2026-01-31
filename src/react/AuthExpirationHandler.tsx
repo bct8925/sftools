@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useConnection } from '../contexts/ConnectionContext';
 import { onAuthExpired, loadConnections } from '../auth/auth';
 import { startAuthorization } from '../auth/start-authorization';
 import { Modal } from '../components/modal/Modal';
 import type { SalesforceConnection } from '../types/salesforce';
+import styles from './AuthExpirationHandler.module.css';
 
 /**
  * Handles auth expiration events by showing a modal with options to
@@ -13,12 +14,18 @@ export function AuthExpirationHandler() {
   const { setActiveConnection, removeConnection } = useConnection();
   const [isOpen, setIsOpen] = useState(false);
   const [expiredConnection, setExpiredConnection] = useState<SalesforceConnection | null>(null);
+  const isOpenRef = useRef(false);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
   useEffect(() => {
-    // Register auth expiration callback
+    // Register auth expiration callback once
     onAuthExpired(async (expiredConnectionId) => {
-      // Prevent duplicate modals
-      if (isOpen) return;
+      // Prevent duplicate modals using ref (no dependency on isOpen)
+      if (isOpenRef.current) return;
 
       const connections = await loadConnections();
       const connection = connections.find((c) => c.id === expiredConnectionId) || null;
@@ -26,7 +33,7 @@ export function AuthExpirationHandler() {
       setExpiredConnection(connection);
       setIsOpen(true);
     });
-  }, [isOpen]);
+  }, []);
 
   const handleReauthorize = useCallback(async () => {
     if (!expiredConnection) return;
@@ -59,7 +66,7 @@ export function AuthExpirationHandler() {
 
   return (
     <Modal isOpen={isOpen} onClose={handleDismiss}>
-      <div className="modal-dialog" style={{ maxWidth: '400px' }}>
+      <div className={`modal-dialog ${styles.dialog}`}>
         <h2>Authorization Lost</h2>
         <p>
           The session for <strong>{connectionLabel}</strong> has expired.

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useReducer, useEffect, useCallback, useMemo } from 'react';
 import type { FieldDescribe, SObject, SalesforceConnection } from '../../types/salesforce';
 import {
   getObjectDescribe,
@@ -12,9 +12,164 @@ import { RichTextModal } from './RichTextModal';
 import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import styles from './RecordPage.module.css';
 
-interface StatusState {
-  text: string;
-  type: StatusType;
+// State interface
+interface RecordPageState {
+  // URL params
+  objectType: string | null;
+  recordId: string | null;
+  connectionId: string | null;
+  instanceUrl: string | null;
+
+  // Data
+  fieldDescribe: Record<string, FieldDescribe>;
+  nameFieldMap: Record<string, string>;
+  originalValues: Record<string, unknown>;
+  currentValues: Record<string, unknown>;
+  objectLabel: string;
+  sortedFields: FieldDescribe[];
+
+  // UI
+  status: { text: string; type: StatusType };
+  isLoading: boolean;
+  error: string | null;
+  isSaving: boolean;
+
+  // Modal
+  previewField: FieldDescribe | null;
+  previewValue: unknown;
+  isModalOpen: boolean;
+}
+
+// Action types
+type RecordPageAction =
+  | { type: 'SET_URL_PARAMS'; objectType: string; recordId: string; connectionId: string }
+  | { type: 'SET_ERROR'; error: string }
+  | { type: 'SET_INSTANCE_URL'; instanceUrl: string }
+  | { type: 'SET_LOADING'; isLoading: boolean }
+  | { type: 'SET_STATUS'; text: string; statusType: StatusType }
+  | {
+      type: 'SET_RECORD_DATA';
+      fieldDescribe: Record<string, FieldDescribe>;
+      nameFieldMap: Record<string, string>;
+      sortedFields: FieldDescribe[];
+      objectLabel: string;
+      recordData: Record<string, unknown>;
+    }
+  | { type: 'UPDATE_FIELD'; fieldName: string; value: unknown }
+  | { type: 'SET_SAVING'; isSaving: boolean }
+  | { type: 'COMMIT_CHANGES'; changedFields: Record<string, unknown> }
+  | { type: 'OPEN_PREVIEW'; field: FieldDescribe; value: unknown }
+  | { type: 'CLOSE_PREVIEW' };
+
+// Initial state
+const initialState: RecordPageState = {
+  objectType: null,
+  recordId: null,
+  connectionId: null,
+  instanceUrl: null,
+  fieldDescribe: {},
+  nameFieldMap: {},
+  originalValues: {},
+  currentValues: {},
+  objectLabel: 'Loading...',
+  sortedFields: [],
+  status: { text: '', type: '' },
+  isLoading: true,
+  error: null,
+  isSaving: false,
+  previewField: null,
+  previewValue: null,
+  isModalOpen: false,
+};
+
+// Reducer
+function recordPageReducer(state: RecordPageState, action: RecordPageAction): RecordPageState {
+  switch (action.type) {
+    case 'SET_URL_PARAMS':
+      return {
+        ...state,
+        objectType: action.objectType,
+        recordId: action.recordId,
+        connectionId: action.connectionId,
+      };
+
+    case 'SET_ERROR':
+      return {
+        ...state,
+        error: action.error,
+        isLoading: false,
+        status: { text: 'Error', type: 'error' },
+      };
+
+    case 'SET_INSTANCE_URL':
+      return { ...state, instanceUrl: action.instanceUrl };
+
+    case 'SET_LOADING':
+      return {
+        ...state,
+        isLoading: action.isLoading,
+        error: action.isLoading ? null : state.error,
+      };
+
+    case 'SET_STATUS':
+      return {
+        ...state,
+        status: { text: action.text, type: action.statusType },
+      };
+
+    case 'SET_RECORD_DATA':
+      return {
+        ...state,
+        fieldDescribe: action.fieldDescribe,
+        nameFieldMap: action.nameFieldMap,
+        sortedFields: action.sortedFields,
+        objectLabel: action.objectLabel,
+        originalValues: action.recordData,
+        currentValues: action.recordData,
+        isLoading: false,
+        status: { text: 'Loaded', type: 'success' },
+      };
+
+    case 'UPDATE_FIELD':
+      return {
+        ...state,
+        currentValues: {
+          ...state.currentValues,
+          [action.fieldName]: action.value,
+        },
+      };
+
+    case 'SET_SAVING':
+      return { ...state, isSaving: action.isSaving };
+
+    case 'COMMIT_CHANGES':
+      return {
+        ...state,
+        originalValues: {
+          ...state.originalValues,
+          ...action.changedFields,
+        },
+      };
+
+    case 'OPEN_PREVIEW':
+      return {
+        ...state,
+        previewField: action.field,
+        previewValue: action.value,
+        isModalOpen: true,
+      };
+
+    case 'CLOSE_PREVIEW':
+      return {
+        ...state,
+        previewField: null,
+        previewValue: null,
+        isModalOpen: false,
+      };
+
+    default:
+      return state;
+  }
 }
 
 /**
@@ -22,35 +177,12 @@ interface StatusState {
  * Parses URL params for recordId, objectType, and connectionId.
  */
 export function RecordPage() {
-  // URL parameters
-  const [objectType, setObjectType] = useState<string | null>(null);
-  const [recordId, setRecordId] = useState<string | null>(null);
-  const [connectionId, setConnectionId] = useState<string | null>(null);
-  const [instanceUrl, setInstanceUrl] = useState<string | null>(null);
-
-  // Data state
-  const [fieldDescribe, setFieldDescribe] = useState<Record<string, FieldDescribe>>({});
-  const [nameFieldMap, setNameFieldMap] = useState<Record<string, string>>({});
-  const [originalValues, setOriginalValues] = useState<Record<string, unknown>>({});
-  const [currentValues, setCurrentValues] = useState<Record<string, unknown>>({});
-  const [objectLabel, setObjectLabel] = useState<string>('Loading...');
-  const [sortedFields, setSortedFields] = useState<FieldDescribe[]>([]);
-
-  // UI state
-  const [status, setStatus] = useState<StatusState>({ text: '', type: '' });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Modal state
-  const [previewField, setPreviewField] = useState<FieldDescribe | null>(null);
-  const [previewValue, setPreviewValue] = useState<unknown>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [state, dispatch] = useReducer(recordPageReducer, initialState);
 
   // Computed values
   const changedFields = useMemo(
-    () => getChangedFields(originalValues, currentValues, fieldDescribe),
-    [originalValues, currentValues, fieldDescribe]
+    () => getChangedFields(state.originalValues, state.currentValues, state.fieldDescribe),
+    [state.originalValues, state.currentValues, state.fieldDescribe]
   );
   const changeCount = Object.keys(changedFields).length;
   const hasChanges = changeCount > 0;
@@ -62,135 +194,165 @@ export function RecordPage() {
     const recId = params.get('recordId');
     const connId = params.get('connectionId');
 
-    setObjectType(objType);
-    setRecordId(recId);
-    setConnectionId(connId);
-
     if (!objType || !recId || !connId) {
-      setError('Missing required parameters');
-      setIsLoading(false);
+      dispatch({ type: 'SET_ERROR', error: 'Missing required parameters' });
       return;
     }
 
+    dispatch({
+      type: 'SET_URL_PARAMS',
+      objectType: objType,
+      recordId: recId,
+      connectionId: connId,
+    });
+
     // Load connection and set as active
-    loadConnection(connId).then((connection) => {
+    const loadConnection = async () => {
+      const { connections } = await chrome.storage.local.get(['connections']);
+      const connection = (connections as SalesforceConnection[] | undefined)?.find(
+        (c) => c.id === connId
+      );
+
       if (!connection) {
-        setError('Connection not found. Please re-authorize.');
-        setIsLoading(false);
+        dispatch({ type: 'SET_ERROR', error: 'Connection not found. Please re-authorize.' });
         return;
       }
-      setInstanceUrl(connection.instanceUrl);
+
+      dispatch({ type: 'SET_INSTANCE_URL', instanceUrl: connection.instanceUrl });
       setActiveConnection(connection);
-    });
+    };
+
+    loadConnection();
   }, []);
 
   // Load record when connection is set
   useEffect(() => {
-    if (instanceUrl && objectType && recordId) {
-      loadRecord();
-    }
-  }, [instanceUrl, objectType, recordId]);
+    if (!state.instanceUrl || !state.objectType || !state.recordId) return;
 
-  const loadConnection = async (id: string): Promise<SalesforceConnection | null> => {
-    const { connections } = await chrome.storage.local.get(['connections']);
-    return (connections as SalesforceConnection[] | undefined)?.find((c) => c.id === id) || null;
-  };
+    const loadRecord = async () => {
+      dispatch({ type: 'SET_LOADING', isLoading: true });
+      dispatch({ type: 'SET_STATUS', text: 'Loading...', statusType: 'loading' });
 
-  const loadRecord = async () => {
-    if (!objectType || !recordId) return;
+      try {
+        const describe = await getObjectDescribe(state.objectType!);
+        const { record, nameFieldMap: nfMap } = await getRecordWithRelationships(
+          state.objectType!,
+          state.recordId!,
+          describe.fields
+        );
 
-    setIsLoading(true);
-    setError(null);
-    setStatus({ text: 'Loading...', type: 'loading' });
+        // Build field describe map
+        const fieldMap: Record<string, FieldDescribe> = {};
+        for (const field of describe.fields) {
+          fieldMap[field.name] = field;
+        }
 
-    try {
-      const describe = await getObjectDescribe(objectType);
-      const { record, nameFieldMap: nfMap } = await getRecordWithRelationships(
-        objectType,
-        recordId,
-        describe.fields
-      );
+        // Sort and filter fields for display
+        const sorted = sortFields(describe.fields);
+        const filtered = filterFields(sorted);
 
-      // Build field describe map
-      const fieldMap: Record<string, FieldDescribe> = {};
-      for (const field of describe.fields) {
-        fieldMap[field.name] = field;
+        document.title = `${state.recordId} - Record Viewer - sftools`;
+
+        dispatch({
+          type: 'SET_RECORD_DATA',
+          fieldDescribe: fieldMap,
+          nameFieldMap: nfMap,
+          sortedFields: filtered,
+          objectLabel: describe.label,
+          recordData: { ...record },
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        dispatch({ type: 'SET_ERROR', error: message });
       }
-      setFieldDescribe(fieldMap);
-      setNameFieldMap(nfMap);
+    };
 
-      // Sort and filter fields for display
-      const sorted = sortFields(describe.fields);
-      const filtered = filterFields(sorted);
-      setSortedFields(filtered);
-
-      setObjectLabel(describe.label);
-      document.title = `${recordId} - Record Viewer - sftools`;
-
-      setOriginalValues({ ...record });
-      setCurrentValues({ ...record });
-
-      setStatus({ text: 'Loaded', type: 'success' });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      setError(message);
-      setStatus({ text: 'Error', type: 'error' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    loadRecord();
+  }, [state.instanceUrl, state.objectType, state.recordId]);
 
   const handleFieldChange = useCallback((fieldName: string, value: unknown) => {
-    setCurrentValues((prev) => ({ ...prev, [fieldName]: value }));
+    dispatch({ type: 'UPDATE_FIELD', fieldName, value });
   }, []);
 
   const handlePreviewClick = useCallback((field: FieldDescribe, value: unknown) => {
-    setPreviewField(field);
-    setPreviewValue(value);
-    setIsModalOpen(true);
+    dispatch({ type: 'OPEN_PREVIEW', field, value });
   }, []);
 
   const handleCloseModal = useCallback(() => {
-    setIsModalOpen(false);
-    setPreviewField(null);
-    setPreviewValue(null);
+    dispatch({ type: 'CLOSE_PREVIEW' });
   }, []);
 
-  const handleSave = async () => {
-    if (!hasChanges || !objectType || !recordId) return;
+  const handleSave = useCallback(async () => {
+    if (!hasChanges || !state.objectType || !state.recordId) return;
 
-    setIsSaving(true);
-    setStatus({ text: 'Saving...', type: 'loading' });
+    dispatch({ type: 'SET_SAVING', isSaving: true });
+    dispatch({ type: 'SET_STATUS', text: 'Saving...', statusType: 'loading' });
 
     try {
-      await updateRecord(objectType, recordId, changedFields);
+      await updateRecord(state.objectType, state.recordId, changedFields);
 
-      // Update original values to match saved state
-      setOriginalValues((prev) => ({ ...prev, ...changedFields }));
-
-      setStatus({ text: 'Saved', type: 'success' });
+      dispatch({ type: 'COMMIT_CHANGES', changedFields });
+      dispatch({ type: 'SET_STATUS', text: 'Saved', statusType: 'success' });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      setStatus({ text: 'Save Failed', type: 'error' });
+      dispatch({ type: 'SET_STATUS', text: 'Save Failed', statusType: 'error' });
       alert(`Error saving record: ${message}`);
     } finally {
-      setIsSaving(false);
+      dispatch({ type: 'SET_SAVING', isSaving: false });
     }
-  };
+  }, [hasChanges, state.objectType, state.recordId, changedFields]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
+    if (!state.instanceUrl || !state.objectType || !state.recordId) return;
+
+    const loadRecord = async () => {
+      dispatch({ type: 'SET_LOADING', isLoading: true });
+      dispatch({ type: 'SET_STATUS', text: 'Loading...', statusType: 'loading' });
+
+      try {
+        const describe = await getObjectDescribe(state.objectType!);
+        const { record, nameFieldMap: nfMap } = await getRecordWithRelationships(
+          state.objectType!,
+          state.recordId!,
+          describe.fields
+        );
+
+        const fieldMap: Record<string, FieldDescribe> = {};
+        for (const field of describe.fields) {
+          fieldMap[field.name] = field;
+        }
+
+        const sorted = sortFields(describe.fields);
+        const filtered = filterFields(sorted);
+
+        document.title = `${state.recordId} - Record Viewer - sftools`;
+
+        dispatch({
+          type: 'SET_RECORD_DATA',
+          fieldDescribe: fieldMap,
+          nameFieldMap: nfMap,
+          sortedFields: filtered,
+          objectLabel: describe.label,
+          recordData: { ...record },
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        dispatch({ type: 'SET_ERROR', error: message });
+      }
+    };
+
     loadRecord();
-  };
+  }, [state.instanceUrl, state.objectType, state.recordId]);
 
-  const handleOpenInOrg = () => {
-    if (instanceUrl && objectType && recordId) {
-      const url = `${instanceUrl}/lightning/r/${objectType}/${recordId}/view`;
+  const handleOpenInOrg = useCallback(() => {
+    if (state.instanceUrl && state.objectType && state.recordId) {
+      const url = `${state.instanceUrl}/lightning/r/${state.objectType}/${state.recordId}/view`;
       window.open(url, '_blank');
     }
-  };
+  }, [state.instanceUrl, state.objectType, state.recordId]);
 
   // Render error state
-  if (error && !isLoading) {
+  if (state.error && !state.isLoading) {
     return (
       <div data-testid="record-page">
         <header className="standalone-header">
@@ -210,7 +372,7 @@ export function RecordPage() {
             </div>
             <div className="card-body">
               <div className={styles.errorContainer}>
-                <p className={styles.errorMessage}>{error}</p>
+                <p className={styles.errorMessage}>{state.error}</p>
                 <p className={styles.errorHint}>Please check the connection and try again.</p>
               </div>
             </div>
@@ -240,8 +402,12 @@ export function RecordPage() {
           </div>
           <div className="card-body">
             <div className={styles.recordInfo}>
-              <span className={styles.objectName} id="objectName">{objectLabel}</span>
-              <span className={styles.recordId} id="recordId">{recordId}</span>
+              <span className={styles.objectName} id="objectName">
+                {state.objectLabel}
+              </span>
+              <span className={styles.recordId} id="recordId">
+                {state.recordId}
+              </span>
               <button
                 className={`button-neutral ${styles.openInOrgBtn}`}
                 onClick={handleOpenInOrg}
@@ -249,7 +415,9 @@ export function RecordPage() {
               >
                 Open in Org
               </button>
-              <StatusBadge type={status.type} id="status">{status.text}</StatusBadge>
+              <StatusBadge type={state.status.type} id="status">
+                {state.status.text}
+              </StatusBadge>
             </div>
 
             <div className={styles.fieldHeader}>
@@ -261,18 +429,18 @@ export function RecordPage() {
             </div>
 
             <div className={styles.fieldsContainer} id="fieldsContainer">
-              {isLoading ? (
+              {state.isLoading ? (
                 <div className={styles.loadingContainer}>Loading record data...</div>
               ) : (
-                sortedFields.map((field) => (
+                state.sortedFields.map((field) => (
                   <FieldRow
                     key={field.name}
                     field={field}
-                    value={currentValues[field.name]}
-                    originalValue={originalValues[field.name]}
-                    record={currentValues as SObject}
-                    nameFieldMap={nameFieldMap}
-                    connectionId={connectionId || ''}
+                    value={state.currentValues[field.name]}
+                    originalValue={state.originalValues[field.name]}
+                    record={state.currentValues as SObject}
+                    nameFieldMap={state.nameFieldMap}
+                    connectionId={state.connectionId || ''}
                     onChange={handleFieldChange}
                     onPreviewClick={handlePreviewClick}
                   />
@@ -284,12 +452,17 @@ export function RecordPage() {
               <button
                 className={`button-brand ${styles.saveBtn}`}
                 onClick={handleSave}
-                disabled={!hasChanges || isSaving}
+                disabled={!hasChanges || state.isSaving}
                 id="saveBtn"
               >
                 Save Changes
               </button>
-              <button className="button-neutral" onClick={handleRefresh} disabled={isLoading} id="refreshBtn">
+              <button
+                className="button-neutral"
+                onClick={handleRefresh}
+                disabled={state.isLoading}
+                id="refreshBtn"
+              >
                 Refresh
               </button>
               <span className={styles.changeCount} id="changeCount">
@@ -303,10 +476,10 @@ export function RecordPage() {
       </main>
 
       <RichTextModal
-        isOpen={isModalOpen}
+        isOpen={state.isModalOpen}
         onClose={handleCloseModal}
-        field={previewField}
-        value={previewValue}
+        field={state.previewField}
+        value={state.previewValue}
       />
     </div>
   );

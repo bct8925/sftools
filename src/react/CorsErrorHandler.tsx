@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Modal } from '../components/modal/Modal';
+import styles from './CorsErrorHandler.module.css';
 
 /**
  * Handles CORS error events by showing a modal with configuration instructions.
@@ -23,39 +24,33 @@ export function CorsErrorHandler() {
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose}>
-      <div className="modal-dialog" style={{ maxWidth: '600px', padding: '24px' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '16px', color: 'var(--error-color)' }}>
+      <div className={`modal-dialog ${styles.dialog}`}>
+        <h3 className={styles.heading}>
           CORS Configuration Required
         </h3>
-        <p style={{ marginBottom: '16px' }}>
+        <p className={styles.description}>
           To allow the Chrome extension to make requests to your Salesforce org, you need to add a
           CORS entry or enable the local proxy.
         </p>
-        <p style={{ marginBottom: '12px', fontWeight: 600 }}>
+        <p className={styles.optionHeading}>
           Option 1: Configure CORS in Salesforce (Recommended for Quick Setup)
         </p>
-        <ol style={{ marginBottom: '20px', paddingLeft: '24px' }}>
+        <ol className={styles.steps}>
           <li>In Salesforce Setup, search for &quot;CORS&quot;</li>
           <li>Click &quot;CORS&quot; under Security</li>
           <li>Click &quot;New&quot; to add an allowed origin pattern</li>
           <li>
             Enter:{' '}
-            <code
-              style={{
-                background: 'var(--bg-secondary)',
-                padding: '2px 6px',
-                borderRadius: '3px',
-              }}
-            >
+            <code className={styles.code}>
               chrome-extension://mckblnkfhlgocgmehmnihmagmhbnjioj
             </code>
           </li>
           <li>Save the CORS entry</li>
         </ol>
-        <p style={{ marginBottom: '12px', fontWeight: 600 }}>
+        <p className={styles.optionHeading}>
           Option 2: Enable Local Proxy (Bypasses CORS Automatically)
         </p>
-        <p style={{ marginBottom: '20px' }}>
+        <p className={styles.optionDescription}>
           The local proxy routes requests through a native host, bypassing browser CORS
           restrictions. See the Settings tab for installation instructions.
         </p>

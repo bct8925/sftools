@@ -1,4 +1,4 @@
-import { useCallback, type ChangeEvent } from 'react';
+import { useCallback, memo, type ChangeEvent } from 'react';
 import type { FieldDescribe, SObject } from '../../types/salesforce';
 import { formatValue, parseValue, formatPreviewHtml } from '../../lib/record-utils';
 import styles from './RecordPage.module.css';
@@ -17,7 +17,7 @@ interface FieldRowProps {
 /**
  * Single field row with label, API name, type, editable value input, and preview.
  */
-export function FieldRow({
+export const FieldRow = memo(function FieldRow({
   field,
   value,
   originalValue,
@@ -91,7 +91,7 @@ export function FieldRow({
       <div className={styles.fieldPreview}>{previewContent}</div>
     </div>
   );
-}
+});
 
 function isValueModified(originalValue: unknown, currentValue: unknown): boolean {
   const originalStr =

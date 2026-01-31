@@ -49,15 +49,6 @@ export function ApexOutput({ output, className }: ApexOutputProps) {
     };
   }, [applyFilter]);
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (filterTimeoutRef.current !== null) {
-        clearTimeout(filterTimeoutRef.current);
-      }
-    };
-  }, []);
-
   return (
     <div className={`card ${className || ''}`} data-testid="apex-output">
       <div className="card-header">

@@ -90,7 +90,7 @@ export function ObjectList({
           <div className={styles.loadingContainer}>No objects found</div>
         ) : (
           filteredObjects.map((obj) => {
-            const setupUrl = `${instanceUrl}/lightning/setup/ObjectManager/${obj.name}/Details/view`;
+            const setupUrl = `${instanceUrl.replace('.salesforce.com', '.salesforce-setup.com')}/lightning/setup/ObjectManager/${obj.name}/Details/view`;
             return (
               <div
                 key={obj.name}

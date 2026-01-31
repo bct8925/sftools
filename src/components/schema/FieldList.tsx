@@ -201,7 +201,7 @@ function FieldItem({
     return typeDisplay.text;
   };
 
-  const setupUrl = `${instanceUrl}/lightning/setup/ObjectManager/${objectName}/FieldsAndRelationships/${field.name}/view`;
+  const setupUrl = `${instanceUrl.replace('.salesforce.com', '.salesforce-setup.com')}/lightning/setup/ObjectManager/${objectName}/FieldsAndRelationships/${field.name}/view`;
 
   return (
     <div className={styles.fieldItem} data-testid="schema-field-item" data-field-name={field.name}>

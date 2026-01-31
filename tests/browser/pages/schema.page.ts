@@ -236,6 +236,28 @@ export class SchemaPage extends BasePage {
     }
 
     /**
+     * Get the external link href for an object item
+     */
+    async getObjectLinkHref(apiName: string): Promise<string | null> {
+        const objectItem = this.page.locator(
+            `[data-testid="schema-object-item"][data-object-name="${apiName}"]`
+        );
+        const link = objectItem.locator('a[target="_blank"]');
+        return link.getAttribute('href');
+    }
+
+    /**
+     * Get the external link href for a field item
+     */
+    async getFieldLinkHref(fieldApiName: string): Promise<string | null> {
+        const fieldItem = this.page.locator(
+            `[data-testid="schema-field-item"][data-field-name="${fieldApiName}"]`
+        );
+        const link = fieldItem.locator('a[target="_blank"]');
+        return link.getAttribute('href');
+    }
+
+    /**
      * Close the fields panel
      */
     async closeFieldsPanel(): Promise<void> {

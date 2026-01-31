@@ -267,6 +267,10 @@
     line-height: 1.6;
 }
 
+.preWrap {
+    white-space: pre-wrap;
+}
+
 /* Style rich text content */
 .modalContentArea p {
     margin: 0 0 10px 0;

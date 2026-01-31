@@ -44,7 +44,7 @@ export function RichTextModal({ isOpen, onClose, field, value }: RichTextModalPr
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(stringValue) }}
             />
           ) : (
-            <div className={styles.modalContentArea} style={{ whiteSpace: 'pre-wrap' }}>
+            <div className={`${styles.modalContentArea} ${styles.preWrap}`}>
               {stringValue}
             </div>
           )}

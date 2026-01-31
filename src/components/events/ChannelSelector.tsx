@@ -74,10 +74,10 @@ export function ChannelSelector({
             ? 'Select an event type...'
             : 'Select a channel...'}
       </option>
-      {channelGroups.map((group, groupIndex) => (
-        <optgroup key={groupIndex} label={group.label}>
-          {group.options.map((option, optionIndex) => (
-            <option key={optionIndex} value={option.value}>
+      {channelGroups.map((group) => (
+        <optgroup key={group.label} label={group.label}>
+          {group.options.map((option) => (
+            <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}

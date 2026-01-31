@@ -96,7 +96,7 @@ export function ButtonDropdown({
       <div className={styles.menu}>
         {options.map((option, index) => (
           <button
-            key={index}
+            key={option.label}
             className={styles.option}
             disabled={option.disabled}
             onClick={() => handleOptionClick(index, option)}

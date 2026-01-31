@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
 import type { SObjectDescribe } from '../../types/salesforce';
 import { filterObjects } from '../../lib/schema-utils';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
@@ -24,6 +24,24 @@ export function ObjectList({
 }: ObjectListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const prevSelectedRef = useRef<string | null>(null);
+
+  // Suppress transition when opening fields panel (instant open, animated close)
+  useLayoutEffect(() => {
+    const wasOpen = prevSelectedRef.current !== null;
+    const isOpen = selectedObjectName !== null;
+    prevSelectedRef.current = selectedObjectName;
+
+    if (!wasOpen && isOpen && panelRef.current) {
+      panelRef.current.style.transition = 'none';
+      requestAnimationFrame(() => {
+        if (panelRef.current) {
+          panelRef.current.style.transition = '';
+        }
+      });
+    }
+  }, [selectedObjectName]);
 
   // Filter objects based on search term
   const filteredObjects = useMemo(
@@ -64,7 +82,7 @@ export function ObjectList({
   }, [selectedObjectName]);
 
   return (
-    <div className={`${styles.objectsPanel}${selectedObjectName ? ` ${styles.withFields}` : ''}`}>
+    <div ref={panelRef} className={`${styles.objectsPanel}${selectedObjectName ? ` ${styles.withFields}` : ''}`}>
       <div className={styles.objectsHeader}>
         <input
           type="text"

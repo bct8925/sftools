@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 /**
  * Hook for managing filtered results with debounced input.
@@ -7,6 +7,14 @@ import { useState, useRef, useCallback } from 'react';
 export function useFilteredResults() {
     const [filterText, setFilterText] = useState('');
     const filterTimeoutRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (filterTimeoutRef.current !== null) {
+                clearTimeout(filterTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;

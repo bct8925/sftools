@@ -75,11 +75,6 @@ export function ButtonIcon({
     [disabled, hasMenu, isOpen, onClick, onToggle]
   );
 
-  // Public methods via ref could be added here with useImperativeHandle if needed
-  const close = useCallback(() => setIsOpen(false), []);
-  const open = useCallback(() => setIsOpen(true), []);
-  const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
-
   return (
     <div
       ref={containerRef}

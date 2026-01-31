@@ -15,7 +15,7 @@ import {
  * - A-F-012: Load from favorites and verify it populates editor
  * - A-F-013: Delete from favorites and verify removal
  */
-describe('Apex Favorites', () => {
+describe('Apex Favorites (A-F-011, A-F-012, A-F-013)', () => {
     let testApex: string;
     let favoriteLabel: string;
 

@@ -1,7 +1,7 @@
 /**
  * Tests for src/lib/salesforce.js
  *
- * Test IDs: SF-U-001 through SF-U-025
+ * Test IDs: SF-U-001 through SF-U-028
  * - SF-U-001: getCurrentUserId() - Returns user ID
  * - SF-U-002: executeAnonymousApex() - Returns execution result (tested in integration tests)
  * - SF-U-003: executeQueryWithColumns() - Returns columns and records
@@ -13,12 +13,12 @@
  * - SF-U-009: getEventChannels() - Returns Platform Events
  * - SF-U-010: getPushTopics() - Returns PushTopics
  * - SF-U-011: publishPlatformEvent() - Publishes event
- * - SF-U-012: deleteAllDebugLogs() - Deletes ApexLog records
+ * - SF-U-012: deleteAllDebugLogs() - Returns 0 when no logs exist
  * - SF-U-013: searchUsers() - Searches by name/username
  * - SF-U-014: enableTraceFlagForUser() - Creates TraceFlag
  * - SF-U-015: searchFlows() - Searches FlowDefinition
  * - SF-U-016: getFlowVersions() - Returns Flow versions
- * - SF-U-017: deleteInactiveFlowVersions() - Composite delete
+ * - SF-U-017: deleteInactiveFlowVersions() - Returns 0 for empty array
  * - SF-U-018: createBulkQueryJob() - Creates Bulk API job
  * - SF-U-019: getBulkQueryJobStatus() - Returns job status
  * - SF-U-020: executeBulkQueryExport() - Full export flow
@@ -28,6 +28,8 @@
  * - SF-U-024: escapeSoql() - Escapes special chars (tested via searchFlows, searchUsers)
  * - SF-U-025: clearDescribeCache() - Clears cache
  * - SF-U-026: getUserInfo() - Returns user info with username
+ * - SF-U-027: deleteAllDebugLogs() - Deletes logs in batches of 25
+ * - SF-U-028: deleteInactiveFlowVersions() - Deletes flow versions
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -400,7 +402,7 @@ describe('salesforce', () => {
             expect(result.deletedCount).toBe(0);
         });
 
-        it('SF-U-012: deletes logs in batches of 25', async () => {
+        it('SF-U-027: deletes logs in batches of 25', async () => {
             // First call returns log IDs
             salesforceRequest.mockResolvedValueOnce({
                 json: {
@@ -434,7 +436,7 @@ describe('salesforce', () => {
             expect(salesforceRequest).not.toHaveBeenCalled();
         });
 
-        it('SF-U-017: deletes flow versions', async () => {
+        it('SF-U-028: deletes flow versions', async () => {
             salesforceRequest.mockResolvedValue({ json: { compositeResponse: [] } });
 
             const result = await deleteInactiveFlowVersions(['301v1', '301v2']);

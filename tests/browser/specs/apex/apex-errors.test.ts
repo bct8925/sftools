@@ -15,7 +15,7 @@ import {
  * - A-F-016: Status badge compile error - Red X with "Compile Error"
  * - A-F-018: Compilation error on specific line - Marker on line 5
  */
-describe('Apex Errors', () => {
+describe('Apex Errors (A-F-004, A-F-016, A-F-018)', () => {
     beforeEach(async () => {
         const router = new MockRouter();
 

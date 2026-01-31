@@ -51,6 +51,6 @@ Use `gh release create` to create the release:
 - Tag: `<version>`
 - Title: `<version>`
 - Body: the release notes from Step 5
-- Attach `dist/sftools.zip` as a release asset (if it exists)
+- Attach `sftools.zip` as a release asset (if it exists)
 
 Report the release URL when done.

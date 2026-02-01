@@ -25,10 +25,10 @@ For each changed file, check:
 ### Code Quality
 
 1. **Component Pattern Compliance**
-   - Uses `template.html?raw` import pattern
-   - Has `connectedCallback()` with proper initialization
-   - Listens for `connection-changed` events if it's a tab component
-   - Uses `querySelector` with class selectors
+   - React functional components with TypeScript
+   - Uses hooks (useState, useEffect, useContext) correctly
+   - Follows project Context provider patterns (Connection, Theme, Proxy)
+   - Uses CSS Modules for component-scoped styles
 
 2. **CSS Variable Usage**
    - No hard-coded colors (must use `var(--variable-name)`)
@@ -90,6 +90,9 @@ Provide a structured report:
 ```
 
 ## Guidelines
+
+> **Tip:** For best results, run `/review` in a fresh session (`/clear` first or new terminal).
+> A clean context avoids bias toward code written in the current session.
 
 - Reference specific file:line locations
 - Explain why something is an issue

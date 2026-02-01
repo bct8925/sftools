@@ -1,8 +1,5 @@
-# field-metadata-detail Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change schema-field-metadata. Update Purpose after archive.
-## Requirements
 ### Requirement: Expandable field detail
 
 Clicking a field row in the Schema Browser toggles an expandable detail section beneath that row showing additional metadata. Only properties relevant to the field's type are displayed.
@@ -32,19 +29,3 @@ Clicking a field row in the Schema Browser toggles an expandable detail section 
 
 - **WHEN** the user clicks a field that has no description, no help text, is not required, has no default value, and no type-specific properties apply
 - **THEN** the detail panel shows only the universal rows with dash placeholders
-
-### Requirement: Picklist value display
-
-#### Scenario: Picklist field with values
-
-- **WHEN** a picklist or multipicklist field is expanded
-- **THEN** picklist values are shown as a list with label and API value
-- **AND** inactive values are visually distinguished
-
-### Requirement: FieldDescribe type includes metadata fields
-
-#### Scenario: Type completeness
-
-- **WHEN** the Salesforce Describe API returns field metadata
-- **THEN** `FieldDescribe` includes `inlineHelpText` (string | null) and `description` (string | null)
-

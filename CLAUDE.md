@@ -23,7 +23,7 @@
 - **MUST** use CSS variables for all colors, shadows, z-index, and radii
 - **MUST** use `salesforceRequest()` for all Salesforce API calls
 - **MUST** use context hooks (`useConnection`, `useTheme`, `useProxy`) for global state
-- **MUST** include tests for new features (unit for lib/, frontend for UI)
+- **MUST** write or update tests when adding or changing functionality (unit for lib/, frontend for UI)
 
 ### Best Practices (SHOULD)
 

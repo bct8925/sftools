@@ -328,49 +328,49 @@ const FieldItem = memo(function FieldItem({
         </div>
       </div>
       {isExpanded && (
-        <div className={styles.fieldDetail}>
-          <div className={styles.fieldDetailRow}>
+        <div className={styles.fieldDetail} data-testid="schema-field-detail" data-field-name={field.name}>
+          <div className={styles.fieldDetailRow} data-testid="schema-field-detail-row" data-detail-label="Description">
             <span className={styles.fieldDetailLabel}>Description</span>
             <span className={styles.fieldDetailValue}>{field.description || dash}</span>
           </div>
-          <div className={styles.fieldDetailRow}>
+          <div className={styles.fieldDetailRow} data-testid="schema-field-detail-row" data-detail-label="Help Text">
             <span className={styles.fieldDetailLabel}>Help Text</span>
             <span className={styles.fieldDetailValue}>{field.inlineHelpText || dash}</span>
           </div>
-          <div className={styles.fieldDetailRow}>
+          <div className={styles.fieldDetailRow} data-testid="schema-field-detail-row" data-detail-label="Required">
             <span className={styles.fieldDetailLabel}>Required</span>
             <span className={styles.fieldDetailValue}>{isRequired ? 'Yes' : dash}</span>
           </div>
-          <div className={styles.fieldDetailRow}>
+          <div className={styles.fieldDetailRow} data-testid="schema-field-detail-row" data-detail-label="Default">
             <span className={styles.fieldDetailLabel}>Default</span>
             <span className={styles.fieldDetailValue}>
               {field.defaultValue != null ? String(field.defaultValue) : dash}
             </span>
           </div>
-          <div className={styles.fieldDetailRow}>
+          <div className={styles.fieldDetailRow} data-testid="schema-field-detail-row" data-detail-label="Size">
             <span className={styles.fieldDetailLabel}>Size</span>
             <span className={styles.fieldDetailValue}>{sizeDisplay || dash}</span>
           </div>
-          <div className={styles.fieldDetailRow}>
+          <div className={styles.fieldDetailRow} data-testid="schema-field-detail-row" data-detail-label="Properties">
             <span className={styles.fieldDetailLabel}>Properties</span>
             <span className={styles.fieldDetailValue}>
               {properties.length > 0 ? (
                 <span className={styles.propertyTags}>
                   {properties.map((prop) => (
-                    <span key={prop} className={styles.propertyTag}>{prop}</span>
+                    <span key={prop} className={styles.propertyTag} data-testid="schema-field-property-tag">{prop}</span>
                   ))}
                 </span>
               ) : dash}
             </span>
           </div>
-          <div className={styles.fieldDetailRow}>
+          <div className={styles.fieldDetailRow} data-testid="schema-field-detail-row" data-detail-label="Relationship">
             <span className={styles.fieldDetailLabel}>Relationship</span>
             <span className={styles.fieldDetailValue}>
               {relationshipLoading ? '…' : resolvedRelationship || dash}
             </span>
           </div>
           {hasPicklist && (
-            <div className={styles.fieldDetailRow}>
+            <div className={styles.fieldDetailRow} data-testid="schema-field-detail-row" data-detail-label="Picklist">
               <span className={styles.fieldDetailLabel}>Picklist</span>
               <div className={styles.picklistValues}>
                 {field.picklistValues!.map((pv) => (
@@ -378,6 +378,8 @@ const FieldItem = memo(function FieldItem({
                     key={pv.value}
                     className={`${styles.picklistTag}${!pv.active ? ` ${styles.inactive}` : ''}`}
                     title={pv.label !== pv.value ? `${pv.label} (${pv.value})` : pv.value}
+                    data-testid="schema-field-picklist-tag"
+                    data-active={String(pv.active)}
                   >
                     {pv.label}
                   </span>

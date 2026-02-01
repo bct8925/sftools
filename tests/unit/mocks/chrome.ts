@@ -36,6 +36,7 @@ interface ChromeMock extends Omit<typeof chrome, 'runtime' | 'tabs'> {
         remove: ReturnType<typeof vi.fn>;
     };
     _reset: () => void;
+    _resetListeners: () => void;
     _setStorageData: (data: ChromeMockStorage) => void;
     _getStorageData: () => ChromeMockStorage;
     _triggerMessage: (message: unknown, sender?: chrome.runtime.MessageSender) => void;
@@ -185,11 +186,16 @@ export function createChromeMock(): ChromeMock {
         // Test helpers (not part of real Chrome API)
         _reset(): void {
             storage = {};
-            storageListeners = [];
-            messageListeners = [];
+            // Don't clear listeners - they're registered at module load time
+            // Use _resetListeners() if you really need to clear them
             chrome.runtime.sendMessage.mockReset().mockResolvedValue({});
             chrome.tabs.create.mockReset().mockResolvedValue({ id: 1 });
             chrome.tabs.query.mockReset().mockResolvedValue([]);
+        },
+
+        _resetListeners(): void {
+            storageListeners = [];
+            messageListeners = [];
         },
 
         _setStorageData(data: ChromeMockStorage): void {

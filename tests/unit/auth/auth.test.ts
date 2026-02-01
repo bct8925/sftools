@@ -18,6 +18,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockConnection } from '../mocks/salesforce.js';
+import { chromeMock } from '../mocks/chrome.js';
 import {
     getAccessToken,
     getInstanceUrl,
@@ -34,12 +35,21 @@ import {
     triggerAuthExpired,
     setPendingAuth,
     consumePendingAuth,
+    validateOAuthState,
+    generateOAuthState,
+    loadAuthTokens,
     migrateFromSingleConnection,
+    migrateCustomConnectedApp,
+    loadCustomConnectedApp,
+    saveCustomConnectedApp,
+    clearCustomConnectedApp,
+    STORAGE_KEYS,
 } from '../../../src/auth/auth.js';
 
 describe('auth', () => {
     beforeEach(() => {
-        // Reset module state by setting null connection
+        // Clear storage but don't reset listeners (they're registered at module load)
+        chromeMock._setStorageData({});
         setActiveConnection(null);
     });
 
@@ -383,24 +393,48 @@ describe('auth', () => {
         });
     });
 
+    describe('generateOAuthState', () => {
+        it('returns a UUID string', () => {
+            const state = generateOAuthState();
+
+            expect(typeof state).toBe('string');
+            expect(state).toBeTruthy();
+            expect(state).toMatch(/^test-uuid-\d+$/);
+        });
+
+        it('generates unique states', () => {
+            const state1 = generateOAuthState();
+            const state2 = generateOAuthState();
+
+            expect(state1).not.toBe(state2);
+        });
+    });
+
     describe('setPendingAuth / consumePendingAuth', () => {
         it('OA-U-006: generates unique OAuth state', async () => {
             const params = {
                 loginDomain: 'https://test.salesforce.com',
                 clientId: 'client-123',
                 connectionId: 'conn-456',
+                state: generateOAuthState(),
             };
 
             await setPendingAuth(params);
             const result = await consumePendingAuth();
 
-            // setPendingAuth internally generates unique state
+            // setPendingAuth stores the state
             expect(result.createdAt).toBeDefined();
             expect(typeof result.createdAt).toBe('number');
+            expect(result.state).toBe(params.state);
         });
 
         it('OA-U-007: validates OAuth state - returns true for valid', async () => {
-            await setPendingAuth({ loginDomain: 'https://login.salesforce.com' });
+            await setPendingAuth({
+                loginDomain: 'https://login.salesforce.com',
+                clientId: null,
+                connectionId: null,
+                state: 'test-state',
+            });
             const result = await consumePendingAuth();
 
             // consumePendingAuth validates and returns pending auth if valid
@@ -419,6 +453,7 @@ describe('auth', () => {
                 loginDomain: 'https://test.salesforce.com',
                 clientId: 'client-123',
                 connectionId: 'conn-456',
+                state: 'test-state',
             };
 
             await setPendingAuth(params);
@@ -428,10 +463,16 @@ describe('auth', () => {
             expect(result.loginDomain).toBe(params.loginDomain);
             expect(result.clientId).toBe(params.clientId);
             expect(result.connectionId).toBe(params.connectionId);
+            expect(result.state).toBe(params.state);
         });
 
         it('OA-U-010: clears pending auth after consume', async () => {
-            await setPendingAuth({ loginDomain: 'https://login.salesforce.com' });
+            await setPendingAuth({
+                loginDomain: 'https://login.salesforce.com',
+                clientId: null,
+                connectionId: null,
+                state: 'test-state',
+            });
             await consumePendingAuth();
 
             // Second consume should return null since first one cleared it
@@ -492,6 +533,373 @@ describe('auth', () => {
             const storage = chrome._getStorageData();
             expect(storage.accessToken).toBeUndefined();
             expect(storage.instanceUrl).toBeUndefined();
+        });
+    });
+
+    describe('loadAuthTokens (deprecated)', () => {
+        it('loads tokens from legacy storage format', async () => {
+            chromeMock._setStorageData({
+                [STORAGE_KEYS.ACCESS_TOKEN]: 'legacy-token',
+                [STORAGE_KEYS.INSTANCE_URL]: 'https://legacy.salesforce.com',
+            });
+
+            const result = await loadAuthTokens();
+
+            expect(result).toBe(true);
+            expect(getAccessToken()).toBe('legacy-token');
+            expect(getInstanceUrl()).toBe('https://legacy.salesforce.com');
+        });
+
+        it('returns false when no tokens exist', async () => {
+            const result = await loadAuthTokens();
+
+            expect(result).toBe(false);
+            expect(getAccessToken()).toBe('');
+            expect(getInstanceUrl()).toBe('');
+        });
+
+        it('returns false when only access token exists', async () => {
+            chromeMock._setStorageData({
+                [STORAGE_KEYS.ACCESS_TOKEN]: 'token-only',
+            });
+
+            const result = await loadAuthTokens();
+
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('validateOAuthState', () => {
+        it('returns valid when state matches', async () => {
+            await setPendingAuth({
+                loginDomain: 'https://test.salesforce.com',
+                clientId: 'test-client',
+                connectionId: null,
+                state: 'test-state-123',
+            });
+
+            const result = await validateOAuthState('test-state-123');
+
+            expect(result.valid).toBe(true);
+            expect(result.pendingAuth?.loginDomain).toBe('https://test.salesforce.com');
+            expect(result.pendingAuth?.state).toBe('test-state-123');
+        });
+
+        it('returns invalid when state does not match', async () => {
+            await setPendingAuth({
+                loginDomain: 'https://test.salesforce.com',
+                clientId: null,
+                connectionId: null,
+                state: 'correct-state',
+            });
+
+            const result = await validateOAuthState('wrong-state');
+
+            expect(result.valid).toBe(false);
+            expect(result.pendingAuth).toBeNull();
+        });
+
+        it('returns invalid when no pending auth exists', async () => {
+            const result = await validateOAuthState('any-state');
+
+            expect(result.valid).toBe(false);
+            expect(result.pendingAuth).toBeNull();
+        });
+
+        it('returns invalid and clears expired pending auth', async () => {
+            const expiredTime = Date.now() - 6 * 60 * 1000; // 6 minutes ago
+            chromeMock._setStorageData({
+                pendingAuth: {
+                    loginDomain: 'https://test.salesforce.com',
+                    clientId: null,
+                    connectionId: null,
+                    state: 'expired-state',
+                    createdAt: expiredTime,
+                },
+            });
+
+            const result = await validateOAuthState('expired-state');
+
+            expect(result.valid).toBe(false);
+            expect(result.pendingAuth).toBeNull();
+
+            // Verify expired auth was cleared
+            const storage = chromeMock._getStorageData();
+            expect(storage.pendingAuth).toBeUndefined();
+        });
+
+        it('clears pending auth after successful validation', async () => {
+            await setPendingAuth({
+                loginDomain: 'https://test.salesforce.com',
+                clientId: null,
+                connectionId: null,
+                state: 'valid-state',
+            });
+
+            await validateOAuthState('valid-state');
+
+            // Second validation should fail since first one cleared it
+            const result = await validateOAuthState('valid-state');
+            expect(result.valid).toBe(false);
+        });
+    });
+
+    describe('consumePendingAuth', () => {
+        it('returns null for expired pending auth', async () => {
+            const expiredTime = Date.now() - 6 * 60 * 1000; // 6 minutes ago
+            chromeMock._setStorageData({
+                pendingAuth: {
+                    loginDomain: 'https://test.salesforce.com',
+                    clientId: null,
+                    connectionId: null,
+                    state: 'test-state',
+                    createdAt: expiredTime,
+                },
+            });
+
+            const result = await consumePendingAuth();
+
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('custom connected app (deprecated)', () => {
+        it('saves custom connected app config', async () => {
+            const config = {
+                enabled: true,
+                clientId: 'custom-client-id',
+            };
+
+            await saveCustomConnectedApp(config);
+
+            const storage = chromeMock._getStorageData();
+            expect(storage.customConnectedApp).toEqual(config);
+        });
+
+        it('loads custom connected app config', async () => {
+            const config = {
+                enabled: true,
+                clientId: 'custom-client-id',
+            };
+            chromeMock._setStorageData({ customConnectedApp: config });
+
+            const result = await loadCustomConnectedApp();
+
+            expect(result).toEqual(config);
+        });
+
+        it('returns null when no custom app config exists', async () => {
+            const result = await loadCustomConnectedApp();
+
+            expect(result).toBeNull();
+        });
+
+        it('clears custom connected app config', async () => {
+            chromeMock._setStorageData({
+                customConnectedApp: { enabled: true, clientId: 'test' },
+            });
+
+            await clearCustomConnectedApp();
+
+            const storage = chromeMock._getStorageData();
+            expect(storage.customConnectedApp).toBeUndefined();
+        });
+    });
+
+    describe('migrateCustomConnectedApp', () => {
+        it('migrates global customConnectedApp to per-connection clientIds', async () => {
+            chromeMock._setStorageData({
+                customConnectedApp: {
+                    enabled: true,
+                    clientId: 'global-client-id',
+                },
+                connections: [
+                    createMockConnection({ id: 'conn-1', clientId: null }),
+                    createMockConnection({ id: 'conn-2', clientId: null }),
+                ],
+            });
+
+            const result = await migrateCustomConnectedApp();
+
+            expect(result).toBe(true);
+            const storage = chromeMock._getStorageData();
+            expect(storage.connections[0].clientId).toBe('global-client-id');
+            expect(storage.connections[1].clientId).toBe('global-client-id');
+            expect(storage.customConnectedApp).toBeUndefined();
+            expect(storage.customAppMigrated).toBe(true);
+        });
+
+        it('preserves existing per-connection clientIds', async () => {
+            chromeMock._setStorageData({
+                customConnectedApp: {
+                    enabled: true,
+                    clientId: 'global-client-id',
+                },
+                connections: [
+                    createMockConnection({ id: 'conn-1', clientId: 'existing-client-id' }),
+                ],
+            });
+
+            await migrateCustomConnectedApp();
+
+            const storage = chromeMock._getStorageData();
+            expect(storage.connections[0].clientId).toBe('existing-client-id');
+        });
+
+        it('returns false when already migrated', async () => {
+            chromeMock._setStorageData({
+                customAppMigrated: true,
+                customConnectedApp: {
+                    enabled: true,
+                    clientId: 'test',
+                },
+            });
+
+            const result = await migrateCustomConnectedApp();
+
+            expect(result).toBe(false);
+        });
+
+        it('returns false when no custom app to migrate', async () => {
+            chromeMock._setStorageData({
+                connections: [createMockConnection()],
+            });
+
+            const result = await migrateCustomConnectedApp();
+
+            expect(result).toBe(false);
+        });
+
+        it('returns false when custom app is disabled', async () => {
+            chromeMock._setStorageData({
+                customConnectedApp: {
+                    enabled: false,
+                    clientId: 'test',
+                },
+            });
+
+            const result = await migrateCustomConnectedApp();
+
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('chrome runtime message listener', () => {
+        it('triggers auth expired when authExpired message received', () => {
+            const callback = vi.fn();
+            onAuthExpired(callback);
+            setActiveConnection(createMockConnection({ id: 'test-conn' }));
+
+            // Trigger authExpired message via chrome.runtime.onMessage
+            chromeMock._triggerMessage({ type: 'authExpired' });
+
+            expect(callback).toHaveBeenCalledWith('test-conn', undefined);
+        });
+
+        it('ignores non-authExpired messages', () => {
+            const callback = vi.fn();
+            onAuthExpired(callback);
+
+            chromeMock._triggerMessage({ type: 'someOtherMessage' });
+
+            expect(callback).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('chrome storage change listener', () => {
+        it('updates module state when active connection tokens are refreshed', async () => {
+            const connection = createMockConnection({ id: 'active-conn' });
+            chromeMock._setStorageData({ connections: [connection] });
+            setActiveConnection(connection);
+
+            const updatedConnection = {
+                ...connection,
+                accessToken: 'new-refreshed-token',
+                instanceUrl: 'https://updated.salesforce.com',
+            };
+
+            // Update storage using chrome.storage.local.set to trigger listeners
+            await chrome.storage.local.set({ connections: [updatedConnection] });
+
+            expect(getAccessToken()).toBe('new-refreshed-token');
+            expect(getInstanceUrl()).toBe('https://updated.salesforce.com');
+        });
+
+        it('triggers auth expired when active connection is removed', async () => {
+            const callback = vi.fn();
+            onAuthExpired(callback);
+            const connection = createMockConnection({ id: 'to-be-removed' });
+            chromeMock._setStorageData({ connections: [connection] });
+            setActiveConnection(connection);
+
+            // Remove connection via storage.set to trigger listeners
+            await chrome.storage.local.set({ connections: [] });
+
+            expect(callback).toHaveBeenCalledWith('to-be-removed', undefined);
+        });
+
+        it('ignores storage changes from non-local areas', async () => {
+            const connection = createMockConnection({ id: 'test-conn' });
+            chromeMock._setStorageData({ connections: [connection] });
+            setActiveConnection(connection);
+            const originalToken = getAccessToken();
+
+            // Trigger change in sync area (not local)
+            chromeMock._triggerStorageChange(
+                {
+                    connections: {
+                        newValue: [{ ...connection, accessToken: 'should-not-update' }],
+                    },
+                },
+                'sync'
+            );
+
+            expect(getAccessToken()).toBe(originalToken);
+        });
+
+        it('updates access token for legacy single-connection format', async () => {
+            setActiveConnection(createMockConnection());
+
+            await chrome.storage.local.set({
+                [STORAGE_KEYS.ACCESS_TOKEN]: 'new-legacy-token',
+            });
+
+            expect(getAccessToken()).toBe('new-legacy-token');
+        });
+
+        it('updates instance URL for legacy single-connection format', async () => {
+            setActiveConnection(createMockConnection());
+
+            await chrome.storage.local.set({
+                [STORAGE_KEYS.INSTANCE_URL]: 'https://new-legacy.salesforce.com',
+            });
+
+            expect(getInstanceUrl()).toBe('https://new-legacy.salesforce.com');
+        });
+
+        it('does not update tokens when no active connection ID', async () => {
+            setActiveConnection(null);
+
+            await chrome.storage.local.set({
+                connections: [createMockConnection({ accessToken: 'should-not-update' })],
+            });
+
+            expect(getAccessToken()).toBe('');
+        });
+    });
+
+    describe('removeConnection', () => {
+        it('cleans up connection describe cache', async () => {
+            const connectionId = 'conn-to-remove';
+            chromeMock._setStorageData({
+                connections: [createMockConnection({ id: connectionId })],
+                [`describeCache_${connectionId}`]: { some: 'cached data' },
+            });
+
+            await removeConnection(connectionId);
+
+            const storage = chromeMock._getStorageData();
+            expect(storage[`describeCache_${connectionId}`]).toBeUndefined();
         });
     });
 });

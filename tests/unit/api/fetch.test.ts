@@ -86,6 +86,19 @@ describe('fetch', () => {
                 type: 'checkProxyConnection',
             });
         });
+
+        it('FE-U-020: returns false when chrome.runtime is undefined', async () => {
+            // Temporarily remove chrome.runtime
+            const originalRuntime = chrome.runtime;
+            (chrome as { runtime: unknown }).runtime = undefined;
+
+            const result = await fetchModule.checkProxyStatus();
+
+            expect(result).toBe(false);
+
+            // Restore chrome.runtime
+            (chrome as { runtime: unknown }).runtime = originalRuntime;
+        });
     });
 
     describe('extensionFetch', () => {
@@ -222,6 +235,212 @@ describe('fetch', () => {
             await fetchModule.extensionFetch('https://api.salesforce.com/test');
 
             expect(callback).toHaveBeenCalled();
+        });
+
+        it('FE-U-022: triggers auth expired with connectionId from response', async () => {
+            const callback = vi.fn();
+            authModule.onAuthExpired(callback);
+
+            chrome.runtime.sendMessage.mockResolvedValueOnce({
+                ok: false,
+                authExpired: true,
+                connectionId: 'response-conn-id',
+                error: 'Session expired',
+            });
+
+            await fetchModule.extensionFetch('https://api.salesforce.com/test');
+
+            expect(callback).toHaveBeenCalledWith('response-conn-id', undefined);
+        });
+
+        it('FE-U-023: triggers auth expired with provided connectionId when response lacks it', async () => {
+            const callback = vi.fn();
+            authModule.onAuthExpired(callback);
+
+            chrome.runtime.sendMessage.mockResolvedValueOnce({
+                ok: false,
+                authExpired: true,
+                error: 'Session expired',
+            });
+
+            await fetchModule.extensionFetch(
+                'https://api.salesforce.com/test',
+                {},
+                'provided-conn-id'
+            );
+
+            expect(callback).toHaveBeenCalledWith('provided-conn-id', undefined);
+        });
+
+        it('FE-U-024: triggers auth expired with active connectionId when no connectionId available', async () => {
+            const callback = vi.fn();
+            authModule.onAuthExpired(callback);
+
+            chrome.runtime.sendMessage.mockResolvedValueOnce({
+                ok: false,
+                authExpired: true,
+                error: 'Session expired',
+            });
+
+            await fetchModule.extensionFetch('https://api.salesforce.com/test');
+
+            // Uses active connection ID from getActiveConnectionId()
+            expect(callback).toHaveBeenCalledWith('active-conn', undefined);
+        });
+    });
+
+    describe('directFetch (headless test mode)', () => {
+        const originalRuntimeId = 'test-extension-id';
+
+        beforeEach(() => {
+            // Set runtime.id to TEST_EXTENSION_ID to simulate headless test mode
+            // This makes isExtensionContext() return false
+            (chrome.runtime as { id: string }).id = 'test-extension-id';
+        });
+
+        afterEach(() => {
+            // Restore original runtime.id
+            (chrome.runtime as { id: string }).id = originalRuntimeId;
+        });
+
+        it('FE-U-021: uses directFetch when chrome is undefined', async () => {
+            // Temporarily remove chrome object
+            const originalChrome = global.chrome;
+            (global as { chrome: unknown }).chrome = undefined;
+
+            global.fetch = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                text: async () => '{"success":true}',
+            });
+
+            const result = await fetchModule.smartFetch('https://api.salesforce.com/test');
+
+            expect(result).toEqual({
+                success: true,
+                status: 200,
+                statusText: 'OK',
+                data: '{"success":true}',
+            });
+
+            // Restore chrome object
+            (global as { chrome: unknown }).chrome = originalChrome;
+        });
+
+        it('FE-U-014: uses directFetch when not in extension context (success)', async () => {
+            global.fetch = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                text: async () => '{"records":[]}',
+            });
+
+            const result = await fetchModule.smartFetch('https://api.salesforce.com/test', {
+                method: 'GET',
+            });
+
+            expect(global.fetch).toHaveBeenCalledWith('https://api.salesforce.com/test', {
+                method: 'GET',
+                headers: undefined,
+                body: undefined,
+            });
+
+            expect(result).toEqual({
+                success: true,
+                status: 200,
+                statusText: 'OK',
+                data: '{"records":[]}',
+            });
+        });
+
+        it('FE-U-015: uses directFetch when not in extension context (network error)', async () => {
+            global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'));
+
+            const result = await fetchModule.smartFetch('https://api.salesforce.com/test');
+
+            expect(result).toEqual({
+                success: false,
+                status: 0,
+                error: 'Network error',
+            });
+        });
+
+        it('FE-U-016: uses directFetch with POST method and body', async () => {
+            global.fetch = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                status: 201,
+                statusText: 'Created',
+                text: async () => '{"id":"001xxx"}',
+            });
+
+            const result = await fetchModule.smartFetch('https://api.salesforce.com/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{"name":"Test"}',
+            });
+
+            expect(global.fetch).toHaveBeenCalledWith('https://api.salesforce.com/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{"name":"Test"}',
+            });
+
+            expect(result).toEqual({
+                success: true,
+                status: 201,
+                statusText: 'Created',
+                data: '{"id":"001xxx"}',
+            });
+        });
+
+        it('FE-U-017: uses directFetch with HTTP error (non-ok response)', async () => {
+            global.fetch = vi.fn().mockResolvedValueOnce({
+                ok: false,
+                status: 404,
+                statusText: 'Not Found',
+                text: async () => '{"error":"Resource not found"}',
+            });
+
+            const result = await fetchModule.smartFetch('https://api.salesforce.com/test');
+
+            expect(result).toEqual({
+                success: false,
+                status: 404,
+                statusText: 'Not Found',
+                data: '{"error":"Resource not found"}',
+            });
+        });
+
+        it('FE-U-018: uses directFetch when fetch throws non-Error object', async () => {
+            global.fetch = vi.fn().mockRejectedValueOnce('Unknown error');
+
+            const result = await fetchModule.smartFetch('https://api.salesforce.com/test');
+
+            expect(result).toEqual({
+                success: false,
+                status: 0,
+                error: 'Network error',
+            });
+        });
+    });
+
+    describe('proxyFetch error handling', () => {
+        beforeEach(() => {
+            authModule.setActiveConnection(createMockConnection({ id: 'active-conn' }));
+        });
+
+        it('FE-U-019: throws error when chrome.runtime is not available', async () => {
+            // Temporarily remove chrome.runtime
+            const originalRuntime = chrome.runtime;
+            (chrome as { runtime: unknown }).runtime = undefined;
+
+            await expect(fetchModule.proxyFetch('https://api.salesforce.com/test')).rejects.toThrow(
+                'Proxy fetch requires extension context'
+            );
+
+            // Restore chrome.runtime
+            (chrome as { runtime: unknown }).runtime = originalRuntime;
         });
     });
 });

@@ -9,5 +9,8 @@ sftools-proxy/sftools-proxy.sh
 test-results/
 coverage/
 
+# Claude
+.claude/plans/
+
 # dora code context index
 .dora/

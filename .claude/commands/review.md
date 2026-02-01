@@ -1,6 +1,6 @@
 ---
 description: Review code changes for quality and patterns
-allowed-tools: Read, Glob, Grep, Bash(git diff:*), Bash(git status:*), Bash(git log:*)
+allowed-tools: Read, Glob, Grep, Task, Bash(git diff:*), Bash(git status:*), Bash(git log:*)
 model: sonnet
 ---
 
@@ -25,10 +25,10 @@ For each changed file, check:
 ### Code Quality
 
 1. **Component Pattern Compliance**
-   - Uses `template.html?raw` import pattern
-   - Has `connectedCallback()` with proper initialization
-   - Listens for `connection-changed` events if it's a tab component
-   - Uses `querySelector` with class selectors
+   - React functional components with TypeScript
+   - Uses hooks (useState, useEffect, useContext) correctly
+   - Follows project Context provider patterns (Connection, Theme, Proxy)
+   - Uses CSS Modules for component-scoped styles
 
 2. **CSS Variable Usage**
    - No hard-coded colors (must use `var(--variable-name)`)
@@ -59,7 +59,17 @@ For each changed file, check:
 2. Event listeners properly cleaned up
 3. Large data sets handled efficiently
 
-## Step 3: Report Findings
+## Step 3: React Performance Review (Subagent)
+
+If any changed files are `.tsx` or `.jsx`, dispatch a subagent to review them against React performance best practices:
+
+Use the Task tool to launch a subagent with the following prompt:
+
+> Invoke `/vercel-react-best-practices` to load the React performance rules. Then review these changed files: [list the changed .tsx/.jsx files]. For each file, check against the loaded rules — focus on unnecessary re-renders, missing memoization, expensive computations in render, bundle impact, and proper hook usage. Return a summary of findings with file:line references.
+
+Include the subagent's findings in the Performance section of the final report.
+
+## Step 4: Report Findings
 
 Provide a structured report:
 
@@ -90,6 +100,9 @@ Provide a structured report:
 ```
 
 ## Guidelines
+
+> **Tip:** For best results, run `/review` in a fresh session (`/clear` first or new terminal).
+> A clean context avoids bias toward code written in the current session.
 
 - Reference specific file:line locations
 - Explain why something is an issue

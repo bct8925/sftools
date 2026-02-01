@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+      "Bash(openspec:*)",
+      "Bash(sf org list:*)",
+      "Bash(sf data query:*)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -7,6 +16,15 @@
           {
             "type": "command",
             "command": "if [[ \"$CLAUDE_TOOL_INPUT\" == *\"rm -rf\"* ]] || [[ \"$CLAUDE_TOOL_INPUT\" == *\"--force\"* && \"$CLAUDE_TOOL_INPUT\" == *\"push\"* ]]; then echo 'BLOCKED: Dangerous command requires confirmation' && exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git commit'; then cd /Users/briantaylor/dev/sftools && npm run validate || exit 2; fi"
           }
         ]
       }

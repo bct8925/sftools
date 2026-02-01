@@ -125,9 +125,10 @@ export class MockRouter {
      * Mock an object describe response
      * @param {string} objectType - Salesforce object type
      * @param {Array} fields - Array of field definitions
+     * @param {Array} childRelationships - Array of child relationship definitions
      */
-    onDescribe(objectType, fields) {
-        const response = this.mockData.objectDescribe(objectType, fields);
+    onDescribe(objectType, fields, childRelationships = []) {
+        const response = this.mockData.objectDescribe(objectType, fields, childRelationships);
         this.addRoute(
             new RegExp(`/services/data/v[\\d.]+/sobjects/${objectType}/describe`),
             response,

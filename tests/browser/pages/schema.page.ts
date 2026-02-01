@@ -272,4 +272,84 @@ export class SchemaPage extends BasePage {
         await this.refreshObjectsBtn.click();
         await this.waitForLoad();
     }
+
+    /**
+     * Click a field row to expand/collapse its detail panel
+     */
+    async clickField(fieldApiName: string): Promise<void> {
+        const fieldItem = this.page.locator(
+            `[data-testid="schema-field-item"][data-field-name="${fieldApiName}"]`
+        );
+        await this.slowClick(fieldItem);
+        await this.page.waitForTimeout(300);
+    }
+
+    /**
+     * Check if a field's detail panel is expanded
+     */
+    async isFieldExpanded(fieldApiName: string): Promise<boolean> {
+        const detail = this.page.locator(
+            `[data-testid="schema-field-detail"][data-field-name="${fieldApiName}"]`
+        );
+        return (await detail.count()) > 0;
+    }
+
+    /**
+     * Get a detail row value by label for a specific field
+     */
+    async getFieldDetailValue(fieldApiName: string, label: string): Promise<string> {
+        const detail = this.page.locator(
+            `[data-testid="schema-field-detail"][data-field-name="${fieldApiName}"]`
+        );
+        const row = detail.locator(
+            `[data-testid="schema-field-detail-row"][data-detail-label="${label}"]`
+        );
+        const value = row.locator('span').last();
+        return (await value.textContent()) || '';
+    }
+
+    /**
+     * Get property tag texts for a field
+     */
+    async getFieldPropertyTags(fieldApiName: string): Promise<string[]> {
+        const detail = this.page.locator(
+            `[data-testid="schema-field-detail"][data-field-name="${fieldApiName}"]`
+        );
+        const tags = detail.locator('[data-testid="schema-field-property-tag"]');
+        const count = await tags.count();
+        const results: string[] = [];
+        for (let i = 0; i < count; i++) {
+            results.push((await tags.nth(i).textContent()) || '');
+        }
+        return results;
+    }
+
+    /**
+     * Get picklist values for a field
+     */
+    async getPicklistValues(
+        fieldApiName: string
+    ): Promise<Array<{ label: string; active: boolean }>> {
+        const detail = this.page.locator(
+            `[data-testid="schema-field-detail"][data-field-name="${fieldApiName}"]`
+        );
+        const tags = detail.locator('[data-testid="schema-field-picklist-tag"]');
+        const count = await tags.count();
+        const results: Array<{ label: string; active: boolean }> = [];
+        for (let i = 0; i < count; i++) {
+            const tag = tags.nth(i);
+            results.push({
+                label: (await tag.textContent()) || '',
+                active: (await tag.getAttribute('data-active')) === 'true',
+            });
+        }
+        return results;
+    }
+
+    /**
+     * Get the relationship value for a field
+     */
+    async getRelationshipValue(fieldApiName: string): Promise<string> {
+        return this.getFieldDetailValue(fieldApiName, 'Relationship');
+    }
 }

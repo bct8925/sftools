@@ -55,13 +55,14 @@ export function createSalesforceMocks() {
         /**
          * Mock object describe response
          */
-        objectDescribe(name, fields = []) {
+        objectDescribe(name, fields = [], childRelationships = []) {
             return createMockResponse({
                 name,
                 label: name,
                 keyPrefix: '001',
                 queryable: true,
                 updateable: true,
+                childRelationships,
                 fields: fields.map(f => ({
                     name: f.name || f,
                     label: f.label || f.name || f,

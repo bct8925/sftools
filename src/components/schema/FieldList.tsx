@@ -410,22 +410,24 @@ const FieldItem = memo(function FieldItem({
                             {field.defaultValue != null ? String(field.defaultValue) : dash}
                         </span>
                     </div>
-                    <div
-                        className={styles.fieldDetailRow}
-                        data-testid="schema-field-detail-row"
-                        data-detail-label="Size"
-                    >
-                        <span className={styles.fieldDetailLabel}>Size</span>
-                        <span className={styles.fieldDetailValue}>{sizeDisplay || dash}</span>
-                    </div>
-                    <div
-                        className={styles.fieldDetailRow}
-                        data-testid="schema-field-detail-row"
-                        data-detail-label="Properties"
-                    >
-                        <span className={styles.fieldDetailLabel}>Properties</span>
-                        <span className={styles.fieldDetailValue}>
-                            {properties.length > 0 ? (
+                    {sizeDisplay && (
+                        <div
+                            className={styles.fieldDetailRow}
+                            data-testid="schema-field-detail-row"
+                            data-detail-label="Size"
+                        >
+                            <span className={styles.fieldDetailLabel}>Size</span>
+                            <span className={styles.fieldDetailValue}>{sizeDisplay}</span>
+                        </div>
+                    )}
+                    {properties.length > 0 && (
+                        <div
+                            className={styles.fieldDetailRow}
+                            data-testid="schema-field-detail-row"
+                            data-detail-label="Properties"
+                        >
+                            <span className={styles.fieldDetailLabel}>Properties</span>
+                            <span className={styles.fieldDetailValue}>
                                 <span className={styles.propertyTags}>
                                     {properties.map(prop => (
                                         <span
@@ -437,21 +439,21 @@ const FieldItem = memo(function FieldItem({
                                         </span>
                                     ))}
                                 </span>
-                            ) : (
-                                dash
-                            )}
-                        </span>
-                    </div>
-                    <div
-                        className={styles.fieldDetailRow}
-                        data-testid="schema-field-detail-row"
-                        data-detail-label="Relationship"
-                    >
-                        <span className={styles.fieldDetailLabel}>Relationship</span>
-                        <span className={styles.fieldDetailValue}>
-                            {relationshipLoading ? '…' : resolvedRelationship || dash}
-                        </span>
-                    </div>
+                            </span>
+                        </div>
+                    )}
+                    {field.type === 'reference' && (
+                        <div
+                            className={styles.fieldDetailRow}
+                            data-testid="schema-field-detail-row"
+                            data-detail-label="Relationship"
+                        >
+                            <span className={styles.fieldDetailLabel}>Relationship</span>
+                            <span className={styles.fieldDetailValue}>
+                                {relationshipLoading ? '…' : resolvedRelationship || dash}
+                            </span>
+                        </div>
+                    )}
                     {hasPicklist && (
                         <div
                             className={styles.fieldDetailRow}

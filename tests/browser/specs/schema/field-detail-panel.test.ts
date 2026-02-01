@@ -227,9 +227,12 @@ describe('Schema Browser - Field Detail Panel', () => {
         const relationship = await schemaPage.getRelationshipValue('AccountId');
         expect(relationship).toBe('Account.Contacts');
 
-        // Non-reference field has no relationship
+        // Non-reference field has no Relationship row (conditionally hidden)
         await schemaPage.clickField('FirstName');
-        const noRel = await schemaPage.getFieldDetailValue('FirstName', 'Relationship');
-        expect(noRel).toBe('—');
+        const detail = await page.waitForSelector(
+            '[data-testid="schema-field-detail"][data-field-name="FirstName"]'
+        );
+        const relRow = await detail!.$('[data-detail-label="Relationship"]');
+        expect(relRow).toBeNull();
     });
 });

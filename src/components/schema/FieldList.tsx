@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect, memo } from 'react';
 import type { FieldDescribe } from '../../types/salesforce';
 import { filterFields, getFieldTypeDisplay } from '../../lib/schema-utils';
 import { getObjectDescribe } from '../../api/salesforce';
@@ -75,8 +75,10 @@ export function FieldList({
     [onEditFormula]
   );
 
-  // Close menu on outside click
+  // Close menu on outside click — only attach listener when a menu is open
   useEffect(() => {
+    if (!openMenuFieldName) return;
+
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (
@@ -89,7 +91,7 @@ export function FieldList({
 
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+  }, [openMenuFieldName]);
 
   // Clear search when object changes
   useEffect(() => {
@@ -163,7 +165,10 @@ interface FieldItemProps {
   onFieldClick: (fieldName: string) => void;
 }
 
-function FieldItem({
+const NUMERIC_TYPES = new Set(['currency', 'double', 'percent', 'int']);
+const STRING_TYPES = new Set(['string', 'textarea', 'phone', 'email', 'url', 'encryptedstring']);
+
+const FieldItem = memo(function FieldItem({
   field,
   objectName,
   instanceUrl,
@@ -174,9 +179,11 @@ function FieldItem({
   onEditClick,
   onFieldClick,
 }: FieldItemProps) {
-  const typeDisplay = getFieldTypeDisplay(field);
-  const isFormulaField =
-    field.calculated && (field as FieldDescribe & { calculatedFormula?: string }).calculatedFormula;
+  const typeDisplay = useMemo(() => getFieldTypeDisplay(field), [field]);
+  const isFormulaField = useMemo(
+    () => field.calculated && (field as FieldDescribe & { calculatedFormula?: string }).calculatedFormula,
+    [field]
+  );
 
   const [resolvedRelationship, setResolvedRelationship] = useState<string | null>(null);
   const [relationshipLoading, setRelationshipLoading] = useState(false);
@@ -232,8 +239,7 @@ function FieldItem({
     [field, onEditClick]
   );
 
-  // Render type cell with optional reference links
-  const renderTypeCell = () => {
+  const typeCell = useMemo(() => {
     if (typeDisplay.isReference && typeDisplay.referenceTo) {
       const links = typeDisplay.referenceTo.map((objName, idx) => (
         <span key={objName}>
@@ -250,28 +256,32 @@ function FieldItem({
       return <>reference ({links})</>;
     }
     return typeDisplay.text;
-  };
+  }, [typeDisplay, onReferenceClick]);
 
-  const setupUrl = `${instanceUrl.replace('.salesforce.com', '.salesforce-setup.com')}/lightning/setup/ObjectManager/${objectName}/FieldsAndRelationships/${field.name}/view`;
+  const setupUrl = useMemo(
+    () => `${instanceUrl.replace('.salesforce.com', '.salesforce-setup.com')}/lightning/setup/ObjectManager/${objectName}/FieldsAndRelationships/${field.name}/view`,
+    [instanceUrl, objectName, field.name]
+  );
 
-  const isRequired = !field.nillable && field.createable;
-  const hasPicklist = (field.type === 'picklist' || field.type === 'multipicklist') && field.picklistValues && field.picklistValues.length > 0;
+  const { isRequired, hasPicklist, sizeDisplay, properties } = useMemo(() => {
+    const required = !field.nillable && field.createable;
+    const picklist = (field.type === 'picklist' || field.type === 'multipicklist') && field.picklistValues && field.picklistValues.length > 0;
 
-  const numericTypes = new Set(['currency', 'double', 'percent', 'int']);
-  const stringTypes = new Set(['string', 'textarea', 'phone', 'email', 'url', 'encryptedstring']);
+    const size = STRING_TYPES.has(field.type) && field.length > 0
+      ? String(field.length)
+      : NUMERIC_TYPES.has(field.type)
+        ? `${field.precision}, ${field.scale}`
+        : null;
 
-  const sizeDisplay = stringTypes.has(field.type) && field.length > 0
-    ? String(field.length)
-    : numericTypes.has(field.type)
-      ? `${field.precision}, ${field.scale}`
-      : null;
+    const props: string[] = [];
+    if (field.externalId) props.push('External ID');
+    if (field.unique) props.push('Unique');
+    if (field.autoNumber) props.push('Auto Number');
 
-  const properties: string[] = [];
-  if (field.externalId) properties.push('External ID');
-  if (field.unique) properties.push('Unique');
-  if (field.autoNumber) properties.push('Auto Number');
+    return { isRequired: required, hasPicklist: picklist, sizeDisplay: size, properties: props };
+  }, [field]);
 
-  const dash = <span className={styles.fieldDetailMuted}>—</span>;
+  const dash = useMemo(() => <span className={styles.fieldDetailMuted}>—</span>, []);
 
   return (
     <>
@@ -288,7 +298,7 @@ function FieldItem({
           {field.name}
         </div>
         <div className={styles.fieldItemType} data-testid="schema-field-type" title={typeDisplay.text}>
-          {renderTypeCell()}
+          {typeCell}
         </div>
         <div className={styles.fieldItemActions}>
           <a
@@ -379,4 +389,4 @@ function FieldItem({
       )}
     </>
   );
-}
+});

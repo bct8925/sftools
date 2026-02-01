@@ -103,7 +103,23 @@ Verify that an implementation matches the change artifacts (specs, tasks, design
      - Add SUGGESTION: "Code pattern deviation: <details>"
      - Recommendation: "Consider following project pattern: <example>"
 
-8. **Generate Verification Report**
+8. **Verify Build**
+
+   Run project validation and build to catch compile errors, lint issues, and formatting problems:
+
+   ```bash
+   npm run validate
+   ```
+   - If validation fails: Add CRITICAL issue with the error output
+   - If validation passes: Note "Validation passed" in report
+
+   ```bash
+   npm run build
+   ```
+   - If build fails: Add CRITICAL issue with the error output
+   - If build passes: Note "Build passed" in report
+
+9. **Generate Verification Report**
 
    **Summary Scorecard**:
    ```
@@ -115,6 +131,7 @@ Verify that an implementation matches the change artifacts (specs, tasks, design
    | Completeness | X/Y tasks, N reqs|
    | Correctness  | M/N reqs covered |
    | Coherence    | Followed/Issues  |
+   | Build        | Pass/Fail        |
    ```
 
    **Issues by Priority**:

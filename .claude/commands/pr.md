@@ -1,6 +1,6 @@
 ---
 description: Create a pull request using gh CLI
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch --show-current), Bash(gh pr create:*), Bash(gh issue view:*), AskUserQuestion
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch --show-current), Bash(gh pr create:*), Bash(gh issue view:*), Bash(ls:*), Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(cp:*), Bash(mkdir:*), AskUserQuestion
 model: sonnet
 ---
 
@@ -45,11 +45,45 @@ Understand:
 - Which components/areas are affected
 - Whether this is a feature, fix, refactor, etc.
 
-## Step 4: Create Pull Request
+## Step 4: Screenshots
+
+Check if the `screenshots/` directory exists with `.png` files:
+
+```bash
+ls screenshots/*.png 2>/dev/null
+```
+
+If screenshots exist:
+
+1. Copy them to `.github/screenshots/` on the current branch:
+   ```bash
+   mkdir -p .github/screenshots
+   cp screenshots/*.png .github/screenshots/
+   ```
+
+2. Commit and push:
+   ```bash
+   git add .github/screenshots/
+   git commit -m "docs: add PR screenshots"
+   git push
+   ```
+
+3. Build image markdown using raw GitHub URLs. For each screenshot file:
+   ```
+   ![<description>](https://raw.githubusercontent.com/bct8925/sftools/<branch>/.github/screenshots/<filename>)
+   ```
+
+4. Include a `## Screenshots` section in the PR body (Step 5).
+
+If no screenshots exist, skip this step.
+
+## Step 5: Create Pull Request
 
 Draft a concise PR title (under 70 characters) and body.
 
 If related to a GitHub issue, include `Fixes #<number>` in the PR body.
+
+If screenshots were committed in Step 4, add a `## Screenshots` section with the image markdown.
 
 ```bash
 gh pr create --title "<title>" --body "$(cat <<'EOF'
@@ -58,13 +92,16 @@ gh pr create --title "<title>" --body "$(cat <<'EOF'
 
 [Fixes #<issue-number> if applicable]
 
+[## Screenshots
+<image markdown from Step 4, if applicable>]
+
 ## Test plan
 - [ ] <verification steps>
 EOF
 )"
 ```
 
-## Step 5: Report
+## Step 6: Report
 
 Output the PR URL so the user can view it.
 

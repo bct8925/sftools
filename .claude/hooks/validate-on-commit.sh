@@ -1,7 +1,7 @@
 #!/bin/bash
 COMMAND=$(jq -r '.tool_input.command')
 if echo "$COMMAND" | grep -q 'git commit'; then
-  cd /Users/briantaylor/dev/sftools || exit 2
+  cd "$(git rev-parse --show-toplevel)" || exit 2
   OUTPUT=$(npm run validate 2>&1)
   if [ $? -ne 0 ]; then
     echo "BLOCKED: npm run validate failed. Fix errors before committing." >&2

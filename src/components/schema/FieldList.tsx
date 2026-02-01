@@ -182,7 +182,7 @@ interface FieldItemProps {
     onFieldClick: (fieldName: string) => void;
 }
 
-const NUMERIC_TYPES = new Set(['currency', 'double', 'percent', 'int']);
+const NUMERIC_TYPES = new Set(['currency', 'double', 'percent']);
 const STRING_TYPES = new Set(['string', 'textarea', 'phone', 'email', 'url', 'encryptedstring']);
 
 const FieldItem = memo(function FieldItem({

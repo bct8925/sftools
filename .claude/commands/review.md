@@ -1,6 +1,6 @@
 ---
 description: Review code changes for quality and patterns
-allowed-tools: Read, Glob, Grep, Bash(git diff:*), Bash(git status:*), Bash(git log:*)
+allowed-tools: Read, Glob, Grep, Task, Bash(git diff:*), Bash(git status:*), Bash(git log:*)
 model: sonnet
 ---
 
@@ -59,7 +59,17 @@ For each changed file, check:
 2. Event listeners properly cleaned up
 3. Large data sets handled efficiently
 
-## Step 3: Report Findings
+## Step 3: React Performance Review (Subagent)
+
+If any changed files are `.tsx` or `.jsx`, dispatch a subagent to review them against React performance best practices:
+
+Use the Task tool to launch a subagent with the following prompt:
+
+> Invoke `/vercel-react-best-practices` to load the React performance rules. Then review these changed files: [list the changed .tsx/.jsx files]. For each file, check against the loaded rules — focus on unnecessary re-renders, missing memoization, expensive computations in render, bundle impact, and proper hook usage. Return a summary of findings with file:line references.
+
+Include the subagent's findings in the Performance section of the final report.
+
+## Step 4: Report Findings
 
 Provide a structured report:
 

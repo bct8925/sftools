@@ -1,5 +1,7 @@
 # sftools
 
+GitHub repo: `bct8925/sftools`
+
 Chrome Extension (Manifest V3) for Salesforce developers. React 19, TypeScript 5.9, Vite 7, Monaco Editor. Vitest (unit) + Playwright (frontend) testing.
 
 ## Tool Use
@@ -70,7 +72,7 @@ npm run check                  # Run typecheck + lint + format:check (no fix)
 npm run fix                    # Auto-fix lint + format only
 ```
 
-**Always run `npm run validate` for linting and formatting.**
+**Run `npm run validate` after changing code files (`.ts`, `.tsx`, `.js`, `.jsx`, `.css`). Skip for docs, config, or non-code changes.**
 
 ### Pre-PR
 

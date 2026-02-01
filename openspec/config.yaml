@@ -14,6 +14,7 @@ rules:
     - Each task should be independently testable
     - Include affected file paths in task descriptions
     - Break into small units that can be verified individually
+    - Include a "Test" task group before the "Verify" group — tests MUST be written using the test-writer agent (Task tool with subagent_type=test-writer)
   design:
     - Reference existing patterns from src/CLAUDE.md
     - Prefer extending existing abstractions over creating new ones

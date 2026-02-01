@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { FieldDescribe } from '../../types/salesforce';
 import { filterFields, getFieldTypeDisplay } from '../../lib/schema-utils';
+import { getObjectDescribe } from '../../api/salesforce';
 import { icons } from '../../lib/icons';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { SfIcon } from '../sf-icon/SfIcon';
@@ -35,6 +36,7 @@ export function FieldList({
 }: FieldListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [openMenuFieldName, setOpenMenuFieldName] = useState<string | null>(null);
+  const [expandedFieldName, setExpandedFieldName] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Filter fields based on search term
@@ -57,6 +59,11 @@ export function FieldList({
   // Toggle field menu
   const handleMenuToggle = useCallback((fieldName: string) => {
     setOpenMenuFieldName((prev) => (prev === fieldName ? null : fieldName));
+  }, []);
+
+  // Toggle field detail expansion
+  const handleFieldClick = useCallback((fieldName: string) => {
+    setExpandedFieldName((prev) => (prev === fieldName ? null : fieldName));
   }, []);
 
   // Handle edit action
@@ -131,9 +138,11 @@ export function FieldList({
               objectName={objectName}
               instanceUrl={instanceUrl}
               isMenuOpen={openMenuFieldName === field.name}
+              isExpanded={expandedFieldName === field.name}
               onMenuToggle={handleMenuToggle}
               onReferenceClick={handleReferenceClick}
               onEditClick={handleEditClick}
+              onFieldClick={handleFieldClick}
             />
           ))
         )}
@@ -147,9 +156,11 @@ interface FieldItemProps {
   objectName: string;
   instanceUrl: string;
   isMenuOpen: boolean;
+  isExpanded: boolean;
   onMenuToggle: (fieldName: string) => void;
   onReferenceClick: (e: React.MouseEvent, objectName: string) => void;
   onEditClick: (field: FieldDescribe) => void;
+  onFieldClick: (fieldName: string) => void;
 }
 
 function FieldItem({
@@ -157,13 +168,49 @@ function FieldItem({
   objectName,
   instanceUrl,
   isMenuOpen,
+  isExpanded,
   onMenuToggle,
   onReferenceClick,
   onEditClick,
+  onFieldClick,
 }: FieldItemProps) {
   const typeDisplay = getFieldTypeDisplay(field);
   const isFormulaField =
     field.calculated && (field as FieldDescribe & { calculatedFormula?: string }).calculatedFormula;
+
+  const [resolvedRelationship, setResolvedRelationship] = useState<string | null>(null);
+  const [relationshipLoading, setRelationshipLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isExpanded || field.type !== 'reference' || field.referenceTo.length === 0) {
+      setResolvedRelationship(null);
+      return;
+    }
+
+    let cancelled = false;
+    setRelationshipLoading(true);
+
+    getObjectDescribe(field.referenceTo[0])
+      .then((describe) => {
+        if (cancelled) return;
+        const match = describe.childRelationships.find(
+          (cr) => cr.childSObject === objectName && cr.field === field.name
+        );
+        setResolvedRelationship(
+          match?.relationshipName
+            ? `${field.referenceTo[0]}.${match.relationshipName}`
+            : null
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setResolvedRelationship(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRelationshipLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [isExpanded, field.type, field.referenceTo, field.name, objectName]);
 
   const handleMenuButtonClick = useCallback(
     (e: React.MouseEvent) => {
@@ -172,6 +219,10 @@ function FieldItem({
     },
     [field.name, onMenuToggle]
   );
+
+  const handleRowClick = useCallback(() => {
+    onFieldClick(field.name);
+  }, [field.name, onFieldClick]);
 
   const handleEditClick = useCallback(
     (e: React.MouseEvent) => {
@@ -203,43 +254,129 @@ function FieldItem({
 
   const setupUrl = `${instanceUrl.replace('.salesforce.com', '.salesforce-setup.com')}/lightning/setup/ObjectManager/${objectName}/FieldsAndRelationships/${field.name}/view`;
 
+  const isRequired = !field.nillable && field.createable;
+  const hasPicklist = (field.type === 'picklist' || field.type === 'multipicklist') && field.picklistValues && field.picklistValues.length > 0;
+
+  const numericTypes = new Set(['currency', 'double', 'percent', 'int']);
+  const stringTypes = new Set(['string', 'textarea', 'phone', 'email', 'url', 'encryptedstring']);
+
+  const sizeDisplay = stringTypes.has(field.type) && field.length > 0
+    ? String(field.length)
+    : numericTypes.has(field.type)
+      ? `${field.precision}, ${field.scale}`
+      : null;
+
+  const properties: string[] = [];
+  if (field.externalId) properties.push('External ID');
+  if (field.unique) properties.push('Unique');
+  if (field.autoNumber) properties.push('Auto Number');
+
+  const dash = <span className={styles.fieldDetailMuted}>—</span>;
+
   return (
-    <div className={styles.fieldItem} data-testid="schema-field-item" data-field-name={field.name}>
-      <div className={styles.fieldItemLabel} data-testid="schema-field-label" title={field.label}>
-        {field.label}
+    <>
+      <div
+        className={`${styles.fieldItem}${isExpanded ? ` ${styles.expanded}` : ''}`}
+        data-testid="schema-field-item"
+        data-field-name={field.name}
+        onClick={handleRowClick}
+      >
+        <div className={styles.fieldItemLabel} data-testid="schema-field-label" title={field.label}>
+          {field.label}
+        </div>
+        <div className={styles.fieldItemName} title={field.name}>
+          {field.name}
+        </div>
+        <div className={styles.fieldItemType} data-testid="schema-field-type" title={typeDisplay.text}>
+          {renderTypeCell()}
+        </div>
+        <div className={styles.fieldItemActions}>
+          <a
+            href={setupUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.fieldItemLink}
+            onClick={(e) => e.stopPropagation()}
+            title="Open in Salesforce Setup"
+            dangerouslySetInnerHTML={{ __html: icons.externalLink }}
+          />
+          {isFormulaField && (
+            <>
+              <button
+                className={styles.fieldMenuButton}
+                onClick={handleMenuButtonClick}
+                aria-label="More options"
+                dangerouslySetInnerHTML={{ __html: icons.verticalDots }}
+              />
+              <div className={`${styles.fieldMenu}${isMenuOpen ? ` ${styles.show}` : ''}`}>
+                <div className={styles.fieldMenuItem} onClick={handleEditClick}>
+                  Edit
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-      <div className={styles.fieldItemName} title={field.name}>
-        {field.name}
-      </div>
-      <div className={styles.fieldItemType} data-testid="schema-field-type" title={typeDisplay.text}>
-        {renderTypeCell()}
-      </div>
-      <div className={styles.fieldItemActions}>
-        <a
-          href={setupUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.fieldItemLink}
-          onClick={(e) => e.stopPropagation()}
-          title="Open in Salesforce Setup"
-          dangerouslySetInnerHTML={{ __html: icons.externalLink }}
-        />
-        {isFormulaField && (
-          <>
-            <button
-              className={styles.fieldMenuButton}
-              onClick={handleMenuButtonClick}
-              aria-label="More options"
-              dangerouslySetInnerHTML={{ __html: icons.verticalDots }}
-            />
-            <div className={`${styles.fieldMenu}${isMenuOpen ? ` ${styles.show}` : ''}`}>
-              <div className={styles.fieldMenuItem} onClick={handleEditClick}>
-                Edit
+      {isExpanded && (
+        <div className={styles.fieldDetail}>
+          <div className={styles.fieldDetailRow}>
+            <span className={styles.fieldDetailLabel}>Description</span>
+            <span className={styles.fieldDetailValue}>{field.description || dash}</span>
+          </div>
+          <div className={styles.fieldDetailRow}>
+            <span className={styles.fieldDetailLabel}>Help Text</span>
+            <span className={styles.fieldDetailValue}>{field.inlineHelpText || dash}</span>
+          </div>
+          <div className={styles.fieldDetailRow}>
+            <span className={styles.fieldDetailLabel}>Required</span>
+            <span className={styles.fieldDetailValue}>{isRequired ? 'Yes' : dash}</span>
+          </div>
+          <div className={styles.fieldDetailRow}>
+            <span className={styles.fieldDetailLabel}>Default</span>
+            <span className={styles.fieldDetailValue}>
+              {field.defaultValue != null ? String(field.defaultValue) : dash}
+            </span>
+          </div>
+          <div className={styles.fieldDetailRow}>
+            <span className={styles.fieldDetailLabel}>Size</span>
+            <span className={styles.fieldDetailValue}>{sizeDisplay || dash}</span>
+          </div>
+          <div className={styles.fieldDetailRow}>
+            <span className={styles.fieldDetailLabel}>Properties</span>
+            <span className={styles.fieldDetailValue}>
+              {properties.length > 0 ? (
+                <span className={styles.propertyTags}>
+                  {properties.map((prop) => (
+                    <span key={prop} className={styles.propertyTag}>{prop}</span>
+                  ))}
+                </span>
+              ) : dash}
+            </span>
+          </div>
+          <div className={styles.fieldDetailRow}>
+            <span className={styles.fieldDetailLabel}>Relationship</span>
+            <span className={styles.fieldDetailValue}>
+              {relationshipLoading ? '…' : resolvedRelationship || dash}
+            </span>
+          </div>
+          {hasPicklist && (
+            <div className={styles.fieldDetailRow}>
+              <span className={styles.fieldDetailLabel}>Picklist</span>
+              <div className={styles.picklistValues}>
+                {field.picklistValues!.map((pv) => (
+                  <span
+                    key={pv.value}
+                    className={`${styles.picklistTag}${!pv.active ? ` ${styles.inactive}` : ''}`}
+                    title={pv.label !== pv.value ? `${pv.label} (${pv.value})` : pv.value}
+                  >
+                    {pv.label}
+                  </span>
+                ))}
               </div>
             </div>
-          </>
-        )}
-      </div>
-    </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }

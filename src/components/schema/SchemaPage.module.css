@@ -203,7 +203,15 @@
     position: relative;
 }
 
+.fieldItem {
+    cursor: pointer;
+}
+
 .fieldItem:hover {
+    background-color: var(--bg-hover);
+}
+
+.fieldItem.expanded {
     background-color: var(--bg-hover);
 }
 
@@ -317,6 +325,75 @@
 .referenceLink:hover {
     color: var(--brand-color);
     text-decoration: underline;
+}
+
+/* Field Detail Panel */
+.fieldDetail {
+    padding: 8px 16px 12px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fieldDetailRow {
+    display: flex;
+    gap: 8px;
+}
+
+.fieldDetailLabel {
+    color: var(--text-secondary);
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+.fieldDetailValue {
+    color: var(--text-primary);
+}
+
+.fieldDetailMuted {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.picklistValues {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.propertyTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.propertyTag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+.picklistTag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+}
+
+.picklistTag.inactive {
+    opacity: 0.5;
+    text-decoration: line-through;
 }
 
 /* Status States */

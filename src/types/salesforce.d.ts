@@ -82,6 +82,11 @@ export interface FieldDescribe {
     relationshipName: string | null;
     picklistValues?: PicklistValue[];
     defaultValue?: unknown;
+    inlineHelpText: string | null;
+    description: string | null;
+    externalId: boolean;
+    unique: boolean;
+    autoNumber: boolean;
 }
 
 export type FieldType =

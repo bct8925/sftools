@@ -94,6 +94,15 @@ Compose a title and body following this structure:
 
 Omit sections that don't apply. Include `enhancement` label for feature requests, `bug` label for bugs (if those labels exist in the repo).
 
+### Difficulty label
+
+Always assign exactly one difficulty label based on estimated implementation complexity:
+
+- **D0**: Trivial — typo, config change, one-line fix
+- **D1**: Simple — small, well-scoped change in 1-2 files
+- **D2**: Moderate — multiple files, some design decisions, testing needed
+- **D3**: Complex — cross-cutting changes, architectural impact, significant effort
+
 **Important**: Do NOT include a "Proposed Solution", "Implementation", or "Technical Approach" section. Issues should only describe the problem or desired capability, not how to build it.
 
 ## Step 4: Confirm with User

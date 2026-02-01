@@ -35,7 +35,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": ".claude/hooks/prettier-on-write.sh"
+                        "command": ".claude/hooks/fix-on-write.sh"
                     }
                 ]
             }

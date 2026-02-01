@@ -9,6 +9,9 @@ sftools-proxy/sftools-proxy.sh
 test-results/
 coverage/
 
+# Screenshots (local working dir; .github/screenshots/ is committed by /pr)
+/screenshots/
+
 # Claude
 .claude/plans/
 

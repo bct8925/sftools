@@ -100,7 +100,7 @@ Three test tiers, all using Vitest:
 
 | Tier | Environment | Command | Purpose |
 |------|-------------|---------|---------|
-| Unit | jsdom | `npm run test:unit` | Fast, mocked tests for `src/lib/` |
+| Unit | jsdom | `npm run test:unit` | Business logic tests for `src/api/`, `src/auth/`, `src/background/`, `src/hooks/`, `src/lib/`, and `sftools-proxy/` |
 | Frontend | Playwright + Chromium | `npm run test:frontend` | Browser tests with real UI interaction |
 | Integration | Node | `npm run test:integration` | Real Salesforce API calls (requires `.env.test`) |
 

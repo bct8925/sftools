@@ -50,6 +50,7 @@ tests/
 │   ├── auth/                 # Tests for src/auth/*
 │   │   ├── auth.test.ts
 │   │   └── oauth-credentials.test.ts
+│   ├── hooks/                # Tests for src/hooks/*
 │   ├── lib/                  # Tests for src/lib/*
 │   │   └── ...
 │   └── proxy/                # Tests for sftools-proxy/src/*

@@ -95,7 +95,7 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                     <MonacoEditor
                         ref={editorRef}
                         language="json"
-                        value="{\n  \n}"
+                        value={'{\n  \n}'}
                         onExecute={handlePublish}
                         className={`monaco-container ${styles.publishEditor}`}
                         data-testid="event-publish-editor"

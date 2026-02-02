@@ -63,6 +63,7 @@ const formatTime = (isoString: string): string => {
 };
 
 const MAX_EVENTS = 100;
+const MAX_SYSTEM_EVENTS = 50;
 
 /**
  * Events Tab - Unified Streaming (gRPC Pub/Sub + CometD)
@@ -133,8 +134,14 @@ export function EventsTab() {
                 // Enforce limit on non-system events while preserving order
                 const nonSystemCount = next.filter(e => !e.isSystemMessage).length;
                 if (nonSystemCount > MAX_EVENTS) {
-                    // Remove oldest non-system event
                     const idx = next.findIndex(e => !e.isSystemMessage);
+                    if (idx !== -1) next.splice(idx, 1);
+                }
+
+                // Enforce limit on system events
+                const systemCount = next.filter(e => e.isSystemMessage).length;
+                if (systemCount > MAX_SYSTEM_EVENTS) {
+                    const idx = next.findIndex(e => e.isSystemMessage);
                     if (idx !== -1) next.splice(idx, 1);
                 }
 

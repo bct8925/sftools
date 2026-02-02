@@ -126,6 +126,7 @@
     letter-spacing: 0.5px;
     position: sticky;
     top: 0;
+    z-index: var(--z-sticky);
 }
 
 .eventTable tbody tr:hover {

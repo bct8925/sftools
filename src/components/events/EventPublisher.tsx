@@ -6,120 +6,118 @@ import { publishPlatformEvent } from '../../api/salesforce';
 import styles from './EventsTab.module.css';
 
 interface EventPublisherProps {
-  /** Available platform events */
-  platformEvents: Array<{ QualifiedApiName: string; Label?: string; DeveloperName: string }>;
-  /** Called when an event is published successfully */
-  onPublishSuccess?: (message: string) => void;
-  /** Called when an error occurs */
-  onError?: (message: string) => void;
+    /** Available platform events */
+    platformEvents: Array<{ QualifiedApiName: string; Label?: string; DeveloperName: string }>;
+    /** Called when an event is published successfully */
+    onPublishSuccess?: (message: string) => void;
+    /** Called when an error occurs */
+    onError?: (message: string) => void;
 }
 
 /**
  * Event publisher card for publishing Platform Events.
  */
-export function EventPublisher({
-  platformEvents,
-  onPublishSuccess,
-  onError,
-}: EventPublisherProps) {
-  const editorRef = useRef<MonacoEditorRef>(null);
-  const [selectedChannel, setSelectedChannel] = useState('');
-  const [status, setStatus] = useState('');
-  const [statusType, setStatusType] = useState<StatusType>('');
-  const [isPublishing, setIsPublishing] = useState(false);
+export function EventPublisher({ platformEvents, onPublishSuccess, onError }: EventPublisherProps) {
+    const editorRef = useRef<MonacoEditorRef>(null);
+    const [selectedChannel, setSelectedChannel] = useState('');
+    const [status, setStatus] = useState('');
+    const [statusType, setStatusType] = useState<StatusType>('');
+    const [isPublishing, setIsPublishing] = useState(false);
 
-  const updateStatus = useCallback((text: string, type: StatusType = '') => {
-    setStatus(text);
-    setStatusType(type);
-  }, []);
+    const updateStatus = useCallback((text: string, type: StatusType = '') => {
+        setStatus(text);
+        setStatusType(type);
+    }, []);
 
-  const handlePublish = async () => {
-    if (!selectedChannel) {
-      updateStatus('Select an event type', 'error');
-      onError?.('Select an event type');
-      return;
-    }
+    const handlePublish = async () => {
+        if (!selectedChannel) {
+            updateStatus('Select an event type', 'error');
+            onError?.('Select an event type');
+            return;
+        }
 
-    const editorValue = editorRef.current?.getValue() || '{}';
-    let payload: Record<string, unknown>;
-    try {
-      payload = JSON.parse(editorValue);
-    } catch {
-      updateStatus('Invalid JSON', 'error');
-      onError?.('Invalid JSON');
-      return;
-    }
+        const editorValue = editorRef.current?.getValue() || '{}';
+        let payload: Record<string, unknown>;
+        try {
+            payload = JSON.parse(editorValue);
+        } catch {
+            updateStatus('Invalid JSON', 'error');
+            onError?.('Invalid JSON');
+            return;
+        }
 
-    updateStatus('Publishing...', 'loading');
-    setIsPublishing(true);
+        updateStatus('Publishing...', 'loading');
+        setIsPublishing(true);
 
-    try {
-      const result = await publishPlatformEvent(selectedChannel, payload);
+        try {
+            const result = await publishPlatformEvent(selectedChannel, payload);
 
-      if (result.success) {
-        updateStatus('Published', 'success');
-        const message = `Published event: ${result.id || 'success'}`;
-        onPublishSuccess?.(message);
-      } else {
-        updateStatus(result.error || 'Publish failed', 'error');
-        onError?.(result.error || 'Publish failed');
-      }
-    } catch (err) {
-      console.error('Publish error:', err);
-      updateStatus('Error', 'error');
-      onError?.('Publish error');
-    } finally {
-      setIsPublishing(false);
-    }
-  };
+            if (result.success) {
+                updateStatus('Published', 'success');
+                const message = `Published event: ${result.id || 'success'}`;
+                onPublishSuccess?.(message);
+            } else {
+                updateStatus(result.error || 'Publish failed', 'error');
+                onError?.(result.error || 'Publish failed');
+            }
+        } catch (err) {
+            console.error('Publish error:', err);
+            updateStatus('Error', 'error');
+            onError?.('Publish error');
+        } finally {
+            setIsPublishing(false);
+        }
+    };
 
-  return (
-    <div className="card">
-      <div className="card-header">
-        <div className={`card-header-icon ${styles.headerIconPublish}`}>
-          P
+    return (
+        <div className="card">
+            <div className="card-header">
+                <div className={`card-header-icon ${styles.headerIconPublish}`}>P</div>
+                <h2>Publish Event</h2>
+            </div>
+            <div className="card-body">
+                <div className="form-element">
+                    <label htmlFor="event-publish-channel">Event Type</label>
+                    <ChannelSelector
+                        platformEvents={platformEvents}
+                        standardEvents={[]}
+                        pushTopics={[]}
+                        systemTopics={[]}
+                        value={selectedChannel}
+                        onChange={setSelectedChannel}
+                        disabled={isPublishing}
+                        publishOnly
+                        data-testid="event-publish-channel"
+                    />
+                </div>
+                <div className="form-element">
+                    <label>JSON Payload (Ctrl/Cmd+Enter to publish)</label>
+                    <MonacoEditor
+                        ref={editorRef}
+                        language="json"
+                        value={'{\n  \n}'}
+                        onExecute={handlePublish}
+                        className={`monaco-container ${styles.publishEditor}`}
+                        data-testid="event-publish-editor"
+                    />
+                </div>
+                <div className="m-top_small">
+                    <button
+                        className="button-brand"
+                        onClick={handlePublish}
+                        disabled={isPublishing}
+                        type="button"
+                        data-testid="event-publish-btn"
+                    >
+                        Publish Event
+                    </button>
+                    {status && (
+                        <StatusBadge type={statusType} data-testid="event-publish-status">
+                            {status}
+                        </StatusBadge>
+                    )}
+                </div>
+            </div>
         </div>
-        <h2>Publish Event</h2>
-      </div>
-      <div className="card-body">
-        <div className="form-element">
-          <label htmlFor="event-publish-channel">Event Type</label>
-          <ChannelSelector
-            platformEvents={platformEvents}
-            standardEvents={[]}
-            pushTopics={[]}
-            systemTopics={[]}
-            value={selectedChannel}
-            onChange={setSelectedChannel}
-            disabled={isPublishing}
-            publishOnly
-            data-testid="event-publish-channel"
-          />
-        </div>
-        <div className="form-element">
-          <label>JSON Payload (Ctrl/Cmd+Enter to publish)</label>
-          <MonacoEditor
-            ref={editorRef}
-            language="json"
-            value="{\n  \n}"
-            onExecute={handlePublish}
-            className="monaco-container"
-            data-testid="event-publish-editor"
-          />
-        </div>
-        <div className="m-top_small">
-          <button
-            className="button-brand"
-            onClick={handlePublish}
-            disabled={isPublishing}
-            type="button"
-            data-testid="event-publish-btn"
-          >
-            Publish Event
-          </button>
-          {status && <StatusBadge type={statusType} data-testid="event-publish-status">{status}</StatusBadge>}
-        </div>
-      </div>
-    </div>
-  );
+    );
 }

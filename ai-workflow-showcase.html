@@ -1,0 +1,2140 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>sftools — AI-Assisted Development</title>
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            :root {
+                --bg: #0a0a0f;
+                --bg-card: #12121a;
+                --bg-card-hover: #1a1a25;
+                --border: #1e1e2e;
+                --border-bright: #2a2a3e;
+                --text: #e0e0e8;
+                --text-dim: #7a7a8e;
+                --text-bright: #ffffff;
+                --accent: #7c6aef;
+                --accent-glow: #7c6aef40;
+                --accent2: #38bdf8;
+                --accent3: #34d399;
+                --accent4: #f472b6;
+                --accent5: #fb923c;
+                --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+                --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                font-family: var(--sans);
+                background: var(--bg);
+                color: var(--text);
+                line-height: 1.6;
+                overflow-x: hidden;
+            }
+
+            /* ── Scrollbar ── */
+            ::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: var(--border-bright);
+                border-radius: 3px;
+            }
+
+            /* ── Hero ── */
+            .hero {
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+                padding: 2rem;
+            }
+
+            .hero-bg {
+                position: absolute;
+                inset: 0;
+                background:
+                    radial-gradient(ellipse 80% 60% at 50% 0%, #7c6aef12 0%, transparent 60%),
+                    radial-gradient(ellipse 60% 40% at 20% 80%, #38bdf808 0%, transparent 50%),
+                    radial-gradient(ellipse 60% 40% at 80% 80%, #34d39908 0%, transparent 50%);
+                pointer-events: none;
+            }
+
+            .hero-grid {
+                position: absolute;
+                inset: 0;
+                background-image:
+                    linear-gradient(var(--border) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+                background-size: 60px 60px;
+                opacity: 0.3;
+                mask-image: radial-gradient(ellipse 70% 50% at 50% 50%, black, transparent);
+                pointer-events: none;
+            }
+
+            .hero-badge {
+                font-family: var(--mono);
+                font-size: 0.75rem;
+                color: var(--accent);
+                border: 1px solid var(--accent-glow);
+                background: #7c6aef10;
+                padding: 0.35rem 1rem;
+                border-radius: 100px;
+                margin-bottom: 1.5rem;
+                position: relative;
+                z-index: 1;
+                letter-spacing: 0.05em;
+            }
+
+            .hero h1 {
+                font-size: clamp(2.5rem, 6vw, 5rem);
+                font-weight: 800;
+                letter-spacing: -0.03em;
+                line-height: 1.1;
+                position: relative;
+                z-index: 1;
+            }
+
+            .hero h1 .gradient {
+                background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            .hero-sub {
+                font-size: 1.15rem;
+                color: var(--text-dim);
+                max-width: 600px;
+                margin-top: 1.25rem;
+                position: relative;
+                z-index: 1;
+            }
+
+            .hero-metrics {
+                display: flex;
+                gap: 2.5rem;
+                margin-top: 3rem;
+                position: relative;
+                z-index: 1;
+            }
+
+            .metric {
+                text-align: center;
+            }
+
+            .metric-value {
+                font-size: 2rem;
+                font-weight: 700;
+                font-family: var(--mono);
+                color: var(--text-bright);
+            }
+
+            .metric-value .unit {
+                font-size: 1rem;
+                color: var(--accent);
+            }
+
+            .metric-label {
+                font-size: 0.75rem;
+                color: var(--text-dim);
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                margin-top: 0.25rem;
+            }
+
+            .scroll-hint {
+                position: absolute;
+                bottom: 2rem;
+                z-index: 1;
+                animation: bounce 2s ease-in-out infinite;
+                color: var(--text-dim);
+                font-size: 0.8rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .scroll-hint svg {
+                width: 20px;
+                height: 20px;
+                stroke: var(--text-dim);
+                fill: none;
+            }
+
+            @keyframes bounce {
+                0%,
+                100% {
+                    transform: translateY(0);
+                }
+
+                50% {
+                    transform: translateY(6px);
+                }
+            }
+
+            /* ── Sections ── */
+            section {
+                padding: 5rem 2rem;
+                max-width: 1100px;
+                margin: 0 auto;
+            }
+
+            .section-label {
+                font-family: var(--mono);
+                font-size: 0.7rem;
+                color: var(--accent);
+                text-transform: uppercase;
+                letter-spacing: 0.15em;
+                margin-bottom: 0.75rem;
+            }
+
+            .section-title {
+                font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+                font-weight: 700;
+                letter-spacing: -0.02em;
+                margin-bottom: 0.75rem;
+            }
+
+            .section-desc {
+                color: var(--text-dim);
+                max-width: 600px;
+                margin-bottom: 2.5rem;
+                font-size: 0.95rem;
+            }
+
+            /* ── Pipeline ── */
+            .pipeline {
+                display: flex;
+                gap: 0;
+                align-items: stretch;
+                overflow-x: auto;
+                padding-bottom: 1rem;
+            }
+
+            .pipe-stage {
+                flex: 1;
+                min-width: 120px;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                padding: 1.25rem 1rem;
+                cursor: pointer;
+                transition: all 0.25s ease;
+                position: relative;
+                text-align: center;
+            }
+
+            .pipe-stage:first-child {
+                border-radius: 10px 0 0 10px;
+            }
+
+            .pipe-stage:last-child {
+                border-radius: 0 10px 10px 0;
+            }
+
+            .pipe-stage:not(:last-child)::after {
+                content: '';
+                position: absolute;
+                right: -1px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 0;
+                height: 0;
+                border-top: 8px solid transparent;
+                border-bottom: 8px solid transparent;
+                border-left: 8px solid var(--border);
+                z-index: 2;
+            }
+
+            .pipe-stage:hover,
+            .pipe-stage.active {
+                background: var(--bg-card-hover);
+                border-color: var(--accent);
+                z-index: 3;
+            }
+
+            .pipe-stage.active {
+                box-shadow: 0 0 20px var(--accent-glow);
+            }
+
+            .pipe-stage .icon {
+                font-size: 1.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .pipe-stage .name {
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: var(--text-bright);
+            }
+
+            .pipe-stage .cmd {
+                font-family: var(--mono);
+                font-size: 0.65rem;
+                color: var(--accent);
+                margin-top: 0.35rem;
+            }
+
+            .pipe-detail {
+                margin-top: 1.5rem;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 1.75rem;
+                min-height: 180px;
+                animation: fadeIn 0.3s ease;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(6px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .pipe-detail h3 {
+                font-size: 1.1rem;
+                margin-bottom: 0.5rem;
+                color: var(--text-bright);
+            }
+
+            .pipe-detail p {
+                color: var(--text-dim);
+                font-size: 0.9rem;
+                margin-bottom: 1rem;
+            }
+
+            .artifact-tabs {
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .artifact-tab {
+                font-family: var(--mono);
+                font-size: 0.7rem;
+                padding: 0.35rem 0.75rem;
+                border-radius: 6px;
+                border: 1px solid var(--border);
+                background: transparent;
+                color: var(--text-dim);
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            .artifact-tab:hover {
+                border-color: var(--accent);
+                color: var(--text);
+            }
+
+            .artifact-tab.active {
+                background: var(--accent);
+                color: white;
+                border-color: var(--accent);
+            }
+
+            .artifact-content {
+                font-family: var(--mono);
+                font-size: 0.78rem;
+                line-height: 1.7;
+                color: var(--text);
+                white-space: pre-wrap;
+                background: #0d0d14;
+                border-radius: 8px;
+                padding: 1.25rem;
+                border: 1px solid var(--border);
+                max-height: 260px;
+                overflow-y: auto;
+            }
+
+            .artifact-content .kw {
+                color: var(--accent);
+            }
+
+            .artifact-content .str {
+                color: var(--accent3);
+            }
+
+            .artifact-content .cmt {
+                color: var(--text-dim);
+            }
+
+            .artifact-content .tag {
+                color: var(--accent2);
+            }
+
+            /* ── Terminal ── */
+            .terminal {
+                background: #0d0d14;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                overflow: hidden;
+                font-family: var(--mono);
+                font-size: 0.8rem;
+            }
+
+            .terminal-bar {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 0.65rem 1rem;
+                background: #0f0f18;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .terminal-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+            }
+
+            .terminal-dot:nth-child(1) {
+                background: #ff5f57;
+            }
+
+            .terminal-dot:nth-child(2) {
+                background: #ffbd2e;
+            }
+
+            .terminal-dot:nth-child(3) {
+                background: #28c840;
+            }
+
+            .terminal-title {
+                margin-left: 0.75rem;
+                color: var(--text-dim);
+                font-size: 0.7rem;
+            }
+
+            .terminal-body {
+                padding: 1rem 1.25rem;
+                min-height: 280px;
+                line-height: 1.8;
+            }
+
+            .terminal-body .line {
+                min-height: 1.4em;
+            }
+
+            .terminal-body .prompt-char {
+                color: var(--accent3);
+            }
+
+            .terminal-body .cmd-text {
+                color: var(--text-bright);
+            }
+
+            .terminal-body .output {
+                color: var(--text-dim);
+            }
+
+            .terminal-body .success {
+                color: var(--accent3);
+            }
+
+            .terminal-body .info {
+                color: var(--accent2);
+            }
+
+            .terminal-body .warn {
+                color: var(--accent5);
+            }
+
+            .terminal-body .agent {
+                color: var(--accent4);
+            }
+
+            .terminal-body .cursor {
+                display: inline-block;
+                width: 8px;
+                height: 15px;
+                background: var(--accent);
+                animation: blink 1s step-end infinite;
+                vertical-align: text-bottom;
+            }
+
+            @keyframes blink {
+                50% {
+                    opacity: 0;
+                }
+            }
+
+            .terminal-controls {
+                display: flex;
+                gap: 0.5rem;
+                padding: 0.75rem 1.25rem;
+                border-top: 1px solid var(--border);
+            }
+
+            .term-btn {
+                font-family: var(--mono);
+                font-size: 0.7rem;
+                padding: 0.3rem 0.75rem;
+                border-radius: 5px;
+                border: 1px solid var(--border);
+                background: transparent;
+                color: var(--text-dim);
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            .term-btn:hover {
+                border-color: var(--accent);
+                color: var(--text);
+            }
+
+            .term-btn.active {
+                background: var(--accent);
+                color: white;
+                border-color: var(--accent);
+            }
+
+            /* ── Cards grid ── */
+            .cards {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 1rem;
+            }
+
+            .card {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 1.5rem;
+                transition: all 0.3s ease;
+                cursor: default;
+            }
+
+            .card:hover {
+                border-color: var(--border-bright);
+                background: var(--bg-card-hover);
+                transform: translateY(-2px);
+            }
+
+            .card-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.1rem;
+                margin-bottom: 1rem;
+            }
+
+            .card h3 {
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: var(--text-bright);
+                margin-bottom: 0.4rem;
+            }
+
+            .card p {
+                font-size: 0.82rem;
+                color: var(--text-dim);
+                line-height: 1.5;
+            }
+
+            .card .tag-row {
+                display: flex;
+                gap: 0.4rem;
+                margin-top: 0.75rem;
+                flex-wrap: wrap;
+            }
+
+            .card .tag {
+                font-family: var(--mono);
+                font-size: 0.6rem;
+                padding: 0.2rem 0.5rem;
+                border-radius: 4px;
+                border: 1px solid var(--border);
+                color: var(--text-dim);
+            }
+
+            /* ── Hooks visualization ── */
+            .hooks-viz {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .hook-row {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 1rem 1.25rem;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+
+            .hook-row:hover {
+                border-color: var(--border-bright);
+                background: var(--bg-card-hover);
+            }
+
+            .hook-row.triggered {
+                border-color: var(--accent3);
+                box-shadow: 0 0 15px #34d39920;
+            }
+
+            .hook-row.blocked {
+                border-color: #ef4444;
+                box-shadow: 0 0 15px #ef444420;
+            }
+
+            .hook-indicator {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: var(--border-bright);
+                transition: all 0.3s ease;
+                flex-shrink: 0;
+            }
+
+            .hook-row.triggered .hook-indicator {
+                background: var(--accent3);
+                box-shadow: 0 0 8px var(--accent3);
+            }
+
+            .hook-row.blocked .hook-indicator {
+                background: #ef4444;
+                box-shadow: 0 0 8px #ef4444;
+            }
+
+            .hook-name {
+                font-weight: 600;
+                font-size: 0.9rem;
+                color: var(--text-bright);
+                min-width: 150px;
+            }
+
+            .hook-trigger {
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                flex: 1;
+            }
+
+            .hook-action {
+                font-family: var(--mono);
+                font-size: 0.7rem;
+                padding: 0.25rem 0.6rem;
+                border-radius: 4px;
+                background: #1a1a25;
+                color: var(--text-dim);
+                transition: all 0.3s ease;
+            }
+
+            .hook-row.triggered .hook-action {
+                background: #34d39920;
+                color: var(--accent3);
+            }
+
+            .hook-row.blocked .hook-action {
+                background: #ef444420;
+                color: #ef4444;
+            }
+
+            /* ── Agents ── */
+            .agents-container {
+                position: relative;
+                height: 320px;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                overflow: hidden;
+            }
+
+            .agent-orchestrator {
+                position: absolute;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--accent);
+                color: white;
+                font-family: var(--mono);
+                font-size: 0.75rem;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                z-index: 5;
+                white-space: nowrap;
+            }
+
+            .agent-line {
+                position: absolute;
+                top: 55px;
+                width: 2px;
+                height: 40px;
+                background: linear-gradient(to bottom, var(--accent), var(--border));
+                z-index: 1;
+            }
+
+            .agent-bubble {
+                position: absolute;
+                top: 100px;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 0.75rem 1rem;
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                width: 200px;
+                transition: all 0.5s ease;
+                z-index: 2;
+            }
+
+            .agent-bubble .agent-name {
+                font-weight: 600;
+                color: var(--text-bright);
+                margin-bottom: 0.35rem;
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+            }
+
+            .agent-bubble .agent-status {
+                color: var(--text-dim);
+                line-height: 1.4;
+            }
+
+            .agent-bubble .progress-bar {
+                height: 3px;
+                border-radius: 2px;
+                background: var(--border);
+                margin-top: 0.5rem;
+                overflow: hidden;
+            }
+
+            .agent-bubble .progress-fill {
+                height: 100%;
+                border-radius: 2px;
+                transition: width 0.5s ease;
+            }
+
+            .agent-status-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                display: inline-block;
+                animation: pulse 1.5s ease-in-out infinite;
+            }
+
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+
+                50% {
+                    opacity: 0.4;
+                }
+            }
+
+            .agents-btn {
+                position: absolute;
+                bottom: 16px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-family: var(--mono);
+                font-size: 0.75rem;
+                padding: 0.5rem 1.25rem;
+                border-radius: 8px;
+                border: 1px solid var(--accent);
+                background: transparent;
+                color: var(--accent);
+                cursor: pointer;
+                transition: all 0.2s ease;
+                z-index: 5;
+            }
+
+            .agents-btn:hover {
+                background: var(--accent);
+                color: white;
+            }
+
+            /* ── Testing tiers ── */
+            .test-tiers {
+                display: flex;
+                gap: 1rem;
+                flex-wrap: wrap;
+            }
+
+            .test-tier {
+                flex: 1;
+                min-width: 240px;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 1.5rem;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+
+            .test-tier:hover {
+                transform: translateY(-2px);
+                border-color: var(--border-bright);
+            }
+
+            .test-tier.running {
+                border-color: var(--accent2);
+                box-shadow: 0 0 20px #38bdf815;
+            }
+
+            .test-tier.pass {
+                border-color: var(--accent3);
+                box-shadow: 0 0 20px #34d39915;
+            }
+
+            .tier-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.75rem;
+            }
+
+            .tier-name {
+                font-weight: 600;
+                color: var(--text-bright);
+            }
+
+            .tier-badge {
+                font-family: var(--mono);
+                font-size: 0.65rem;
+                padding: 0.2rem 0.5rem;
+                border-radius: 4px;
+                border: 1px solid var(--border);
+                color: var(--text-dim);
+            }
+
+            .test-tier.running .tier-badge {
+                border-color: var(--accent2);
+                color: var(--accent2);
+            }
+
+            .test-tier.pass .tier-badge {
+                border-color: var(--accent3);
+                color: var(--accent3);
+            }
+
+            .tier-env {
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                margin-bottom: 0.5rem;
+            }
+
+            .tier-desc {
+                font-size: 0.82rem;
+                color: var(--text-dim);
+            }
+
+            .tier-results {
+                margin-top: 0.75rem;
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                display: none;
+            }
+
+            .test-tier.pass .tier-results {
+                display: block;
+            }
+
+            .tier-results .pass-text {
+                color: var(--accent3);
+            }
+
+            .run-tests-btn {
+                margin-top: 1.5rem;
+                font-family: var(--mono);
+                font-size: 0.8rem;
+                padding: 0.6rem 1.5rem;
+                border-radius: 8px;
+                border: 1px solid var(--accent);
+                background: transparent;
+                color: var(--accent);
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .run-tests-btn:hover {
+                background: var(--accent);
+                color: white;
+            }
+
+            /* ── Infra section ── */
+            .infra-cards {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 1rem;
+            }
+
+            .infra-card {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                overflow: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .infra-card:hover {
+                border-color: var(--border-bright);
+                transform: translateY(-2px);
+            }
+
+            .infra-card-header {
+                padding: 1.25rem 1.5rem;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .infra-card-header .icon {
+                font-size: 1.25rem;
+            }
+
+            .infra-card-header h3 {
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: var(--text-bright);
+            }
+
+            .infra-card-body {
+                padding: 1.25rem 1.5rem;
+            }
+
+            .infra-card-body p {
+                font-size: 0.82rem;
+                color: var(--text-dim);
+                margin-bottom: 0.75rem;
+            }
+
+            .runner-viz {
+                display: flex;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+
+            .runner-dot {
+                width: 32px;
+                height: 32px;
+                border-radius: 6px;
+                border: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: var(--mono);
+                font-size: 0.6rem;
+                color: var(--text-dim);
+                transition: all 0.3s ease;
+            }
+
+            .runner-dot.active {
+                border-color: var(--accent3);
+                color: var(--accent3);
+                background: #34d39910;
+                animation: pulse 2s ease-in-out infinite;
+            }
+
+            .phone-mock {
+                width: 160px;
+                height: 280px;
+                border: 2px solid var(--border-bright);
+                border-radius: 20px;
+                margin: 0 auto;
+                padding: 2rem 0.5rem 1.5rem;
+                position: relative;
+                background: #0d0d14;
+            }
+
+            .phone-notch {
+                position: absolute;
+                top: 8px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 50px;
+                height: 6px;
+                border-radius: 3px;
+                background: var(--border-bright);
+            }
+
+            .phone-screen {
+                width: 100%;
+                height: 100%;
+                border-radius: 6px;
+                overflow: hidden;
+                font-family: var(--mono);
+                font-size: 0.45rem;
+                line-height: 1.5;
+                color: var(--text-dim);
+                padding: 0.4rem;
+            }
+
+            .phone-screen .prompt-char {
+                color: var(--accent3);
+            }
+
+            .phone-screen .cmd-text {
+                color: var(--text-bright);
+            }
+
+            /* ── Footer ── */
+            footer {
+                text-align: center;
+                padding: 3rem 2rem;
+                color: var(--text-dim);
+                font-size: 0.8rem;
+                border-top: 1px solid var(--border);
+            }
+
+            footer a {
+                color: var(--accent);
+                text-decoration: none;
+            }
+
+            footer a:hover {
+                text-decoration: underline;
+            }
+
+            /* ── Divider ── */
+            .divider {
+                height: 1px;
+                background: linear-gradient(to right, transparent, var(--border), transparent);
+                max-width: 1100px;
+                margin: 0 auto;
+            }
+
+            /* ── Responsive ── */
+            @media (max-width: 640px) {
+                .hero-metrics {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1.25rem 2rem;
+                }
+
+                .metric-value {
+                    font-size: 1.5rem;
+                }
+
+                .metric-label {
+                    font-size: 0.65rem;
+                }
+
+                .pipeline {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 0.5rem;
+                }
+
+                .pipe-stage {
+                    border-radius: 10px !important;
+                    min-width: unset;
+                    padding: 1rem 0.75rem;
+                }
+
+                .pipe-stage:not(:last-child)::after {
+                    display: none;
+                }
+
+                .pipe-stage:last-child {
+                    grid-column: 1 / -1;
+                }
+
+                .pipe-stage .icon {
+                    font-size: 1.2rem;
+                    margin-bottom: 0.3rem;
+                }
+
+                .pipe-stage .name {
+                    font-size: 0.72rem;
+                }
+
+                .pipe-stage .cmd {
+                    font-size: 0.58rem;
+                }
+
+                .pipe-detail {
+                    padding: 1.25rem;
+                }
+
+                .pipe-detail p {
+                    font-size: 0.82rem;
+                }
+
+                .artifact-tabs {
+                    flex-wrap: wrap;
+                }
+
+                .agent-bubble {
+                    width: 150px;
+                    font-size: 0.65rem;
+                }
+
+                section {
+                    padding: 3rem 1.25rem;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- ═══════════ HERO ═══════════ -->
+        <div class="hero">
+            <div class="hero-bg"></div>
+            <div class="hero-grid"></div>
+            <div class="hero-badge">v2.3.1 · Chrome Extension</div>
+            <h1>
+                <span class="gradient">sftools</span><br />
+                AI-Assisted Development
+            </h1>
+            <p class="hero-sub">
+                A walkthrough of the AI-assisted dev workflow behind this project — spec-driven
+                planning, automated guardrails, parallel agents, and the tooling that ties it
+                together.
+            </p>
+            <div class="hero-metrics">
+                <div class="metric">
+                    <div class="metric-value" id="m-prs">0</div>
+                    <div class="metric-label">PRs Merged</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="m-loc">0<span class="unit">k</span></div>
+                    <div class="metric-label">Lines of Code</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="m-sessions">0</div>
+                    <div class="metric-label">Agent Sessions</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="m-specs">0</div>
+                    <div class="metric-label">OpenSpec Changes</div>
+                </div>
+            </div>
+            <div class="scroll-hint">
+                <span>See how it works</span>
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 5v14M5 12l7 7 7-7"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+            </div>
+        </div>
+
+        <!-- ═══════════ WORKFLOW PIPELINE ═══════════ -->
+        <div class="divider"></div>
+        <section id="pipeline">
+            <div class="section-label">01 · Workflow</div>
+            <div class="section-title">From Issue to Production</div>
+            <p class="section-desc">
+                Each stage below is clickable. This is the actual flow — AI handles the grunt work
+                at each step, with human review and steering at every transition.
+            </p>
+
+            <div class="pipeline" id="pipeline-stages">
+                <div class="pipe-stage active" data-stage="issue" onclick="setStage('issue')">
+                    <div class="icon">🐛</div>
+                    <div class="name">Issue</div>
+                    <div class="cmd">gh issue</div>
+                </div>
+                <div class="pipe-stage" data-stage="plan" onclick="setStage('plan')">
+                    <div class="icon">📋</div>
+                    <div class="name">Plan</div>
+                    <div class="cmd">/opsx:new</div>
+                </div>
+                <div class="pipe-stage" data-stage="spec" onclick="setStage('spec')">
+                    <div class="icon">📐</div>
+                    <div class="name">Specify</div>
+                    <div class="cmd">/opsx:ff</div>
+                </div>
+                <div class="pipe-stage" data-stage="implement" onclick="setStage('implement')">
+                    <div class="icon">⚡</div>
+                    <div class="name">Implement</div>
+                    <div class="cmd">/opsx:apply</div>
+                </div>
+                <div class="pipe-stage" data-stage="test" onclick="setStage('test')">
+                    <div class="icon">🧪</div>
+                    <div class="name">Test</div>
+                    <div class="cmd">/test</div>
+                </div>
+                <div class="pipe-stage" data-stage="verify" onclick="setStage('verify')">
+                    <div class="icon">✅</div>
+                    <div class="name">Verify</div>
+                    <div class="cmd">/opsx:verify</div>
+                </div>
+                <div class="pipe-stage" data-stage="ship" onclick="setStage('ship')">
+                    <div class="icon">🚀</div>
+                    <div class="name">Ship</div>
+                    <div class="cmd">/pr</div>
+                </div>
+            </div>
+
+            <div class="pipe-detail" id="pipe-detail"></div>
+        </section>
+
+        <!-- ═══════════ TERMINAL DEMO ═══════════ -->
+        <div class="divider"></div>
+        <section id="terminal-section">
+            <div class="section-label">02 · Live Demo</div>
+            <div class="section-title">What the Terminal Looks Like</div>
+            <p class="section-desc">
+                Simulated sessions showing the actual commands used. Switch between demos to see
+                different parts of the workflow.
+            </p>
+
+            <div class="terminal">
+                <div class="terminal-bar">
+                    <div class="terminal-dot"></div>
+                    <div class="terminal-dot"></div>
+                    <div class="terminal-dot"></div>
+                    <span class="terminal-title">claude — sftools</span>
+                </div>
+                <div class="terminal-body" id="term-body"></div>
+                <div class="terminal-controls">
+                    <button class="term-btn active" onclick="playDemo('openspec')">OpenSpec</button>
+                    <button class="term-btn" onclick="playDemo('hooks')">Hooks</button>
+                    <button class="term-btn" onclick="playDemo('dora')">dora</button>
+                    <button class="term-btn" onclick="playDemo('agents')">Parallel Agents</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════ HOOKS ═══════════ -->
+        <div class="divider"></div>
+        <section id="hooks-section">
+            <div class="section-label">03 · Guardrails</div>
+            <div class="section-title">Automated Safety Hooks</div>
+            <p class="section-desc">
+                These are Claude Code hooks — they fire on every tool call. The agent can't save
+                unformatted code, run destructive commands, or commit without validation. Click any
+                row to simulate.
+            </p>
+
+            <div class="hooks-viz" id="hooks-viz">
+                <div class="hook-row" onclick="triggerHook(this, 'triggered')">
+                    <div class="hook-indicator"></div>
+                    <div class="hook-name">fix-on-write</div>
+                    <div class="hook-trigger">Every Edit / Write</div>
+                    <div class="hook-action">eslint --fix && prettier</div>
+                </div>
+                <div class="hook-row" onclick="triggerHook(this, 'blocked')">
+                    <div class="hook-indicator"></div>
+                    <div class="hook-name">block-dangerous</div>
+                    <div class="hook-trigger">Every Bash call</div>
+                    <div class="hook-action">⛔ blocks rm -rf, push --force</div>
+                </div>
+                <div class="hook-row" onclick="triggerHook(this, 'triggered')">
+                    <div class="hook-indicator"></div>
+                    <div class="hook-name">validate-on-commit</div>
+                    <div class="hook-trigger">Every git commit</div>
+                    <div class="hook-action">npm run validate</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════ TESTING ═══════════ -->
+        <div class="divider"></div>
+        <section id="testing-section">
+            <div class="section-label">04 · Quality</div>
+            <div class="section-title">Three-Tier Testing</div>
+            <p class="section-desc">
+                A dedicated test-writer agent generates tests. Nothing gets past /opsx:verify
+                without passing all three tiers.
+            </p>
+
+            <div class="test-tiers" id="test-tiers">
+                <div class="test-tier" data-tier="unit">
+                    <div class="tier-header">
+                        <span class="tier-name">Unit</span>
+                        <span class="tier-badge">idle</span>
+                    </div>
+                    <div class="tier-env">Vitest · jsdom</div>
+                    <div class="tier-desc">
+                        Business logic — API clients, auth flows, hooks, utilities
+                    </div>
+                    <div class="tier-results">
+                        <span class="pass-text">✓ 147 tests passed</span> · 0.8s
+                    </div>
+                </div>
+                <div class="test-tier" data-tier="frontend">
+                    <div class="tier-header">
+                        <span class="tier-name">Frontend</span>
+                        <span class="tier-badge">idle</span>
+                    </div>
+                    <div class="tier-env">Playwright · Chromium</div>
+                    <div class="tier-desc">
+                        Real browser interactions — component rendering, user flows
+                    </div>
+                    <div class="tier-results">
+                        <span class="pass-text">✓ 38 tests passed</span> · 4.2s
+                    </div>
+                </div>
+                <div class="test-tier" data-tier="integration">
+                    <div class="tier-header">
+                        <span class="tier-name">Integration</span>
+                        <span class="tier-badge">idle</span>
+                    </div>
+                    <div class="tier-env">Node · Salesforce API</div>
+                    <div class="tier-desc">Live API calls against real Salesforce orgs</div>
+                    <div class="tier-results">
+                        <span class="pass-text">✓ 12 tests passed</span> · 11.3s
+                    </div>
+                </div>
+            </div>
+            <button class="run-tests-btn" id="run-tests-btn" onclick="runTests()">
+                ▶ Run All Tests
+            </button>
+        </section>
+
+        <!-- ═══════════ PARALLEL AGENTS ═══════════ -->
+        <div class="divider"></div>
+        <section id="agents-section">
+            <div class="section-label">05 · Concurrency</div>
+            <div class="section-title">Parallel Agent Dispatch</div>
+            <p class="section-desc">
+                When there are multiple independent tasks of the same kind — say 4 failing tests or
+                3 unrelated bug fixes — they get dispatched in parallel instead of running
+                sequentially.
+            </p>
+
+            <div class="agents-container" id="agents-container">
+                <div class="agent-orchestrator">🧠 orchestrator</div>
+                <div class="agent-line" style="left: calc(50% - 1px)"></div>
+
+                <div class="agent-bubble" id="agent-0" style="left: 5%; opacity: 0.4">
+                    <div class="agent-name">
+                        <span class="agent-status-dot" style="background: var(--accent2)"></span>
+                        test-writer #1
+                    </div>
+                    <div class="agent-status">Waiting...</div>
+                    <div class="progress-bar">
+                        <div
+                            class="progress-fill"
+                            style="width: 0; background: var(--accent2)"
+                        ></div>
+                    </div>
+                </div>
+                <div class="agent-bubble" id="agent-1" style="left: 28%; opacity: 0.4">
+                    <div class="agent-name">
+                        <span class="agent-status-dot" style="background: var(--accent3)"></span>
+                        test-writer #2
+                    </div>
+                    <div class="agent-status">Waiting...</div>
+                    <div class="progress-bar">
+                        <div
+                            class="progress-fill"
+                            style="width: 0; background: var(--accent3)"
+                        ></div>
+                    </div>
+                </div>
+                <div class="agent-bubble" id="agent-2" style="left: 53%; opacity: 0.4">
+                    <div class="agent-name">
+                        <span class="agent-status-dot" style="background: var(--accent4)"></span>
+                        test-writer #3
+                    </div>
+                    <div class="agent-status">Waiting...</div>
+                    <div class="progress-bar">
+                        <div
+                            class="progress-fill"
+                            style="width: 0; background: var(--accent4)"
+                        ></div>
+                    </div>
+                </div>
+                <div class="agent-bubble" id="agent-3" style="left: 78%; opacity: 0.4">
+                    <div class="agent-name">
+                        <span class="agent-status-dot" style="background: var(--accent5)"></span>
+                        test-writer #4
+                    </div>
+                    <div class="agent-status">Waiting...</div>
+                    <div class="progress-bar">
+                        <div
+                            class="progress-fill"
+                            style="width: 0; background: var(--accent5)"
+                        ></div>
+                    </div>
+                </div>
+
+                <div class="agent-line" style="left: 14%; top: 55px; height: 40px"></div>
+                <div class="agent-line" style="left: 37%; top: 55px; height: 40px"></div>
+                <div class="agent-line" style="left: 62%; top: 55px; height: 40px"></div>
+                <div class="agent-line" style="left: 87%; top: 55px; height: 40px"></div>
+
+                <button class="agents-btn" onclick="runAgents()">▶ Dispatch Agents</button>
+            </div>
+        </section>
+
+        <!-- ═══════════ INFRASTRUCTURE ═══════════ -->
+        <div class="divider"></div>
+        <section id="infra-section">
+            <div class="section-label">06 · Infrastructure</div>
+            <div class="section-title">Beyond the Editor</div>
+            <p class="section-desc">
+                A couple of infrastructure pieces that make the whole thing practical day-to-day.
+            </p>
+
+            <div class="infra-cards">
+                <div class="infra-card">
+                    <div class="infra-card-header">
+                        <div class="icon">🖥️</div>
+                        <h3>Self-Hosted Runners</h3>
+                    </div>
+                    <div class="infra-card-body">
+                        <p>
+                            Multiple GitHub Actions runners on a Mac via
+                            <code
+                                style="
+                                    color: var(--accent);
+                                    font-family: var(--mono);
+                                    font-size: 0.8rem;
+                                "
+                                >ghrunners</code
+                            >. Faster CI, no queue wait, full hardware access.
+                        </p>
+                        <div class="runner-viz" id="runner-viz"></div>
+                    </div>
+                </div>
+
+                <div class="infra-card">
+                    <div class="infra-card-header">
+                        <div class="icon">📱</div>
+                        <h3>Mobile SSH Access</h3>
+                    </div>
+                    <div class="infra-card-body">
+                        <p>
+                            SSH through a Vercel domain to run Claude Code from anywhere — even a
+                            phone.
+                        </p>
+                        <div class="phone-mock">
+                            <div class="phone-notch"></div>
+                            <div class="phone-screen" id="phone-screen"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════ TOOLS ═══════════ -->
+        <div class="divider"></div>
+        <section id="tools-section">
+            <div class="section-label">07 · Toolchain</div>
+            <div class="section-title">Key Tools</div>
+            <p class="section-desc">
+                The custom tools and Claude Code skills that make the workflow work.
+            </p>
+
+            <div class="cards">
+                <div class="card">
+                    <div class="card-icon" style="background: #7c6aef20; color: var(--accent)">
+                        🧠
+                    </div>
+                    <h3>brain</h3>
+                    <p>
+                        Loads coding standards before any code is written. Naming conventions,
+                        patterns, and architecture decisions — enforced consistently.
+                    </p>
+                    <div class="tag-row">
+                        <span class="tag">naming</span>
+                        <span class="tag">patterns</span>
+                        <span class="tag">architecture</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: #38bdf820; color: var(--accent2)">
+                        🔍
+                    </div>
+                    <h3>dora</h3>
+                    <p>
+                        Code intelligence CLI. Symbol lookup, dependency tracing, reference finding
+                        — replaces grep for code exploration.
+                    </p>
+                    <div class="tag-row">
+                        <span class="tag">dora file</span>
+                        <span class="tag">dora symbol</span>
+                        <span class="tag">dora deps</span>
+                        <span class="tag">dora refs</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: #34d39920; color: var(--accent3)">
+                        📋
+                    </div>
+                    <h3>OpenSpec</h3>
+                    <p>
+                        Spec-driven development framework. Proposal → Specs → Design → Tasks — all
+                        agreed upon before a single line of code.
+                    </p>
+                    <div class="tag-row">
+                        <span class="tag">proposal.md</span>
+                        <span class="tag">specs/</span>
+                        <span class="tag">design.md</span>
+                        <span class="tag">tasks.md</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: #f472b620; color: var(--accent4)">
+                        ⚡
+                    </div>
+                    <h3>Parallel Dispatch</h3>
+                    <p>
+                        When multiple independent tasks of the same kind need doing — fixing 4
+                        failing tests, making 3 unrelated bug fixes — they run concurrently instead
+                        of sequentially.
+                    </p>
+                    <div class="tag-row">
+                        <span class="tag">test fixes</span>
+                        <span class="tag">independent bugs</span>
+                        <span class="tag">batch updates</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: #fb923c20; color: var(--accent5)">
+                        🔒
+                    </div>
+                    <h3>Hooks & Guards</h3>
+                    <p>
+                        Automated safety net. Every file save, bash call, and commit passes through
+                        validation — format, lint, and dangerous-command checks.
+                    </p>
+                    <div class="tag-row">
+                        <span class="tag">fix-on-write</span>
+                        <span class="tag">block-dangerous</span>
+                        <span class="tag">validate-on-commit</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: #a78bfa20; color: #a78bfa">🤖</div>
+                    <h3>CI/CD</h3>
+                    <p>
+                        Self-hosted runners, automated AI code review on every PR, build-and-test
+                        pipeline, and auto-packaging on merge.
+                    </p>
+                    <div class="tag-row">
+                        <span class="tag">build-and-test</span>
+                        <span class="tag">claude-review</span>
+                        <span class="tag">build-package</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="divider"></div>
+        <footer>
+            <p>
+                sftools — a case study in AI-assisted development with Claude Code ·
+                <a href="https://github.com/bct8925/sftools">github.com/bct8925/sftools</a>
+            </p>
+        </footer>
+
+        <script src="ai-workflow-stats.js"></script>
+        <script>
+            // ═══════════ HERO COUNTERS ═══════════
+            function animateCounter(el, target, suffix = '', duration = 2000) {
+                const start = performance.now();
+                const tick = now => {
+                    const t = Math.min((now - start) / duration, 1);
+                    const ease = 1 - Math.pow(1 - t, 3);
+                    const val = Math.round(ease * target);
+                    el.innerHTML = val + (suffix ? `<span class="unit">${suffix}</span>` : '');
+                    if (t < 1) requestAnimationFrame(tick);
+                };
+                requestAnimationFrame(tick);
+            }
+
+            const stats = window.SHOWCASE_STATS || { prs: 0, loc: 0, sessions: 0, specs: 0 };
+            const heroObs = new IntersectionObserver(
+                entries => {
+                    if (entries[0].isIntersecting) {
+                        animateCounter(document.getElementById('m-prs'), stats.prs);
+                        animateCounter(document.getElementById('m-loc'), stats.loc, 'k');
+                        animateCounter(document.getElementById('m-sessions'), stats.sessions);
+                        animateCounter(document.getElementById('m-specs'), stats.specs);
+                        heroObs.disconnect();
+                    }
+                },
+                { threshold: 0.3 }
+            );
+            heroObs.observe(document.querySelector('.hero'));
+
+            // ═══════════ PIPELINE ═══════════
+            const stageData = {
+                issue: {
+                    title: 'Bugs & Feature Requests',
+                    desc: 'Everything starts as a GitHub issue — filed by contributors, users, or captured during development. Issues get triaged with /issue-triage and branch names link back automatically.',
+                    body: `<div style="display:flex;flex-direction:column;gap:0.75rem;">
+                  <div style="background:#0d0d14;padding:1rem;border-radius:8px;border:1px solid var(--border);display:flex;align-items:flex-start;gap:0.75rem;">
+                    <span style="color:#ef4444;font-size:1.1rem;">●</span>
+                    <div>
+                      <div style="font-weight:600;font-size:0.85rem;color:var(--text-bright);">#42 — Schema browser search is missing</div>
+                      <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);margin-top:0.25rem;">feature request · opened by bct8925 · 2 days ago</div>
+                      <div style="font-size:0.78rem;color:var(--text-dim);margin-top:0.35rem;">Developers need to search across fields and objects in the schema browser. Currently requires scrolling through the full list.</div>
+                    </div>
+                  </div>
+                  <div style="background:#0d0d14;padding:1rem;border-radius:8px;border:1px solid var(--border);display:flex;align-items:flex-start;gap:0.75rem;">
+                    <span style="color:#ef4444;font-size:1.1rem;">●</span>
+                    <div>
+                      <div style="font-weight:600;font-size:0.85rem;color:var(--text-bright);">#43 — OAuth refresh fails silently on expired tokens</div>
+                      <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);margin-top:0.25rem;">bug · opened by contributor · 5 hours ago</div>
+                      <div style="font-size:0.78rem;color:var(--text-dim);margin-top:0.35rem;">Token refresh returns 401 but error isn't surfaced to the user. Extension appears connected but all API calls fail.</div>
+                    </div>
+                  </div>
+                  <div style="font-family:var(--mono);font-size:0.72rem;color:var(--text-dim);margin-top:0.25rem;">
+                    <span style="color:var(--accent3);">❯</span> <span style="color:var(--text-bright);">git checkout -b issue-42</span><br>
+                    <span style="color:var(--text-dim);">  Branch auto-links to issue on PR creation</span>
+                  </div>
+                </div>`,
+                },
+                plan: {
+                    title: 'Planning with OpenSpec',
+                    desc: 'Every non-trivial change starts with a structured plan. The AI generates the artifacts, but nothing proceeds until a human approves.',
+                    artifacts: {
+                        'proposal.md':
+                            '<span class="cmt"># Schema Browser Search</span><br><br>' +
+                            '<span class="kw">## Summary</span><br>' +
+                            'Add full-text search to the schema browser,<br>' +
+                            'allowing developers to find fields, objects,<br>' +
+                            'and relationships by name or label.<br><br>' +
+                            '<span class="kw">## Capabilities</span><br>' +
+                            '- Real-time search across all sobjects<br>' +
+                            '- Field-level results with type badges<br>' +
+                            '- Keyboard navigation (↑/↓/Enter)<br><br>' +
+                            '<span class="kw">## Non-goals</span><br>' +
+                            '- SOSL-based server-side search<br>' +
+                            '- Saved search history',
+                        'specs/':
+                            '<span class="tag">Feature:</span> Schema Browser Search<br><br>' +
+                            '  <span class="tag">Scenario:</span> User searches for a field<br>' +
+                            '    <span class="kw">WHEN</span> user types <span class="str">"email"</span> in search box<br>' +
+                            '    <span class="kw">THEN</span> results show all fields containing<br>' +
+                            '         <span class="str">"email"</span> in name or label<br>' +
+                            '    <span class="kw">AND</span>  results grouped by sobject<br>' +
+                            '    <span class="kw">AND</span>  each result shows field type badge<br><br>' +
+                            '  <span class="tag">Scenario:</span> Empty search<br>' +
+                            '    <span class="kw">WHEN</span> search box is cleared<br>' +
+                            '    <span class="kw">THEN</span> default object list is restored',
+                        'design.md':
+                            '<span class="cmt"># Design: Schema Browser Search</span><br><br>' +
+                            '<span class="kw">## Approach</span><br>' +
+                            'Extend existing <span class="str">SchemaExplorer</span> component<br>' +
+                            'with search input + filtered results list.<br><br>' +
+                            '<span class="kw">## Decisions</span><br>' +
+                            '✓ Client-side filtering (data already loaded)<br>' +
+                            '✓ Fuse.js for fuzzy matching<br>' +
+                            '✓ Debounce input at 150ms<br>' +
+                            '✗ No server-side search (non-goal)<br><br>' +
+                            '<span class="kw">## Risks</span><br>' +
+                            '- Large orgs (2000+ objects) may need<br>' +
+                            '  virtualized list for performance',
+                        'tasks.md':
+                            '<span class="cmt"># Tasks</span><br><br>' +
+                            '<span class="kw">## Implement</span><br>' +
+                            '☑ Add search input to SchemaExplorer<br>' +
+                            '  <span class="str">src/components/schema/SchemaExplorer.tsx</span><br>' +
+                            '☑ Create useSchemaSearch hook<br>' +
+                            '  <span class="str">src/hooks/useSchemaSearch.ts</span><br>' +
+                            '☑ Add Fuse.js dependency<br>' +
+                            '☐ Wire search results to filtered list<br>' +
+                            '☐ Add keyboard navigation<br><br>' +
+                            '<span class="kw">## Test</span><br>' +
+                            '☐ Unit tests for useSchemaSearch<br>' +
+                            '☐ Frontend test for search interaction<br><br>' +
+                            '<span class="kw">## Verify</span><br>' +
+                            '☐ /opsx:verify against specs',
+                    },
+                },
+                spec: {
+                    title: 'Generating Specifications',
+                    desc: '/opsx:ff generates all four artifacts in one pass. Gherkin-style specs pin down acceptance criteria before any code gets written.',
+                    body: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                  <div style="background:#0d0d14;padding:1rem;border-radius:8px;border:1px solid var(--border);">
+                    <div style="font-family:var(--mono);font-size:0.7rem;color:var(--accent);margin-bottom:0.5rem;">proposal.md</div>
+                    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);">Under 500 words<br>Why + What + Non-goals</div>
+                  </div>
+                  <div style="background:#0d0d14;padding:1rem;border-radius:8px;border:1px solid var(--border);">
+                    <div style="font-family:var(--mono);font-size:0.7rem;color:var(--accent2);margin-bottom:0.5rem;">specs/</div>
+                    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);">WHEN / THEN / AND<br>All behaviors covered</div>
+                  </div>
+                  <div style="background:#0d0d14;padding:1rem;border-radius:8px;border:1px solid var(--border);">
+                    <div style="font-family:var(--mono);font-size:0.7rem;color:var(--accent3);margin-bottom:0.5rem;">design.md</div>
+                    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);">Decisions + Trade-offs<br>References existing patterns</div>
+                  </div>
+                  <div style="background:#0d0d14;padding:1rem;border-radius:8px;border:1px solid var(--border);">
+                    <div style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4);margin-bottom:0.5rem;">tasks.md</div>
+                    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);">Numbered checklist<br>File paths + test group</div>
+                  </div>
+                </div>`,
+                },
+                implement: {
+                    title: 'AI-Assisted Implementation',
+                    desc: '/opsx:apply works through each task, loading brain coding standards first. Hooks auto-format and lint on every file save.',
+                    body: `<div style="white-space:pre-wrap;font-family:var(--mono);font-size:0.78rem;background:#0d0d14;padding:1.25rem;border-radius:8px;border:1px solid var(--border);line-height:1.8;">
+            <span style="color:var(--accent3);">❯</span> <span style="color:var(--text-bright);">/opsx:apply</span>
+            <span style="color:var(--text-dim);">Loading brain standards...</span>
+            <span style="color:var(--accent2);">ℹ</span> <span style="color:var(--text-dim);">Found change: schema-browser-search (4 tasks remaining)</span>
+            <span style="color:var(--accent3);">✓</span> <span style="color:var(--text-dim);">Task 1: Add search input to SchemaExplorer</span>
+            <span style="color:var(--accent3);">✓</span> <span style="color:var(--text-dim);">Task 2: Create useSchemaSearch hook</span>
+            <span style="color:var(--accent2);">→</span> <span style="color:var(--text-bright);">Task 3: Wire search results to filtered list</span>
+            <span style="color:var(--text-dim);">  Editing src/components/schema/SchemaExplorer.tsx</span>
+            <span style="color:var(--accent5);">⚡ hook:</span> <span style="color:var(--text-dim);">fix-on-write → eslint --fix + prettier</span></div>`,
+                },
+                test: {
+                    title: 'Three-Tier Testing',
+                    desc: "The test-writer agent generates tests across all three tiers. Verification won't pass without them.",
+                    body: `<div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                  <div style="flex:1;min-width:140px;text-align:center;padding:1rem;background:#0d0d14;border-radius:8px;border:1px solid var(--border);">
+                    <div style="font-size:1.5rem;margin-bottom:0.35rem;">🔬</div>
+                    <div style="font-weight:600;font-size:0.85rem;color:var(--text-bright);">Unit</div>
+                    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);margin-top:0.25rem;">Vitest · jsdom</div>
+                    <div style="font-family:var(--mono);font-size:0.75rem;color:var(--accent3);margin-top:0.5rem;">147 tests</div>
+                  </div>
+                  <div style="flex:1;min-width:140px;text-align:center;padding:1rem;background:#0d0d14;border-radius:8px;border:1px solid var(--border);">
+                    <div style="font-size:1.5rem;margin-bottom:0.35rem;">🎭</div>
+                    <div style="font-weight:600;font-size:0.85rem;color:var(--text-bright);">Frontend</div>
+                    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);margin-top:0.25rem;">Playwright</div>
+                    <div style="font-family:var(--mono);font-size:0.75rem;color:var(--accent3);margin-top:0.5rem;">38 tests</div>
+                  </div>
+                  <div style="flex:1;min-width:140px;text-align:center;padding:1rem;background:#0d0d14;border-radius:8px;border:1px solid var(--border);">
+                    <div style="font-size:1.5rem;margin-bottom:0.35rem;">🌐</div>
+                    <div style="font-weight:600;font-size:0.85rem;color:var(--text-bright);">Integration</div>
+                    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);margin-top:0.25rem;">Salesforce API</div>
+                    <div style="font-family:var(--mono);font-size:0.75rem;color:var(--accent3);margin-top:0.5rem;">12 tests</div>
+                  </div>
+                </div>`,
+                },
+                verify: {
+                    title: 'Verification & Archive',
+                    desc: '/opsx:verify checks the implementation against every spec scenario before committing. Then /opsx:archive preserves the change for future reference.',
+                    body: `<div style="white-space:pre-wrap;font-family:var(--mono);font-size:0.78rem;background:#0d0d14;padding:1.25rem;border-radius:8px;border:1px solid var(--border);line-height:1.8;">
+            <span style="color:var(--accent3);">❯</span> <span style="color:var(--text-bright);">/opsx:verify</span>
+            <span style="color:var(--accent2);">ℹ</span> <span style="color:var(--text-dim);">Checking schema-browser-search against specs...</span>
+            <span style="color:var(--accent3);">✓</span> <span style="color:var(--text-dim);">Scenario: User searches for a field</span>
+            <span style="color:var(--accent3);">✓</span> <span style="color:var(--text-dim);">Scenario: Empty search</span>
+            <span style="color:var(--accent3);">✓</span> <span style="color:var(--text-dim);">Scenario: Keyboard navigation</span>
+            <span style="color:var(--accent3);">✓</span> <span style="color:var(--text-dim);">All tasks complete · All specs satisfied</span>
+
+            <span style="color:var(--accent3);">❯</span> <span style="color:var(--text-bright);">/opsx:archive</span>
+            <span style="color:var(--text-dim);">  Syncing delta specs → openspec/specs/</span>
+            <span style="color:var(--text-dim);">  Moving → openspec/changes/archive/schema-browser-search/</span>
+            <span style="color:var(--accent3);">✓</span> <span style="color:var(--text-dim);">Change archived</span></div>`,
+                },
+                ship: {
+                    title: 'Ship It',
+                    desc: '/commit runs validation hooks, /pr creates the PR with auto-linked issues and captured screenshots, then CI and AI code review kick off automatically.',
+                    body: `<div style="white-space:pre-wrap;font-family:var(--mono);font-size:0.78rem;background:#0d0d14;padding:1.25rem;border-radius:8px;border:1px solid var(--border);line-height:1.8;">
+            <span style="color:var(--accent3);">❯</span> <span style="color:var(--text-bright);">/commit</span>
+            <span style="color:var(--accent5);">⚡ hook:</span> <span style="color:var(--text-dim);">validate-on-commit → npm run validate</span>
+            <span style="color:var(--accent3);">✓</span> <span style="color:var(--text-dim);">typecheck passed · lint passed · format passed</span>
+            <span style="color:var(--text-dim);">  feat: add schema browser search with fuzzy matching</span>
+
+            <span style="color:var(--accent3);">❯</span> <span style="color:var(--text-bright);">/pr</span>
+            <span style="color:var(--accent2);">ℹ</span> <span style="color:var(--text-dim);">Detected issue-42 → auto-linking</span>
+            <span style="color:var(--accent2);">📸</span> <span style="color:var(--text-dim);">Capturing screenshots for PR body...</span>
+            <span style="color:var(--accent3);">✓</span> <span style="color:var(--text-dim);">PR #102 created (3 screenshots attached)</span>
+            <span style="color:var(--text-dim);">  CI: build-and-test ⏳</span>
+            <span style="color:var(--text-dim);">  CI: claude-code-review ⏳</span></div>`,
+                },
+            };
+
+            let currentArtifact = 'proposal.md';
+
+            function setStage(stage) {
+                document
+                    .querySelectorAll('.pipe-stage')
+                    .forEach(el => el.classList.toggle('active', el.dataset.stage === stage));
+                const data = stageData[stage];
+                const detail = document.getElementById('pipe-detail');
+
+                if (data.artifacts) {
+                    const tabs = Object.keys(data.artifacts);
+                    if (!tabs.includes(currentArtifact)) currentArtifact = tabs[0];
+                    detail.innerHTML = `
+                  <h3>${data.title}</h3>
+                  <p>${data.desc}</p>
+                  <div class="artifact-tabs">${tabs
+                      .map(
+                          t =>
+                              `<button class="artifact-tab ${t === currentArtifact ? 'active' : ''}" onclick="switchArtifact('${stage}','${t}')">${t}</button>`
+                      )
+                      .join('')}</div>
+                  <div class="artifact-content">${data.artifacts[currentArtifact]}</div>`;
+                } else {
+                    detail.innerHTML = `<h3>${data.title}</h3><p>${data.desc}</p>${data.body}`;
+                }
+            }
+
+            function switchArtifact(stage, artifact) {
+                currentArtifact = artifact;
+                setStage(stage);
+            }
+
+            setStage('issue');
+
+            // ═══════════ TERMINAL DEMOS ═══════════
+            const demos = {
+                openspec: [
+                    { type: 'cmd', text: '/opsx:ff' },
+                    { type: 'info', text: 'ℹ Creating change workspace: schema-browser-search' },
+                    { type: 'output', text: '  Generating proposal.md...' },
+                    { type: 'success', text: '  ✓ proposal.md (487 words, under 500 limit)' },
+                    { type: 'output', text: '  Generating specs/search.spec.md...' },
+                    { type: 'success', text: '  ✓ 3 Gherkin scenarios defined' },
+                    { type: 'output', text: '  Generating design.md...' },
+                    { type: 'success', text: '  ✓ design.md (references SchemaExplorer pattern)' },
+                    { type: 'output', text: '  Generating tasks.md...' },
+                    { type: 'success', text: '  ✓ 7 tasks (5 implement + 2 test)' },
+                    {
+                        type: 'success',
+                        text: '✓ All artifacts ready — run /opsx:apply to implement',
+                    },
+                ],
+                hooks: [
+                    { type: 'cmd', text: 'Edit src/components/schema/SchemaExplorer.tsx' },
+                    { type: 'warn', text: '⚡ hook: fix-on-write triggered' },
+                    { type: 'output', text: '  Running: eslint --fix + prettier' },
+                    { type: 'success', text: '  ✓ 2 fixes applied, formatted' },
+                    { type: 'cmd', text: 'Bash: rm -rf /' },
+                    { type: 'output', text: '  ⚡ hook: block-dangerous triggered' },
+                    { type: 'agent', text: '  ⛔ BLOCKED — destructive command rejected' },
+                    { type: 'cmd', text: 'git commit -m "feat: add search"' },
+                    { type: 'warn', text: '⚡ hook: validate-on-commit triggered' },
+                    { type: 'output', text: '  Running: npm run validate' },
+                    { type: 'success', text: '  ✓ typecheck · lint · format — all passed' },
+                    { type: 'success', text: '  ✓ Commit created' },
+                ],
+                dora: [
+                    { type: 'cmd', text: 'dora symbol SchemaExplorer' },
+                    { type: 'output', text: '  Found 1 match:' },
+                    {
+                        type: 'info',
+                        text: '  ƒ SchemaExplorer — src/components/schema/SchemaExplorer.tsx:24',
+                    },
+                    { type: 'output', text: '  React component · exported · 142 lines' },
+                    { type: 'cmd', text: 'dora deps src/components/schema/SchemaExplorer.tsx' },
+                    { type: 'output', text: '  Dependencies:' },
+                    { type: 'info', text: '  → src/hooks/useSchemaSearch.ts' },
+                    { type: 'info', text: '  → src/api/salesforce/describe.ts' },
+                    { type: 'info', text: '  → src/lib/fuzzyMatch.ts' },
+                    { type: 'cmd', text: 'dora treasure' },
+                    { type: 'output', text: '  Core files (highest connectivity):' },
+                    { type: 'info', text: '  ★ src/api/salesforce/connection.ts (47 dependents)' },
+                    { type: 'info', text: '  ★ src/lib/storage.ts (31 dependents)' },
+                    { type: 'info', text: '  ★ src/auth/oauth.ts (28 dependents)' },
+                ],
+                agents: [
+                    { type: 'cmd', text: 'Fix the 4 failing tests' },
+                    { type: 'info', text: 'ℹ Detected 4 independent test failures' },
+                    { type: 'agent', text: '  → Spawning test-writer #1 (auth.test.ts)' },
+                    { type: 'agent', text: '  → Spawning test-writer #2 (describe.test.ts)' },
+                    { type: 'agent', text: '  → Spawning test-writer #3 (storage.test.ts)' },
+                    { type: 'agent', text: '  → Spawning test-writer #4 (oauth.test.ts)' },
+                    { type: 'output', text: '' },
+                    { type: 'info', text: '  [#1] Fixing mock setup in auth.test.ts...' },
+                    { type: 'info', text: '  [#2] Updating snapshot in describe.test.ts...' },
+                    { type: 'info', text: '  [#3] Adding missing assertion in storage.test.ts...' },
+                    {
+                        type: 'info',
+                        text: '  [#4] Fixing token expiry edge case in oauth.test.ts...',
+                    },
+                    { type: 'output', text: '' },
+                    { type: 'success', text: '  ✓ #1 complete — auth.test.ts passing' },
+                    { type: 'success', text: '  ✓ #2 complete — describe.test.ts passing' },
+                    { type: 'success', text: '  ✓ #3 complete — storage.test.ts passing' },
+                    { type: 'success', text: '  ✓ #4 complete — oauth.test.ts passing' },
+                    { type: 'success', text: '✓ All 4 tests fixed in parallel' },
+                ],
+            };
+
+            let termAnim = null;
+            let currentDemo = 'openspec';
+
+            function playDemo(name) {
+                currentDemo = name;
+                document
+                    .querySelectorAll('.term-btn')
+                    .forEach(b =>
+                        b.classList.toggle(
+                            'active',
+                            b.textContent.toLowerCase().replace(/\s/g, '') === name
+                        )
+                    );
+
+                if (termAnim) clearTimeout(termAnim);
+                const body = document.getElementById('term-body');
+                body.innerHTML = '';
+                const lines = demos[name];
+                let i = 0;
+
+                function addLine() {
+                    if (i >= lines.length) {
+                        // add cursor at end
+                        const cursor = document.createElement('div');
+                        cursor.className = 'line';
+                        cursor.innerHTML =
+                            '<span class="prompt-char">❯ </span><span class="cursor"></span>';
+                        body.appendChild(cursor);
+                        return;
+                    }
+                    const l = lines[i];
+                    const div = document.createElement('div');
+                    div.className = 'line';
+                    if (l.type === 'cmd') {
+                        div.innerHTML = `<span class="prompt-char">❯ </span><span class="cmd-text">${l.text}</span>`;
+                    } else {
+                        div.innerHTML = `<span class="${l.type}">${l.text}</span>`;
+                    }
+                    body.appendChild(div);
+                    body.scrollTop = body.scrollHeight;
+                    i++;
+                    termAnim = setTimeout(
+                        addLine,
+                        l.type === 'cmd' ? 600 : l.text === '' ? 300 : 250
+                    );
+                }
+                addLine();
+            }
+
+            // defer terminal demo until scrolled into view
+            const termObs = new IntersectionObserver(
+                entries => {
+                    if (entries[0].isIntersecting) {
+                        playDemo('openspec');
+                        termObs.disconnect();
+                    }
+                },
+                { threshold: 0.3 }
+            );
+            termObs.observe(document.getElementById('terminal-section'));
+
+            // ═══════════ HOOKS ═══════════
+            function triggerHook(el, type) {
+                el.classList.remove('triggered', 'blocked');
+                void el.offsetWidth; // reflow
+                el.classList.add(type);
+                setTimeout(() => el.classList.remove('triggered', 'blocked'), 2000);
+            }
+
+            // defer hook cycling until scrolled into view
+            let hookIdx = 0;
+            let hookInterval = null;
+            const hookObs = new IntersectionObserver(
+                entries => {
+                    if (entries[0].isIntersecting && !hookInterval) {
+                        hookInterval = setInterval(() => {
+                            const rows = document.querySelectorAll('.hook-row');
+                            const types = ['triggered', 'blocked', 'triggered'];
+                            triggerHook(rows[hookIdx], types[hookIdx]);
+                            hookIdx = (hookIdx + 1) % 3;
+                        }, 3000);
+                        hookObs.disconnect();
+                    }
+                },
+                { threshold: 0.3 }
+            );
+            hookObs.observe(document.getElementById('hooks-section'));
+
+            // ═══════════ TESTING ═══════════
+            function runTests() {
+                const tiers = document.querySelectorAll('.test-tier');
+                const btn = document.getElementById('run-tests-btn');
+                btn.disabled = true;
+                btn.textContent = '⏳ Running...';
+
+                tiers.forEach(t => {
+                    t.classList.remove('running', 'pass');
+                    t.querySelector('.tier-badge').textContent = 'idle';
+                });
+
+                const delays = [400, 1200, 2000];
+                const durations = [800, 1500, 2500];
+
+                tiers.forEach((tier, i) => {
+                    setTimeout(() => {
+                        tier.classList.add('running');
+                        tier.querySelector('.tier-badge').textContent = 'running';
+                    }, delays[i]);
+
+                    setTimeout(() => {
+                        tier.classList.remove('running');
+                        tier.classList.add('pass');
+                        tier.querySelector('.tier-badge').textContent = 'passed';
+                    }, delays[i] + durations[i]);
+                });
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '▶ Run All Tests';
+                }, 5000);
+            }
+
+            // ═══════════ PARALLEL AGENTS ═══════════
+            function runAgents() {
+                const agents = [
+                    {
+                        id: 'agent-0',
+                        tasks: ['Reading auth.test.ts...', 'Fixing mock setup...', 'Test passing'],
+                        color: 'var(--accent2)',
+                    },
+                    {
+                        id: 'agent-1',
+                        tasks: [
+                            'Reading describe.test.ts...',
+                            'Updating snapshot...',
+                            'Test passing',
+                        ],
+                        color: 'var(--accent3)',
+                    },
+                    {
+                        id: 'agent-2',
+                        tasks: [
+                            'Reading storage.test.ts...',
+                            'Adding assertion...',
+                            'Test passing',
+                        ],
+                        color: 'var(--accent4)',
+                    },
+                    {
+                        id: 'agent-3',
+                        tasks: ['Reading oauth.test.ts...', 'Fixing edge case...', 'Test passing'],
+                        color: 'var(--accent5)',
+                    },
+                ];
+
+                agents.forEach((a, i) => {
+                    const el = document.getElementById(a.id);
+                    el.style.opacity = '1';
+                    el.style.borderColor = a.color;
+                    const status = el.querySelector('.agent-status');
+                    const fill = el.querySelector('.progress-fill');
+
+                    a.tasks.forEach((task, j) => {
+                        setTimeout(
+                            () => {
+                                status.textContent = task;
+                                fill.style.width = ((j + 1) / a.tasks.length) * 100 + '%';
+                            },
+                            (j + 1) * 800 + i * 200
+                        );
+                    });
+
+                    setTimeout(
+                        () => {
+                            status.innerHTML =
+                                '<span style="color:var(--accent3);">✓ Complete</span>';
+                        },
+                        a.tasks.length * 800 + i * 200 + 400
+                    );
+                });
+            }
+
+            // ═══════════ RUNNERS VIZ ═══════════
+            const runnerViz = document.getElementById('runner-viz');
+            for (let i = 0; i < 8; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'runner-dot';
+                dot.textContent = `R${i + 1}`;
+                runnerViz.appendChild(dot);
+            }
+
+            function cycleRunners() {
+                const dots = runnerViz.querySelectorAll('.runner-dot');
+                dots.forEach(d => d.classList.remove('active'));
+                const count = 2 + Math.floor(Math.random() * 3);
+                const indices = [];
+                while (indices.length < count) {
+                    const idx = Math.floor(Math.random() * 8);
+                    if (!indices.includes(idx)) indices.push(idx);
+                }
+                indices.forEach(idx => dots[idx].classList.add('active'));
+            }
+
+            // ═══════════ PHONE MOCK ═══════════
+            const phoneLines = [
+                '<span class="prompt-char">❯</span> <span class="cmd-text">ssh dev.example.com</span>',
+                '<span style="color:var(--text-dim);">Connected to sftools</span>',
+                '',
+                '<span class="prompt-char">❯</span> <span class="cmd-text">claude</span>',
+                '<span style="color:var(--accent);">Claude Code v1.0</span>',
+                '<span style="color:var(--text-dim);">sftools/ on main</span>',
+                '',
+                '<span class="prompt-char">❯</span> <span class="cmd-text">/test</span>',
+                '<span style="color:var(--accent3);">✓ 147 passed</span>',
+            ];
+
+            function startPhoneAnim() {
+                const phoneScreen = document.getElementById('phone-screen');
+                phoneScreen.innerHTML = '';
+                phoneLines.forEach((line, i) => {
+                    setTimeout(() => {
+                        phoneScreen.innerHTML += line + '<br>';
+                        phoneScreen.scrollTop = phoneScreen.scrollHeight;
+                    }, i * 400);
+                });
+            }
+
+            // defer infra animations until scrolled into view
+            const infraObs = new IntersectionObserver(
+                entries => {
+                    if (entries[0].isIntersecting) {
+                        cycleRunners();
+                        setInterval(cycleRunners, 2500);
+                        startPhoneAnim();
+                        infraObs.disconnect();
+                    }
+                },
+                { threshold: 0.2 }
+            );
+            infraObs.observe(document.getElementById('infra-section'));
+
+            // ═══════════ SCROLL ANIMATIONS ═══════════
+            const fadeObs = new IntersectionObserver(
+                entries => {
+                    entries.forEach(e => {
+                        if (e.isIntersecting) {
+                            e.target.style.opacity = '1';
+                            e.target.style.transform = 'translateY(0)';
+                        }
+                    });
+                },
+                { threshold: 0.1 }
+            );
+
+            document.querySelectorAll('section').forEach(s => {
+                s.style.opacity = '0';
+                s.style.transform = 'translateY(20px)';
+                s.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                fadeObs.observe(s);
+            });
+        </script>
+    </body>
+</html>

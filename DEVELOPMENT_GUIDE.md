@@ -82,6 +82,8 @@ openspec/changes/<change-name>/
 /opsx:apply       # Implement tasks from the change, checkboxes update as you go
 ```
 
+Implementation tasks should be dispatched to `senior-dev` subagents via the Task tool for better context isolation. When multiple tasks are independent, use the `dispatching-parallel-agents` skill to run them concurrently.
+
 ### Automatic hooks
 
 These run without any action from you:
@@ -235,6 +237,7 @@ After your PR is merged to `main`, the **build-package** workflow triggers autom
 | `/test` | Run tests interactively |
 | `/review` | Code review |
 | `/build` | Build and verify output |
+| `/workflow` | Guided end-to-end: issue → branch → plan → implement → test → commit → PR |
 | `/issue-triage` | Process open GitHub issues |
 | `/release-notes` | Generate release notes |
 

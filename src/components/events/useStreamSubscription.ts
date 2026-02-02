@@ -217,7 +217,7 @@ export function useStreamSubscription({
                 updateStreamStatus('Subscribed', 'success');
                 const msg = `Subscribed to ${selectedChannel} (replay: ${replayPreset})`;
                 if (onEventReceived) {
-                    onEventReceived({ channel: selectedChannel }, true);
+                    onEventReceived({ channel: selectedChannel, payload: { message: msg } }, true);
                 }
                 if (appendSystemMessage) {
                     appendSystemMessage(msg);
@@ -260,7 +260,7 @@ export function useStreamSubscription({
             });
             const msg = 'Unsubscribed';
             if (onEventReceived) {
-                onEventReceived({}, true);
+                onEventReceived({ payload: { message: msg } }, true);
             }
             if (appendSystemMessage) {
                 appendSystemMessage(msg);

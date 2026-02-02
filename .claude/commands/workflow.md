@@ -40,6 +40,7 @@ gh issue view <number>
 
 ```bash
 git checkout main
+git pull origin main
 git checkout -b <branch-name>
 ```
 

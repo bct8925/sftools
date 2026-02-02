@@ -2,6 +2,24 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    height: calc(100vh - 90px);
+    overflow: hidden;
+}
+
+.streamingCard {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin-bottom: 0;
+}
+
+.streamingCardBody {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 }
 
 /* ============================================================
@@ -60,15 +78,25 @@
 }
 
 .viewerEditor {
-    flex: 2;
-    min-height: 200px;
+    flex: none;
+    min-height: 120px;
     display: flex;
     flex-direction: column;
 }
 
+.streamEditor {
+    height: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.publishEditor {
+    height: 120px;
+}
+
 .viewerTable {
     flex: 1;
-    min-height: 150px;
+    min-height: 100px;
     overflow: auto;
 }
 

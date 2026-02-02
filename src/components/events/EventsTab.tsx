@@ -229,7 +229,7 @@ export function EventsTab() {
 
     return (
         <div className={styles.eventsTab} data-testid="events-tab">
-            <div className="card">
+            <div className={`card ${styles.streamingCard}`}>
                 <div className={`card-header ${styles.header}`}>
                     <div className={styles.headerRow}>
                         <div className={`card-header-icon ${styles.headerIconEvents}`}>E</div>
@@ -253,7 +253,7 @@ export function EventsTab() {
                         </div>
                     </div>
                 </div>
-                <div className="card-body">
+                <div className={`card-body ${styles.streamingCardBody}`}>
                     <div className="form-element">
                         <label htmlFor="event-channel-select">Channel</label>
                         <ChannelSelector
@@ -315,7 +315,7 @@ export function EventsTab() {
                                 language="json"
                                 value="// Click Open on any event to view details\n"
                                 readonly
-                                className="monaco-container monaco-container-lg"
+                                className={`monaco-container ${styles.streamEditor}`}
                                 data-testid="event-stream-editor"
                             />
                         </div>

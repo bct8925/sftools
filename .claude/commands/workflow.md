@@ -63,39 +63,21 @@ Use **AskUserQuestion**:
 Use **AskUserQuestion**:
 
 - **"How should we plan this?"**
-  - "Fast-forward (requirements are clear)" — Dispatch subagent below
+  - "Fast-forward (requirements are clear)" — Invoke `/opsx:ff`
   - "Step by step (explore first)" — Invoke `/opsx:new`
   - "Already planned (change exists)" — Skip to Step 5
 
-**If fast-forward:** Dispatch a subagent with the opus model so planning runs in a dedicated context:
+Invoke the appropriate OpenSpec skill:
 
 ```
-Task(
-  subagent_type: "senior-dev",
-  model: "opus",
-  prompt: "Run the OpenSpec fast-forward workflow for this change. Invoke: Skill(skill: 'opsx:ff', args: '<change-name-or-description>') and complete all artifact generation.",
-  description: "OpenSpec ff planning"
-)
+Skill(skill: "opsx:ff")      # or opsx:new
 ```
 
-**If step by step:** Invoke the skill in-context:
-
-```
-Skill(skill: "opsx:new")
-```
-
-Wait for planning to complete before proceeding. When the planning skill/subagent returns control, check with the user before continuing — the planning may have revealed issues or the user may want to review artifacts before implementation.
+Wait for planning to complete before proceeding.
 
 ## Step 5: Implementation
 
-Use **AskUserQuestion**:
-
-- **"Planning complete. Ready to implement?"**
-  - "Yes (dispatch subagent)" — Dispatch Task tool below
-  - "Review plan first" — Show the tasks file, then ask again
-  - "I'll implement manually" — Skip to Step 6
-
-**BLOCKING REQUIREMENT: You MUST use the Task tool to dispatch a subagent for implementation. Do NOT use the Skill tool for opsx:apply — skills load instructions into the current conversation instead of doing the work. Do NOT implement tasks yourself in this conversation.**
+Dispatch implementation to a subagent using the Task tool. Do NOT use the Skill tool here — skills load instructions into the current conversation instead of doing the work.
 
 ```
 Task(
@@ -134,17 +116,28 @@ If an OpenSpec change exists for this task:
 
 ```
 Skill(skill: "opsx:verify")
-Skill(skill: "opsx:archive")
 ```
+
+**If verification finds issues (CRITICAL or WARNING):** Fix them before archiving. Re-run verify after fixes to confirm clean.
+
+Then sync delta specs to main specs and archive:
+
+```
+Skill(skill: "opsx:sync", args: "<change-name>")
+Skill(skill: "opsx:archive", args: "<change-name>")
+```
+
+**Always sync specs** — delta specs must be synced to `openspec/specs/` before archiving.
 
 Skip this step if no OpenSpec change was created (small fix / docs).
 
 ## Step 8.5: Stage OpenSpec Artifacts
 
-If an OpenSpec change was used, stage the change directory so planning artifacts are included in the commit and PR:
+If an OpenSpec change was used, stage the archived change and any synced specs so planning artifacts are included in the commit and PR:
 
 ```bash
-git add openspec/changes/<change-name>/
+git add openspec/changes/archive/<date>-<change-name>/
+git add openspec/specs/   # if specs were synced
 ```
 
 ## Step 9: Commit
@@ -157,17 +150,31 @@ Skill(skill: "commit")
 
 ## Step 10: Screenshots (if UI changes)
 
-Check if `src/components/` files were modified:
+**MANDATORY CHECK** — Always run this before creating the PR:
 
 ```bash
 git diff --name-only main...HEAD | grep -q 'src/components/' && echo "UI_CHANGED" || echo "NO_UI"
 ```
 
-If UI changed, use **AskUserQuestion**:
+**If UI_CHANGED:** Screenshots are required. Do NOT skip to the PR step.
+
+Use **AskUserQuestion** to confirm:
 
 - **"This branch has UI changes. Capture screenshots for the PR?"**
-  - "Yes" — Invoke the screenshot skill
-  - "No" — Skip
+  - "Yes, capture screenshots" — Proceed below
+  - "No, skip screenshots" — Skip (user explicitly opted out)
+
+**To capture screenshots**, read `~/.claude/skills/screenshot/SKILL.md` and launch a subagent:
+
+```
+Task(
+    description: "Capture UI screenshots",
+    subagent_type: "senior-dev",
+    prompt: "<follow the Subagent Prompt Template from the screenshot SKILL.md>"
+)
+```
+
+After the subagent returns, the screenshots will be in `screenshots/`. They get committed and referenced in the PR body by the `/pr` command.
 
 ## Step 11: Pull Request
 

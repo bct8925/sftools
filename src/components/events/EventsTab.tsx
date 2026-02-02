@@ -78,7 +78,7 @@ export function EventsTab() {
     // Event table state
     const [events, setEvents] = useState<StreamEvent[]>([]);
     const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-    const [openedEventIds, setOpenedEventIds] = useState<Set<string>>(new Set());
+    const [openedEventIds, setOpenedEventIds] = useState<Set<string>>(() => new Set());
 
     // Channel data
     const [channels, setChannels] = useState<StreamingChannels>({
@@ -131,15 +131,21 @@ export function EventsTab() {
             setEvents(prev => {
                 const next = [...prev, event];
 
+                // Count both types in a single pass
+                let nonSystemCount = 0;
+                let systemCount = 0;
+                for (const e of next) {
+                    if (e.isSystemMessage) systemCount++;
+                    else nonSystemCount++;
+                }
+
                 // Enforce limit on non-system events while preserving order
-                const nonSystemCount = next.filter(e => !e.isSystemMessage).length;
                 if (nonSystemCount > MAX_EVENTS) {
                     const idx = next.findIndex(e => !e.isSystemMessage);
                     if (idx !== -1) next.splice(idx, 1);
                 }
 
                 // Enforce limit on system events
-                const systemCount = next.filter(e => e.isSystemMessage).length;
                 if (systemCount > MAX_SYSTEM_EVENTS) {
                     const idx = next.findIndex(e => e.isSystemMessage);
                     if (idx !== -1) next.splice(idx, 1);
@@ -173,6 +179,21 @@ export function EventsTab() {
         setOpenedEventIds(new Set());
         streamEditorRef.current?.setValue('// Click Open on any event to view details\n');
     }, []);
+
+    // Publish event callbacks
+    const handlePublishSuccess = useCallback(
+        (msg: string) => {
+            handleEventReceived({ channel: 'PublishEvent', payload: { message: msg } }, true);
+        },
+        [handleEventReceived]
+    );
+
+    const handlePublishError = useCallback(
+        (msg: string) => {
+            handleEventReceived({ error: msg }, true);
+        },
+        [handleEventReceived]
+    );
 
     // Load channels from API
     const loadChannels = useCallback(async () => {
@@ -385,13 +406,8 @@ export function EventsTab() {
 
             <EventPublisher
                 platformEvents={channels.platformEvents}
-                onPublishSuccess={msg =>
-                    handleEventReceived(
-                        { channel: 'PublishEvent', payload: { message: msg } },
-                        true
-                    )
-                }
-                onError={msg => handleEventReceived({ error: msg }, true)}
+                onPublishSuccess={handlePublishSuccess}
+                onError={handlePublishError}
             />
         </div>
     );

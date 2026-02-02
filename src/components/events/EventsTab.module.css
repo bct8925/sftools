@@ -129,6 +129,11 @@
     z-index: var(--z-sticky);
 }
 
+.eventTable tbody tr {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 36px;
+}
+
 .eventTable tbody tr:hover {
     background: var(--bg-hover);
 }

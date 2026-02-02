@@ -5,9 +5,9 @@ End-to-end workflow for building features and fixes in sftools, from issue to me
 ## Process Overview
 
 ```
-GitHub Issue ──► Branch ──► OpenSpec Planning ──► Implementation ──► Testing ──► Verify & Archive ──► Commit ──► PR ──► CI ──► Review ──► Merge ──► Release
-                              proposal.md          /brain:brain       test-writer   /opsx:verify       /commit    /pr    build-and-test   claude-code-review
-                              specs/               /opsx:apply        /test         /opsx:archive      hooks      gh     claude.yml
+GitHub Issue ──► Branch ──► OpenSpec Planning ──► Implementation ──► Testing ──► Verify & Archive ──► Commit ──► Screenshots ──► PR ──► CI ──► Review ──► Merge ──► Release
+                              proposal.md          /brain:brain       test-writer   /opsx:verify       /commit    /screenshot       /pr    build-and-test   claude-code-review
+                              specs/               /opsx:apply        /test         /opsx:archive      hooks      (UI changes only)  gh     claude.yml
                               design.md            dora + hooks                                        validate
                               tasks.md
 ```
@@ -81,6 +81,8 @@ openspec/changes/<change-name>/
 ```bash
 /opsx:apply       # Implement tasks from the change, checkboxes update as you go
 ```
+
+Implementation tasks should be dispatched to `senior-dev` subagents via the Task tool for better context isolation. When multiple tasks are independent, use the `dispatching-parallel-agents` skill to run them concurrently.
 
 ### Automatic hooks
 
@@ -171,6 +173,16 @@ Conventional commit types: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `styl
 npm run validate && npm run test:unit && npm run test:frontend && npm run build
 ```
 
+### Screenshots (for UI changes)
+
+If the branch includes visual changes, capture screenshots before creating the PR:
+
+```bash
+/screenshot         # Captures screenshots, commits to .github/screenshots/, pushes
+```
+
+The screenshot skill analyzes the branch diff, launches a Playwright script to capture light + dark theme screenshots, verifies them visually, then commits them to `.github/screenshots/` so PR image URLs resolve. The `/pr` command detects committed screenshots and includes them in the PR body automatically.
+
 ### Create PR
 
 ```bash
@@ -225,6 +237,7 @@ After your PR is merged to `main`, the **build-package** workflow triggers autom
 | `/test` | Run tests interactively |
 | `/review` | Code review |
 | `/build` | Build and verify output |
+| `/workflow` | Guided end-to-end: issue → branch → plan → implement → test → commit → PR |
 | `/issue-triage` | Process open GitHub issues |
 | `/release-notes` | Generate release notes |
 
@@ -234,7 +247,7 @@ After your PR is merged to `main`, the **build-package** workflow triggers autom
 ```
 git checkout -b issue-42
 /opsx:new → /opsx:ff → /opsx:apply → /opsx:verify → /opsx:archive
-/commit → /pr
+/commit → /screenshot (if UI changes) → /pr
 # (CI runs, review, merge)
 ```
 

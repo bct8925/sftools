@@ -1,6 +1,6 @@
 ---
 description: Guided end-to-end workflow from issue to PR
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git checkout:*), Bash(git push:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(openspec:*), Bash(npm run validate:*), Bash(npm run test*), Bash(npm run build:*), Bash(npm run check:*), Skill, Task, AskUserQuestion
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git checkout:*), Bash(git push:*), Bash(git add:*), Bash(git stash:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(openspec:*), Bash(npm run validate:*), Bash(npm run test*), Bash(npm run build:*), Bash(npm run check:*), Skill, Skill(commit), Skill(pr), Task, AskUserQuestion
 model: sonnet
 argument-hint: [issue-number or description]
 ---
@@ -33,17 +33,21 @@ gh issue view <number>
 
 ## Step 2: Branch Setup
 
-Check the current branch. If on `main`, create a new branch:
+**Always create the new branch from `main`** to avoid carrying forward unrelated commits.
 
-- For issues: `issue-<number>` (e.g., `issue-42`)
-- For features: `feature/<short-description>`
-- For fixes: `fix/<short-description>`
-
-If already on a feature/fix/issue branch, confirm it's the right one.
+- If on `main`: create the new branch directly
+- If on a different branch: switch to `main` first, then create the new branch
 
 ```bash
+git checkout main
+git pull origin main
 git checkout -b <branch-name>
 ```
+
+Branch naming:
+- For issues: `issue-<number>` (e.g., `issue-42`)
+- For features: `feat/<short-description>`
+- For fixes: `fix/<short-description>`
 
 ## Step 3: Determine Workflow Type
 
@@ -73,14 +77,17 @@ Wait for planning to complete before proceeding.
 
 ## Step 5: Implementation
 
-Invoke `/brain:brain` to load coding standards, then `/opsx:apply` to implement tasks:
+Dispatch implementation to a subagent using the Task tool. Do NOT use the Skill tool here — skills load instructions into the current conversation instead of doing the work.
 
 ```
-Skill(skill: "brain:brain")
-Skill(skill: "opsx:apply")
+Task(
+  subagent_type: "senior-dev",
+  prompt: "Implement the OpenSpec change '<name>'. Run: Skill(skill: 'opsx:apply', args: '<name>') and work through all tasks.",
+  description: "Implement <name> change"
+)
 ```
 
-Implementation tasks should be dispatched to `senior-dev` subagents. For independent tasks, use `dispatching-parallel-agents`.
+For multiple independent tasks, use `dispatching-parallel-agents` to run them in parallel.
 
 Wait for implementation to complete before proceeding.
 
@@ -113,6 +120,14 @@ Skill(skill: "opsx:archive")
 ```
 
 Skip this step if no OpenSpec change was created (small fix / docs).
+
+## Step 8.5: Stage OpenSpec Artifacts
+
+If an OpenSpec change was used, stage the change directory so planning artifacts are included in the commit and PR:
+
+```bash
+git add openspec/changes/<change-name>/
+```
 
 ## Step 9: Commit
 

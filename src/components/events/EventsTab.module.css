@@ -4,6 +4,35 @@
     gap: 20px;
 }
 
+/* ============================================================
+   Header Layout (Two-row pattern)
+   ============================================================ */
+
+.header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.headerRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.headerRow h2 {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.headerControls {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
 .headerIconEvents {
     background-color: var(--icon-events);
 }
@@ -16,4 +45,111 @@
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 10px;
+}
+
+/* ============================================================
+   Viewer Layout (Monaco + Table)
+   ============================================================ */
+
+.viewer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+}
+
+.viewerEditor {
+    flex: 2;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.viewerTable {
+    flex: 1;
+    min-height: 150px;
+    overflow: auto;
+}
+
+/* ============================================================
+   Event Table
+   ============================================================ */
+
+.eventTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.eventTable th,
+.eventTable td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.eventTable th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+}
+
+.eventTable tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.rowOpened {
+    opacity: 0.5;
+}
+
+.rowOpened:hover {
+    opacity: 0.7;
+}
+
+.rowSystem {
+    background: var(--bg-secondary);
+    font-style: italic;
+}
+
+.rowSystem:hover {
+    background: var(--bg-hover);
+}
+
+.eventTable td.time {
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.eventTable td.replayIdCell {
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-align: right;
+}
+
+/* ============================================================
+   Empty State
+   ============================================================ */
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    color: var(--text-muted);
+    text-align: center;
+    gap: 8px;
+}
+
+.emptyStateIcon {
+    font-size: 32px;
+    opacity: 0.5;
 }

@@ -17,6 +17,14 @@ interface StreamMessage {
     error?: string;
 }
 
+interface EventData {
+    channel?: string;
+    protocol?: string;
+    replayId?: number | string;
+    payload?: unknown;
+    error?: string;
+}
+
 interface UseStreamSubscriptionOptions {
     selectedChannel: string;
     replayPreset: string;
@@ -24,9 +32,10 @@ interface UseStreamSubscriptionOptions {
     isAuthenticated: boolean;
     isProxyConnected: boolean;
     updateStreamStatus: (text: string, type?: StatusType) => void;
-    appendSystemMessage: (msg: string) => void;
-    streamEditorRef: React.RefObject<MonacoEditorRef | null>;
-    scrollStreamToBottom: () => void;
+    appendSystemMessage?: (msg: string) => void;
+    onEventReceived?: (eventData: EventData, isSystemMessage: boolean) => void;
+    streamEditorRef?: React.RefObject<MonacoEditorRef | null>;
+    scrollStreamToBottom?: () => void;
 }
 
 interface UseStreamSubscriptionReturn {
@@ -55,6 +64,7 @@ export function useStreamSubscription({
     isProxyConnected,
     updateStreamStatus,
     appendSystemMessage,
+    onEventReceived,
     streamEditorRef,
     scrollStreamToBottom,
 }: UseStreamSubscriptionOptions): UseStreamSubscriptionReturn {
@@ -86,33 +96,52 @@ export function useStreamSubscription({
                     if (!message.event) return;
 
                     eventCountRef.current++;
-                    const timestamp = new Date().toISOString();
-                    const eventEntry = formatEventEntry(
-                        message.event,
-                        eventCountRef.current,
-                        timestamp
-                    );
 
-                    const currentValue = streamEditorRef.current?.getValue() || '';
-                    const newEntry = JSON.stringify(eventEntry, null, 2);
-
-                    if (currentValue.startsWith('//')) {
-                        streamEditorRef.current?.setValue(newEntry);
-                    } else {
-                        streamEditorRef.current?.setValue(`${currentValue}\n\n${newEntry}`);
+                    // New callback-based approach
+                    if (onEventReceived) {
+                        onEventReceived(message.event, false);
                     }
 
-                    scrollStreamToBottom();
+                    // Legacy Monaco editor approach (deprecated)
+                    if (streamEditorRef?.current && scrollStreamToBottom) {
+                        const timestamp = new Date().toISOString();
+                        const eventEntry = formatEventEntry(
+                            message.event,
+                            eventCountRef.current,
+                            timestamp
+                        );
+
+                        const currentValue = streamEditorRef.current.getValue() || '';
+                        const newEntry = JSON.stringify(eventEntry, null, 2);
+
+                        if (currentValue.startsWith('//')) {
+                            streamEditorRef.current.setValue(newEntry);
+                        } else {
+                            streamEditorRef.current.setValue(`${currentValue}\n\n${newEntry}`);
+                        }
+
+                        scrollStreamToBottom();
+                    }
                     break;
                 }
 
                 case 'streamError':
-                    appendSystemMessage(`Error: ${message.error}`);
+                    if (onEventReceived) {
+                        onEventReceived({ error: message.error }, true);
+                    }
+                    if (appendSystemMessage) {
+                        appendSystemMessage(`Error: ${message.error}`);
+                    }
                     updateStreamStatus('Error', 'error');
                     break;
 
                 case 'streamEnd':
-                    appendSystemMessage('Stream ended by server');
+                    if (onEventReceived) {
+                        onEventReceived({ error: 'Stream ended by server' }, true);
+                    }
+                    if (appendSystemMessage) {
+                        appendSystemMessage('Stream ended by server');
+                    }
                     setIsSubscribed(false);
                     setCurrentSubscriptionId(null);
                     updateStreamStatus('Disconnected', '');
@@ -122,6 +151,7 @@ export function useStreamSubscription({
         [
             currentSubscriptionId,
             appendSystemMessage,
+            onEventReceived,
             updateStreamStatus,
             scrollStreamToBottom,
             streamEditorRef,
@@ -159,7 +189,13 @@ export function useStreamSubscription({
 
         if (!isProxyConnected) {
             updateStreamStatus('Proxy required', 'error');
-            appendSystemMessage('Streaming requires the local proxy. Open Settings to connect.');
+            const msg = 'Streaming requires the local proxy. Open Settings to connect.';
+            if (onEventReceived) {
+                onEventReceived({ error: msg }, true);
+            }
+            if (appendSystemMessage) {
+                appendSystemMessage(msg);
+            }
             return;
         }
 
@@ -179,14 +215,26 @@ export function useStreamSubscription({
                 setCurrentSubscriptionId(response.subscriptionId);
                 setIsSubscribed(true);
                 updateStreamStatus('Subscribed', 'success');
-                appendSystemMessage(`Subscribed to ${selectedChannel} (replay: ${replayPreset})`);
+                const msg = `Subscribed to ${selectedChannel} (replay: ${replayPreset})`;
+                if (onEventReceived) {
+                    onEventReceived({ channel: selectedChannel }, true);
+                }
+                if (appendSystemMessage) {
+                    appendSystemMessage(msg);
+                }
             } else {
                 throw new Error(response.error || 'Subscription failed');
             }
         } catch (err) {
             console.error('Subscribe error:', err);
             updateStreamStatus('Error', 'error');
-            appendSystemMessage(`Error: ${(err as Error).message}`);
+            const msg = `Error: ${(err as Error).message}`;
+            if (onEventReceived) {
+                onEventReceived({ error: msg }, true);
+            }
+            if (appendSystemMessage) {
+                appendSystemMessage(msg);
+            }
         }
     }, [
         selectedChannel,
@@ -196,6 +244,7 @@ export function useStreamSubscription({
         replayId,
         updateStreamStatus,
         appendSystemMessage,
+        onEventReceived,
     ]);
 
     // Unsubscribe from channel
@@ -209,7 +258,13 @@ export function useStreamSubscription({
                 type: 'unsubscribe',
                 subscriptionId: currentSubscriptionId,
             });
-            appendSystemMessage('Unsubscribed');
+            const msg = 'Unsubscribed';
+            if (onEventReceived) {
+                onEventReceived({}, true);
+            }
+            if (appendSystemMessage) {
+                appendSystemMessage(msg);
+            }
         } catch (err) {
             console.error('Unsubscribe error:', err);
         }
@@ -217,7 +272,7 @@ export function useStreamSubscription({
         setCurrentSubscriptionId(null);
         setIsSubscribed(false);
         updateStreamStatus('Disconnected', '');
-    }, [currentSubscriptionId, updateStreamStatus, appendSystemMessage]);
+    }, [currentSubscriptionId, updateStreamStatus, appendSystemMessage, onEventReceived]);
 
     // Toggle subscription
     const toggleSubscription = useCallback(() => {

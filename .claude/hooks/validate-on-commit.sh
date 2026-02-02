@@ -9,8 +9,8 @@ if echo "$COMMAND" | grep -q 'git commit'; then
     exit 2
   fi
   if ! git diff --quiet; then
-    echo "BLOCKED: validate auto-fixed files. Stage the changes and retry." >&2
+    echo "validate auto-fixed files, auto-staging:" >&2
     git diff --name-only >&2
-    exit 2
+    git add -u
   fi
 fi

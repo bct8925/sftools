@@ -63,17 +63,28 @@ Use **AskUserQuestion**:
 Use **AskUserQuestion**:
 
 - **"How should we plan this?"**
-  - "Fast-forward (requirements are clear)" — Invoke `/opsx:ff`
+  - "Fast-forward (requirements are clear)" — Dispatch subagent below
   - "Step by step (explore first)" — Invoke `/opsx:new`
   - "Already planned (change exists)" — Skip to Step 5
 
-Invoke the appropriate OpenSpec skill:
+**If fast-forward:** Dispatch a subagent with the opus model so planning runs in a dedicated context:
 
 ```
-Skill(skill: "opsx:ff")      # or opsx:new
+Task(
+  subagent_type: "senior-dev",
+  model: "opus",
+  prompt: "Run the OpenSpec fast-forward workflow for this change. Invoke: Skill(skill: 'opsx:ff', args: '<change-name-or-description>') and complete all artifact generation.",
+  description: "OpenSpec ff planning"
+)
 ```
 
-Wait for planning to complete before proceeding. When the planning skill returns control, check with the user before continuing — the planning may have revealed issues or the user may want to review artifacts before implementation.
+**If step by step:** Invoke the skill in-context:
+
+```
+Skill(skill: "opsx:new")
+```
+
+Wait for planning to complete before proceeding. When the planning skill/subagent returns control, check with the user before continuing — the planning may have revealed issues or the user may want to review artifacts before implementation.
 
 ## Step 5: Implementation
 

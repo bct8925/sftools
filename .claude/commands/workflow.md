@@ -73,11 +73,18 @@ Invoke the appropriate OpenSpec skill:
 Skill(skill: "opsx:ff")      # or opsx:new
 ```
 
-Wait for planning to complete before proceeding.
+Wait for planning to complete before proceeding. When the planning skill returns control, check with the user before continuing — the planning may have revealed issues or the user may want to review artifacts before implementation.
 
 ## Step 5: Implementation
 
-Dispatch implementation to a subagent using the Task tool. Do NOT use the Skill tool here — skills load instructions into the current conversation instead of doing the work.
+Use **AskUserQuestion**:
+
+- **"Planning complete. Ready to implement?"**
+  - "Yes (dispatch subagent)" — Dispatch Task tool below
+  - "Review plan first" — Show the tasks file, then ask again
+  - "I'll implement manually" — Skip to Step 6
+
+**BLOCKING REQUIREMENT: You MUST use the Task tool to dispatch a subagent for implementation. Do NOT use the Skill tool for opsx:apply — skills load instructions into the current conversation instead of doing the work. Do NOT implement tasks yourself in this conversation.**
 
 ```
 Task(

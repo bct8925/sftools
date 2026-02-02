@@ -167,6 +167,41 @@ body {
     color: var(--text-main);
     min-height: 100vh;
     overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* --- Text Selection Rules --- */
+/* Re-enable text selection for functional elements */
+.input,
+.select,
+.textarea,
+.search-input,
+.monaco-editor,
+.monaco-placeholder,
+input[type='text'],
+input[type='number'],
+input[type='email'],
+input[type='url'],
+textarea,
+select {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* Enable selection for data display elements */
+td,
+.script-preview,
+.text-muted,
+.error-message,
+.status-badge,
+pre,
+code,
+.query-result,
+.apex-output,
+.api-response {
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 /* --- Layout Shell --- */

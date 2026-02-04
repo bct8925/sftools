@@ -382,7 +382,7 @@ function MyComponent() {
 | Prop | Type | Description |
 |------|------|-------------|
 | `language` | `'sql' \| 'apex' \| 'json' \| 'text'` | Editor language mode |
-| `value` | `string` | Controlled value |
+| `value` | `string` | Initial value (uncontrolled - use ref methods for updates) |
 | `onChange` | `(value: string) => void` | Value change handler |
 | `onExecute` | `() => void` | Ctrl/Cmd+Enter handler |
 | `readonly` | `boolean` | Read-only mode |

@@ -19,6 +19,13 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Configure Claude auth
+        run: |
+          mkdir -p "$HOME/.claude-ci/.claude"
+          cat > "$HOME/.claude-ci/.claude/.credentials.json" << EOF
+          {"claudeAiOauth":{"accessToken":"${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}"}}
+          EOF
+
       - name: Run Claude Code Review
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

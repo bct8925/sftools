@@ -60,7 +60,8 @@ npm run test:unit                        # Run all unit tests
 npm run test:unit -- auth.test.ts        # Run specific test file
 npm run test:unit:coverage               # With coverage report
 npm run test:frontend                    # Run all frontend tests (headless)
-npm run test:frontend -- --filter=query  # Run tests matching "query"
+npm run test:frontend -- query           # Run test files matching "query"
+npm run test:frontend -- -t "pattern"    # Run tests with names matching pattern
 npm run test:integration                 # Run all integration tests
 ```
 

@@ -189,6 +189,12 @@
     height: 120px;
 }
 
+.editorPlaceholder {
+    height: 120px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
 .footer {
     display: flex;
     align-items: center;

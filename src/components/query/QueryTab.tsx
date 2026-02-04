@@ -63,14 +63,12 @@ export function QueryTab() {
     // Filter hook
     const { filterText, setFilterText, handleFilterChange } = useFilteredResults();
 
-    // Editor ref and initial load tracking
-    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+    // Editor ref and initial query state
     const editorRef = useRef<QueryEditorRef>(null);
+    const [initialQuery, setInitialQuery] = useState<string | null>(null);
 
     // Load last query from history or favorites on mount (whichever is more recent)
     useEffect(() => {
-        if (initialLoadComplete) return;
-
         chrome.storage.local.get(['queryHistory', 'queryFavorites']).then(data => {
             const history = data.queryHistory as
                 | Array<{ query: string; timestamp: number }>
@@ -98,12 +96,10 @@ export function QueryTab() {
                 lastQuery = lastFavorite.query;
             }
 
-            if (lastQuery) {
-                editorRef.current?.setValue(lastQuery);
-            }
-            setInitialLoadComplete(true);
+            // Set resolved initial query (use DEFAULT_QUERY if no history)
+            setInitialQuery(lastQuery ?? DEFAULT_QUERY);
         });
-    }, [initialLoadComplete]);
+    }, []);
 
     // History manager ref
     const historyManagerRef = useRef<HistoryManager | null>(null);
@@ -314,6 +310,23 @@ export function QueryTab() {
     const hasModifications = activeTab && activeTab.modifiedRecords.size > 0;
     const isEditMode = editingEnabled && activeTab?.isEditable;
 
+    // Wait for initial query to be resolved before rendering editor
+    if (initialQuery === null) {
+        return (
+            <div className={styles.queryTab} data-testid="query-tab">
+                <div className="card">
+                    <div className="card-header">
+                        <div className={`card-header-icon ${styles.headerIconQuery}`}>S</div>
+                        <h2>SOQL Query</h2>
+                    </div>
+                    <div className="card-body">
+                        <div className={styles.editorPlaceholder} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={styles.queryTab} data-testid="query-tab">
             {/* Query Editor Card */}
@@ -344,7 +357,7 @@ export function QueryTab() {
                     <div className="form-element">
                         <QueryEditor
                             ref={editorRef}
-                            value={DEFAULT_QUERY}
+                            value={initialQuery}
                             onExecute={executeQuery}
                             className={styles.editor}
                         />

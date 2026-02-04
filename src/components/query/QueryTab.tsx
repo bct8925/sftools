@@ -63,8 +63,7 @@ export function QueryTab() {
     // Filter hook
     const { filterText, setFilterText, handleFilterChange } = useFilteredResults();
 
-    // Editor state - load last query from history on mount
-    const [editorValue, setEditorValue] = useState(DEFAULT_QUERY);
+    // Editor ref and initial load tracking
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const editorRef = useRef<QueryEditorRef>(null);
 
@@ -100,7 +99,7 @@ export function QueryTab() {
             }
 
             if (lastQuery) {
-                setEditorValue(lastQuery);
+                editorRef.current?.setValue(lastQuery);
             }
             setInitialLoadComplete(true);
         });
@@ -113,7 +112,6 @@ export function QueryTab() {
     // Query execution hook
     const { fetchQueryData, executeQuery, loadMore } = useQueryExecution({
         editorRef,
-        editorValue,
         useToolingApi,
         setLoading,
         setResults,
@@ -151,7 +149,7 @@ export function QueryTab() {
             const tab = state.tabs.find(t => t.id === tabId);
             if (tab) {
                 setActiveTab(tabId);
-                setEditorValue(tab.query);
+                editorRef.current?.setValue(tab.query);
                 setFilterText('');
             }
         },
@@ -212,7 +210,7 @@ export function QueryTab() {
 
     // Bulk export
     const handleBulkExport = useCallback(async () => {
-        const query = editorRef.current?.getValue().trim() || editorValue.trim();
+        const query = editorRef.current?.getValue().trim() ?? '';
 
         if (!query) {
             alert('Please enter a SOQL query.');
@@ -256,7 +254,7 @@ export function QueryTab() {
         } finally {
             setBulkExportInProgress(false);
         }
-    }, [editorValue, isAuthenticated, useToolingApi, bulkExportInProgress, updateStatus]);
+    }, [isAuthenticated, useToolingApi, bulkExportInProgress, updateStatus]);
 
     // Save changes
     const handleSaveChanges = useCallback(async () => {
@@ -301,7 +299,7 @@ export function QueryTab() {
 
     // Handle query selection from history
     const handleSelectQuery = useCallback((query: string) => {
-        setEditorValue(query);
+        editorRef.current?.setValue(query);
     }, []);
 
     // Handle load more results
@@ -346,8 +344,7 @@ export function QueryTab() {
                     <div className="form-element">
                         <QueryEditor
                             ref={editorRef}
-                            value={editorValue}
-                            onChange={setEditorValue}
+                            value={DEFAULT_QUERY}
                             onExecute={executeQuery}
                             className={styles.editor}
                         />

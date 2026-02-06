@@ -7,7 +7,6 @@ import type { StatusType } from '../../hooks/useStatusBadge';
 
 interface UseQueryExecutionOptions {
     editorRef: React.RefObject<{ getValue(): string } | null>;
-    editorValue: string;
     useToolingApi: boolean;
     setLoading: (tabId: string, loading: boolean) => void;
     setResults: (
@@ -149,7 +148,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
 
     // Execute query
     const executeQuery = useCallback(async () => {
-        const query = options.editorRef.current?.getValue().trim() || options.editorValue.trim();
+        const query = options.editorRef.current?.getValue().trim() ?? '';
 
         if (!query) {
             alert('Please enter a SOQL query.');
@@ -181,7 +180,6 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
             await options.saveToHistory(query);
         }
     }, [
-        options.editorValue,
         options.editorRef,
         options.normalizeQuery,
         options.findTabByQuery,

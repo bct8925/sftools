@@ -1,16 +1,16 @@
 .dialog {
     max-width: 600px;
-    padding: var(--spacing-lg);
+    padding: 24px;
 }
 
 .heading {
     margin-top: 0;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 16px;
     color: var(--error-color);
 }
 
 .description {
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 16px;
 }
 
 .optionHeading {
@@ -20,7 +20,7 @@
 
 .steps {
     margin-bottom: 20px;
-    padding-left: var(--spacing-lg);
+    padding-left: 24px;
 }
 
 .code {

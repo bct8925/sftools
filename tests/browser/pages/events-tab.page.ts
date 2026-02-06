@@ -277,4 +277,86 @@ export class EventsTabPage extends BasePage {
     async isReplayIdInputVisible(): Promise<boolean> {
         return await this.replayIdInput.isVisible();
     }
+
+    /**
+     * Get the count of event rows in the table
+     */
+    async getEventCount(): Promise<number> {
+        const rows = this.page.locator('[data-testid^="event-row-"]');
+        return await rows.count();
+    }
+
+    /**
+     * Get the count of system message rows
+     */
+    async getSystemMessageCount(): Promise<number> {
+        const rows = this.page.locator('[data-testid^="event-row-"]');
+        const count = await rows.count();
+        let systemCount = 0;
+
+        for (let i = 0; i < count; i++) {
+            const row = rows.nth(i);
+            const className = await row.getAttribute('class');
+            if (className?.includes('rowSystem')) {
+                systemCount++;
+            }
+        }
+
+        return systemCount;
+    }
+
+    /**
+     * Check if event table is visible
+     */
+    async isEventTableVisible(): Promise<boolean> {
+        const table = this.page.locator('[data-testid="event-table"]');
+        return await table.isVisible();
+    }
+
+    /**
+     * Check if empty state is visible
+     */
+    async isEmptyStateVisible(): Promise<boolean> {
+        const emptyState = this.page.locator('text=Subscribe to a channel to see events');
+        return await emptyState.isVisible();
+    }
+
+    /**
+     * Click Open button on a specific event by index
+     */
+    async openEventByIndex(index: number): Promise<void> {
+        const openButtons = this.page.locator('[data-testid^="event-open-"]');
+        const button = openButtons.nth(index);
+        await this.slowClick(button);
+    }
+
+    /**
+     * Check if an event row is marked as opened
+     */
+    async isEventOpened(eventId: string): Promise<boolean> {
+        const row = this.page.locator(`[data-testid="event-row-${eventId}"]`);
+        const className = await row.getAttribute('class');
+        return className?.includes('rowOpened') || false;
+    }
+
+    /**
+     * Get event data from a specific row
+     */
+    async getEventData(index: number): Promise<{
+        time: string;
+        replayId: string;
+        channel: string;
+        eventType: string;
+    }> {
+        const rows = this.page.locator('[data-testid^="event-row-"]');
+        const row = rows.nth(index);
+        const cells = row.locator('td');
+
+        return {
+            time: (await cells.nth(0).textContent()) || '',
+            replayId: (await cells.nth(1).textContent()) || '',
+            channel: (await cells.nth(2).textContent()) || '',
+            eventType: (await cells.nth(3).textContent()) || '',
+        };
+    }
 }

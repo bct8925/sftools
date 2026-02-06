@@ -112,3 +112,14 @@
 .outputHeaderIcon {
     background-color: var(--icon-apex-output);
 }
+
+/* ============================================================
+   Editor Placeholder (loading state)
+   ============================================================ */
+
+.editorPlaceholder {
+    height: 220px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}

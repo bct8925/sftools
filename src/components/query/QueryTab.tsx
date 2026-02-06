@@ -63,15 +63,12 @@ export function QueryTab() {
     // Filter hook
     const { filterText, setFilterText, handleFilterChange } = useFilteredResults();
 
-    // Editor state - load last query from history on mount
-    const [editorValue, setEditorValue] = useState(DEFAULT_QUERY);
-    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+    // Editor ref and initial query state
     const editorRef = useRef<QueryEditorRef>(null);
+    const [initialQuery, setInitialQuery] = useState<string | null>(null);
 
     // Load last query from history or favorites on mount (whichever is more recent)
     useEffect(() => {
-        if (initialLoadComplete) return;
-
         chrome.storage.local.get(['queryHistory', 'queryFavorites']).then(data => {
             const history = data.queryHistory as
                 | Array<{ query: string; timestamp: number }>
@@ -99,14 +96,10 @@ export function QueryTab() {
                 lastQuery = lastFavorite.query;
             }
 
-            if (lastQuery) {
-                setEditorValue(lastQuery);
-                editorRef.current?.setValue(lastQuery);
-            }
-            setInitialLoadComplete(true);
+            // Set resolved initial query (use DEFAULT_QUERY if no history)
+            setInitialQuery(lastQuery ?? DEFAULT_QUERY);
         });
-    }, [initialLoadComplete]);
-
+    }, []);
     // History manager ref
     const historyManagerRef = useRef<HistoryManager | null>(null);
     const saveToHistory = useSaveToHistory(historyManagerRef);
@@ -114,7 +107,6 @@ export function QueryTab() {
     // Query execution hook
     const { fetchQueryData, executeQuery, loadMore } = useQueryExecution({
         editorRef,
-        editorValue,
         useToolingApi,
         setLoading,
         setResults,
@@ -152,7 +144,6 @@ export function QueryTab() {
             const tab = state.tabs.find(t => t.id === tabId);
             if (tab) {
                 setActiveTab(tabId);
-                setEditorValue(tab.query);
                 editorRef.current?.setValue(tab.query);
                 setFilterText('');
             }
@@ -214,7 +205,7 @@ export function QueryTab() {
 
     // Bulk export
     const handleBulkExport = useCallback(async () => {
-        const query = editorRef.current?.getValue().trim() || editorValue.trim();
+        const query = editorRef.current?.getValue().trim() ?? '';
 
         if (!query) {
             alert('Please enter a SOQL query.');
@@ -258,7 +249,7 @@ export function QueryTab() {
         } finally {
             setBulkExportInProgress(false);
         }
-    }, [editorValue, isAuthenticated, useToolingApi, bulkExportInProgress, updateStatus]);
+    }, [isAuthenticated, useToolingApi, bulkExportInProgress, updateStatus]);
 
     // Save changes
     const handleSaveChanges = useCallback(async () => {
@@ -303,7 +294,6 @@ export function QueryTab() {
 
     // Handle query selection from history
     const handleSelectQuery = useCallback((query: string) => {
-        setEditorValue(query);
         editorRef.current?.setValue(query);
     }, []);
 
@@ -344,6 +334,23 @@ export function QueryTab() {
     const hasModifications = activeTab && activeTab.modifiedRecords.size > 0;
     const isEditMode = editingEnabled && activeTab?.isEditable;
 
+    // Wait for initial query to be resolved before rendering editor
+    if (initialQuery === null) {
+        return (
+            <div className={styles.queryTab} data-testid="query-tab">
+                <div className="card">
+                    <div className="card-header">
+                        <div className={`card-header-icon ${styles.headerIconQuery}`}>S</div>
+                        <h2>SOQL Query</h2>
+                    </div>
+                    <div className="card-body">
+                        <div className={styles.editorPlaceholder} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={styles.queryTab} data-testid="query-tab">
             {/* Query Editor Card */}
@@ -375,8 +382,7 @@ export function QueryTab() {
                     <div className="form-element">
                         <QueryEditor
                             ref={editorRef}
-                            value={editorValue}
-                            onChange={setEditorValue}
+                            value={initialQuery}
                             onExecute={executeQuery}
                             className={styles.editor}
                         />

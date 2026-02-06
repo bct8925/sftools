@@ -370,7 +370,19 @@ If ANY screenshot fails verification:
 3. Re-run the script
 4. Re-verify
 
-### Step 6: Clean Up and Report
+### Step 6: Commit Screenshots for PR
+
+Screenshots must be in `.github/screenshots/` and committed to git so PR image URLs resolve.
+
+```bash
+mkdir -p <project_root>/.github/screenshots
+cp <project_root>/screenshots/*.png <project_root>/.github/screenshots/
+git -C <project_root> add .github/screenshots/
+git -C <project_root> commit -m "docs: add PR screenshots"
+git -C <project_root> push
+```
+
+### Step 7: Clean Up and Report
 
 Delete the script file:
 
@@ -381,13 +393,13 @@ rm <project_root>/capture-screenshots.ts
 Return a response in this format:
 
 ```
-Screenshots captured in screenshots/:
+Screenshots captured and committed to .github/screenshots/:
 
-- screenshots/01-name-light.png — Description of what it shows
-- screenshots/02-name-dark.png — Same, dark theme
+- .github/screenshots/01-name-light.png — Description of what it shows
+- .github/screenshots/02-name-dark.png — Same, dark theme
 - ...
 
-All screenshots verified ✓
+All screenshots verified and committed ✓
 ```
 
 ### Critical Rules

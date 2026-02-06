@@ -53,7 +53,8 @@ describe('Q-F-016/017/018: Query History Functionality', () => {
         expect(historyCount).toBeGreaterThan(0);
 
         const historyItems = await queryTab.getHistoryItems();
-        expect(historyItems).toContain(testQuery);
+        // Preview will have "SELECT Id," trimmed, so check for the trimmed version
+        expect(historyItems).toContain('Name FROM Account LIMIT 1');
 
         await queryTab.closeHistory();
 

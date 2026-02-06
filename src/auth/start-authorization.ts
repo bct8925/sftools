@@ -21,9 +21,15 @@ export async function startAuthorization(
     let loginDomain = overrideLoginDomain;
     if (!loginDomain) {
         try {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (tab?.url) {
-                loginDomain = detectLoginDomain(tab.url);
+            const tabs = await chrome.tabs.query({ active: true });
+            for (const tab of tabs) {
+                if (tab?.url) {
+                    const detected = detectLoginDomain(tab.url);
+                    if (detected) {
+                        loginDomain = detected;
+                        break;
+                    }
+                }
             }
         } catch {
             // Ignore tab query errors

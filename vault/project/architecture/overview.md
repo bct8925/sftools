@@ -114,6 +114,9 @@ All 6 tabs render simultaneously (hidden when inactive) for state preservation:
 - [[native-proxy|Native Proxy]]
 - [[testing|Testing Framework]]
 - [[environment|Environment Configuration]]
+- [[salesforce-apis|Salesforce APIs]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]
+- [[css-variables-theming|CSS Variables and Theming]]
 
 ## Notes
 

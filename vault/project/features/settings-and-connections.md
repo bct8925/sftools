@@ -8,6 +8,8 @@ tags:
   - connections
   - multi-org
   - theme
+  - oauth
+  - chrome-storage
 aliases:
   - Settings Tab
 created: 2026-02-08
@@ -74,3 +76,7 @@ The Settings tab provides multi-org connection management, theme selection, prox
 - [[authentication-oauth|Authentication and OAuth]]
 - [[state-management|State Management]]
 - [[native-proxy|Native Proxy]]
+- [[overview|System Architecture Overview]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]
+- [[css-variables-theming|CSS Variables and Theming]]
+- [[typescript-types|TypeScript Type Definitions]]

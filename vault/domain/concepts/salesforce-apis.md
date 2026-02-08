@@ -9,6 +9,8 @@ tags:
   - bulk-api
   - soql
   - apex
+  - cometd
+  - pub-sub
 aliases:
   - Salesforce REST API
   - SOQL
@@ -83,6 +85,17 @@ SQL-like query language for Salesforce data:
 - Describe results should be cached (per-connection) to reduce API calls
 - Bulk API for exports >2000 records
 - Error responses follow standard Salesforce error format: `[{ errorCode, message }]`
+
+## Related
+
+- [[query-editor|Query Editor]]
+- [[apex-executor|Apex Executor]]
+- [[event-streaming|Event Streaming]]
+- [[rest-api-explorer|REST API Explorer]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[native-proxy|Native Proxy]]
+- [[schema-browser|Schema Browser]]
+- [[utility-tools|Utility Tools]]
 
 ## Resources
 

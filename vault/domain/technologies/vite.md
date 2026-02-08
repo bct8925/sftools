@@ -33,6 +33,11 @@ Vite is a fast build tool and dev server. sftools uses Vite 7 with the `@vitejs/
 - Fast HMR in development via `npm run watch`
 - Tree-shaking and code splitting for production
 
+## Related
+
+- [[environment|Environment Configuration]]
+- [[testing|Testing Framework]]
+
 ## Resources
 
 - [Vite Documentation](https://vitejs.dev)

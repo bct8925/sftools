@@ -6,6 +6,10 @@ tags:
   - feature
   - apex
   - anonymous-apex
+  - tooling-api
+  - debug-logs
+  - trace-flags
+  - history
 aliases:
   - Apex Tab
   - Anonymous Apex
@@ -56,3 +60,7 @@ The Apex tab provides Anonymous Apex execution with [[monaco-editor|Monaco Edito
 - [[overview|System Architecture Overview]]
 - [[salesforce-api-client|Salesforce API Client]]
 - [[monaco-editor|Monaco Editor]]
+- [[salesforce-apis|Salesforce APIs]]
+- [[utility-libraries|Utility Libraries]]
+- [[typescript-types|TypeScript Type Definitions]]
+- [[utility-tools|Utility Tools]]

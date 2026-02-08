@@ -33,6 +33,11 @@ Playwright is a browser automation framework used in sftools for frontend/browse
 - Headless execution for CI
 - Integrated with Vitest test runner
 
+## Related
+
+- [[testing|Testing Framework]]
+- [[Vitest]]
+
 ## Resources
 
 - [Playwright Documentation](https://playwright.dev)

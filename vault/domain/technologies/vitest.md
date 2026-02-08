@@ -33,6 +33,11 @@ Vitest is a Vite-native test runner used for unit testing in sftools. It shares 
 - [[Playwright]] browser for frontend tests
 - Separate config files for each test type
 
+## Related
+
+- [[testing|Testing Framework]]
+- [[Playwright]]
+
 ## Resources
 
 - [Vitest Documentation](https://vitest.dev)

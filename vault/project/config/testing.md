@@ -123,6 +123,8 @@ Hierarchical IDs for traceability:
 - [[environment|Environment Configuration]]
 - [[Vitest]]
 - [[Playwright]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]
 
 ## Notes
 

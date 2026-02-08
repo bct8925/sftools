@@ -165,6 +165,9 @@ export function useQueryState() {
 - [[css-variables-theming|CSS Variables and Theming]]
 - [[React]]
 - [[monaco-editor|Monaco Editor]]
+- [[query-editor|Query Editor]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[typescript-types|TypeScript Type Definitions]]
 
 ## Notes
 

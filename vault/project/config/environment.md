@@ -73,6 +73,8 @@ Uses [[Vite]] 7 with React plugin for bundling.
 - [[overview|System Architecture Overview]]
 - [[Vite]]
 - [[Vitest]]
+- [[testing|Testing Framework]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]
 
 ## Notes
 

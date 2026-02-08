@@ -82,6 +82,10 @@ Hooks used by a single component are colocated (e.g., `query/useQueryState.ts`).
 - [[component-architecture|Component Architecture]]
 - [[salesforce-api-client|Salesforce API Client]]
 - [[overview|System Architecture Overview]]
+- [[query-editor|Query Editor]]
+- [[apex-executor|Apex Executor]]
+- [[typescript-types|TypeScript Type Definitions]]
+- [[css-variables-theming|CSS Variables and Theming]]
 
 ## Notes
 

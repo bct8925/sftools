@@ -6,6 +6,8 @@ tags:
   - feature
   - rest-api
   - explorer
+  - http-methods
+  - json
 aliases:
   - REST Tab
 created: 2026-02-08
@@ -43,3 +45,6 @@ The REST API tab provides a raw REST explorer for making arbitrary Salesforce AP
 - [[overview|System Architecture Overview]]
 - [[salesforce-api-client|Salesforce API Client]]
 - [[monaco-editor|Monaco Editor]]
+- [[salesforce-apis|Salesforce APIs]]
+- [[utility-libraries|Utility Libraries]]
+- [[typescript-types|TypeScript Type Definitions]]

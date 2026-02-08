@@ -6,6 +6,7 @@ tags:
   - architecture
   - react-context
   - state
+  - chrome-storage
 aliases:
   - Contexts
   - React Context
@@ -136,6 +137,9 @@ Events tab requires `isConnected === true` to function.
 - [[component-architecture|Component Architecture]]
 - [[authentication-oauth|Authentication and OAuth]]
 - [[native-proxy|Native Proxy]]
+- [[settings-and-connections|Settings and Connections]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]
+- [[typescript-types|TypeScript Type Definitions]]
 
 ## Notes
 

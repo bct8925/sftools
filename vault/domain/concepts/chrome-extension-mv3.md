@@ -50,6 +50,14 @@ Manifest V3 is Chrome's extension platform. sftools uses MV3 with a background s
 - `chrome.storage.local` for persistence; `onChanged` for cross-tab sync
 - Types from `@types/chrome` for TypeScript support
 
+## Related
+
+- [[background-service-worker|Background Service Worker]]
+- [[native-proxy|Native Proxy]]
+- [[state-management|State Management]]
+- [[authentication-oauth|Authentication and OAuth]]
+- [[settings-and-connections|Settings and Connections]]
+
 ## Resources
 
 - [Chrome Extensions MV3 Documentation](https://developer.chrome.com/docs/extensions/mv3/)

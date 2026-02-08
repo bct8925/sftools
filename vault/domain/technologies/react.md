@@ -36,6 +36,11 @@ React is a JavaScript library for building user interfaces. sftools uses React 1
 - Context-based state management (no external state library)
 - Component-per-feature directory structure
 
+## Related
+
+- [[component-architecture|Component Architecture]]
+- [[state-management|State Management]]
+
 ## Resources
 
 - [React Documentation](https://react.dev)

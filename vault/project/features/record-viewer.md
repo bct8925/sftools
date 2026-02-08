@@ -7,6 +7,9 @@ tags:
   - record
   - sobject
   - editing
+  - crud
+  - standalone-page
+  - context-menu
 aliases:
   - Record Page
 created: 2026-02-08
@@ -55,3 +58,8 @@ Standalone page for viewing and editing individual Salesforce record fields. Ope
 - [[overview|System Architecture Overview]]
 - [[salesforce-api-client|Salesforce API Client]]
 - [[background-service-worker|Background Service Worker]] (context menu integration)
+- [[salesforce-apis|Salesforce APIs]]
+- [[utility-libraries|Utility Libraries]]
+- [[typescript-types|TypeScript Type Definitions]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]
+- [[schema-browser|Schema Browser]]

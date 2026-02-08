@@ -7,6 +7,9 @@ tags:
   - utils
   - debug-logs
   - flow-cleanup
+  - tooling-api
+  - trace-flags
+  - composite-api
 aliases:
   - Utils Tab
 created: 2026-02-08
@@ -63,3 +66,7 @@ Quick link to open the [[schema-browser|Schema Browser]] standalone page.
 - [[overview|System Architecture Overview]]
 - [[salesforce-api-client|Salesforce API Client]]
 - [[schema-browser|Schema Browser]]
+- [[salesforce-apis|Salesforce APIs]]
+- [[apex-executor|Apex Executor]]
+- [[typescript-types|TypeScript Type Definitions]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]

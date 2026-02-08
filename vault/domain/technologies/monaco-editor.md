@@ -33,6 +33,13 @@ Monaco Editor is the code editor that powers VS Code, used in sftools for SOQL q
 - Language-specific autocomplete and syntax highlighting
 - Lazy-loaded for performance
 
+## Related
+
+- [[query-editor|Query Editor]]
+- [[apex-executor|Apex Executor]]
+- [[rest-api-explorer|REST API Explorer]]
+- [[component-architecture|Component Architecture]]
+
 ## Resources
 
 - [Monaco Editor GitHub](https://github.com/microsoft/monaco-editor)

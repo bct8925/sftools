@@ -34,6 +34,11 @@ TypeScript is a typed superset of JavaScript. sftools uses TypeScript 5.9 for ty
 - Type validation via `npm run typecheck` (uses `tsc --noEmit`)
 - Types shared between components, API layer, and background worker
 
+## Related
+
+- [[typescript-types|TypeScript Type Definitions]]
+- [[component-architecture|Component Architecture]]
+
 ## Resources
 
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/)

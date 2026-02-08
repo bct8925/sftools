@@ -8,6 +8,8 @@ tags:
   - grpc
   - cometd
   - streaming
+  - cors
+  - large-payload
 aliases:
   - sftools-proxy
   - Proxy
@@ -144,6 +146,11 @@ sftools-proxy/
 - [[overview|System Architecture Overview]]
 - [[background-service-worker|Background Service Worker]]
 - [[event-streaming|Event Streaming]]
+- [[salesforce-apis|Salesforce APIs]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[authentication-oauth|Authentication and OAuth]]
+- [[settings-and-connections|Settings and Connections]]
 
 ## Notes
 

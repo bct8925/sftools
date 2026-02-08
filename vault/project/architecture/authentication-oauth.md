@@ -7,6 +7,8 @@ tags:
   - oauth
   - multi-org
   - security
+  - csrf
+  - token-refresh
 aliases:
   - OAuth
   - Auth
@@ -127,6 +129,10 @@ Each instance (tab) independently selects its active connection.
 - [[state-management|State Management]]
 - [[background-service-worker|Background Service Worker]]
 - [[salesforce-api-client|Salesforce API Client]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]
+- [[native-proxy|Native Proxy]]
+- [[settings-and-connections|Settings and Connections]]
+- [[typescript-types|TypeScript Type Definitions]]
 
 ## Notes
 

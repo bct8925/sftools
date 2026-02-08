@@ -8,6 +8,9 @@ tags:
   - platform-events
   - cometd
   - grpc
+  - pub-sub
+  - change-data-capture
+  - push-topics
 aliases:
   - Events Tab
 created: 2026-02-08
@@ -69,3 +72,6 @@ The Events tab enables subscribing to Salesforce Platform Events, Change Data Ca
 - [[overview|System Architecture Overview]]
 - [[native-proxy|Native Proxy]]
 - [[background-service-worker|Background Service Worker]]
+- [[salesforce-apis|Salesforce APIs]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]

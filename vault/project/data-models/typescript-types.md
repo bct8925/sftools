@@ -95,3 +95,5 @@ declare global {
 - [[salesforce-api-client|Salesforce API Client]]
 - [[TypeScript]]
 - [[component-architecture|Component Architecture]]
+- [[salesforce-apis|Salesforce APIs]]
+- [[state-management|State Management]]

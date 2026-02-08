@@ -102,6 +102,12 @@ Global classes in `style.css` for common patterns:
 .component { background: #ffffff; color: #333; }
 ```
 
+## Related
+
+- [[component-architecture|Component Architecture]]
+- [[state-management|State Management]]
+- [[settings-and-connections|Settings and Connections]]
+
 ## Resources
 
 - `src/style.css` — All variable definitions and shared classes

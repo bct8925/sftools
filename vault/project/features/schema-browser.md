@@ -7,6 +7,9 @@ tags:
   - schema
   - metadata
   - describe
+  - formula-fields
+  - relationships
+  - standalone-page
 aliases:
   - Schema Page
 created: 2026-02-08
@@ -54,3 +57,8 @@ Standalone page for browsing Salesforce object metadata, fields, relationships, 
 - [[overview|System Architecture Overview]]
 - [[salesforce-api-client|Salesforce API Client]]
 - [[component-architecture|Component Architecture]]
+- [[salesforce-apis|Salesforce APIs]]
+- [[utility-libraries|Utility Libraries]]
+- [[typescript-types|TypeScript Type Definitions]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]
+- [[record-viewer|Record Viewer]]

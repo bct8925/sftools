@@ -116,6 +116,9 @@ On startup, checks if proxy auto-connect is enabled in settings and connects aut
 - [[authentication-oauth|Authentication and OAuth]]
 - [[native-proxy|Native Proxy]]
 - [[salesforce-api-client|Salesforce API Client]]
+- [[chrome-extension-mv3|Chrome Extension MV3]]
+- [[event-streaming|Event Streaming]]
+- [[record-viewer|Record Viewer]]
 
 ## Notes
 

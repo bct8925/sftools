@@ -77,6 +77,10 @@ sftools/
 ## Related
 
 - [[overview|System Architecture Overview]]
+- [[component-architecture|Component Architecture]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[authentication-oauth|Authentication and OAuth]]
+- [[native-proxy|Native Proxy]]
 
 ## Notes
 

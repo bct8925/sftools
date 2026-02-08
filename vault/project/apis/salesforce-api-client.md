@@ -7,6 +7,9 @@ tags:
   - salesforce
   - rest
   - fetch
+  - cors
+  - bulk-api
+  - tooling-api
 aliases:
   - API Layer
   - salesforceRequest
@@ -135,6 +138,11 @@ publishPlatformEvent(eventName, fields) // → { success, id, error }
 - [[background-service-worker|Background Service Worker]]
 - [[authentication-oauth|Authentication and OAuth]]
 - [[native-proxy|Native Proxy]]
+- [[salesforce-apis|Salesforce APIs]]
+- [[typescript-types|TypeScript Type Definitions]]
+- [[query-editor|Query Editor]]
+- [[apex-executor|Apex Executor]]
+- [[rest-api-explorer|REST API Explorer]]
 
 ## Notes
 

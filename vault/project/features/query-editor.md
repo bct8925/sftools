@@ -7,6 +7,10 @@ tags:
   - soql
   - query
   - monaco
+  - bulk-api
+  - csv-export
+  - pagination
+  - history
 aliases:
   - SOQL Editor
   - Query Tab
@@ -66,3 +70,8 @@ Uses `useReducer` via `useQueryState.ts` hook for managing tabs, active tab, que
 - [[salesforce-api-client|Salesforce API Client]]
 - [[monaco-editor|Monaco Editor]]
 - [[component-architecture|Component Architecture]]
+- [[salesforce-apis|Salesforce APIs]]
+- [[typescript-types|TypeScript Type Definitions]]
+- [[state-management|State Management]]
+- [[utility-libraries|Utility Libraries]]
+- [[testing|Testing Framework]]

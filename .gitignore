@@ -19,5 +19,5 @@ coverage/
 .dora/
 
 # Obsidian workspace (user-specific)
-.vault/.obsidian/workspace.json
-.vault/.obsidian/workspace-mobile.json
+vault/.obsidian/workspace.json
+vault/.obsidian/workspace-mobile.json

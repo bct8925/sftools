@@ -5,7 +5,6 @@ category: features
 tags:
   - feature
   - utils
-  - debug-logs
   - flow-cleanup
   - tooling-api
   - trace-flags
@@ -26,11 +25,15 @@ confidence: high
 
 ## Overview
 
-The Utils tab hosts developer utility tools: Debug Log management, Flow Cleanup, and Schema Browser link. Individual tools are in `components/utils-tools/`.
+The Utils tab hosts developer utility tools: Debug Log management, Flow Cleanup, and Schema Browser link. Individual tools are in `components/utils-tools/`. For the full-featured Debug Logs Viewer tab, see [[debug-logs-viewer|Debug Logs Viewer]].
 
 ## How It Works
 
 ### Debug Logs
+
+> [!note]
+> The Utils tab contains simplified debug log management (enable tracing, delete logs). For the full Debug Logs Viewer with live log monitoring, see [[debug-logs-viewer|Debug Logs Viewer]].
+
 - **User search**: Find users to enable trace flags
 - **Enable tracing**: `enableTraceFlagForUser(userId)` — 30-minute trace flag
 - **Log stats**: `getDebugLogStats()` — count + total size
@@ -66,6 +69,7 @@ Quick link to open the [[schema-browser|Schema Browser]] standalone page.
 - [[overview|System Architecture Overview]]
 - [[salesforce-api-client|Salesforce API Client]]
 - [[schema-browser|Schema Browser]]
+- [[debug-logs-viewer|Debug Logs Viewer]]
 - [[salesforce-apis|Salesforce APIs]]
 - [[apex-executor|Apex Executor]]
 - [[typescript-types|TypeScript Type Definitions]]

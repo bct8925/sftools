@@ -59,6 +59,24 @@ Uses [[Vite]] 7 with React plugin for bundling.
 - `SFTOOLS_PRODUCTION` — Controls debug mode in builds (`true`/`false`)
 - `.env.test` — Integration test credentials (gitignored, never committed)
 
+### CI/CD Pipeline
+
+See [[ci-cd-pipeline|CI/CD Pipeline]] for full documentation.
+
+**Summary of workflows:**
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| Build & Test | PR events | Unit tests → Frontend tests → Build → Upload artifact |
+| Build Package | Push to main | Production build + Claude-generated release notes |
+| Claude Code Review | PR events | AI-powered code review with inline comments |
+
+All workflows run on a self-hosted runner. Test results are posted as PR comments. The Build Package workflow uses Claude Code CLI to generate release notes.
+
+**Secrets required:**
+- `GITHUB_TOKEN` — Auto-provided by GitHub Actions
+- `CLAUDE_CODE_OAUTH_TOKEN` — Claude Code authentication
+
 ## Key Files
 
 - `vite.config.ts` — Main build configuration
@@ -75,6 +93,7 @@ Uses [[Vite]] 7 with React plugin for bundling.
 - [[Vitest]]
 - [[testing|Testing Framework]]
 - [[chrome-extension-mv3|Chrome Extension MV3]]
+- [[ci-cd-pipeline|CI/CD Pipeline]]
 
 ## Notes
 

@@ -21,9 +21,11 @@ General reference material about concepts, patterns, and technologies used in th
 
 ## Entries
 
-### Concepts (2)
+### Concepts (4)
 - [[chrome-extension-mv3|Chrome Extension MV3]] - Manifest V3 architecture, service workers, Chrome APIs
+- [[chrome-native-messaging|Chrome Native Messaging]] - Extension-to-proxy communication via native host
 - [[salesforce-apis|Salesforce APIs]] - REST, Tooling, Bulk, Pub/Sub gRPC, CometD, SOQL
+- [[soql|SOQL]] - Salesforce Object Query Language
 
 ### Patterns (1)
 - [[css-variables-theming|CSS Variables and Theming]] - Design system, CSS variables, dark/light mode, CSS Modules

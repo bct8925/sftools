@@ -16,3 +16,4 @@ Design patterns, best practices, and reusable solutions.
 ## Entries
 
 - [[css-variables-theming|CSS Variables and Theming]] - Design system, CSS variables, dark/light mode, CSS Modules
+- [[script-list-component|Script List Component Pattern]] - Reusable history/favorites list pattern with generic accessors

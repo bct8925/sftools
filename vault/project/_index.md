@@ -21,6 +21,7 @@ Implementation-specific knowledge about this codebase.
 - [[project/data-models/_index|Data Models]] - Schemas, entities, relationships
 - [[project/config/_index|Configuration]] - Environment, build, CI/CD
 - [[project/decisions/_index|Decisions]] - Architecture Decision Records
+- [[project/meta/_index|Meta]] - Vault maintenance and documentation
 
 ## Entries
 
@@ -50,6 +51,17 @@ Implementation-specific knowledge about this codebase.
 ### Data Models (1)
 - [[typescript-types|TypeScript Type Definitions]] - Salesforce API types, custom events, connection interfaces
 
-### Configuration (2)
+### Configuration (3)
+- [[ci-cd-pipeline|CI/CD Pipeline]] - GitHub Actions workflows for testing, building, packaging, and code review
 - [[environment|Environment Configuration]] - Build system, code quality commands, environment variables
 - [[testing|Testing Framework]] - Vitest unit/frontend/integration test architecture
+
+### Decisions (5)
+- [[adr-001-monaco-editor|ADR-001: Monaco Editor for Code Editing]] - Using Monaco Editor for SOQL, Apex, JSON editing
+- [[adr-002-native-proxy|ADR-002: Native Proxy for Advanced Features]] - Node.js proxy for gRPC, CometD, CORS bypass
+- [[adr-003-oauth-flow|ADR-003: Dual OAuth Flow Strategy]] - Implicit flow (no proxy) vs authorization code flow (with proxy)
+- [[adr-004-css-modules|ADR-004: CSS Modules for Component Styling]] - CSS Modules with CSS variables over styled-components or Tailwind
+- [[adr-005-vitest|ADR-005: Vitest for Testing]] - Unified Vitest framework for unit, browser, and integration tests
+
+### Meta (1)
+- [[vault-gap-analysis|Vault Gap Analysis - 2026-02-08]] - Documentation coverage review and improvement roadmap

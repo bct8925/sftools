@@ -15,5 +15,6 @@ Environment variables, build system, CI/CD, and feature flags.
 
 ## Entries
 
+- [[ci-cd-pipeline|CI/CD Pipeline]] - GitHub Actions workflows for testing, building, packaging, and code review
 - [[environment|Environment Configuration]] - Build system, code quality commands, environment variables
 - [[testing|Testing Framework]] - Vitest unit/frontend/integration test architecture

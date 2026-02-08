@@ -144,3 +144,82 @@ npm run test:integration            # Real API calls (needs .env.test)
 | Integration test fails | Check `.env.test` credentials |
 | Frontend test timeout | Check MockRouter URL patterns |
 | Vite port conflict | Set `VITE_PORT=5175` env var |
+
+### Browser Test Details
+
+The browser test environment (`vitest.config.browser.ts`) provides real browser testing:
+
+**Architecture:**
+- Vitest in browser mode using Playwright provider
+- Starts Vite dev server on port 5174 (configurable via `VITE_PORT`)
+- Headless Chromium instance per test file
+- Fresh page per test via `beforeEach`
+
+**Mock System (MockRouter):**
+
+MockRouter intercepts Salesforce API calls in the browser context. It works by injecting a mock `chrome.runtime` that routes `sendMessage` calls through a URL-based mock map:
+
+```typescript
+const router = new MockRouter();
+
+// Mock query results
+router.onQuery(/\/query/, records, columnMetadata);
+
+// Mock describe API
+router.onDescribe('Account', fields);
+
+// Mock Apex execution
+router.onApexExecute(true, true, 'Debug log content');
+
+// Mock REST API
+router.onRest('/services/data/v62.0/sobjects/Account/001xxx', record);
+
+// Apply mocks to page
+await setupMocks(router);
+```
+
+**Page Object Pattern:**
+
+Page objects provide semantic test methods encapsulating DOM interactions:
+
+| Page Object | Tests |
+|-------------|-------|
+| `query-tab.page.ts` | Query editor, results, tabs, history |
+| `apex-tab.page.ts` | Apex execution, output |
+| `rest-api-tab.page.ts` | REST API requests |
+| `events-tab.page.ts` | Event streaming |
+| `settings-tab.page.ts` | Connection management |
+| `record-page.page.ts` | Record viewer |
+| `schema-page.page.ts` | Schema browser |
+| `debug-logs-tab.page.ts` | Debug log viewer |
+
+**Test Context:**
+
+```typescript
+const { page } = getTestContext(); // Access Playwright page
+const { queryTab, apexTab, settingsTab } = createPageObjects(page);
+await navigateToExtension(); // Navigate to app
+```
+
+### Mock Data Factories
+
+`tests/shared/mocks/mock-data.ts` provides reusable test data:
+
+| Factory | Creates |
+|---------|---------|
+| `createMockConnection()` | SalesforceConnection |
+| `createMockQueryResult()` | QueryResult with records |
+| `createMockDescribe()` | ObjectDescribeResult with fields |
+| `createMockField()` | Individual FieldDescribe |
+| `createMockApexResult()` | ApexExecutionResult |
+| `createMockRecord()` | SObject record |
+
+### Test Scenarios
+
+`tests/shared/mocks/mock-scenarios.ts` provides pre-built complex mock configurations:
+
+| Scenario | Description |
+|----------|-------------|
+| `EventsChannelsScenario` | Platform events + push topics |
+| `QueryResultScenario` | Query with pagination |
+| `SchemaScenario` | Object describe + fields |

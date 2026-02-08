@@ -17,3 +17,7 @@ coverage/
 
 # dora code context index
 .dora/
+
+# Obsidian workspace (user-specific)
+.vault/.obsidian/workspace.json
+.vault/.obsidian/workspace-mobile.json

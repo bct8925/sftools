@@ -22,7 +22,7 @@ confidence: high
 
 ## Overview
 
-The REST API tab provides a raw REST explorer for making arbitrary Salesforce API calls. Uses [[Monaco Editor]] (`json` mode) for request body editing and response display.
+The REST API tab provides a raw REST explorer for making arbitrary Salesforce API calls. Uses [[monaco-editor|Monaco Editor]] (`json` mode) for request body editing and response display.
 
 ## How It Works
 
@@ -40,6 +40,6 @@ The REST API tab provides a raw REST explorer for making arbitrary Salesforce AP
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Salesforce API Client]]
-- [[Monaco Editor]]
+- [[overview|System Architecture Overview]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[monaco-editor|Monaco Editor]]

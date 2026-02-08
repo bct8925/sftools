@@ -15,4 +15,4 @@ Design patterns, best practices, and reusable solutions.
 
 ## Entries
 
-- [[CSS Variables and Theming]] - Design system, CSS variables, dark/light mode, CSS Modules
+- [[css-variables-theming|CSS Variables and Theming]] - Design system, CSS variables, dark/light mode, CSS Modules

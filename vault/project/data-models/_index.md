@@ -15,4 +15,4 @@ Database schemas, entities, and relationships.
 
 ## Entries
 
-- [[TypeScript Type Definitions]] - Salesforce API types, custom events, connection interfaces
+- [[typescript-types|TypeScript Type Definitions]] - Salesforce API types, custom events, connection interfaces

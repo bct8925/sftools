@@ -141,9 +141,9 @@ sftools-proxy/
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Background Service Worker]]
-- [[Event Streaming]]
+- [[overview|System Architecture Overview]]
+- [[background-service-worker|Background Service Worker]]
+- [[event-streaming|Event Streaming]]
 
 ## Notes
 

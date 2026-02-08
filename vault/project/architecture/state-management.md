@@ -132,10 +132,10 @@ Events tab requires `isConnected === true` to function.
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Component Architecture]]
-- [[Authentication and OAuth]]
-- [[Native Proxy]]
+- [[overview|System Architecture Overview]]
+- [[component-architecture|Component Architecture]]
+- [[authentication-oauth|Authentication and OAuth]]
+- [[native-proxy|Native Proxy]]
 
 ## Notes
 

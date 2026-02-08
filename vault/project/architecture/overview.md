@@ -22,7 +22,7 @@ confidence: high
 
 ## Overview
 
-sftools is a Chrome Extension (Manifest V3) providing developer tools for Salesforce. Built with [[React]] 19, [[TypeScript]] 5.9, [[Vite]] 7, and [[Monaco Editor]]. Testing uses [[Vitest]] (unit) + [[Playwright]] (browser). An optional [[Native Proxy]] (Node.js) enables streaming and CORS bypass.
+sftools is a Chrome Extension (Manifest V3) providing developer tools for Salesforce. Built with [[react|React]] 19, [[typescript|TypeScript]] 5.9, [[vite|Vite]] 7, and [[monaco-editor|Monaco Editor]]. Testing uses [[vitest|Vitest]] (unit) + [[playwright|Playwright]] (browser). An optional [[native-proxy|Native Proxy]] (Node.js) enables streaming and CORS bypass.
 
 ## How It Works
 
@@ -105,15 +105,15 @@ All 6 tabs render simultaneously (hidden when inactive) for state preservation:
 
 ## Related
 
-- [[Directory Structure]]
-- [[Component Architecture]]
-- [[State Management]]
-- [[Background Service Worker]]
-- [[Salesforce API Client]]
-- [[Authentication and OAuth]]
-- [[Native Proxy]]
-- [[Testing Framework]]
-- [[Environment Configuration]]
+- [[directory-structure|Directory Structure]]
+- [[component-architecture|Component Architecture]]
+- [[state-management|State Management]]
+- [[background-service-worker|Background Service Worker]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[authentication-oauth|Authentication and OAuth]]
+- [[native-proxy|Native Proxy]]
+- [[testing|Testing Framework]]
+- [[environment|Environment Configuration]]
 
 ## Notes
 

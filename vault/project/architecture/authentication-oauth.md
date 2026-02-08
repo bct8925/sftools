@@ -123,10 +123,10 @@ Each instance (tab) independently selects its active connection.
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[State Management]]
-- [[Background Service Worker]]
-- [[Salesforce API Client]]
+- [[overview|System Architecture Overview]]
+- [[state-management|State Management]]
+- [[background-service-worker|Background Service Worker]]
+- [[salesforce-api-client|Salesforce API Client]]
 
 ## Notes
 

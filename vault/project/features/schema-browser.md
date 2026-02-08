@@ -51,6 +51,6 @@ Standalone page for browsing Salesforce object metadata, fields, relationships, 
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Salesforce API Client]]
-- [[Component Architecture]]
+- [[overview|System Architecture Overview]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[component-architecture|Component Architecture]]

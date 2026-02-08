@@ -24,7 +24,7 @@ confidence: high
 
 ## Overview
 
-The Apex tab provides Anonymous Apex execution with [[Monaco Editor]] (`apex` language mode), debug log retrieval, execution history, and compile error highlighting with markers.
+The Apex tab provides Anonymous Apex execution with [[monaco-editor|Monaco Editor]] (`apex` language mode), debug log retrieval, execution history, and compile error highlighting with markers.
 
 ## How It Works
 
@@ -53,6 +53,6 @@ The Apex tab provides Anonymous Apex execution with [[Monaco Editor]] (`apex` la
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Salesforce API Client]]
-- [[Monaco Editor]]
+- [[overview|System Architecture Overview]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[monaco-editor|Monaco Editor]]

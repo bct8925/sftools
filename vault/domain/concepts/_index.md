@@ -15,5 +15,5 @@ Core domain concepts, principles, and definitions.
 
 ## Entries
 
-- [[Chrome Extension MV3]] - Manifest V3 architecture, service workers, Chrome APIs
-- [[Salesforce APIs]] - REST, Tooling, Bulk, Pub/Sub gRPC, CometD, SOQL
+- [[chrome-extension-mv3|Chrome Extension MV3]] - Manifest V3 architecture, service workers, Chrome APIs
+- [[salesforce-apis|Salesforce APIs]] - REST, Tooling, Bulk, Pub/Sub gRPC, CometD, SOQL

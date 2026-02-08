@@ -160,11 +160,11 @@ export function useQueryState() {
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[State Management]]
-- [[CSS Variables and Theming]]
+- [[overview|System Architecture Overview]]
+- [[state-management|State Management]]
+- [[css-variables-theming|CSS Variables and Theming]]
 - [[React]]
-- [[Monaco Editor]]
+- [[monaco-editor|Monaco Editor]]
 
 ## Notes
 

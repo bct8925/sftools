@@ -24,7 +24,7 @@ confidence: high
 
 ## Overview
 
-The Events tab enables subscribing to Salesforce Platform Events, Change Data Capture, PushTopics, and System Topics. **Requires the [[Native Proxy]] to be connected** — shows connection prompt when proxy is offline.
+The Events tab enables subscribing to Salesforce Platform Events, Change Data Capture, PushTopics, and System Topics. **Requires the [[native-proxy|Native Proxy]] to be connected** — shows connection prompt when proxy is offline.
 
 ## How It Works
 
@@ -66,6 +66,6 @@ The Events tab enables subscribing to Salesforce Platform Events, Change Data Ca
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Native Proxy]]
-- [[Background Service Worker]]
+- [[overview|System Architecture Overview]]
+- [[native-proxy|Native Proxy]]
+- [[background-service-worker|Background Service Worker]]

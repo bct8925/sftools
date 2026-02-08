@@ -81,7 +81,7 @@ clearAuthTokens()                                                // Wipe all tok
 
 ### Native Messaging (`native-messaging.ts`)
 
-Communication with the local [[Native Proxy]] via Chrome Native Messaging:
+Communication with the local [[native-proxy|Native Proxy]] via Chrome Native Messaging:
 
 ```typescript
 connectNative()      // Connect + init handshake → { httpPort, secret }
@@ -112,10 +112,10 @@ On startup, checks if proxy auto-connect is enabled in settings and connects aut
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Authentication and OAuth]]
-- [[Native Proxy]]
-- [[Salesforce API Client]]
+- [[overview|System Architecture Overview]]
+- [[authentication-oauth|Authentication and OAuth]]
+- [[native-proxy|Native Proxy]]
+- [[salesforce-api-client|Salesforce API Client]]
 
 ## Notes
 

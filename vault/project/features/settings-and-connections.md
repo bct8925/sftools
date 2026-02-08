@@ -71,6 +71,6 @@ The Settings tab provides multi-org connection management, theme selection, prox
 
 ## Related
 
-- [[Authentication and OAuth]]
-- [[State Management]]
-- [[Native Proxy]]
+- [[authentication-oauth|Authentication and OAuth]]
+- [[state-management|State Management]]
+- [[native-proxy|Native Proxy]]

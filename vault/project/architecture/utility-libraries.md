@@ -79,9 +79,9 @@ Hooks used by a single component are colocated (e.g., `query/useQueryState.ts`).
 
 ## Related
 
-- [[Component Architecture]]
-- [[Salesforce API Client]]
-- [[System Architecture Overview]]
+- [[component-architecture|Component Architecture]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[overview|System Architecture Overview]]
 
 ## Notes
 

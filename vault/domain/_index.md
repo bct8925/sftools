@@ -22,16 +22,16 @@ General reference material about concepts, patterns, and technologies used in th
 ## Entries
 
 ### Concepts (2)
-- [[Chrome Extension MV3]] - Manifest V3 architecture, service workers, Chrome APIs
-- [[Salesforce APIs]] - REST, Tooling, Bulk, Pub/Sub gRPC, CometD, SOQL
+- [[chrome-extension-mv3|Chrome Extension MV3]] - Manifest V3 architecture, service workers, Chrome APIs
+- [[salesforce-apis|Salesforce APIs]] - REST, Tooling, Bulk, Pub/Sub gRPC, CometD, SOQL
 
 ### Patterns (1)
-- [[CSS Variables and Theming]] - Design system, CSS variables, dark/light mode, CSS Modules
+- [[css-variables-theming|CSS Variables and Theming]] - Design system, CSS variables, dark/light mode, CSS Modules
 
 ### Technologies (6)
 - [[React]] - UI library (v19) for Chrome DevTools panel
 - [[TypeScript]] - Type-safe JavaScript (v5.9)
 - [[Vite]] - Build tool and bundler (v7)
-- [[Monaco Editor]] - Code editor for SOQL, Apex, and REST API
+- [[monaco-editor|Monaco Editor]] - Code editor for SOQL, Apex, and REST API
 - [[Vitest]] - Unit and browser test runner
 - [[Playwright]] - Browser automation for frontend tests

@@ -52,6 +52,6 @@ Standalone page for viewing and editing individual Salesforce record fields. Ope
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Salesforce API Client]]
-- [[Background Service Worker]] (context menu integration)
+- [[overview|System Architecture Overview]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[background-service-worker|Background Service Worker]] (context menu integration)

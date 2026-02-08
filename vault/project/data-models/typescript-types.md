@@ -92,6 +92,6 @@ declare global {
 
 ## Related
 
-- [[Salesforce API Client]]
+- [[salesforce-api-client|Salesforce API Client]]
 - [[TypeScript]]
-- [[Component Architecture]]
+- [[component-architecture|Component Architecture]]

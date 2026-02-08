@@ -15,4 +15,4 @@ API endpoints, contracts, and integration points.
 
 ## Entries
 
-- [[Salesforce API Client]] - Layered API client (salesforceRequest → smartFetch → Salesforce)
+- [[salesforce-api-client|Salesforce API Client]] - Layered API client (salesforceRequest → smartFetch → Salesforce)

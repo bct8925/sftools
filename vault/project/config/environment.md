@@ -70,7 +70,7 @@ Uses [[Vite]] 7 with React plugin for bundling.
 
 ## Related
 
-- [[System Architecture Overview]]
+- [[overview|System Architecture Overview]]
 - [[Vite]]
 - [[Vitest]]
 

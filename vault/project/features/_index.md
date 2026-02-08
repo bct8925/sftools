@@ -15,11 +15,11 @@ User-facing features, workflows, and functionality.
 
 ## Entries
 
-- [[Query Editor]] - SOQL editor with Monaco, tabbed results, bulk export
-- [[Apex Executor]] - Anonymous Apex execution with debug log retrieval
-- [[REST API Explorer]] - Raw REST API calls with Monaco JSON editor
-- [[Event Streaming]] - Platform Events, CDC, PushTopics (requires proxy)
-- [[Schema Browser]] - Standalone object metadata browser
-- [[Record Viewer]] - Standalone record viewer/editor
-- [[Utility Tools]] - Debug log management, flow cleanup
-- [[Settings and Connections]] - Multi-org management, theme, proxy config
+- [[query-editor|Query Editor]] - SOQL editor with Monaco, tabbed results, bulk export
+- [[apex-executor|Apex Executor]] - Anonymous Apex execution with debug log retrieval
+- [[rest-api-explorer|REST API Explorer]] - Raw REST API calls with Monaco JSON editor
+- [[event-streaming|Event Streaming]] - Platform Events, CDC, PushTopics (requires proxy)
+- [[schema-browser|Schema Browser]] - Standalone object metadata browser
+- [[record-viewer|Record Viewer]] - Standalone record viewer/editor
+- [[utility-tools|Utility Tools]] - Debug log management, flow cleanup
+- [[settings-and-connections|Settings and Connections]] - Multi-org management, theme, proxy config

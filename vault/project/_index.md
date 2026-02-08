@@ -25,31 +25,31 @@ Implementation-specific knowledge about this codebase.
 ## Entries
 
 ### Architecture (8)
-- [[System Architecture Overview]] - High-level architecture, communication flow, page/tab structure
-- [[Directory Structure]] - Repository layout and directory purposes
-- [[Component Architecture]] - React component patterns, CSS Modules, Monaco editor wrapper
-- [[State Management]] - React Context providers (Connection, Theme, Proxy)
-- [[Background Service Worker]] - Message routing, OAuth tokens, native messaging
-- [[Authentication and OAuth]] - Multi-org OAuth, CSRF protection, token refresh
-- [[Native Proxy]] - Node.js proxy for gRPC streaming, CometD, CORS bypass
-- [[Utility Libraries]] - Shared TypeScript utilities in src/lib/
+- [[overview|System Architecture Overview]] - High-level architecture, communication flow, page/tab structure
+- [[directory-structure|Directory Structure]] - Repository layout and directory purposes
+- [[component-architecture|Component Architecture]] - React component patterns, CSS Modules, Monaco editor wrapper
+- [[state-management|State Management]] - React Context providers (Connection, Theme, Proxy)
+- [[background-service-worker|Background Service Worker]] - Message routing, OAuth tokens, native messaging
+- [[authentication-oauth|Authentication and OAuth]] - Multi-org OAuth, CSRF protection, token refresh
+- [[native-proxy|Native Proxy]] - Node.js proxy for gRPC streaming, CometD, CORS bypass
+- [[utility-libraries|Utility Libraries]] - Shared TypeScript utilities in src/lib/
 
 ### Features (8)
-- [[Query Editor]] - SOQL editor with Monaco, tabbed results, bulk export
-- [[Apex Executor]] - Anonymous Apex execution with debug log retrieval
-- [[REST API Explorer]] - Raw REST API calls with Monaco JSON editor
-- [[Event Streaming]] - Platform Events, CDC, PushTopics (requires proxy)
-- [[Schema Browser]] - Standalone object metadata browser
-- [[Record Viewer]] - Standalone record viewer/editor
-- [[Utility Tools]] - Debug log management, flow cleanup
-- [[Settings and Connections]] - Multi-org management, theme, proxy config
+- [[query-editor|Query Editor]] - SOQL editor with Monaco, tabbed results, bulk export
+- [[apex-executor|Apex Executor]] - Anonymous Apex execution with debug log retrieval
+- [[rest-api-explorer|REST API Explorer]] - Raw REST API calls with Monaco JSON editor
+- [[event-streaming|Event Streaming]] - Platform Events, CDC, PushTopics (requires proxy)
+- [[schema-browser|Schema Browser]] - Standalone object metadata browser
+- [[record-viewer|Record Viewer]] - Standalone record viewer/editor
+- [[utility-tools|Utility Tools]] - Debug log management, flow cleanup
+- [[settings-and-connections|Settings and Connections]] - Multi-org management, theme, proxy config
 
 ### APIs (1)
-- [[Salesforce API Client]] - Layered API client (salesforceRequest → smartFetch → Salesforce)
+- [[salesforce-api-client|Salesforce API Client]] - Layered API client (salesforceRequest → smartFetch → Salesforce)
 
 ### Data Models (1)
-- [[TypeScript Type Definitions]] - Salesforce API types, custom events, connection interfaces
+- [[typescript-types|TypeScript Type Definitions]] - Salesforce API types, custom events, connection interfaces
 
 ### Configuration (2)
-- [[Environment Configuration]] - Build system, code quality commands, environment variables
-- [[Testing Framework]] - Vitest unit/frontend/integration test architecture
+- [[environment|Environment Configuration]] - Build system, code quality commands, environment variables
+- [[testing|Testing Framework]] - Vitest unit/frontend/integration test architecture

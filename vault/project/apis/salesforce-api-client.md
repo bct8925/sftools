@@ -131,10 +131,10 @@ publishPlatformEvent(eventName, fields) // → { success, id, error }
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Background Service Worker]]
-- [[Authentication and OAuth]]
-- [[Native Proxy]]
+- [[overview|System Architecture Overview]]
+- [[background-service-worker|Background Service Worker]]
+- [[authentication-oauth|Authentication and OAuth]]
+- [[native-proxy|Native Proxy]]
 
 ## Notes
 

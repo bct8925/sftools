@@ -76,7 +76,7 @@ sftools/
 
 ## Related
 
-- [[System Architecture Overview]]
+- [[overview|System Architecture Overview]]
 
 ## Notes
 

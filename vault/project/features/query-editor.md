@@ -25,7 +25,7 @@ confidence: high
 
 ## Overview
 
-The Query tab provides a full-featured SOQL editor with [[Monaco Editor]] syntax highlighting, SOQL autocomplete, tabbed results display, query history/favorites, pagination, and bulk query export via Salesforce Bulk API v2.
+The Query tab provides a full-featured SOQL editor with [[monaco-editor|Monaco Editor]] syntax highlighting, SOQL autocomplete, tabbed results display, query history/favorites, pagination, and bulk query export via Salesforce Bulk API v2.
 
 ## How It Works
 
@@ -62,7 +62,7 @@ Uses `useReducer` via `useQueryState.ts` hook for managing tabs, active tab, que
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Salesforce API Client]]
-- [[Monaco Editor]]
-- [[Component Architecture]]
+- [[overview|System Architecture Overview]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[monaco-editor|Monaco Editor]]
+- [[component-architecture|Component Architecture]]

@@ -119,8 +119,8 @@ Hierarchical IDs for traceability:
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Environment Configuration]]
+- [[overview|System Architecture Overview]]
+- [[environment|Environment Configuration]]
 - [[Vitest]]
 - [[Playwright]]
 

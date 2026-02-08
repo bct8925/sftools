@@ -39,7 +39,7 @@ The Utils tab hosts developer utility tools: Debug Log management, Flow Cleanup,
 - **Delete inactive**: `deleteInactiveFlowVersions(flowId)` — clean up old versions
 
 ### Schema Browser Link
-Quick link to open the [[Schema Browser]] standalone page.
+Quick link to open the [[schema-browser|Schema Browser]] standalone page.
 
 ### Key Components
 
@@ -60,6 +60,6 @@ Quick link to open the [[Schema Browser]] standalone page.
 
 ## Related
 
-- [[System Architecture Overview]]
-- [[Salesforce API Client]]
-- [[Schema Browser]]
+- [[overview|System Architecture Overview]]
+- [[salesforce-api-client|Salesforce API Client]]
+- [[schema-browser|Schema Browser]]

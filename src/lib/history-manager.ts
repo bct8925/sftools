@@ -26,6 +26,7 @@ export class HistoryManager {
     private favoritesKey: string;
     private maxSize: number;
     private contentProperty: string;
+    private loaded = false;
 
     public history: HistoryEntry[] = [];
     public favorites: FavoriteEntry[] = [];
@@ -44,6 +45,16 @@ export class HistoryManager {
         const data = await chrome.storage.local.get([this.historyKey, this.favoritesKey]);
         this.history = (data[this.historyKey] as HistoryEntry[]) || [];
         this.favorites = (data[this.favoritesKey] as FavoriteEntry[]) || [];
+        this.loaded = true;
+    }
+
+    /**
+     * Ensure data is loaded from storage before any write operation
+     */
+    private async ensureLoaded(): Promise<void> {
+        if (!this.loaded) {
+            await this.load();
+        }
     }
 
     /**
@@ -55,6 +66,7 @@ export class HistoryManager {
         const trimmed = content.trim();
         if (!trimmed) return;
 
+        await this.ensureLoaded();
         const contentProp = this.contentProperty;
 
         // If already in favorites, just update the timestamp
@@ -99,6 +111,7 @@ export class HistoryManager {
 
         if (!trimmedContent || !trimmedLabel) return;
 
+        await this.ensureLoaded();
         const contentProp = this.contentProperty;
 
         this.favorites.unshift({
@@ -115,6 +128,7 @@ export class HistoryManager {
      * Remove item from history by ID
      */
     async removeFromHistory(id: string): Promise<void> {
+        await this.ensureLoaded();
         this.history = this.history.filter(item => item.id !== id);
         await this.saveHistory();
     }
@@ -123,6 +137,7 @@ export class HistoryManager {
      * Remove item from favorites by ID
      */
     async removeFromFavorites(id: string): Promise<void> {
+        await this.ensureLoaded();
         this.favorites = this.favorites.filter(item => item.id !== id);
         await this.saveFavorites();
     }

@@ -172,6 +172,7 @@ describe('HistoryManager', () => {
         });
 
         it('HM-U-022: updates favorite timestamp instead of adding to history', async () => {
+            await manager.load();
             manager.favorites = [{ id: '1', content: 'fav query', label: 'Fav', timestamp: 1000 }];
 
             await manager.saveToHistory('fav query');
@@ -185,6 +186,32 @@ describe('HistoryManager', () => {
 
             const storage = chrome._getStorageData();
             expect(storage.testHistory[0].content).toBe('persisted');
+        });
+
+        it('HM-U-040: preserves existing storage entries when saving without prior load', async () => {
+            // Simulate a previous session that stored history
+            chrome._setStorageData({
+                testHistory: [
+                    { id: '1', content: 'old query 1', timestamp: 1000 },
+                    { id: '2', content: 'old query 2', timestamp: 2000 },
+                ],
+                testFavorites: [],
+            });
+
+            // Create a fresh manager (simulates extension reopened)
+            const freshManager = new HistoryManager(storageKeys, { maxSize: 5 });
+
+            // Save without ever calling load() — this was the bug
+            await freshManager.saveToHistory('new query');
+
+            expect(freshManager.history).toHaveLength(3);
+            expect(freshManager.history[0].content).toBe('new query');
+            expect(freshManager.history[1].content).toBe('old query 1');
+            expect(freshManager.history[2].content).toBe('old query 2');
+
+            // Verify storage also has all entries
+            const storage = chrome._getStorageData();
+            expect(storage.testHistory).toHaveLength(3);
         });
     });
 
@@ -231,6 +258,7 @@ describe('HistoryManager', () => {
 
     describe('removeFromHistory', () => {
         it('HM-U-006: removes by ID', async () => {
+            await manager.load();
             manager.history = [
                 { id: '1', content: 'first' },
                 { id: '2', content: 'second' },
@@ -243,6 +271,7 @@ describe('HistoryManager', () => {
         });
 
         it('HM-U-021: removes item by ID', async () => {
+            await manager.load();
             manager.history = [
                 { id: '1', content: 'first' },
                 { id: '2', content: 'second' },
@@ -255,6 +284,7 @@ describe('HistoryManager', () => {
         });
 
         it('HM-U-029: does nothing if ID not found', async () => {
+            await manager.load();
             manager.history = [{ id: '1', content: 'first' }];
 
             await manager.removeFromHistory('999');
@@ -265,6 +295,7 @@ describe('HistoryManager', () => {
 
     describe('removeFromFavorites', () => {
         it('HM-U-007: removes by ID', async () => {
+            await manager.load();
             manager.favorites = [
                 { id: '1', content: 'first', label: 'Fav 1' },
                 { id: '2', content: 'second', label: 'Fav 2' },
@@ -277,6 +308,7 @@ describe('HistoryManager', () => {
         });
 
         it('HM-U-024: removes item by ID and persists after removal', async () => {
+            await manager.load();
             manager.favorites = [
                 { id: '1', content: 'first', label: 'Fav 1' },
                 { id: '2', content: 'second', label: 'Fav 2' },

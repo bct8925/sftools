@@ -104,6 +104,27 @@ describe('startAuthorization', () => {
                 expect.any(Boolean)
             );
         });
+
+        it('finds Salesforce tab among multiple active tabs across windows', async () => {
+            chromeMock.tabs.query.mockResolvedValue([
+                { url: 'https://google.com' },
+                { url: 'https://myorg.my.salesforce.com/page' },
+            ]);
+            vi.mocked(detectLoginDomain).mockImplementation((url: string) => {
+                if (url.includes('salesforce.com')) return 'https://myorg.my.salesforce.com';
+                return null as unknown as string;
+            });
+
+            await startAuthorization(null, null, null);
+
+            expect(buildOAuthUrl).toHaveBeenCalledWith(
+                'https://myorg.my.salesforce.com',
+                expect.any(String),
+                expect.any(String),
+                expect.any(String),
+                expect.any(Boolean)
+            );
+        });
     });
 
     describe('flow selection', () => {

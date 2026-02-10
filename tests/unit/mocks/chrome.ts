@@ -177,6 +177,10 @@ export function createChromeMock(): ChromeMock {
             update: vi.fn().mockResolvedValue({}),
         },
 
+        windows: {
+            getCurrent: vi.fn().mockResolvedValue({ id: 1 }),
+        },
+
         contextMenus: {
             create: vi.fn(),
             update: vi.fn(),

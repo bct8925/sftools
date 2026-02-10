@@ -30,8 +30,45 @@ jobs:
       - name: Build and package
         run: npm run package
 
+      - name: Get current release tag
+        id: before-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "tag=$(gh release view --json tagName -q '.tagName' 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+
       - name: Create release with notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: claude /release-notes
+
+      - name: Check if new release was created
+        id: after-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "tag=$(gh release view --json tagName -q '.tagName' 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack
+        if: steps.after-release.outputs.tag != '' && steps.after-release.outputs.tag != steps.before-release.outputs.tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the latest release info
+          RELEASE_JSON=$(gh release view --json tagName,body,assets)
+          VERSION=$(echo "$RELEASE_JSON" | jq -r '.tagName')
+          BODY=$(echo "$RELEASE_JSON" | jq -r '.body')
+          ASSET_URL=$(echo "$RELEASE_JSON" | jq -r '.assets[0].url // empty')
+
+          # Fall back to release page if no asset
+          if [ -z "$ASSET_URL" ]; then
+            ASSET_URL="https://github.com/${{ github.repository }}/releases/tag/$VERSION"
+          fi
+
+          # Post to Slack webhook
+          curl -X POST "https://hooks.slack.com/triggers/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" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg link "$ASSET_URL" \
+              --arg version "$VERSION" \
+              --arg body "$BODY" \
+              '{link: $link, version: $version, body: $body}')"

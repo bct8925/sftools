@@ -10,10 +10,18 @@ interface ExportData {
 }
 
 /**
- * Export all extension storage data as a JSON file download.
+ * Export extension storage data as a JSON file download.
+ * Excludes describe cache (large, rebuilt automatically).
  */
 export async function exportData(): Promise<void> {
-    const data = await chrome.storage.local.get(null);
+    const allData = await chrome.storage.local.get(null);
+
+    const data: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(allData)) {
+        if (!key.startsWith('describeCache_')) {
+            data[key] = value;
+        }
+    }
 
     const exportPayload: ExportData = {
         version: EXPORT_VERSION,

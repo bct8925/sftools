@@ -87,7 +87,7 @@ export function ProxySettings() {
           <li>In Salesforce Setup, search for "CORS"</li>
           <li>Click "CORS" under Security</li>
           <li>Click "New" to add an allowed origin pattern</li>
-          <li>Enter: <code>chrome-extension://mckblnkfhlgocgmehmnihmagmhbnjioj</code></li>
+          <li>Enter: <code>chrome-extension://lhkfhpookakmejcjfanegicfcdcmmoca</code></li>
           <li>Save the CORS entry</li>
         </ol>
         <p>

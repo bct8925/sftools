@@ -42,7 +42,7 @@ export function CorsErrorHandler() {
           <li>
             Enter:{' '}
             <code className={styles.code}>
-              chrome-extension://mckblnkfhlgocgmehmnihmagmhbnjioj
+              chrome-extension://lhkfhpookakmejcjfanegicfcdcmmoca
             </code>
           </li>
           <li>Save the CORS entry</li>

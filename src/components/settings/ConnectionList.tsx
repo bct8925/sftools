@@ -138,7 +138,7 @@ export function ConnectionList({ onEditConnection }: ConnectionListProps) {
         <ol>
           <li>In Salesforce Setup, create an External Client App or Connected App</li>
           <li>
-            Callback URL: <code>https://sftools.dev/sftools-callback</code>
+            Callback URL: <code>https://sftools.dev/callback</code>
           </li>
           <li>
             OAuth Scopes: <code>api, web, refresh_token</code>

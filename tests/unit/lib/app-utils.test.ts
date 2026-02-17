@@ -60,7 +60,7 @@ describe('app-utils', () => {
     describe('buildOAuthUrl', () => {
         const loginDomain = 'https://login.salesforce.com';
         const clientId = '3MVG9...test_client_id';
-        const redirectUri = 'https://sftools.dev/sftools-callback';
+        const redirectUri = 'https://sftools.dev/callback';
         const state = 'random-state-string';
 
         it('AS-U-001.1: builds OAuth URL with implicit flow', () => {
@@ -87,7 +87,7 @@ describe('app-utils', () => {
             const result = buildOAuthUrl(loginDomain, clientId, redirectUri, state);
 
             // URL should contain encoded redirect URI
-            expect(result).toContain('redirect_uri=https%3A%2F%2Fsftools.dev%2Fsftools-callback');
+            expect(result).toContain('redirect_uri=https%3A%2F%2Fsftools.dev%2Fcallback');
         });
 
         it('AS-U-001.4: encodes state parameter correctly', () => {

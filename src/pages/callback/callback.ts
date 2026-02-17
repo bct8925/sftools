@@ -74,7 +74,7 @@ async function handleCodeFlow(code: string, state: string | null): Promise<void>
             return;
         }
 
-        const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
+        const CALLBACK_URL = 'https://sftools.dev/callback';
 
         // Validate state parameter for CSRF protection
         const { valid, pendingAuth } = await validateOAuthState(state);

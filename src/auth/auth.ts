@@ -48,7 +48,7 @@ export const STORAGE_KEYS: StorageKeys = {
     LOGIN_DOMAIN: 'loginDomain',
 };
 
-export const CALLBACK_URL = 'https://sftools.dev/sftools-callback';
+export const CALLBACK_URL = 'https://sftools.dev/callback';
 
 // --- Frontend Auth State ---
 // These are used by content scripts to access tokens without async calls

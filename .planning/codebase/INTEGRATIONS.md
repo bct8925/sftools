@@ -53,7 +53,7 @@
 
 **OAuth Configuration:**
 - Default Client ID: `3MVG97L7PWbPq6UzVRgT5Rg8IBlXwjgq8JGCyYoI6n53KYt2KXhokiQmkRq2gGAnFE0sZKp_5lDZpWG0GBhhm` - `manifest.json`
-- Callback URL: `https://sftools.dev/sftools-callback` - `src/lib/auth.js`
+- Callback URL: `https://sftools.dev/callback` - `src/lib/auth.js`
 - Per-connection Client ID: Supported via `clientId` field in connection object
 
 **Token Refresh:**
@@ -95,7 +95,7 @@
 ## Webhooks & Callbacks
 
 **Incoming:**
-- OAuth callback: `https://sftools.dev/sftools-callback`
+- OAuth callback: `https://sftools.dev/callback`
   - Handled by: `src/pages/callback/callback.js`
   - Receives: Authorization code (with proxy) or token (implicit flow)
 

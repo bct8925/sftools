@@ -92,7 +92,7 @@ The main extension interface with tabbed navigation.
 
 OAuth callback handler for both authorization code and implicit flows.
 
-- **URL**: `https://sftools.dev/sftools-callback` (redirects here)
+- **URL**: `https://sftools.dev/callback` (redirects here)
 - **Query params**: `code`, `state`, `error`, `error_description`
 - **Hash params**: `access_token`, `instance_url`, `state`
 - **Features**:

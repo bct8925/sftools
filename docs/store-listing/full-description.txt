@@ -3,49 +3,71 @@ sftools provides Salesforce developer tools in a Chrome side panel or tab.
 FEATURES
 
 SOQL Query Editor
-- Execute SOQL queries with syntax highlighting
+- Execute SOQL queries with syntax highlighting and autocomplete
+- Multi-tab results: run multiple queries with independent result tabs
 - Results displayed in formatted tables with relationship field support
 - Subquery results expandable inline
+- Inline record editing: edit fields directly in query results and save back to Salesforce
+- Toggle between standard and Tooling API queries
+- Filter and search within results
+- Export results as CSV or via Bulk API for large datasets
+- Query history and favorites
 - Keyboard shortcut: Ctrl/Cmd+Enter
-- Export large results via Bulk API (CSV download)
 
 Anonymous Apex Execution
 - Run anonymous Apex with Monaco editor
-- Automatic debug log retrieval
+- Automatic trace flag setup and debug log retrieval
 - Compile errors shown with line/column markers
+- Runtime errors shown with stack traces
+- Apex history and favorites
+- Keyboard shortcut: Ctrl/Cmd+Enter
 
 REST API Explorer
 - GET, POST, PATCH, DELETE requests to Salesforce REST endpoints
 - JSON formatting in request/response editors
+- Request body validation and HTTP status display
+- Keyboard shortcut: Ctrl/Cmd+Enter
 
 Schema Browser
 - Browse objects and fields
-- View field metadata (label, API name, type)
+- View field metadata (label, API name, type, length, relationships)
+- Search and filter objects
 - Edit formula fields directly
 
 Record Viewer
 - View and edit record field values
+- Supports text, checkbox, date, number, rich text, and lookup fields
 - Right-click extension icon on any Lightning record page to open
 
 Debug Logs
-- View and stream debug logs in real time
+- Watch mode: monitor new logs in real time
+- Auto-refresh when local proxy is connected
 - Filter and search log content
 - Manage trace flags for users
 - Bulk delete debug logs
 
 Utility Tools
 - Delete inactive flow versions
+- View and delete debug logs (count and total size)
 
 Platform Events (requires local proxy)
 - Subscribe to Platform Events via gRPC
-- Publish Platform Events
-- Monitor PushTopics and System Topics via CometD
+- Publish Platform Events with JSON payload editor
+- Monitor standard events, PushTopics, and system topics via CometD
+- Replay modes: latest, earliest, or custom replay ID
 
 MULTI-ORG SUPPORT
 - Connect to multiple Salesforce orgs
 - Switch connections via dropdown
 - Each browser window can use a different connection
+- Configure custom Connected Apps per connection
+
+SETTINGS
+- Theme: system, light, or dark mode
+- Local proxy connection status and configuration
+- Refresh cached SObject definitions
 
 INTERFACE
 - Opens in Chrome side panel or standalone tab
-- Light and dark mode
+- Monaco editor with syntax highlighting across all code panels
+- Ctrl/Cmd+Enter keyboard shortcut across all tabs

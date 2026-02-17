@@ -81,10 +81,11 @@ sftools includes an optional local proxy feature for advanced streaming capabili
 
 ## Security
 
-- OAuth tokens are stored using Chrome's secure storage API
-- Tokens are only transmitted over HTTPS to Salesforce endpoints
+- OAuth tokens are stored locally using Chrome's extension storage API (`chrome.storage.local`), sandboxed to this extension
+- All tokens are transmitted exclusively over HTTPS to Salesforce endpoints
 - The extension does not have access to your Salesforce password
 - Authorization uses Salesforce's standard OAuth 2.0 flow
+- Tokens are never disclosed to third parties or transmitted to non-Salesforce servers
 
 ## Children's Privacy
 

@@ -199,7 +199,9 @@ describe('downloadCsv', () => {
         const mockRemoveChild = vi
             .spyOn(document.body, 'removeChild')
             .mockImplementation(() => mockLink as any);
-        const mockCreateObjectURL = vi.spyOn(URL, 'createObjectURL');
+        const mockCreateObjectURL = vi
+            .spyOn(URL, 'createObjectURL')
+            .mockReturnValue('blob:mock-url');
         const mockRevokeObjectURL = vi.spyOn(URL, 'revokeObjectURL');
 
         downloadCsv('Id,Name\n001,Test', 'test.csv');

@@ -56,6 +56,7 @@ export function QueryTab() {
 
     // UI state
     const [useToolingApi, setUseToolingApi] = useState(false);
+    const [includeDeleted, setIncludeDeleted] = useState(false);
     const [editingEnabled, setEditingEnabled] = useState(false);
     const [bulkExportInProgress, setBulkExportInProgress] = useState(false);
     const { statusText, statusType, updateStatus } = useStatusBadge();
@@ -109,6 +110,7 @@ export function QueryTab() {
     const { fetchQueryData, executeQuery, loadMore } = useQueryExecution({
         editorRef,
         useToolingApi,
+        includeDeleted,
         setLoading,
         setResults,
         appendResults,
@@ -228,15 +230,19 @@ export function QueryTab() {
         setBulkExportInProgress(true);
 
         try {
-            const csv = await executeBulkQueryExport(query, (jobState, recordCount) => {
-                if (jobState === 'InProgress' || jobState === 'UploadComplete') {
-                    updateStatus(`Processing: ${recordCount || 0} records`, 'loading');
-                } else if (jobState === 'Creating job...') {
-                    updateStatus('Creating bulk job...', 'loading');
-                } else if (jobState === 'Downloading...') {
-                    updateStatus('Downloading results...', 'loading');
-                }
-            });
+            const csv = await executeBulkQueryExport(
+                query,
+                (jobState, recordCount) => {
+                    if (jobState === 'InProgress' || jobState === 'UploadComplete') {
+                        updateStatus(`Processing: ${recordCount || 0} records`, 'loading');
+                    } else if (jobState === 'Creating job...') {
+                        updateStatus('Creating bulk job...', 'loading');
+                    } else if (jobState === 'Downloading...') {
+                        updateStatus('Downloading results...', 'loading');
+                    }
+                },
+                includeDeleted
+            );
 
             const objectMatch = query.match(/FROM\s+(\w+)/i);
             const objectName = objectMatch ? objectMatch[1] : 'export';
@@ -250,7 +256,7 @@ export function QueryTab() {
         } finally {
             setBulkExportInProgress(false);
         }
-    }, [isAuthenticated, useToolingApi, bulkExportInProgress, updateStatus]);
+    }, [isAuthenticated, useToolingApi, includeDeleted, bulkExportInProgress, updateStatus]);
 
     // Save changes
     const handleSaveChanges = useCallback(async () => {
@@ -350,6 +356,14 @@ export function QueryTab() {
                             data-testid="query-tooling-checkbox"
                         >
                             Tooling API
+                        </ButtonIconCheckbox>
+                        <ButtonIconCheckbox
+                            checked={includeDeleted}
+                            onChange={setIncludeDeleted}
+                            disabled={useToolingApi}
+                            data-testid="query-deleted-checkbox"
+                        >
+                            Include Deleted
                         </ButtonIconCheckbox>
                     </ButtonIcon>
                 </div>

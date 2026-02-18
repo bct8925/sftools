@@ -263,10 +263,11 @@ export interface QueryMoreResult {
  */
 export async function executeQueryWithColumns(
     soql: string,
-    useToolingApi = false
+    useToolingApi = false,
+    includeDeleted = false
 ): Promise<QueryWithColumnsResult> {
     const encodedQuery = encodeURIComponent(soql);
-    const apiPath = useToolingApi ? 'tooling/query' : 'query';
+    const apiPath = useToolingApi ? 'tooling/query' : includeDeleted ? 'queryAll' : 'query';
     const baseUrl = `/services/data/v${API_VERSION}/${apiPath}/?q=${encodedQuery}`;
 
     // Execute columns request first to fail fast on query errors

@@ -218,6 +218,64 @@ describe('Query Tab Integration', () => {
         });
     });
 
+    describe('Q-I-010: queryAll includes deleted records', () => {
+        it('returns deleted records with IsDeleted=true via queryAll', async () => {
+            const testName = uniqueName('QueryAllTest');
+            const recordId = await testData.create('Account', { Name: testName });
+
+            // Delete the record
+            await salesforce.deleteRecord('Account', recordId);
+            // Remove from testData tracking since it's already deleted
+            testData['createdRecords'] = testData['createdRecords'].filter(
+                r => r.recordId !== recordId
+            );
+
+            // Standard query should NOT return the deleted record
+            const standardResult = await salesforce.query<{ Id: string; IsDeleted: boolean }>(
+                `SELECT Id, IsDeleted FROM Account WHERE Name = '${testName}'`
+            );
+            expect(standardResult).toHaveLength(0);
+
+            // queryAll SHOULD return the deleted record
+            const allResult = await salesforce.queryAll<{ Id: string; IsDeleted: boolean }>(
+                `SELECT Id, IsDeleted FROM Account WHERE Name = '${testName}'`
+            );
+            expect(allResult).toHaveLength(1);
+            expect(allResult[0].Id).toBe(recordId);
+            expect(allResult[0].IsDeleted).toBe(true);
+        });
+
+        it('returns both active and deleted records via queryAll', async () => {
+            const prefix = uniqueName('QueryAllMix');
+            const activeId = await testData.create('Account', { Name: `${prefix}_Active` });
+            const deletedId = await testData.create('Account', { Name: `${prefix}_Deleted` });
+
+            // Delete one record
+            await salesforce.deleteRecord('Account', deletedId);
+            testData['createdRecords'] = testData['createdRecords'].filter(
+                r => r.recordId !== deletedId
+            );
+
+            // queryAll should return both
+            const allResult = await salesforce.queryAll<{
+                Id: string;
+                Name: string;
+                IsDeleted: boolean;
+            }>(`SELECT Id, Name, IsDeleted FROM Account WHERE Name LIKE '${prefix}%'`);
+
+            expect(allResult).toHaveLength(2);
+
+            const active = allResult.find(r => r.Id === activeId);
+            const deleted = allResult.find(r => r.Id === deletedId);
+
+            expect(active).toBeDefined();
+            expect(active!.IsDeleted).toBe(false);
+
+            expect(deleted).toBeDefined();
+            expect(deleted!.IsDeleted).toBe(true);
+        });
+    });
+
     describe('Q-I-009: Query Tooling API object', () => {
         it('returns results from Tooling API', async () => {
             // Query ApexClass (Tooling API object)

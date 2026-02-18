@@ -15,13 +15,16 @@ export interface BulkQueryJob {
 /**
  * Create a Bulk API v2 query job
  */
-export async function createBulkQueryJob(soql: string): Promise<BulkQueryJob> {
+export async function createBulkQueryJob(
+    soql: string,
+    includeDeleted = false
+): Promise<BulkQueryJob> {
     const response = await salesforceRequest<BulkQueryJob>(
         `/services/data/v${API_VERSION}/jobs/query`,
         {
             method: 'POST',
             body: JSON.stringify({
-                operation: 'query',
+                operation: includeDeleted ? 'queryAll' : 'query',
                 query: soql,
             }),
         }
@@ -82,10 +85,11 @@ export async function abortBulkQueryJob(jobId: string): Promise<void> {
  */
 export async function executeBulkQueryExport(
     soql: string,
-    onProgress?: (state: string, recordCount?: number) => void
+    onProgress?: (state: string, recordCount?: number) => void,
+    includeDeleted = false
 ): Promise<string> {
     onProgress?.('Creating job...');
-    const job = await createBulkQueryJob(soql);
+    const job = await createBulkQueryJob(soql, includeDeleted);
     const jobId = job.id;
 
     const pollInterval = 2000;

@@ -8,6 +8,7 @@ import type { StatusType } from '../../hooks/useStatusBadge';
 interface UseQueryExecutionOptions {
     editorRef: React.RefObject<{ getValue(): string } | null>;
     useToolingApi: boolean;
+    includeDeleted: boolean;
     setLoading: (tabId: string, loading: boolean) => void;
     setResults: (
         tabId: string,
@@ -81,7 +82,11 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
             options.updateStatus('Loading...', 'loading');
 
             try {
-                const result = await executeQueryWithColumns(query, options.useToolingApi);
+                const result = await executeQueryWithColumns(
+                    query,
+                    options.useToolingApi,
+                    options.includeDeleted
+                );
 
                 // Process columns
                 let columns: QueryColumn[];
@@ -136,6 +141,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
         },
         [
             options.useToolingApi,
+            options.includeDeleted,
             options.setLoading,
             options.setResults,
             options.setError,

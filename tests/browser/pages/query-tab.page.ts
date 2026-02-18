@@ -11,6 +11,7 @@ export class QueryTabPage extends BasePage {
     readonly settingsBtn: Locator;
     readonly resultsBtn: Locator;
     readonly toolingCheckbox: Locator;
+    readonly deletedCheckbox: Locator;
     readonly editingCheckbox: Locator;
     readonly tabsContainer: Locator;
     readonly resultsContainer: Locator;
@@ -26,6 +27,7 @@ export class QueryTabPage extends BasePage {
         this.settingsBtn = page.locator('[data-testid="query-settings-btn"]');
         this.resultsBtn = page.locator('[data-testid="query-results-btn"]');
         this.toolingCheckbox = page.locator('[data-testid="query-tooling-checkbox"]');
+        this.deletedCheckbox = page.locator('[data-testid="query-deleted-checkbox"]');
         this.editingCheckbox = page.locator('[data-testid="query-editing-checkbox"]');
         this.tabsContainer = page.locator('[data-testid="query-tabs"]');
         this.resultsContainer = page.locator('[data-testid="query-results"]');
@@ -237,6 +239,17 @@ export class QueryTabPage extends BasePage {
         if (isChecked !== enabled) {
             await this.settingsBtn.click();
             await this.toolingCheckbox.click();
+        }
+    }
+
+    /**
+     * Enable or disable Include Deleted mode
+     */
+    async setIncludeDeleted(enabled: boolean): Promise<void> {
+        const isChecked = await this.deletedCheckbox.isChecked();
+        if (isChecked !== enabled) {
+            await this.settingsBtn.click();
+            await this.deletedCheckbox.click();
         }
     }
 

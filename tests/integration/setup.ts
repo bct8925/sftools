@@ -143,6 +143,17 @@ export const salesforce = {
     },
 
     /**
+     * Execute a SOQL queryAll (includes deleted/archived records)
+     */
+    async queryAll<T = unknown>(soql: string): Promise<T[]> {
+        const response = await this.request<{ records?: T[] }>(
+            'GET',
+            `/queryAll?q=${encodeURIComponent(soql)}`
+        );
+        return response?.records || [];
+    },
+
+    /**
      * Execute a Tooling API query
      */
     async toolingQuery<T = unknown>(soql: string): Promise<T[]> {

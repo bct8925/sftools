@@ -44,6 +44,21 @@ describe('bulk-query', () => {
             );
         });
 
+        it('uses queryAll operation when includeDeleted is true', async () => {
+            const mockJob = { id: 'job-456', state: 'UploadComplete' };
+            vi.mocked(salesforceRequest).mockResolvedValue({ json: mockJob });
+
+            await createBulkQueryJob('SELECT Id FROM Account', true);
+
+            expect(salesforceRequest).toHaveBeenCalledWith(
+                expect.stringContaining('/jobs/query'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: expect.stringContaining('"operation":"queryAll"'),
+                })
+            );
+        });
+
         it('throws when no json returned', async () => {
             vi.mocked(salesforceRequest).mockResolvedValue({ json: undefined });
             await expect(createBulkQueryJob('SELECT Id FROM Account')).rejects.toThrow();

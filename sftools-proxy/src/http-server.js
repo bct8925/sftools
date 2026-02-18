@@ -15,6 +15,8 @@ const http = require('http');
 const crypto = require('crypto');
 const { getPayload, deletePayload } = require('./payload-store');
 
+const EXTENSION_ORIGIN = 'chrome-extension://lhkfhpookakmejcjfanegicfcdcmmoca';
+
 let server = null;
 let serverPort = null;
 let serverSecret = null;
@@ -42,8 +44,8 @@ function startServer() {
         serverSecret = generateSecret();
 
         server = http.createServer((req, res) => {
-            // CORS headers for extension access
-            res.setHeader('Access-Control-Allow-Origin', '*');
+            // CORS headers - restricted to the sftools extension origin only
+            res.setHeader('Access-Control-Allow-Origin', EXTENSION_ORIGIN);
             res.setHeader('Access-Control-Allow-Headers', 'X-Proxy-Secret');
             res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
@@ -61,9 +63,13 @@ function startServer() {
                 return;
             }
 
-            // Validate secret
+            // Validate secret (constant-time comparison to prevent timing attacks)
             const providedSecret = req.headers['x-proxy-secret'];
-            if (providedSecret !== serverSecret) {
+            if (
+                typeof providedSecret !== 'string' ||
+                providedSecret.length !== serverSecret.length ||
+                !crypto.timingSafeEqual(Buffer.from(providedSecret), Buffer.from(serverSecret))
+            ) {
                 res.writeHead(401, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Invalid or missing secret' }));
                 return;
@@ -93,7 +99,7 @@ function startServer() {
         });
 
         // Handle server errors
-        server.on('error', (err) => {
+        server.on('error', err => {
             server = null;
             serverPort = null;
             serverSecret = null;
@@ -113,7 +119,7 @@ function startServer() {
  * @returns {Promise<void>}
  */
 function stopServer() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
         if (server) {
             server.close(() => {
                 server = null;
@@ -135,7 +141,7 @@ function getServerInfo() {
     return {
         port: serverPort,
         secret: serverSecret,
-        running: !!server
+        running: !!server,
     };
 }
 

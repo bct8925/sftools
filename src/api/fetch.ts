@@ -35,6 +35,10 @@ export function isProxyConnected(): boolean {
     return PROXY_CONNECTED;
 }
 
+export function setProxyConnected(connected: boolean): void {
+    PROXY_CONNECTED = connected;
+}
+
 /**
  * Check and update proxy connection status
  */

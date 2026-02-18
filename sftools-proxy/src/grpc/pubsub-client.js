@@ -32,7 +32,7 @@ async function loadProto() {
         longs: String,
         enums: String,
         defaults: true,
-        oneofs: true
+        oneofs: true,
     });
 
     protoDefinition = grpc.loadPackageDefinition(packageDefinition);
@@ -71,7 +71,10 @@ function extractOrgIdFromToken(accessToken) {
     if (exclamationIndex > 0) {
         const potentialOrgId = accessToken.substring(0, exclamationIndex);
         // Salesforce org IDs start with 00D and are 15 or 18 characters
-        if (potentialOrgId.startsWith('00D') && (potentialOrgId.length === 15 || potentialOrgId.length === 18)) {
+        if (
+            potentialOrgId.startsWith('00D') &&
+            (potentialOrgId.length === 15 || potentialOrgId.length === 18)
+        ) {
             console.error(`[gRPC] Extracted org ID from session token: ${potentialOrgId}`);
             return potentialOrgId;
         }
@@ -121,14 +124,17 @@ async function createClient(accessToken, instanceUrl, tenantId) {
     // Format: https://MyDomainName.my.salesforce.com -> extract org ID requires API call
     // For now, log a warning - the API might still work without it in some cases
     if (!orgId) {
-        console.error(`[gRPC] WARNING: Could not extract org ID from token. Authentication may fail.`);
-        console.error(`[gRPC] Token starts with: ${accessToken.substring(0, 20)}...`);
+        console.error(
+            `[gRPC] WARNING: Could not extract org ID from token. Authentication may fail.`
+        );
     } else {
         console.error(`[gRPC] Using org ID: ${orgId}`);
     }
 
     const metadata = createAuthMetadata(accessToken, instanceUrl, orgId);
-    console.error(`[gRPC] Metadata headers: accesstoken=..., instanceurl=${instanceUrl}, tenantid=${orgId || '(empty)'}`);
+    console.error(
+        `[gRPC] Metadata headers: accesstoken=..., instanceurl=${instanceUrl}, tenantid=${orgId || '(empty)'}`
+    );
 
     return { client, metadata };
 }
@@ -205,7 +211,7 @@ async function subscribe(options) {
         tenantId,
         onEvent,
         onError,
-        onEnd
+        onEnd,
     } = options;
 
     console.error(`[gRPC] Subscribing to ${topicName} with replay ${replayPreset}`);
@@ -217,24 +223,26 @@ async function subscribe(options) {
     const call = client.Subscribe(metadata);
 
     // Track stream state
-    call.on('metadata', (metadata) => {
+    call.on('metadata', metadata => {
         console.error(`[gRPC] Stream metadata received:`, JSON.stringify(metadata.getMap()));
     });
 
-    call.on('status', (status) => {
+    call.on('status', status => {
         console.error(`[gRPC] Stream status: code=${status.code}, details=${status.details}`);
     });
 
     // Handle incoming events
-    call.on('data', (fetchResponse) => {
-        console.error(`[gRPC] Received FetchResponse: ${fetchResponse.events?.length || 0} events, pending: ${fetchResponse.pending_num_requested}`);
+    call.on('data', fetchResponse => {
+        console.error(
+            `[gRPC] Received FetchResponse: ${fetchResponse.events?.length || 0} events, pending: ${fetchResponse.pending_num_requested}`
+        );
 
         if (fetchResponse.events && fetchResponse.events.length > 0) {
             for (const consumerEvent of fetchResponse.events) {
                 console.error(`[gRPC] Event received, schema: ${consumerEvent.event?.schema_id}`);
                 onEvent({
                     subscriptionId,
-                    event: consumerEvent
+                    event: consumerEvent,
                 });
             }
         }
@@ -244,19 +252,19 @@ async function subscribe(options) {
             console.error(`[gRPC] Requesting more events`);
             call.write({
                 topic_name: topicName,
-                num_requested: numRequested
+                num_requested: numRequested,
             });
         }
     });
 
     // Handle errors
-    call.on('error', (error) => {
+    call.on('error', error => {
         console.error(`[gRPC] Stream error: ${error.message} (code: ${error.code})`);
         subscriptionManager.remove(subscriptionId);
         onError({
             subscriptionId,
             error: error.message,
-            code: error.code
+            code: error.code,
         });
     });
 
@@ -272,7 +280,7 @@ async function subscribe(options) {
     const fetchRequest = {
         topic_name: topicName,
         replay_preset: replayPreset, // 'LATEST', 'EARLIEST', or 'CUSTOM'
-        num_requested: numRequested
+        num_requested: numRequested,
     };
 
     if (replayPreset === 'CUSTOM' && replayId) {
@@ -287,7 +295,7 @@ async function subscribe(options) {
     subscriptionManager.add(subscriptionId, {
         protocol: 'grpc',
         channel: topicName,
-        cleanup: () => call.end()
+        cleanup: () => call.end(),
     });
 
     return { success: true, subscriptionId };
@@ -321,16 +329,20 @@ async function publish(accessToken, instanceUrl, topicName, events, tenantId) {
     const { client, metadata } = await createClient(accessToken, instanceUrl, tenantId);
 
     return new Promise((resolve, reject) => {
-        client.Publish({
-            topic_name: topicName,
-            events
-        }, metadata, (error, response) => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve(response);
+        client.Publish(
+            {
+                topic_name: topicName,
+                events,
+            },
+            metadata,
+            (error, response) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(response);
+                }
             }
-        });
+        );
     });
 }
 
@@ -341,5 +353,5 @@ module.exports = {
     subscribe,
     unsubscribe,
     publish,
-    extractOrgIdFromToken
+    extractOrgIdFromToken,
 };

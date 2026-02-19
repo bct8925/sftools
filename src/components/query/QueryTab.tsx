@@ -101,7 +101,6 @@ export function QueryTab() {
             setInitialQuery(lastQuery ?? DEFAULT_QUERY);
         });
     }, []);
-
     // History manager ref
     const historyManagerRef = useRef<HistoryManager | null>(null);
     const saveToHistory = useSaveToHistory(historyManagerRef);
@@ -304,6 +303,31 @@ export function QueryTab() {
         editorRef.current?.setValue(query);
     }, []);
 
+    // Handle re-running query from history without loading into editor
+    const handleRerunQuery = useCallback(
+        async (query: string) => {
+            if (!isAuthenticated) {
+                alert('Not authenticated. Please authorize via the connection selector.');
+                return;
+            }
+
+            const normalized = normalizeQuery(query);
+
+            // Check if query already exists as a tab
+            const existingTab = findTabByQuery(normalized);
+            if (existingTab) {
+                setActiveTab(existingTab.id);
+                await fetchQueryData(existingTab.id, query);
+                return;
+            }
+
+            // Create new tab
+            const tabId = addTab(query);
+            await fetchQueryData(tabId, query);
+        },
+        [isAuthenticated, normalizeQuery, findTabByQuery, setActiveTab, addTab, fetchQueryData]
+    );
+
     // Handle load more results
     const handleLoadMore = useCallback(() => {
         if (activeTab && activeTab.nextRecordsUrl) {
@@ -342,6 +366,7 @@ export function QueryTab() {
                     <h2>SOQL Query</h2>
                     <QueryHistory
                         onSelectQuery={handleSelectQuery}
+                        onRerun={handleRerunQuery}
                         historyManagerRef={historyManagerRef}
                     />
                     <ButtonIcon

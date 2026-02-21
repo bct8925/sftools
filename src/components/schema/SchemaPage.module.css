@@ -18,6 +18,10 @@
     min-height: 500px;
 }
 
+.schemaContainerInline {
+    height: calc(100vh - 120px);
+}
+
 /* Objects Panel */
 .objectsPanel {
     flex: 1;

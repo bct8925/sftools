@@ -1,6 +1,6 @@
 import type { IconName } from '../lib/icons';
 
-export type FeatureId = 'query' | 'apex' | 'logs' | 'rest-api' | 'events' | 'utils';
+export type FeatureId = 'query' | 'apex' | 'logs' | 'rest-api' | 'events' | 'schema' | 'utils';
 export type TabId = FeatureId | 'settings';
 
 export interface Feature {

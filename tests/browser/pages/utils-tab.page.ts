@@ -25,9 +25,6 @@ export class UtilsTabPage extends BasePage {
     readonly flowCleanupStatusIndicator: Locator;
     readonly flowCleanupStatusText: Locator;
 
-    // Schema Browser Link
-    readonly openSchemaBtn: Locator;
-
     constructor(page: Page) {
         super(page);
 
@@ -59,9 +56,6 @@ export class UtilsTabPage extends BasePage {
             '[data-testid="flow-cleanup-status"] .status-indicator'
         );
         this.flowCleanupStatusText = page.locator('[data-testid="flow-cleanup-status-text"]');
-
-        // Schema Browser Link
-        this.openSchemaBtn = page.locator('[data-testid="open-schema-btn"]');
     }
 
     /**
@@ -378,16 +372,5 @@ export class UtilsTabPage extends BasePage {
         else if (classList.includes('status-loading')) type = 'loading';
 
         return { text, type };
-    }
-
-    // ============================================================
-    // Schema Browser Link Methods
-    // ============================================================
-
-    /**
-     * Click the Schema Browser link
-     */
-    async clickSchemaBrowserLink(): Promise<void> {
-        await this.slowClick(this.openSchemaBtn);
     }
 }

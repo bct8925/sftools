@@ -1,9 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type {
-  SObjectDescribe,
-  FieldDescribe,
-  SalesforceConnection,
-} from '../../types/salesforce';
+import type { SObjectDescribe, FieldDescribe, SalesforceConnection } from '../../types/salesforce';
 import { getGlobalDescribe, getObjectDescribe } from '../../api/salesforce';
 import { setActiveConnection } from '../../auth/auth';
 import { ObjectList } from './ObjectList';
@@ -11,237 +7,273 @@ import { FieldList } from './FieldList';
 import { FormulaEditor } from './FormulaEditor';
 import styles from './SchemaPage.module.css';
 
+export interface SchemaPageProps {
+    connectionId?: string;
+    instanceUrl?: string;
+}
+
 /**
  * Schema Browser page - browse objects and fields in a Salesforce org.
- * Parses connectionId from URL params.
+ * Supports inline mode (props from context) and standalone mode (URL params).
  */
-export function SchemaPage() {
-  // URL parameters
-  const [connectionId, setConnectionId] = useState<string | null>(null);
+export function SchemaPage({
+    connectionId: propConnectionId,
+    instanceUrl: propInstanceUrl,
+}: SchemaPageProps = {}) {
+    const isStandalone = !propConnectionId;
 
-  // Objects state
-  const [allObjects, setAllObjects] = useState<SObjectDescribe[]>([]);
-  const [isLoadingObjects, setIsLoadingObjects] = useState(true);
+    // Objects state
+    const [allObjects, setAllObjects] = useState<SObjectDescribe[]>([]);
+    const [isLoadingObjects, setIsLoadingObjects] = useState(true);
 
-  // Selected object state
-  const [selectedObject, setSelectedObject] = useState<SObjectDescribe | null>(null);
-  const [allFields, setAllFields] = useState<FieldDescribe[]>([]);
-  const [isLoadingFields, setIsLoadingFields] = useState(false);
+    // Selected object state
+    const [selectedObject, setSelectedObject] = useState<SObjectDescribe | null>(null);
+    const [allFields, setAllFields] = useState<FieldDescribe[]>([]);
+    const [isLoadingFields, setIsLoadingFields] = useState(false);
 
-  // Formula editor state
-  const [editingField, setEditingField] = useState<FieldDescribe | null>(null);
-  const [isFormulaEditorOpen, setIsFormulaEditorOpen] = useState(false);
+    // Formula editor state
+    const [editingField, setEditingField] = useState<FieldDescribe | null>(null);
+    const [isFormulaEditorOpen, setIsFormulaEditorOpen] = useState(false);
 
-  // Error state
-  const [error, setError] = useState<string | null>(null);
+    // Error state
+    const [error, setError] = useState<string | null>(null);
 
-  // Active connection state
-  const [instanceUrl, setInstanceUrl] = useState<string>('');
+    // Active connection state (standalone only)
+    const [resolvedInstanceUrl, setResolvedInstanceUrl] = useState<string>('');
 
-  // Initialize from URL params and load connection
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const connId = params.get('connectionId');
-    setConnectionId(connId);
+    const instanceUrl = isStandalone ? resolvedInstanceUrl : propInstanceUrl || '';
 
-    if (!connId) {
-      setError('Missing connection ID');
-      setIsLoadingObjects(false);
-      return;
-    }
+    const loadObjects = useCallback(async (bypassCache = false) => {
+        setIsLoadingObjects(true);
+        setError(null);
 
-    loadConnection(connId).then((connection) => {
-      if (!connection) {
-        setError('Connection not found. Please re-authorize.');
-        setIsLoadingObjects(false);
-        return;
-      }
-      setActiveConnection(connection);
-      setInstanceUrl(connection.instanceUrl);
-      loadObjects();
-    });
-  }, []);
+        try {
+            const describe = await getGlobalDescribe(bypassCache);
+            const queryableObjects = describe.sobjects
+                .filter(obj => obj.queryable)
+                .sort((a, b) => a.name.localeCompare(b.name));
+            setAllObjects(queryableObjects);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Unknown error';
+            setError(message);
+        } finally {
+            setIsLoadingObjects(false);
+        }
+    }, []);
 
-  const loadConnection = async (id: string): Promise<SalesforceConnection | null> => {
-    const { connections } = await chrome.storage.local.get(['connections']);
-    return (connections as SalesforceConnection[] | undefined)?.find((c) => c.id === id) || null;
-  };
+    // Standalone mode: initialize from URL params and load connection
+    useEffect(() => {
+        if (!isStandalone) return;
 
-  const loadObjects = async (bypassCache = false) => {
-    setIsLoadingObjects(true);
-    setError(null);
+        const params = new URLSearchParams(window.location.search);
+        const connId = params.get('connectionId');
 
-    try {
-      const describe = await getGlobalDescribe(bypassCache);
-      const queryableObjects = describe.sobjects
-        .filter((obj) => obj.queryable)
-        .sort((a, b) => a.name.localeCompare(b.name));
-      setAllObjects(queryableObjects);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      setError(message);
-    } finally {
-      setIsLoadingObjects(false);
-    }
-  };
+        if (!connId) {
+            setError('Missing connection ID');
+            setIsLoadingObjects(false);
+            return;
+        }
 
-  const handleRefreshObjects = useCallback(() => {
-    loadObjects(true);
-  }, []);
+        const loadConnection = async (id: string): Promise<SalesforceConnection | null> => {
+            const { connections } = await chrome.storage.local.get(['connections']);
+            return (
+                (connections as SalesforceConnection[] | undefined)?.find(c => c.id === id) || null
+            );
+        };
 
-  const handleSelectObject = useCallback(
-    async (objectName: string) => {
-      const obj = allObjects.find((o) => o.name === objectName);
-      if (!obj) return;
+        loadConnection(connId).then(connection => {
+            if (!connection) {
+                setError('Connection not found. Please re-authorize.');
+                setIsLoadingObjects(false);
+                return;
+            }
+            setActiveConnection(connection);
+            setResolvedInstanceUrl(connection.instanceUrl);
+            loadObjects();
+        });
+    }, [isStandalone, loadObjects]);
 
-      setSelectedObject(obj);
-      await loadFields(objectName);
-    },
-    [allObjects]
-  );
+    // Inline mode: load objects when props are provided, reload on connection change
+    useEffect(() => {
+        if (isStandalone) return;
 
-  const loadFields = async (objectName: string, bypassCache = false) => {
-    setIsLoadingFields(true);
+        setSelectedObject(null);
+        setAllFields([]);
+        setError(null);
+        loadObjects();
+    }, [isStandalone, propConnectionId, loadObjects]);
 
-    try {
-      const describe = await getObjectDescribe(objectName, bypassCache);
-      const sortedFields = [...(describe.fields || [])].sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
-      setAllFields(sortedFields);
-    } catch (err) {
-      // Set error state or show in field list
-      setAllFields([]);
-    } finally {
-      setIsLoadingFields(false);
-    }
-  };
+    const handleRefreshObjects = useCallback(() => {
+        loadObjects(true);
+    }, [loadObjects]);
 
-  const handleRefreshFields = useCallback(() => {
-    if (selectedObject) {
-      loadFields(selectedObject.name, true);
-    }
-  }, [selectedObject]);
+    const loadFields = useCallback(async (objectName: string, bypassCache = false) => {
+        setIsLoadingFields(true);
 
-  const handleCloseFields = useCallback(() => {
-    setSelectedObject(null);
-    setAllFields([]);
-  }, []);
+        try {
+            const describe = await getObjectDescribe(objectName, bypassCache);
+            const sortedFields = [...(describe.fields || [])].sort((a, b) =>
+                a.name.localeCompare(b.name)
+            );
+            setAllFields(sortedFields);
+        } catch {
+            setAllFields([]);
+        } finally {
+            setIsLoadingFields(false);
+        }
+    }, []);
 
-  const handleNavigateToObject = useCallback(
-    (objectName: string) => {
-      const obj = allObjects.find((o) => o.name === objectName);
-      if (obj) {
-        handleSelectObject(objectName);
-      }
-    },
-    [allObjects, handleSelectObject]
-  );
+    const handleSelectObject = useCallback(
+        async (objectName: string) => {
+            const obj = allObjects.find(o => o.name === objectName);
+            if (!obj) return;
 
-  const handleEditFormula = useCallback((field: FieldDescribe) => {
-    setEditingField(field);
-    setIsFormulaEditorOpen(true);
-  }, []);
-
-  const handleCloseFormulaEditor = useCallback(() => {
-    setIsFormulaEditorOpen(false);
-    setEditingField(null);
-  }, []);
-
-  const handleFormulaSaveSuccess = useCallback(() => {
-    // Reload fields to reflect changes
-    if (selectedObject) {
-      loadFields(selectedObject.name);
-    }
-  }, [selectedObject]);
-
-  // Render error state
-  if (error && !isLoadingObjects) {
-    return (
-      <div data-testid="schema-page">
-        <header className="standalone-header">
-          <div className="nav-brand">
-            <img src="../../icon.png" alt="" />
-            sftools
-          </div>
-          <span className="tool-name">Schema Browser</span>
-        </header>
-        <main className="content-area">
-          <div className="card schema-card">
-            <div className="card-header">
-              <div className={`card-header-icon ${styles.headerIcon}`}>
-                S
-              </div>
-              <h2>Schema Browser</h2>
-            </div>
-            <div className={`card-body ${styles.schemaCardBody}`}>
-              <div className={styles.errorContainer}>
-                <p className={styles.errorMessage}>{error}</p>
-                <p className={styles.errorHint}>Please check the connection and try again.</p>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
+            setSelectedObject(obj);
+            await loadFields(objectName);
+        },
+        [allObjects, loadFields]
     );
-  }
 
-  return (
-    <div data-testid="schema-page">
-      <header className="standalone-header">
-        <div className="nav-brand">
-          <img src="../../icon.png" alt="" />
-          sftools
-        </div>
-        <span className="tool-name">Schema Browser</span>
-      </header>
+    const handleRefreshFields = useCallback(() => {
+        if (selectedObject) {
+            loadFields(selectedObject.name, true);
+        }
+    }, [selectedObject, loadFields]);
 
-      <main className="content-area">
-        <div className="card schema-card">
-          <div className="card-header">
-            <div className={`card-header-icon ${styles.headerIcon}`}>
-              S
-            </div>
-            <h2>Schema Browser</h2>
-          </div>
-          <div className={`card-body ${styles.schemaCardBody}`}>
-            <div className={styles.schemaContainer}>
-              <ObjectList
+    const handleCloseFields = useCallback(() => {
+        setSelectedObject(null);
+        setAllFields([]);
+    }, []);
+
+    const handleNavigateToObject = useCallback(
+        (objectName: string) => {
+            const obj = allObjects.find(o => o.name === objectName);
+            if (obj) {
+                handleSelectObject(objectName);
+            }
+        },
+        [allObjects, handleSelectObject]
+    );
+
+    const handleEditFormula = useCallback((field: FieldDescribe) => {
+        setEditingField(field);
+        setIsFormulaEditorOpen(true);
+    }, []);
+
+    const handleCloseFormulaEditor = useCallback(() => {
+        setIsFormulaEditorOpen(false);
+        setEditingField(null);
+    }, []);
+
+    const handleFormulaSaveSuccess = useCallback(() => {
+        if (selectedObject) {
+            loadFields(selectedObject.name);
+        }
+    }, [selectedObject, loadFields]);
+
+    const schemaContent = (
+        <div
+            className={`${styles.schemaContainer} ${!isStandalone ? styles.schemaContainerInline : ''}`}
+        >
+            <ObjectList
                 objects={allObjects}
                 selectedObjectName={selectedObject?.name || null}
                 isLoading={isLoadingObjects}
                 instanceUrl={instanceUrl}
                 onSelect={handleSelectObject}
                 onRefresh={handleRefreshObjects}
-              />
+            />
 
-              {selectedObject && (
+            {selectedObject && (
                 <FieldList
-                  objectLabel={selectedObject.label}
-                  objectName={selectedObject.name}
-                  fields={allFields}
-                  isLoading={isLoadingFields}
-                  instanceUrl={instanceUrl}
-                  onClose={handleCloseFields}
-                  onRefresh={handleRefreshFields}
-                  onNavigateToObject={handleNavigateToObject}
-                  onEditFormula={handleEditFormula}
+                    objectLabel={selectedObject.label}
+                    objectName={selectedObject.name}
+                    fields={allFields}
+                    isLoading={isLoadingFields}
+                    instanceUrl={instanceUrl}
+                    onClose={handleCloseFields}
+                    onRefresh={handleRefreshFields}
+                    onNavigateToObject={handleNavigateToObject}
+                    onEditFormula={handleEditFormula}
                 />
-              )}
-            </div>
-          </div>
+            )}
         </div>
-      </main>
+    );
 
-      <FormulaEditor
-        isOpen={isFormulaEditorOpen}
-        onClose={handleCloseFormulaEditor}
-        field={editingField}
-        objectName={selectedObject?.name || ''}
-        objectLabel={selectedObject?.label || ''}
-        allFields={allFields}
-        onSaveSuccess={handleFormulaSaveSuccess}
-      />
-    </div>
-  );
+    const errorContent = (
+        <div className={styles.errorContainer}>
+            <p className={styles.errorMessage}>{error}</p>
+            <p className={styles.errorHint}>Please check the connection and try again.</p>
+        </div>
+    );
+
+    const formulaEditor = (
+        <FormulaEditor
+            isOpen={isFormulaEditorOpen}
+            onClose={handleCloseFormulaEditor}
+            field={editingField}
+            objectName={selectedObject?.name || ''}
+            objectLabel={selectedObject?.label || ''}
+            allFields={allFields}
+            onSaveSuccess={handleFormulaSaveSuccess}
+        />
+    );
+
+    // Inline mode: render content directly without standalone chrome
+    if (!isStandalone) {
+        return (
+            <div data-testid="schema-page">
+                {error && !isLoadingObjects ? errorContent : schemaContent}
+                {formulaEditor}
+            </div>
+        );
+    }
+
+    // Standalone mode: render with header and card wrapper
+    if (error && !isLoadingObjects) {
+        return (
+            <div data-testid="schema-page">
+                <header className="standalone-header">
+                    <div className="nav-brand">
+                        <img src="../../icon.png" alt="" />
+                        sftools
+                    </div>
+                    <span className="tool-name">Schema Browser</span>
+                </header>
+                <main className="content-area">
+                    <div className="card schema-card">
+                        <div className="card-header">
+                            <div className={`card-header-icon ${styles.headerIcon}`}>S</div>
+                            <h2>Schema Browser</h2>
+                        </div>
+                        <div className={`card-body ${styles.schemaCardBody}`}>{errorContent}</div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    return (
+        <div data-testid="schema-page">
+            <header className="standalone-header">
+                <div className="nav-brand">
+                    <img src="../../icon.png" alt="" />
+                    sftools
+                </div>
+                <span className="tool-name">Schema Browser</span>
+            </header>
+
+            <main className="content-area">
+                <div className="card schema-card">
+                    <div className="card-header">
+                        <div className={`card-header-icon ${styles.headerIcon}`}>S</div>
+                        <h2>Schema Browser</h2>
+                    </div>
+                    <div className={`card-body ${styles.schemaCardBody}`}>{schemaContent}</div>
+                </div>
+            </main>
+
+            {formulaEditor}
+        </div>
+    );
 }

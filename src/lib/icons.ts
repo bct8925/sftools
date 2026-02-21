@@ -19,6 +19,7 @@ import httpIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-syst
 import eventIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/event.svg?raw';
 import appsIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/apps.svg?raw';
 import chevrondownIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/chevrondown.svg?raw';
+import sobjectIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/sobject.svg?raw';
 import salesforce1Icon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/salesforce1.svg?raw';
 
 interface ProcessSvgOptions {
@@ -73,6 +74,7 @@ export const icons = {
     tileEvents: processSvg(eventIcon, { size: 32 }),
     tileUtils:
         '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    tileSchema: processSvg(sobjectIcon, { size: 32 }),
     tileSettings: processSvg(settingsIcon, { size: 32 }),
 
     // Header icons

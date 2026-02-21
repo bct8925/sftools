@@ -25,6 +25,9 @@ const RestApiTab = lazy(() =>
 const EventsTab = lazy(() =>
     import('../components/events/EventsTab').then(m => ({ default: m.EventsTab }))
 );
+const SchemaTab = lazy(() =>
+    import('../components/schema/SchemaTab').then(m => ({ default: m.SchemaTab }))
+);
 const UtilsTab = lazy(() =>
     import('../components/utils/UtilsTab').then(m => ({ default: m.UtilsTab }))
 );
@@ -39,11 +42,21 @@ const TAB_COMPONENTS: Record<TabId, ComponentType> = {
     logs: DebugLogsTab,
     'rest-api': RestApiTab,
     events: EventsTab,
+    schema: SchemaTab,
     utils: UtilsTab,
     settings: SettingsTab,
 };
 
-const TAB_IDS: TabId[] = ['query', 'apex', 'logs', 'rest-api', 'events', 'utils', 'settings'];
+const TAB_IDS: TabId[] = [
+    'query',
+    'apex',
+    'logs',
+    'rest-api',
+    'events',
+    'schema',
+    'utils',
+    'settings',
+];
 
 type ViewState = { view: 'home' } | { view: 'feature'; featureId: TabId };
 

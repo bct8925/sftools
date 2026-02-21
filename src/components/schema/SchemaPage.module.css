@@ -10,7 +10,6 @@
 .schemaContainerInline {
     height: calc(100vh - 70px);
     min-height: 0;
-    margin: -20px;
     margin-bottom: 0;
 }
 

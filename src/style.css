@@ -370,7 +370,7 @@ code,
     cursor: pointer;
 }
 .card-header-collapsible:hover {
-    opacity: 0.8;
+    background-color: var(--bg-hover);
 }
 
 .card-collapse-chevron {

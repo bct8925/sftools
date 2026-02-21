@@ -3,6 +3,7 @@ import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEdito
 import { ChannelSelector } from './ChannelSelector';
 import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
+import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import { publishPlatformEvent } from '../../api/salesforce';
 import styles from './EventsTab.module.css';
 
@@ -13,27 +14,20 @@ interface EventPublisherProps {
     onPublishSuccess?: (message: string) => void;
     /** Called when an error occurs */
     onError?: (message: string) => void;
-    /** Whether the publisher card body is collapsed */
-    isCollapsed?: boolean;
-    /** Called when the user toggles the collapse state */
-    onToggleCollapse?: () => void;
 }
 
 /**
  * Event publisher card for publishing Platform Events.
  */
-export function EventPublisher({
-    platformEvents,
-    onPublishSuccess,
-    onError,
-    isCollapsed = false,
-    onToggleCollapse,
-}: EventPublisherProps) {
+export function EventPublisher({ platformEvents, onPublishSuccess, onError }: EventPublisherProps) {
     const editorRef = useRef<MonacoEditorRef>(null);
     const [selectedChannel, setSelectedChannel] = useState('');
     const [status, setStatus] = useState('');
     const [statusType, setStatusType] = useState<StatusType>('');
     const [isPublishing, setIsPublishing] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(true);
+
+    const handleToggleCollapse = useCallback(() => setIsCollapsed(prev => !prev), []);
 
     const updateStatus = useCallback((text: string, type: StatusType = '') => {
         setStatus(text);
@@ -84,8 +78,8 @@ export function EventPublisher({
         <div className="card">
             <div className={`card-header ${styles.header}`}>
                 <div
-                    className={`${styles.headerRow} ${onToggleCollapse ? styles.publisherHeaderRow : ''}`}
-                    onClick={onToggleCollapse}
+                    className={`${styles.headerRow} card-header-collapsible`}
+                    onClick={handleToggleCollapse}
                 >
                     <div className={`card-header-icon ${styles.headerIconPublish}`}>P</div>
                     <h2>Publish</h2>
@@ -103,23 +97,7 @@ export function EventPublisher({
                             data-testid="event-publish-btn"
                         />
                     </div>
-                    {onToggleCollapse && (
-                        <svg
-                            className={`${styles.collapseChevron} ${!isCollapsed ? styles.collapseChevronOpen : ''}`}
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                        >
-                            <polyline points="9 6 15 12 9 18" />
-                        </svg>
-                    )}
+                    <CollapseChevron isOpen={!isCollapsed} />
                 </div>
             </div>
             {!isCollapsed && (

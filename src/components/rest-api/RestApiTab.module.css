@@ -19,6 +19,10 @@
     margin-bottom: 0;
 }
 
+.responseCardCollapsed {
+    flex: none;
+}
+
 .responseCardBody {
     flex: 1;
     display: flex;

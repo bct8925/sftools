@@ -365,6 +365,26 @@ code,
     overflow: visible;
 }
 
+/* Collapsible card headers */
+.card-header-collapsible {
+    cursor: pointer;
+}
+.card-header-collapsible:hover {
+    opacity: 0.8;
+}
+
+.card-collapse-chevron {
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.card-collapse-chevron-open {
+    transform: rotate(90deg);
+}
+
 .form-element {
     margin-bottom: 15px;
 }

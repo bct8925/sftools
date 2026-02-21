@@ -2,6 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { ChannelSelector } from './ChannelSelector';
 import { EventPublisher } from './EventPublisher';
+import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useProxy } from '../../contexts/ProxyContext';
 import { useStatusBadge } from '../../hooks/useStatusBadge';
@@ -114,9 +115,10 @@ export function EventsTab() {
     // Settings modal state
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-    // Publisher collapse state
-    const [isPublisherCollapsed, setIsPublisherCollapsed] = useState(true);
-    const handleTogglePublisher = useCallback(() => setIsPublisherCollapsed(prev => !prev), []);
+    // Streaming card collapse state
+    const [isStreamingCollapsed, setIsStreamingCollapsed] = useState(false);
+    const handleToggleStreaming = useCallback(() => setIsStreamingCollapsed(prev => !prev), []);
+
     const {
         statusText: streamStatus,
         statusType: streamStatusType,
@@ -259,11 +261,17 @@ export function EventsTab() {
 
     return (
         <div className={styles.eventsTab} data-testid="events-tab">
-            <div className={`card ${styles.streamingCard}`}>
+            <div
+                className={`card ${styles.streamingCard} ${isStreamingCollapsed ? styles.streamingCardCollapsed : ''}`}
+            >
                 <div className={`card-header ${styles.header}`}>
-                    <div className={styles.headerRow}>
+                    <div
+                        className={`${styles.headerRow} card-header-collapsible`}
+                        onClick={handleToggleStreaming}
+                    >
                         <div className={`card-header-icon ${styles.headerIconEvents}`}>E</div>
                         <h2>Streaming</h2>
+                        <CollapseChevron isOpen={!isStreamingCollapsed} />
                     </div>
                     <div className={styles.headerRow}>
                         {streamStatus && (
@@ -294,88 +302,88 @@ export function EventsTab() {
                         </div>
                     </div>
                 </div>
-                <div className={`card-body ${styles.streamingCardBody}`}>
-                    <div className="form-element">
-                        <label htmlFor="event-channel-select">Channel</label>
-                        <ChannelSelector
-                            platformEvents={channels.platformEvents}
-                            standardEvents={channels.standardEvents}
-                            pushTopics={channels.pushTopics}
-                            systemTopics={channels.systemTopics}
-                            value={selectedChannel}
-                            onChange={setSelectedChannel}
-                            disabled={isSubscribed}
-                            data-testid="event-channel-select"
-                        />
-                    </div>
-                    {/* Viewer Layout */}
-                    <div className={styles.viewer}>
-                        {/* Monaco Editor */}
-                        <MonacoEditor
-                            ref={streamEditorRef}
-                            language="json"
-                            value="// Subscribe to and open an event"
-                            readonly
-                            className={`monaco-container ${styles.streamEditor}`}
-                            data-testid="event-stream-editor"
-                        />
+                {!isStreamingCollapsed && (
+                    <div className={`card-body ${styles.streamingCardBody}`}>
+                        <div className="form-element">
+                            <label htmlFor="event-channel-select">Channel</label>
+                            <ChannelSelector
+                                platformEvents={channels.platformEvents}
+                                standardEvents={channels.standardEvents}
+                                pushTopics={channels.pushTopics}
+                                systemTopics={channels.systemTopics}
+                                value={selectedChannel}
+                                onChange={setSelectedChannel}
+                                disabled={isSubscribed}
+                                data-testid="event-channel-select"
+                            />
+                        </div>
+                        {/* Viewer Layout */}
+                        <div className={styles.viewer}>
+                            {/* Monaco Editor */}
+                            <MonacoEditor
+                                ref={streamEditorRef}
+                                language="json"
+                                value="// Subscribe to and open an event"
+                                readonly
+                                className={`monaco-container ${styles.streamEditor}`}
+                                data-testid="event-stream-editor"
+                            />
 
-                        {/* Event Table (1/3) */}
-                        <div className={styles.viewerTable}>
-                            {events.length === 0 ? (
-                                <div className={styles.emptyState}>
-                                    <div className={styles.emptyStateIcon}></div>
-                                </div>
-                            ) : (
-                                <table className={styles.eventTable} data-testid="event-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Time</th>
-                                            <th>Replay ID</th>
-                                            <th>Event Type</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {[...events].reverse().map(event => (
-                                            <tr
-                                                key={event.id}
-                                                className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${
-                                                    event.isSystemMessage ? styles.rowSystem : ''
-                                                }`}
-                                                data-testid={`event-row-${event.id}`}
-                                            >
-                                                <td className={styles.time}>
-                                                    {formatTime(event.timestamp)}
-                                                </td>
-                                                <td className={styles.replayIdCell}>
-                                                    {formatReplayId(event.replayId)}
-                                                </td>
-                                                <td>{event.eventType}</td>
-                                                <td>
-                                                    <button
-                                                        className="button-neutral button-sm"
-                                                        onClick={() => handleOpenEvent(event)}
-                                                        data-testid={`event-open-${event.id}`}
-                                                    >
-                                                        Open
-                                                    </button>
-                                                </td>
+                            {/* Event Table (1/3) */}
+                            <div className={styles.viewerTable}>
+                                {events.length === 0 ? (
+                                    <div className={styles.emptyState}>
+                                        <div className={styles.emptyStateIcon}></div>
+                                    </div>
+                                ) : (
+                                    <table className={styles.eventTable} data-testid="event-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Replay ID</th>
+                                                <th>Event Type</th>
+                                                <th></th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
+                                        </thead>
+                                        <tbody>
+                                            {[...events].reverse().map(event => (
+                                                <tr
+                                                    key={event.id}
+                                                    className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${
+                                                        event.isSystemMessage
+                                                            ? styles.rowSystem
+                                                            : ''
+                                                    }`}
+                                                    data-testid={`event-row-${event.id}`}
+                                                >
+                                                    <td className={styles.time}>
+                                                        {formatTime(event.timestamp)}
+                                                    </td>
+                                                    <td className={styles.replayIdCell}>
+                                                        {formatReplayId(event.replayId)}
+                                                    </td>
+                                                    <td>{event.eventType}</td>
+                                                    <td>
+                                                        <button
+                                                            className="button-neutral button-sm"
+                                                            onClick={() => handleOpenEvent(event)}
+                                                            data-testid={`event-open-${event.id}`}
+                                                        >
+                                                            Open
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
 
-            <EventPublisher
-                platformEvents={channels.platformEvents}
-                isCollapsed={isPublisherCollapsed}
-                onToggleCollapse={handleTogglePublisher}
-            />
+            <EventPublisher platformEvents={channels.platformEvents} />
 
             {/* Settings Modal */}
             <Modal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}>

@@ -174,28 +174,11 @@
 }
 
 /* ============================================================
-   Collapsible Publisher Header
+   Streaming Card Collapsed State
    ============================================================ */
 
-.publisherHeaderRow {
-    cursor: pointer;
-    flex: 1;
-}
-
-.publisherHeaderRow:hover {
-    opacity: 0.8;
-}
-
-.collapseChevron {
-    transition: transform 0.2s ease;
-    color: var(--text-muted);
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-}
-
-.collapseChevronOpen {
-    transform: rotate(90deg);
+.streamingCardCollapsed {
+    flex: none;
 }
 
 /* ============================================================

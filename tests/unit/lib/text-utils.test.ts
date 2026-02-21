@@ -23,7 +23,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { escapeHtml, escapeAttr, truncate } from '../../../src/lib/text-utils.js';
+import { escapeHtml } from '../../../src/lib/text-utils.js';
+import { escapeAttr, truncate } from '../../../src/lib/text-utils.testing.js';
 
 describe('text-utils', () => {
     describe('escapeHtml', () => {

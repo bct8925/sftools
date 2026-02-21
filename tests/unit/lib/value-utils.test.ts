@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
+import { parseFieldValue } from '../../../src/lib/value-utils.js';
 import {
     valuesEqual,
     isNullish,
     isEmpty,
     ensureString,
-    parseFieldValue,
     formatFieldForInput,
-} from '../../../src/lib/value-utils.js';
+} from '../../../src/lib/value-utils.testing.js';
 
 describe('valuesEqual', () => {
     it('returns true when both values are null', () => {

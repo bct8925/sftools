@@ -71,6 +71,8 @@ npm run test:integration                 # Run all integration tests
 npm run validate               # Auto-fix lint + format, then run all checks
 npm run check                  # Run typecheck + lint + format:check (no fix)
 npm run fix                    # Auto-fix lint + format only
+npm run dead-code              # Find unused exports (dora-based)
+npm run dead-code -- --all     # Include known exceptions
 ```
 
 **Run `npm run validate` after changing code files (`.ts`, `.tsx`, `.js`, `.jsx`, `.css`). Skip for docs, config, or non-code changes.**
@@ -80,6 +82,14 @@ npm run fix                    # Auto-fix lint + format only
 ```bash
 npm run validate && npm run test:unit && npm run test:frontend && npm run build
 ```
+
+## Test-Only Exports
+
+Exports that exist solely for test access live in companion `.testing.ts` files (e.g., `fetch.testing.ts` re-exports internals from `fetch.ts`). This keeps them out of `npm run dead-code` results while making the intent explicit.
+
+- **Production code** imports from the main module (`./fetch`)
+- **Test code** imports test-only symbols from the `.testing` companion (`./fetch.testing`)
+- When adding a new test-only export, add it to the corresponding `.testing.ts` file (create one if needed)
 
 ## Git Workflow
 

@@ -4,9 +4,8 @@ import {
     getISODateFromNow,
     getNowISO,
     isExpired,
-    formatRelativeTime,
-    getFilenameTimestamp,
 } from '../../../src/lib/date-utils.js';
+import { formatRelativeTime, getFilenameTimestamp } from '../../../src/lib/date-utils.testing.js';
 
 describe('date-utils', () => {
     const FIXED_TIME = new Date('2024-06-15T12:00:00.000Z');

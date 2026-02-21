@@ -1,0 +1,75 @@
+# Dead code false positives — symbols dora can't trace statically
+# Format: path:symbol_name
+# Lines starting with # are comments, blank lines are ignored
+
+# --- React lazy() imports (dynamic import not traced) ---
+src/components/record/RecordPage.tsx:RecordPage
+src/components/record/RichTextModal.tsx:RichTextModal
+src/components/schema/FieldList.tsx:FieldList
+src/components/schema/SchemaPage.tsx:SchemaPage
+src/components/schema/ObjectList.tsx:scrollToObject
+
+# --- React Context providers (consumed via JSX) ---
+src/contexts/ConnectionContext.tsx:ConnectionProvider
+src/contexts/ProxyContext.tsx:ProxyProvider
+
+# --- Background service worker handlers (string-based message routing) ---
+src/background/auth.ts:exchangeCodeForTokens
+src/background/auth.ts:refreshAccessToken
+src/background/auth.ts:updateConnectionToken
+src/background/auth.ts:clearAuthTokens
+src/background/debug.ts:debugWarn
+
+# --- Entry-point consumers (imported by components dora can't trace) ---
+src/api/fetch.ts:setProxyConnected
+src/api/salesforce-request.ts:salesforceRequest
+src/api/salesforce.ts:clearDescribeCache
+src/api/salesforce.ts:migrateDescribeCache
+src/api/salesforce.ts:executeAnonymousApex
+src/api/salesforce.ts:executeQueryWithColumns
+src/api/salesforce.ts:fetchQueryMore
+src/api/salesforce.ts:getRecordWithRelationships
+src/api/salesforce.ts:updateRecord
+src/api/salesforce.ts:executeRestRequest
+src/api/salesforce.ts:searchUsers
+src/api/salesforce.ts:searchFlows
+src/api/salesforce.ts:getFlowVersions
+src/api/salesforce.ts:deleteInactiveFlowVersions
+src/api/salesforce.ts:getFormulaFieldMetadata
+src/api/salesforce.ts:updateFormulaField
+src/api/soql-autocomplete.ts:registerSOQLCompletionProvider
+src/api/soql-autocomplete.ts:activateSOQLAutocomplete
+src/api/soql-autocomplete.ts:clearState
+
+# --- Auth functions (used by entry points and components) ---
+src/auth/auth.ts:CALLBACK_URL
+src/auth/auth.ts:onAuthExpired
+src/auth/auth.ts:migrateFromSingleConnection
+src/auth/auth.ts:generateOAuthState
+src/auth/auth.ts:setPendingAuth
+src/auth/auth.ts:migrateCustomConnectedApp
+
+# --- Utility functions (consumed by components dora can't trace) ---
+src/lib/app-utils.ts:detectLoginDomain
+src/lib/app-utils.ts:buildOAuthUrl
+src/lib/events-utils.ts:parseStreamMessage
+src/lib/schema-utils.ts:filterObjects
+
+# --- Class methods (dora doesn't trace instance method calls) ---
+src/lib/history-manager.ts:HistoryEntry
+src/lib/history-manager.ts:HistoryManager
+
+# --- App entry points (loaded by HTML, not imported by other TS files) ---
+src/react/App.tsx:App
+src/react/HomeScreen.tsx:HomeScreen
+src/react/TabNavigation.tsx:TabId
+src/react/TabNavigation.tsx:FEATURES
+src/pages/callback/callback.ts:_PendingAuth
+
+# --- Type declaration files (ambient types, no runtime references) ---
+src/types/salesforce.d.ts:SalesforceConnection
+src/types/salesforce.d.ts:UserInfo
+src/types/components.d.ts:unknown
+src/types/components.d.ts:DocumentEventMap
+src/types/components.d.ts:WindowEventMap
+src/types/vite-env.d.ts:unknown

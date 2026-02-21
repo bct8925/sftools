@@ -481,9 +481,10 @@ describe('Debug Logs Integration', () => {
 
                 expect(deletedCount).toBe(1);
 
-                // Verify count decreased
+                // Verify the deleted log is no longer present
+                // (checking exact count is flaky since the active trace flag can generate new logs)
                 const statsAfter = await getDebugLogStats();
-                expect(statsAfter.count).toBe(statsBefore.count - 1);
+                expect(statsAfter.logIds).not.toContain(logToDelete);
             });
         });
 

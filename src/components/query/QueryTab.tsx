@@ -62,6 +62,8 @@ export function QueryTab() {
     const [bulkExportInProgress, setBulkExportInProgress] = useState(false);
     const [isQueryCollapsed, setIsQueryCollapsed] = useState(false);
     const [isResultsCollapsed, setIsResultsCollapsed] = useState(false);
+    const handleToggleQuery = useCallback(() => setIsQueryCollapsed(prev => !prev), []);
+    const handleToggleResults = useCallback(() => setIsResultsCollapsed(prev => !prev), []);
     const { statusText, statusType, updateStatus } = useStatusBadge();
 
     // Filter hook
@@ -340,17 +342,12 @@ export function QueryTab() {
         <div className={styles.queryTab} data-testid="query-tab">
             {/* Query Editor Card */}
             <div className="card">
-                <div
-                    className="card-header card-header-collapsible"
-                    onClick={e => {
-                        if (!(e.target as HTMLElement).closest('button, input, select')) {
-                            setIsQueryCollapsed(prev => !prev);
-                        }
-                    }}
-                >
+                <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconQuery}`}>S</div>
-                    <h2>SOQL Query</h2>
-                    <CollapseChevron isOpen={!isQueryCollapsed} />
+                    <h2 className="card-collapse-title" onClick={handleToggleQuery}>
+                        SOQL Query
+                    </h2>
+                    <CollapseChevron isOpen={!isQueryCollapsed} onClick={handleToggleQuery} />
                     <QueryHistory
                         onSelectQuery={handleSelectQuery}
                         historyManagerRef={historyManagerRef}
@@ -408,17 +405,12 @@ export function QueryTab() {
             <div
                 className={`card ${styles.resultsCard} ${isResultsCollapsed ? styles.resultsCardCollapsed : ''}`}
             >
-                <div
-                    className="card-header card-header-collapsible"
-                    onClick={e => {
-                        if (!(e.target as HTMLElement).closest('button, input, select')) {
-                            setIsResultsCollapsed(prev => !prev);
-                        }
-                    }}
-                >
+                <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconSuccess}`}>Q</div>
-                    <h2>Results</h2>
-                    <CollapseChevron isOpen={!isResultsCollapsed} />
+                    <h2 className="card-collapse-title" onClick={handleToggleResults}>
+                        Results
+                    </h2>
+                    <CollapseChevron isOpen={!isResultsCollapsed} onClick={handleToggleResults} />
                     <div className={styles.resultsSearch}>
                         <input
                             type="text"

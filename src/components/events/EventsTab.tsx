@@ -265,13 +265,15 @@ export function EventsTab() {
                 className={`card ${styles.streamingCard} ${isStreamingCollapsed ? styles.streamingCardCollapsed : ''}`}
             >
                 <div className={`card-header ${styles.header}`}>
-                    <div
-                        className={`${styles.headerRow} card-header-collapsible`}
-                        onClick={handleToggleStreaming}
-                    >
+                    <div className={styles.headerRow}>
                         <div className={`card-header-icon ${styles.headerIconEvents}`}>E</div>
-                        <h2>Streaming</h2>
-                        <CollapseChevron isOpen={!isStreamingCollapsed} />
+                        <h2 className="card-collapse-title" onClick={handleToggleStreaming}>
+                            Streaming
+                        </h2>
+                        <CollapseChevron
+                            isOpen={!isStreamingCollapsed}
+                            onClick={handleToggleStreaming}
+                        />
 
                         <div className={styles.headerControls}>
                             <ButtonIcon
@@ -343,10 +345,11 @@ export function EventsTab() {
                                             {[...events].reverse().map(event => (
                                                 <tr
                                                     key={event.id}
-                                                    className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${event.isSystemMessage
+                                                    className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${
+                                                        event.isSystemMessage
                                                             ? styles.rowSystem
                                                             : ''
-                                                        }`}
+                                                    }`}
                                                     data-testid={`event-row-${event.id}`}
                                                 >
                                                     <td className={styles.time}>

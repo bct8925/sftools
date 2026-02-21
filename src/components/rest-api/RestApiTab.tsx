@@ -25,6 +25,8 @@ export function RestApiTab() {
     const [status, setStatus] = useState<StatusState>({ message: '', type: '' });
     const [isRequestCollapsed, setIsRequestCollapsed] = useState(false);
     const [isResponseCollapsed, setIsResponseCollapsed] = useState(false);
+    const handleToggleRequest = useCallback(() => setIsRequestCollapsed(prev => !prev), []);
+    const handleToggleResponse = useCallback(() => setIsResponseCollapsed(prev => !prev), []);
 
     const requestEditorRef = useRef<MonacoEditorRef>(null);
     const responseEditorRef = useRef<MonacoEditorRef>(null);
@@ -90,22 +92,17 @@ export function RestApiTab() {
         <div className={styles.restApiTab} data-testid="rest-api-tab">
             {/* Request Card */}
             <div className="card">
-                <div
-                    className="card-header card-header-collapsible"
-                    onClick={e => {
-                        if (!(e.target as HTMLElement).closest('button, input, select')) {
-                            setIsRequestCollapsed(prev => !prev);
-                        }
-                    }}
-                >
+                <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconRest}`}>R</div>
-                    <h2>Request</h2>
+                    <h2 className="card-collapse-title" onClick={handleToggleRequest}>
+                        Request
+                    </h2>
                     {status.message && (
                         <StatusBadge type={status.type} data-testid="rest-status">
                             {status.message}
                         </StatusBadge>
                     )}
-                    <CollapseChevron isOpen={!isRequestCollapsed} />
+                    <CollapseChevron isOpen={!isRequestCollapsed} onClick={handleToggleRequest} />
                 </div>
                 {!isRequestCollapsed && (
                     <div className="card-body">
@@ -168,13 +165,12 @@ export function RestApiTab() {
             <div
                 className={`card ${styles.responseCard} ${isResponseCollapsed ? styles.responseCardCollapsed : ''}`}
             >
-                <div
-                    className="card-header card-header-collapsible"
-                    onClick={() => setIsResponseCollapsed(prev => !prev)}
-                >
+                <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconSuccess}`}>✓</div>
-                    <h2>Response</h2>
-                    <CollapseChevron isOpen={!isResponseCollapsed} />
+                    <h2 className="card-collapse-title" onClick={handleToggleResponse}>
+                        Response
+                    </h2>
+                    <CollapseChevron isOpen={!isResponseCollapsed} onClick={handleToggleResponse} />
                 </div>
                 {!isResponseCollapsed && (
                     <div className={`card-body ${styles.responseCardBody}`}>

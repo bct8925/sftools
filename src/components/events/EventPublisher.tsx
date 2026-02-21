@@ -77,19 +77,18 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
     return (
         <div className="card">
             <div className={`card-header ${styles.header}`}>
-                <div
-                    className={`${styles.headerRow} card-header-collapsible`}
-                    onClick={handleToggleCollapse}
-                >
+                <div className={styles.headerRow}>
                     <div className={`card-header-icon ${styles.headerIconPublish}`}>P</div>
-                    <h2>Publish</h2>
-                    <CollapseChevron isOpen={!isCollapsed} />
+                    <h2 className="card-collapse-title" onClick={handleToggleCollapse}>
+                        Publish
+                    </h2>
+                    <CollapseChevron isOpen={!isCollapsed} onClick={handleToggleCollapse} />
                     {status && (
                         <StatusBadge type={statusType} data-testid="event-publish-status">
                             {status}
                         </StatusBadge>
                     )}
-                    <div className={styles.headerControls} onClick={e => e.stopPropagation()}>
+                    <div className={styles.headerControls}>
                         <ButtonIcon
                             icon="send"
                             title="Publish event"

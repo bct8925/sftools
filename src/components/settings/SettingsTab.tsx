@@ -20,13 +20,15 @@ export function SettingsTab() {
     return (
         <div className={styles.settingsContent} data-testid="settings-tab">
             <div className="card">
-                <div
-                    className="card-header card-header-collapsible"
-                    onClick={() => toggleCard('connections')}
-                >
+                <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconConnections}`}>C</div>
-                    <h2>Connections</h2>
-                    <CollapseChevron isOpen={!collapsed['connections']} />
+                    <h2 className="card-collapse-title" onClick={() => toggleCard('connections')}>
+                        Connections
+                    </h2>
+                    <CollapseChevron
+                        isOpen={!collapsed['connections']}
+                        onClick={() => toggleCard('connections')}
+                    />
                 </div>
                 {!collapsed['connections'] && (
                     <div className="card-body">
@@ -40,13 +42,15 @@ export function SettingsTab() {
             </div>
 
             <div className="card">
-                <div
-                    className="card-header card-header-collapsible"
-                    onClick={() => toggleCard('appearance')}
-                >
+                <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconAppearance}`}>A</div>
-                    <h2>Appearance</h2>
-                    <CollapseChevron isOpen={!collapsed['appearance']} />
+                    <h2 className="card-collapse-title" onClick={() => toggleCard('appearance')}>
+                        Appearance
+                    </h2>
+                    <CollapseChevron
+                        isOpen={!collapsed['appearance']}
+                        onClick={() => toggleCard('appearance')}
+                    />
                 </div>
                 {!collapsed['appearance'] && (
                     <div className="card-body">
@@ -59,13 +63,15 @@ export function SettingsTab() {
             </div>
 
             <div className="card">
-                <div
-                    className="card-header card-header-collapsible"
-                    onClick={() => toggleCard('proxy')}
-                >
+                <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconProxy}`}>P</div>
-                    <h2>Local Proxy</h2>
-                    <CollapseChevron isOpen={!collapsed['proxy']} />
+                    <h2 className="card-collapse-title" onClick={() => toggleCard('proxy')}>
+                        Local Proxy
+                    </h2>
+                    <CollapseChevron
+                        isOpen={!collapsed['proxy']}
+                        onClick={() => toggleCard('proxy')}
+                    />
                 </div>
                 {!collapsed['proxy'] && (
                     <div className="card-body">
@@ -75,13 +81,15 @@ export function SettingsTab() {
             </div>
 
             <div className="card">
-                <div
-                    className="card-header card-header-collapsible"
-                    onClick={() => toggleCard('data')}
-                >
+                <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconCache}`}>D</div>
-                    <h2>Data</h2>
-                    <CollapseChevron isOpen={!collapsed['data']} />
+                    <h2 className="card-collapse-title" onClick={() => toggleCard('data')}>
+                        Data
+                    </h2>
+                    <CollapseChevron
+                        isOpen={!collapsed['data']}
+                        onClick={() => toggleCard('data')}
+                    />
                 </div>
                 {!collapsed['data'] && (
                     <div className="card-body">

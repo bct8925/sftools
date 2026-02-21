@@ -32,6 +32,7 @@ export function ApexTab() {
     const [output, setOutput] = useState('// Output will appear here after execution');
     const [initialCode, setInitialCode] = useState<string | null>(null);
     const [isApexCollapsed, setIsApexCollapsed] = useState(false);
+    const handleToggleApex = useCallback(() => setIsApexCollapsed(prev => !prev), []);
     const { statusText, statusType, updateStatus } = useStatusBadge();
 
     // Load last Apex code from history or favorites on mount (whichever is more recent)
@@ -180,17 +181,12 @@ export function ApexTab() {
     return (
         <div className={styles.apexTab} data-testid="apex-tab">
             <div className="card">
-                <div
-                    className="card-header card-header-collapsible"
-                    onClick={e => {
-                        if (!(e.target as HTMLElement).closest('button, input, select')) {
-                            setIsApexCollapsed(prev => !prev);
-                        }
-                    }}
-                >
+                <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIcon}`}>A</div>
-                    <h2>Anonymous Apex</h2>
-                    <CollapseChevron isOpen={!isApexCollapsed} />
+                    <h2 className="card-collapse-title" onClick={handleToggleApex}>
+                        Anonymous Apex
+                    </h2>
+                    <CollapseChevron isOpen={!isApexCollapsed} onClick={handleToggleApex} />
                     <ApexHistory ref={historyRef} onLoadScript={handleLoadScript} />
                 </div>
                 {!isApexCollapsed && (

@@ -16,6 +16,7 @@ interface ApexOutputProps {
 export function ApexOutput({ output, className }: ApexOutputProps) {
     const [searchText, setSearchText] = useState('');
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const handleToggle = useCallback(() => setIsCollapsed(prev => !prev), []);
     const editorRef = useRef<MonacoEditorRef>(null);
     const filterTimeoutRef = useRef<number | null>(null);
 
@@ -54,17 +55,12 @@ export function ApexOutput({ output, className }: ApexOutputProps) {
             className={`card ${className || ''}${isCollapsed ? ` ${styles.outputCardCollapsed}` : ''}`}
             data-testid="apex-output"
         >
-            <div
-                className="card-header card-header-collapsible"
-                onClick={e => {
-                    if (!(e.target as HTMLElement).closest('button, input, select')) {
-                        setIsCollapsed(prev => !prev);
-                    }
-                }}
-            >
+            <div className="card-header">
                 <div className={`card-header-icon ${styles.outputHeaderIcon}`}>L</div>
-                <h2>Debug Log</h2>
-                <CollapseChevron isOpen={!isCollapsed} />
+                <h2 className="card-collapse-title" onClick={handleToggle}>
+                    Debug Log
+                </h2>
+                <CollapseChevron isOpen={!isCollapsed} onClick={handleToggle} />
                 <div className={styles.outputSearch}>
                     <input
                         type="text"

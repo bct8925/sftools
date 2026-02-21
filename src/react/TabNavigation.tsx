@@ -46,20 +46,20 @@ export const FEATURES: Feature[] = [
         tileColor: 'var(--icon-rest-api)',
     },
     {
-        id: 'events',
-        label: 'Platform Events',
-        requiresAuth: true,
-        requiresProxy: true,
-        tileIcon: 'tileEvents',
-        tileColor: 'var(--icon-events)',
-    },
-    {
         id: 'schema',
         label: 'Schema',
         requiresAuth: true,
         requiresProxy: false,
         tileIcon: 'tileSchema',
         tileColor: 'var(--icon-schema)',
+    },
+    {
+        id: 'events',
+        label: 'Platform Events',
+        requiresAuth: true,
+        requiresProxy: true,
+        tileIcon: 'tileEvents',
+        tileColor: 'var(--icon-events)',
     },
     {
         id: 'utils',

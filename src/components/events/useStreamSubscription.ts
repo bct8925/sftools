@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getInstanceUrl, getAccessToken } from '../../auth/auth';
 import { formatEventEntry } from '../../lib/events-utils';
 import type { MonacoEditorRef } from '../monaco-editor/MonacoEditor';
-import type { StatusType } from '../status-badge/StatusBadge';
+import { useToast } from '../../contexts/ToastContext';
 
 interface StreamMessage {
     subscriptionId: string;
@@ -31,7 +31,6 @@ interface UseStreamSubscriptionOptions {
     replayId: string;
     isAuthenticated: boolean;
     isProxyConnected: boolean;
-    updateStreamStatus: (text: string, type?: StatusType) => void;
     appendSystemMessage?: (msg: string) => void;
     onEventReceived?: (eventData: EventData, isSystemMessage: boolean) => void;
     streamEditorRef?: React.RefObject<MonacoEditorRef | null>;
@@ -62,7 +61,6 @@ export function useStreamSubscription({
     replayId,
     isAuthenticated,
     isProxyConnected,
-    updateStreamStatus,
     appendSystemMessage,
     onEventReceived,
     streamEditorRef,
@@ -70,6 +68,8 @@ export function useStreamSubscription({
 }: UseStreamSubscriptionOptions): UseStreamSubscriptionReturn {
     const [currentSubscriptionId, setCurrentSubscriptionId] = useState<string | null>(null);
     const [isSubscribed, setIsSubscribed] = useState(false);
+    const toast = useToast();
+    const activeToastRef = useRef<string | null>(null);
 
     // Event counting
     const eventCountRef = useRef(0);
@@ -132,7 +132,7 @@ export function useStreamSubscription({
                     if (appendSystemMessage) {
                         appendSystemMessage(`Error: ${message.error}`);
                     }
-                    updateStreamStatus('Error', 'error');
+                    toast.show('Stream error', 'error');
                     break;
 
                 case 'streamEnd':
@@ -144,7 +144,6 @@ export function useStreamSubscription({
                     }
                     setIsSubscribed(false);
                     setCurrentSubscriptionId(null);
-                    updateStreamStatus('Disconnected', '');
                     break;
             }
         },
@@ -152,7 +151,7 @@ export function useStreamSubscription({
             currentSubscriptionId,
             appendSystemMessage,
             onEventReceived,
-            updateStreamStatus,
+            toast,
             scrollStreamToBottom,
             streamEditorRef,
         ]
@@ -178,17 +177,17 @@ export function useStreamSubscription({
     // Subscribe to channel
     const subscribe = useCallback(async () => {
         if (!selectedChannel) {
-            updateStreamStatus('Select a channel', 'error');
+            toast.show('Select a channel', 'error');
             return;
         }
 
         if (!isAuthenticated) {
-            updateStreamStatus('Not authenticated', 'error');
+            toast.show('Not authenticated', 'error');
             return;
         }
 
         if (!isProxyConnected) {
-            updateStreamStatus('Proxy required', 'error');
+            toast.show('Proxy required', 'error');
             const msg = 'Streaming requires the local proxy. Open Settings to connect.';
             if (onEventReceived) {
                 onEventReceived({ error: msg }, true);
@@ -199,7 +198,8 @@ export function useStreamSubscription({
             return;
         }
 
-        updateStreamStatus('Connecting...', 'loading');
+        const id = toast.show('Connecting...', 'loading');
+        activeToastRef.current = id;
 
         try {
             const response = await chrome.runtime.sendMessage({
@@ -214,7 +214,10 @@ export function useStreamSubscription({
             if (response.success) {
                 setCurrentSubscriptionId(response.subscriptionId);
                 setIsSubscribed(true);
-                updateStreamStatus('Subscribed', 'success');
+                if (activeToastRef.current) {
+                    toast.update(activeToastRef.current, 'Subscribed', 'success');
+                    activeToastRef.current = null;
+                }
                 const msg = `Subscribed to ${selectedChannel} (replay: ${replayPreset})`;
                 if (onEventReceived) {
                     onEventReceived({ channel: selectedChannel, payload: { message: msg } }, true);
@@ -227,7 +230,12 @@ export function useStreamSubscription({
             }
         } catch (err) {
             console.error('Subscribe error:', err);
-            updateStreamStatus('Error', 'error');
+            if (activeToastRef.current) {
+                toast.update(activeToastRef.current, 'Error', 'error');
+                activeToastRef.current = null;
+            } else {
+                toast.show('Error', 'error');
+            }
             const msg = `Error: ${(err as Error).message}`;
             if (onEventReceived) {
                 onEventReceived({ error: msg }, true);
@@ -242,7 +250,7 @@ export function useStreamSubscription({
         isProxyConnected,
         replayPreset,
         replayId,
-        updateStreamStatus,
+        toast,
         appendSystemMessage,
         onEventReceived,
     ]);
@@ -250,8 +258,6 @@ export function useStreamSubscription({
     // Unsubscribe from channel
     const unsubscribe = useCallback(async () => {
         if (!currentSubscriptionId) return;
-
-        updateStreamStatus('Disconnecting...', 'loading');
 
         try {
             await chrome.runtime.sendMessage({
@@ -271,8 +277,7 @@ export function useStreamSubscription({
 
         setCurrentSubscriptionId(null);
         setIsSubscribed(false);
-        updateStreamStatus('Disconnected', '');
-    }, [currentSubscriptionId, updateStreamStatus, appendSystemMessage, onEventReceived]);
+    }, [currentSubscriptionId, appendSystemMessage, onEventReceived]);
 
     // Toggle subscription
     const toggleSubscription = useCallback(() => {
@@ -297,9 +302,8 @@ export function useStreamSubscription({
             }
             setIsSubscribed(false);
             setCurrentSubscriptionId(null);
-            updateStreamStatus('Disconnected', '');
         }
-    }, [updateStreamStatus]);
+    }, []);
 
     return {
         isSubscribed,

@@ -209,7 +209,6 @@ td,
 .script-preview,
 .text-muted,
 .error-message,
-.status-badge,
 pre,
 code,
 .query-result,
@@ -548,30 +547,6 @@ code,
     font-size: 13px;
     background: var(--input-bg);
     color: var(--text-main);
-}
-
-/* --- Status Badge --- */
-.status-badge {
-    margin-left: 12px;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.status-badge.status-success {
-    background-color: var(--status-success-bg);
-    color: var(--status-success-text);
-}
-
-.status-badge.status-error {
-    background-color: var(--status-error-bg);
-    color: var(--status-error-text);
-}
-
-.status-badge.status-loading {
-    background-color: var(--status-loading-bg);
-    color: var(--status-loading-text);
 }
 
 /* --- Utility --- */

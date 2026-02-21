@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
-import { useStatusBadge } from '../../hooks/useStatusBadge';
+import { useToast } from '../../contexts/ToastContext';
 import {
     getCurrentUserId,
     searchUsers,
@@ -32,21 +32,19 @@ export function DebugLogsSettingsModal({ onClose }: DebugLogsSettingsModalProps)
 
     // Trace flag state
     const [enableForMeLoading, setEnableForMeLoading] = useState(false);
-    const { statusText: traceStatusText, statusType: traceStatusType, updateStatus: updateTraceStatus, clearStatus: clearTraceStatus } = useStatusBadge();
 
     // Cleanup state
     const [deleteLogsLoading, setDeleteLogsLoading] = useState(false);
     const [deleteFlagsLoading, setDeleteFlagsLoading] = useState(false);
-    const { statusText: deleteStatusText, statusType: deleteStatusType, updateStatus: updateDeleteStatus, clearStatus: clearDeleteStatus } = useStatusBadge();
+
+    const toast = useToast();
 
     // Clear state on connection change
     useEffect(() => {
         setEnableForMeLoading(false);
-        clearTraceStatus();
         setDeleteLogsLoading(false);
         setDeleteFlagsLoading(false);
-        clearDeleteStatus();
-    }, [activeConnection?.id, clearTraceStatus, clearDeleteStatus]);
+    }, [activeConnection?.id]);
 
     const handleEnableForMe = useCallback(async () => {
         if (!isAuthenticated) {
@@ -54,31 +52,34 @@ export function DebugLogsSettingsModal({ onClose }: DebugLogsSettingsModalProps)
             return;
         }
 
-        updateTraceStatus('Enabling trace flag...', 'loading');
+        const id = toast.show('Enabling trace flag...', 'loading');
         setEnableForMeLoading(true);
 
         try {
             const userId = await getCurrentUserId();
             await enableTraceFlagForUser(userId);
-            updateTraceStatus('Trace flag enabled for 30 minutes', 'success');
+            toast.update(id, 'Trace flag enabled for 30 minutes', 'success');
         } catch (error) {
-            updateTraceStatus((error as Error).message, 'error');
+            toast.update(id, (error as Error).message, 'error');
         } finally {
             setEnableForMeLoading(false);
         }
-    }, [isAuthenticated, updateTraceStatus]);
+    }, [isAuthenticated, toast]);
 
-    const handleUserSelect = useCallback(async (user: unknown) => {
-        const userObj = user as User;
-        updateTraceStatus('Enabling trace flag...', 'loading');
+    const handleUserSelect = useCallback(
+        async (user: unknown) => {
+            const userObj = user as User;
+            const id = toast.show('Enabling trace flag...', 'loading');
 
-        try {
-            await enableTraceFlagForUser(userObj.Id);
-            updateTraceStatus('Trace flag enabled for 30 minutes', 'success');
-        } catch (error) {
-            updateTraceStatus((error as Error).message, 'error');
-        }
-    }, [updateTraceStatus]);
+            try {
+                await enableTraceFlagForUser(userObj.Id);
+                toast.update(id, 'Trace flag enabled for 30 minutes', 'success');
+            } catch (error) {
+                toast.update(id, (error as Error).message, 'error');
+            }
+        },
+        [toast]
+    );
 
     const renderUserSearch = useCallback((user: unknown): SearchBoxRenderData => {
         const userObj = user as User;
@@ -99,19 +100,19 @@ export function DebugLogsSettingsModal({ onClose }: DebugLogsSettingsModalProps)
             return;
         }
 
-        updateDeleteStatus('Deleting trace flags...', 'loading');
+        const id = toast.show('Deleting trace flags...', 'loading');
         setDeleteFlagsLoading(true);
 
         try {
             const result = await deleteAllTraceFlags();
             const count = result.deletedCount;
-            updateDeleteStatus(`Deleted ${count} trace flag${count !== 1 ? 's' : ''}`, 'success');
+            toast.update(id, `Deleted ${count} trace flag${count !== 1 ? 's' : ''}`, 'success');
         } catch (error) {
-            updateDeleteStatus((error as Error).message, 'error');
+            toast.update(id, (error as Error).message, 'error');
         } finally {
             setDeleteFlagsLoading(false);
         }
-    }, [isAuthenticated, updateDeleteStatus]);
+    }, [isAuthenticated, toast]);
 
     const formatBytes = (bytes: number): string => {
         if (bytes === 0) return '0 B';
@@ -127,34 +128,42 @@ export function DebugLogsSettingsModal({ onClose }: DebugLogsSettingsModalProps)
             return;
         }
 
-        updateDeleteStatus('Checking logs...', 'loading');
+        const id = toast.show('Checking logs...', 'loading');
         setDeleteLogsLoading(true);
 
         try {
             const stats = await getDebugLogStats();
 
             if (stats.count === 0) {
-                updateDeleteStatus('No logs to delete', 'success');
+                toast.update(id, 'No logs to delete', 'success');
                 return;
             }
 
             const sizeStr = formatBytes(stats.totalSize);
-            if (!confirm(`Delete ${stats.count} debug log${stats.count !== 1 ? 's' : ''} (${sizeStr})? This cannot be undone.`)) {
-                clearDeleteStatus();
+            if (
+                !confirm(
+                    `Delete ${stats.count} debug log${stats.count !== 1 ? 's' : ''} (${sizeStr})? This cannot be undone.`
+                )
+            ) {
+                toast.dismiss(id);
                 return;
             }
 
-            updateDeleteStatus('Deleting logs...', 'loading');
+            toast.update(id, 'Deleting logs...', 'loading');
 
             const result = await deleteDebugLogs(stats.logIds);
             const count = result.deletedCount;
-            updateDeleteStatus(`Deleted ${count} log${count !== 1 ? 's' : ''} (${sizeStr})`, 'success');
+            toast.update(
+                id,
+                `Deleted ${count} log${count !== 1 ? 's' : ''} (${sizeStr})`,
+                'success'
+            );
         } catch (error) {
-            updateDeleteStatus((error as Error).message, 'error');
+            toast.update(id, (error as Error).message, 'error');
         } finally {
             setDeleteLogsLoading(false);
         }
-    }, [isAuthenticated, updateDeleteStatus, clearDeleteStatus]);
+    }, [isAuthenticated, toast]);
 
     return (
         <div className={styles.settingsModal} data-testid="debug-logs-settings-modal">
@@ -189,23 +198,11 @@ export function DebugLogsSettingsModal({ onClose }: DebugLogsSettingsModalProps)
                         inputTestId="debug-logs-user-search"
                         dropdownTestId="debug-logs-user-results"
                     />
-                    {traceStatusText && (
-                        <div className={styles.status} data-testid="debug-logs-trace-status">
-                            <span className={`status-indicator status-${traceStatusType}`}></span>
-                            <span className={styles.statusText} data-testid="debug-logs-trace-status-text">{traceStatusText}</span>
-                        </div>
-                    )}
                 </div>
 
                 {/* Cleanup Section */}
                 <div className={styles.section}>
                     <h4 className={styles.sectionTitle}>Cleanup</h4>
-                    {deleteStatusText && (
-                        <div className={styles.status} data-testid="debug-logs-delete-status">
-                            <span className={`status-indicator status-${deleteStatusType}`}></span>
-                            <span className={styles.statusText} data-testid="debug-logs-delete-status-text">{deleteStatusText}</span>
-                        </div>
-                    )}
                     <div className={styles.buttonGroup}>
                         <button
                             className="button-neutral"

@@ -3,9 +3,8 @@ import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/Mon
 import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
 import { ApexOutput } from './ApexOutput';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
-import { StatusBadge } from '../status-badge/StatusBadge';
 import { useConnection } from '../../contexts/ConnectionContext';
-import { useStatusBadge } from '../../hooks/useStatusBadge';
+import { useToast } from '../../contexts/ToastContext';
 import { executeAnonymousApex } from '../../api/salesforce';
 import { formatOutput } from '../../lib/apex-utils';
 import type { ApexExecutionResult } from '../../types/salesforce';
@@ -33,7 +32,8 @@ export function ApexTab() {
     const [initialCode, setInitialCode] = useState<string | null>(null);
     const [isApexCollapsed, setIsApexCollapsed] = useState(false);
     const handleToggleApex = useCallback(() => setIsApexCollapsed(prev => !prev), []);
-    const { statusText, statusType, updateStatus } = useStatusBadge();
+    const toast = useToast();
+    const toastIdRef = useRef<string | null>(null);
 
     // Load last Apex code from history or favorites on mount (whichever is more recent)
     useEffect(() => {
@@ -127,34 +127,45 @@ export function ApexTab() {
 
         setIsExecuting(true);
 
+        // Dismiss any previous toast before starting
+        if (toastIdRef.current) {
+            toast.dismiss(toastIdRef.current);
+            toastIdRef.current = null;
+        }
+
+        const id = toast.show('Executing...', 'loading');
+        toastIdRef.current = id;
+
         try {
             const result = await executeAnonymousApex(apexCode, (status: string) => {
-                updateStatus(status, 'loading');
+                toast.update(id, status, 'loading');
                 setOutput(`// ${status}`);
             });
 
             setEditorMarkers(result.execution);
 
             if (!result.execution.compiled) {
-                updateStatus('Compile Error', 'error');
+                toast.update(id, 'Compile Error', 'error');
             } else if (!result.execution.success) {
-                updateStatus('Runtime Error', 'error');
+                toast.update(id, 'Runtime Error', 'error');
             } else {
-                updateStatus('Success', 'success');
+                toast.update(id, 'Success', 'success');
             }
+            toastIdRef.current = null;
 
             setOutput(formatOutput(result.execution, result.debugLog));
 
             // Save to history after successful execution
             await historyRef.current?.saveToHistory(apexCode);
         } catch (error) {
-            updateStatus('Error', 'error');
+            toast.update(id, 'Error', 'error');
+            toastIdRef.current = null;
             setOutput(`Error: ${(error as Error).message}`);
             console.error('Apex execution error:', error);
         } finally {
             setIsExecuting(false);
         }
-    }, [isAuthenticated, updateStatus, setEditorMarkers]);
+    }, [isAuthenticated, toast, setEditorMarkers]);
 
     // Load script from history/favorites
     const handleLoadScript = useCallback((code: string) => {
@@ -209,9 +220,6 @@ export function ApexTab() {
                         >
                             Execute
                         </button>
-                        <StatusBadge type={statusType} data-testid="apex-status">
-                            {statusText}
-                        </StatusBadge>
                     </div>
                 </div>
             </div>

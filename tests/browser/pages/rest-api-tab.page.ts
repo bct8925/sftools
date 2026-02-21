@@ -21,7 +21,7 @@ export class RestApiTabPage extends BasePage {
         this.methodSelect = page.locator('[data-testid="rest-method-select"]');
         this.urlInput = page.locator('[data-testid="rest-api-url"]');
         this.sendBtn = page.locator('[data-testid="rest-send-btn"]');
-        this.statusBadge = page.locator('[data-testid="rest-status"]');
+        this.statusBadge = page.locator('[role="alert"]').first();
         this.bodyContainer = page.locator('[data-testid="rest-body-container"]');
     }
 
@@ -75,18 +75,13 @@ export class RestApiTabPage extends BasePage {
     async send(): Promise<void> {
         await this.slowClick(this.sendBtn);
 
-        // Wait for request to complete - status badge will have status-success or status-error class
-        // Note: The element starts with class="rest-status status-badge" but updateStatusBadge
-        // replaces className with "status-badge status-{type}", removing rest-status
+        // Wait for request to complete - toast will have data-type="success" or "error"
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('[data-testid="rest-status"]');
-                if (!status) return false;
-                // Request is complete when status has success or error class (not loading)
-                return (
-                    status.classList.contains('status-error') ||
-                    status.classList.contains('status-success')
+                const toast = document.querySelector(
+                    '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
+                return toast !== null;
             },
             { timeout: 30000 }
         );
@@ -99,15 +94,14 @@ export class RestApiTabPage extends BasePage {
         text: string;
         type: 'success' | 'error' | 'loading' | 'default';
     }> {
-        const text = (await this.statusBadge.textContent()) || '';
-        const classList = await this.statusBadge.evaluate(el => Array.from(el.classList));
-
-        let type: 'success' | 'error' | 'loading' | 'default' = 'default';
-        if (classList.includes('status-success')) type = 'success';
-        else if (classList.includes('status-error')) type = 'error';
-        else if (classList.includes('status-loading')) type = 'loading';
-
-        return { text: text.trim(), type };
+        const toast = this.page.locator('[role="alert"]').first();
+        const text = (await toast.textContent()) || '';
+        const type = (await toast.getAttribute('data-type')) as
+            | 'success'
+            | 'error'
+            | 'loading'
+            | null;
+        return { text: text.trim(), type: type ?? 'default' };
     }
 
     /**
@@ -125,13 +119,10 @@ export class RestApiTabPage extends BasePage {
 
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('[data-testid="rest-status"]');
-                if (!status) return false;
-                // Request is complete when status has success or error class (not loading)
-                return (
-                    status.classList.contains('status-error') ||
-                    status.classList.contains('status-success')
+                const toast = document.querySelector(
+                    '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
+                return toast !== null;
             },
             { timeout: 30000 }
         );

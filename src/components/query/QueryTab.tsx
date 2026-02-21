@@ -1,7 +1,7 @@
 // Query Tab - SOQL Query Editor with tabbed results (React version)
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
-import { useStatusBadge } from '../../hooks/useStatusBadge';
+import { useToast } from '../../contexts/ToastContext';
 import { useFilteredResults } from '../../hooks/useFilteredResults';
 import { ButtonIcon, ButtonIconOption, ButtonIconCheckbox } from '../button-icon/ButtonIcon';
 import { QueryEditor, clearQueryAutocompleteState, type QueryEditorRef } from './QueryEditor';
@@ -18,7 +18,6 @@ import {
     getExportFilename,
     downloadCsv,
 } from '../../lib/csv-utils';
-import { StatusBadge } from '../status-badge/StatusBadge';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import type { HistoryManager } from '../../lib/history-manager';
 import styles from './QueryTab.module.css';
@@ -64,7 +63,8 @@ export function QueryTab() {
     const [isResultsCollapsed, setIsResultsCollapsed] = useState(false);
     const handleToggleQuery = useCallback(() => setIsQueryCollapsed(prev => !prev), []);
     const handleToggleResults = useCallback(() => setIsResultsCollapsed(prev => !prev), []);
-    const { statusText, statusType, updateStatus } = useStatusBadge();
+    const toast = useToast();
+    const toastIdRef = useRef<string | null>(null);
 
     // Filter hook
     const { filterText, setFilterText, handleFilterChange } = useFilteredResults();
@@ -125,7 +125,6 @@ export function QueryTab() {
         setActiveTab,
         addTab,
         normalizeQuery,
-        updateStatus,
         setFilterText,
         saveToHistory,
     });
@@ -234,16 +233,19 @@ export function QueryTab() {
 
         setBulkExportInProgress(true);
 
+        let id = toast.show('Creating bulk job...', 'loading');
+        toastIdRef.current = id;
+
         try {
             const csv = await executeBulkQueryExport(
                 query,
                 (jobState, recordCount) => {
                     if (jobState === 'InProgress' || jobState === 'UploadComplete') {
-                        updateStatus(`Processing: ${recordCount || 0} records`, 'loading');
+                        toast.update(id, `Processing: ${recordCount || 0} records`, 'loading');
                     } else if (jobState === 'Creating job...') {
-                        updateStatus('Creating bulk job...', 'loading');
+                        toast.update(id, 'Creating bulk job...', 'loading');
                     } else if (jobState === 'Downloading...') {
-                        updateStatus('Downloading results...', 'loading');
+                        toast.update(id, 'Downloading results...', 'loading');
                     }
                 },
                 includeDeleted
@@ -254,14 +256,15 @@ export function QueryTab() {
             const filename = getExportFilename(objectName);
 
             downloadCsv(csv, filename);
-            updateStatus('Export complete', 'success');
+            toast.update(id, 'Export complete', 'success');
         } catch (error) {
-            updateStatus('Export failed', 'error');
+            toast.update(id, 'Export failed', 'error');
             alert(`Bulk export failed: ${(error as Error).message}`);
         } finally {
             setBulkExportInProgress(false);
+            toastIdRef.current = null;
         }
-    }, [isAuthenticated, useToolingApi, includeDeleted, bulkExportInProgress, updateStatus]);
+    }, [isAuthenticated, useToolingApi, includeDeleted, bulkExportInProgress, toast]);
 
     // Save changes
     const handleSaveChanges = useCallback(async () => {
@@ -269,7 +272,7 @@ export function QueryTab() {
             return;
         }
 
-        updateStatus('Saving...', 'loading');
+        const id = toast.show('Saving...', 'loading');
 
         const errors: Array<{ recordId: string; error: string }> = [];
 
@@ -289,13 +292,13 @@ export function QueryTab() {
 
         if (errors.length === 0) {
             clearAllModified(activeTab.id);
-            updateStatus('Saved', 'success');
+            toast.update(id, 'Saved', 'success');
         } else {
-            updateStatus('Save Failed', 'error');
+            toast.update(id, 'Save Failed', 'error');
             const errorMsg = errors.map(e => `Record ${e.recordId}: ${e.error}`).join('\n');
             alert(`Failed to save some records:\n\n${errorMsg}`);
         }
-    }, [activeTab, updateStatus, updateRecordData, clearAllModified]);
+    }, [activeTab, toast, updateRecordData, clearAllModified]);
 
     // Clear changes
     const handleClearChanges = useCallback(() => {
@@ -392,9 +395,6 @@ export function QueryTab() {
                         >
                             Query
                         </button>
-                        <StatusBadge type={statusType} data-testid="query-status">
-                            {statusText}
-                        </StatusBadge>
                     </div>
                 </div>
             </div>

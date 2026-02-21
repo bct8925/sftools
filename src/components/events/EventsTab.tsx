@@ -5,9 +5,7 @@ import { EventPublisher } from './EventPublisher';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useProxy } from '../../contexts/ProxyContext';
-import { useStatusBadge } from '../../hooks/useStatusBadge';
 import { getAllStreamingChannels } from '../../api/salesforce';
-import { StatusBadge } from '../status-badge/StatusBadge';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { Modal } from '../modal/Modal';
 import { EventsSettingsModal } from './EventsSettingsModal';
@@ -119,12 +117,6 @@ export function EventsTab() {
     const [isStreamingCollapsed, setIsStreamingCollapsed] = useState(false);
     const handleToggleStreaming = useCallback(() => setIsStreamingCollapsed(prev => !prev), []);
 
-    const {
-        statusText: streamStatus,
-        statusType: streamStatusType,
-        updateStatus: updateStreamStatus,
-    } = useStatusBadge();
-
     // Handle event received from subscription
     const handleEventReceived = useCallback(
         (
@@ -226,7 +218,6 @@ export function EventsTab() {
         replayId,
         isAuthenticated,
         isProxyConnected,
-        updateStreamStatus,
         onEventReceived: handleEventReceived,
     });
 
@@ -347,9 +338,8 @@ export function EventsTab() {
                                         {[...events].reverse().map(event => (
                                             <tr
                                                 key={event.id}
-                                                className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${
-                                                    event.isSystemMessage ? styles.rowSystem : ''
-                                                }`}
+                                                className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${event.isSystemMessage ? styles.rowSystem : ''
+                                                    }`}
                                                 data-testid={`event-row-${event.id}`}
                                             >
                                                 <td className={styles.time}>

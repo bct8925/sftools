@@ -4,25 +4,20 @@ import { useConnection } from '../../contexts/ConnectionContext';
 import { executeRestRequest } from '../../api/salesforce';
 import { shouldShowBody } from '../../lib/rest-api-utils';
 import type { RestApiResponse } from '../../types/salesforce';
-import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
+import { useToast } from '../../contexts/ToastContext';
 import styles from './RestApiTab.module.css';
 
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
-
-interface StatusState {
-    message: string;
-    type: StatusType;
-}
 
 /**
  * REST API Explorer Tab - Send HTTP requests to Salesforce REST API
  */
 export function RestApiTab() {
     const { isAuthenticated } = useConnection();
+    const toast = useToast();
     const [url, setUrl] = useState('/services/data/v62.0/limits');
     const [method, setMethod] = useState<HttpMethod>('GET');
-    const [status, setStatus] = useState<StatusState>({ message: '', type: '' });
     const [isRequestCollapsed, setIsRequestCollapsed] = useState(false);
     const [isResponseCollapsed, setIsResponseCollapsed] = useState(false);
     const handleToggleRequest = useCallback(() => setIsRequestCollapsed(prev => !prev), []);
@@ -32,10 +27,6 @@ export function RestApiTab() {
     const responseEditorRef = useRef<MonacoEditorRef>(null);
 
     const showBodyInput = shouldShowBody(method);
-
-    const updateStatus = useCallback((message: string, type: StatusState['type'] = '') => {
-        setStatus({ message, type });
-    }, []);
 
     const executeRequest = useCallback(async () => {
         const urlValue = url.trim();
@@ -59,18 +50,18 @@ export function RestApiTab() {
                 body = bodyValue;
             } catch {
                 alert('Invalid JSON in Request Body.');
-                updateStatus('Invalid JSON', 'error');
+                toast.show('Invalid JSON', 'error');
                 return;
             }
         }
 
-        updateStatus('Loading...', 'loading');
+        const id = toast.show('Loading...', 'loading');
         responseEditorRef.current?.setValue('// Loading...');
 
         try {
             const response: RestApiResponse = await executeRestRequest(urlValue, method, body);
 
-            updateStatus(response.status.toString(), response.success ? 'success' : 'error');
+            toast.update(id, response.status.toString(), response.success ? 'success' : 'error');
 
             if (typeof response.data === 'object') {
                 responseEditorRef.current?.setValue(JSON.stringify(response.data, null, 2));
@@ -82,11 +73,11 @@ export function RestApiTab() {
                 responseEditorRef.current?.setValue(response.statusText || 'No response');
             }
         } catch (error) {
-            updateStatus('Client Error', 'error');
+            toast.update(id, 'Client Error', 'error');
             responseEditorRef.current?.setValue(`Error: ${(error as Error).message}`);
             console.error('REST API Error:', error);
         }
-    }, [url, method, showBodyInput, isAuthenticated, updateStatus]);
+    }, [url, method, showBodyInput, isAuthenticated, toast]);
 
     return (
         <div className={styles.restApiTab} data-testid="rest-api-tab">
@@ -97,11 +88,6 @@ export function RestApiTab() {
                     <h2 className="card-collapse-title" onClick={handleToggleRequest}>
                         Request
                     </h2>
-                    {status.message && (
-                        <StatusBadge type={status.type} data-testid="rest-status">
-                            {status.message}
-                        </StatusBadge>
-                    )}
                     <CollapseChevron isOpen={!isRequestCollapsed} onClick={handleToggleRequest} />
                 </div>
                 <div className="card-body" hidden={isRequestCollapsed}>

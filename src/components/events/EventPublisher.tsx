@@ -1,9 +1,9 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { ChannelSelector } from './ChannelSelector';
-import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
+import { useToast } from '../../contexts/ToastContext';
 import { publishPlatformEvent } from '../../api/salesforce';
 import styles from './EventsTab.module.css';
 
@@ -22,21 +22,16 @@ interface EventPublisherProps {
 export function EventPublisher({ platformEvents, onPublishSuccess, onError }: EventPublisherProps) {
     const editorRef = useRef<MonacoEditorRef>(null);
     const [selectedChannel, setSelectedChannel] = useState('');
-    const [status, setStatus] = useState('');
-    const [statusType, setStatusType] = useState<StatusType>('');
     const [isPublishing, setIsPublishing] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(true);
 
     const handleToggleCollapse = useCallback(() => setIsCollapsed(prev => !prev), []);
 
-    const updateStatus = useCallback((text: string, type: StatusType = '') => {
-        setStatus(text);
-        setStatusType(type);
-    }, []);
+    const toast = useToast();
 
     const handlePublish = async () => {
         if (!selectedChannel) {
-            updateStatus('Select an event type', 'error');
+            toast.show('Select an event type', 'error');
             onError?.('Select an event type');
             return;
         }
@@ -46,28 +41,28 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
         try {
             payload = JSON.parse(editorValue);
         } catch {
-            updateStatus('Invalid JSON', 'error');
+            toast.show('Invalid JSON', 'error');
             onError?.('Invalid JSON');
             return;
         }
 
-        updateStatus('Publishing...', 'loading');
+        const id = toast.show('Publishing...', 'loading');
         setIsPublishing(true);
 
         try {
             const result = await publishPlatformEvent(selectedChannel, payload);
 
             if (result.success) {
-                updateStatus('Published', 'success');
+                toast.update(id, 'Published', 'success');
                 const message = `Published event: ${result.id || 'success'}`;
                 onPublishSuccess?.(message);
             } else {
-                updateStatus(result.error || 'Publish failed', 'error');
+                toast.update(id, result.error || 'Publish failed', 'error');
                 onError?.(result.error || 'Publish failed');
             }
         } catch (err) {
             console.error('Publish error:', err);
-            updateStatus('Error', 'error');
+            toast.update(id, 'Error', 'error');
             onError?.('Publish error');
         } finally {
             setIsPublishing(false);
@@ -125,7 +120,7 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                         data-testid="event-publish-editor"
                     />
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

@@ -1,9 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { flattenColumnMetadata, type QueryColumn } from '../../lib/column-utils';
 import { executeQueryWithColumns, fetchQueryMore, getObjectDescribe } from '../../api/salesforce';
 import type { FieldDescribe, SObject } from '../../types/salesforce';
-import type { StatusType } from '../../hooks/useStatusBadge';
+import { useToast } from '../../contexts/ToastContext';
 
 interface UseQueryExecutionOptions {
     editorRef: React.RefObject<{ getValue(): string } | null>;
@@ -37,7 +37,6 @@ interface UseQueryExecutionOptions {
     setActiveTab: (tabId: string) => void;
     addTab: (query: string) => string;
     normalizeQuery: (query: string) => string;
-    updateStatus: (text: string, type?: StatusType) => void;
     setFilterText: (text: string) => void;
     saveToHistory: (query: string) => Promise<void>;
 }
@@ -48,6 +47,8 @@ interface UseQueryExecutionOptions {
  */
 export function useQueryExecution(options: UseQueryExecutionOptions) {
     const { isAuthenticated } = useConnection();
+    const toast = useToast();
+    const activeToastRef = useRef<string | null>(null);
 
     // Check if query results are editable
     const isEditable = useCallback((columns: QueryColumn[], objectName: string | null): boolean => {
@@ -79,7 +80,10 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
     const fetchQueryData = useCallback(
         async (tabId: string, query: string): Promise<boolean> => {
             options.setLoading(tabId, true);
-            options.updateStatus('Loading...', 'loading');
+            if (activeToastRef.current) {
+                toast.dismiss(activeToastRef.current);
+            }
+            activeToastRef.current = toast.show('Loading...', 'loading');
 
             try {
                 const result = await executeQueryWithColumns(
@@ -125,17 +129,20 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
                     fieldDescribe,
                 });
 
-                options.updateStatus(
+                toast.update(
+                    activeToastRef.current!,
                     `${result.totalSize} record${result.totalSize !== 1 ? 's' : ''}`,
                     'success'
                 );
+                activeToastRef.current = null;
 
                 // Clear filter
                 options.setFilterText('');
                 return true;
             } catch (error) {
                 options.setError(tabId, (error as Error).message);
-                options.updateStatus('Error', 'error');
+                toast.update(activeToastRef.current!, 'Error', 'error');
+                activeToastRef.current = null;
                 return false;
             }
         },
@@ -145,8 +152,8 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
             options.setLoading,
             options.setResults,
             options.setError,
-            options.updateStatus,
             options.setFilterText,
+            toast,
             isEditable,
             extractColumnsFromRecord,
         ]
@@ -200,7 +207,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
     const loadMore = useCallback(
         async (tabId: string, nextRecordsUrl: string) => {
             options.setLoadingMore(tabId, true);
-            options.updateStatus('Loading more...', 'loading');
+            const id = toast.show('Loading more...', 'loading');
 
             try {
                 const result = await fetchQueryMore(nextRecordsUrl);
@@ -211,13 +218,13 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
                     nextRecordsUrl: result.nextRecordsUrl,
                 });
 
-                options.updateStatus(`Loaded ${result.records.length} more records`, 'success');
+                toast.update(id, `Loaded ${result.records.length} more records`, 'success');
             } catch {
                 options.setLoadingMore(tabId, false);
-                options.updateStatus('Error loading more', 'error');
+                toast.update(id, 'Error loading more', 'error');
             }
         },
-        [options.setLoadingMore, options.appendResults, options.updateStatus]
+        [options.setLoadingMore, options.appendResults, toast]
     );
 
     return { fetchQueryData, executeQuery, loadMore };

@@ -71,17 +71,9 @@
     min-height: 0;
 }
 
-.viewerEditor {
-    flex: 1;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-}
-
 .streamEditor {
-    height: auto;
-    flex: 1;
-    min-height: 0;
+    flex: none;
+    height: 200px;
 }
 
 .publishEditor {
@@ -224,8 +216,8 @@
         gap: 8px;
     }
 
-    .viewerEditor {
-        min-height: 120px;
+    .streamEditor {
+        height: 120px;
     }
 
     .viewerTable {
@@ -250,8 +242,8 @@
         gap: 8px;
     }
 
-    .viewerEditor {
-        min-height: 80px;
+    .streamEditor {
+        height: 80px;
     }
 
     .viewerTable {

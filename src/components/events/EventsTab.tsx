@@ -294,17 +294,15 @@ export function EventsTab() {
                     </div>
                     {/* Viewer Layout */}
                     <div className={styles.viewer}>
-                        {/* Monaco Editor (2/3) */}
-                        <div className={styles.viewerEditor}>
-                            <MonacoEditor
-                                ref={streamEditorRef}
-                                language="json"
-                                value="// Subscribe to and open an event"
-                                readonly
-                                className={`monaco-container ${styles.streamEditor}`}
-                                data-testid="event-stream-editor"
-                            />
-                        </div>
+                        {/* Monaco Editor */}
+                        <MonacoEditor
+                            ref={streamEditorRef}
+                            language="json"
+                            value="// Subscribe to and open an event"
+                            readonly
+                            className={`monaco-container ${styles.streamEditor}`}
+                            data-testid="event-stream-editor"
+                        />
 
                         {/* Event Table (1/3) */}
                         <div className={styles.viewerTable}>

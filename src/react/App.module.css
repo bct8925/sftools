@@ -20,6 +20,32 @@
     z-index: 100;
 }
 
+/* Back button for feature view */
+.backBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    margin-right: 10px;
+    transition: background-color 0.15s ease;
+}
+
+.backBtn:hover {
+    background: var(--bg-hover);
+}
+
+/* Clickable brand in feature view */
+.navBrandClickable {
+    cursor: pointer;
+}
+
 /* Content Area */
 .contentArea {
     flex: 1;
@@ -28,6 +54,11 @@
     width: 100%;
     margin: 0 auto;
     box-sizing: border-box;
+}
+
+/* Hide main content when on home view */
+.contentHidden {
+    display: none;
 }
 
 /* Tab Panel States - keeps components mounted to retain state */

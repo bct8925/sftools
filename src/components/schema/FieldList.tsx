@@ -109,7 +109,15 @@ export function FieldList({
                     >
                         <SfIcon name="chevronleft" /> Objects
                     </button>
-                    <h3 data-testid="schema-selected-object-label">{objectLabel}</h3>
+                    <div className={styles.fieldsHeaderCenter}>
+                        <h3 data-testid="schema-selected-object-label">{objectLabel}</h3>
+                        <div
+                            className={styles.selectedObjectName}
+                            data-testid="schema-selected-object-name"
+                        >
+                            {objectName}
+                        </div>
+                    </div>
                     <div className={styles.fieldsHeaderActions}>
                         <ButtonIcon
                             icon="refresh"
@@ -126,12 +134,6 @@ export function FieldList({
                             <SfIcon name="close" />
                         </button>
                     </div>
-                </div>
-                <div
-                    className={styles.selectedObjectName}
-                    data-testid="schema-selected-object-name"
-                >
-                    {objectName}
                 </div>
                 <input
                     type="text"

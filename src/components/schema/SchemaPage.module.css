@@ -136,6 +136,10 @@
     margin-bottom: 8px;
 }
 
+.fieldsHeaderCenter {
+    min-width: 0;
+}
+
 .fieldsHeaderTop h3 {
     margin: 0;
     font-size: 18px;
@@ -545,5 +549,9 @@
 
     .backButton {
         display: flex;
+    }
+
+    .fieldsHeaderCenter {
+        text-align: center;
     }
 }

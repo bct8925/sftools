@@ -7,7 +7,6 @@
  * - SF-U-003: executeQueryWithColumns() - Returns columns and records
  * - SF-U-004: getGlobalDescribe() - Returns cached on second call
  * - SF-U-005: getObjectDescribe() - Returns cached on second call
- * - SF-U-006: getRecord() - Returns record data
  * - SF-U-007: updateRecord() - Sends PATCH request
  * - SF-U-008: executeRestRequest() - Makes authenticated request
  * - SF-U-009: getEventChannels() - Returns Platform Events
@@ -27,7 +26,6 @@
  * - SF-U-023: bulkDeleteTooling() - Batches in 25s
  * - SF-U-024: escapeSoql() - Escapes special chars (tested via searchFlows, searchUsers)
  * - SF-U-025: clearDescribeCache() - Clears cache
- * - SF-U-026: getUserInfo() - Returns user info with username
  * - SF-U-027: deleteAllDebugLogs() - Deletes logs in batches of 25
  * - SF-U-028: deleteInactiveFlowVersions() - Deletes flow versions
  */
@@ -54,10 +52,8 @@ vi.mock('../../../src/auth/auth.js', () => ({
 import {
     clearDescribeCache,
     getCurrentUserId,
-    getUserInfo,
     getGlobalDescribe,
     getObjectDescribe,
-    getRecord,
     getRecordWithRelationships,
     updateRecord,
     searchUsers,
@@ -73,7 +69,6 @@ import {
     publishPlatformEvent,
     enableTraceFlagForUser,
     deleteAllTraceFlags,
-    searchProfiles,
     createBulkQueryJob,
     getBulkQueryJobStatus,
     getBulkQueryResults,
@@ -142,34 +137,6 @@ describe('salesforce', () => {
             expect(salesforceRequest).toHaveBeenCalledWith(
                 expect.stringContaining('/chatter/users/me')
             );
-        });
-    });
-
-    describe('getUserInfo', () => {
-        it('SF-U-026: returns user info from userinfo endpoint', async () => {
-            salesforceRequest.mockResolvedValue({
-                json: {
-                    user_id: '005XXXXXXXXXXXXXXX',
-                    organization_id: '00DXXXXXXXXXXXXXXX',
-                    preferred_username: 'user@example.com',
-                    nickname: 'user',
-                    name: 'Test User',
-                    email: 'user@example.com',
-                    email_verified: true,
-                },
-            });
-
-            const userInfo = await getUserInfo();
-
-            expect(userInfo.preferred_username).toBe('user@example.com');
-            expect(userInfo.user_id).toBe('005XXXXXXXXXXXXXXX');
-            expect(salesforceRequest).toHaveBeenCalledWith('/services/oauth2/userinfo');
-        });
-
-        it('throws when no user info returned', async () => {
-            salesforceRequest.mockResolvedValue({ json: null });
-
-            await expect(getUserInfo()).rejects.toThrow('No user info returned from API');
         });
     });
 
@@ -278,22 +245,6 @@ describe('salesforce', () => {
 
             expect(result.fields[0].name).toBe('NewField');
             expect(salesforceRequest).toHaveBeenCalled();
-        });
-    });
-
-    describe('getRecord', () => {
-        it('SF-U-006: fetches record by objectType and recordId', async () => {
-            salesforceRequest.mockResolvedValue({
-                json: { Id: '001abc', Name: 'Test Account' },
-            });
-
-            const result = await getRecord('Account', '001abc');
-
-            expect(result.Id).toBe('001abc');
-            expect(result.Name).toBe('Test Account');
-            expect(salesforceRequest).toHaveBeenCalledWith(
-                expect.stringContaining('/sobjects/Account/001abc')
-            );
         });
     });
 
@@ -843,34 +794,6 @@ describe('salesforce', () => {
             const result = await deleteAllTraceFlags();
 
             expect(result.deletedCount).toBe(0);
-        });
-    });
-
-    describe('searchProfiles', () => {
-        it('returns matching profiles', async () => {
-            salesforceRequest.mockResolvedValue({
-                json: {
-                    records: [
-                        { Id: '00e123', Name: 'System Administrator' },
-                        { Id: '00e456', Name: 'Standard User' },
-                    ],
-                },
-            });
-
-            const result = await searchProfiles('Admin');
-
-            expect(result).toHaveLength(2);
-            expect(result[0].Name).toBe('System Administrator');
-        });
-
-        it('escapes single quotes in search term', async () => {
-            salesforceRequest.mockResolvedValue({ json: { records: [] } });
-
-            await searchProfiles("Partner's Profile");
-
-            expect(salesforceRequest).toHaveBeenCalledWith(
-                expect.stringContaining("Partner%5C's%20Profile")
-            );
         });
     });
 

@@ -12,7 +12,6 @@ import type {
     RestApiResponse,
     FlowDefinition,
     FlowVersion,
-    UserInfo,
 } from '../types/salesforce';
 import { getAccessToken, getInstanceUrl, getActiveConnectionId } from '../auth/auth';
 import { API_VERSION } from './constants';
@@ -129,15 +128,6 @@ export async function clearDescribeCache(): Promise<void> {
 }
 
 /**
- * Clear describe cache for a specific connection
- * Used when removing a connection from storage
- */
-export async function clearDescribeCacheForConnection(connectionId: string): Promise<void> {
-    if (!connectionId) return;
-    await chrome.storage.local.remove(getDescribeCacheKey(connectionId));
-}
-
-/**
  * Migrate describe cache from old single-key format to per-connection keys
  * Should be called once during app initialization
  */
@@ -183,18 +173,6 @@ export async function getCurrentUserId(): Promise<string> {
         throw new Error('No user data returned from API');
     }
     return response.json.id;
-}
-
-/**
- * Get current user info including username
- * Uses the OAuth UserInfo endpoint which works with just an access token
- */
-export async function getUserInfo(): Promise<UserInfo> {
-    const response = await salesforceRequest<UserInfo>('/services/oauth2/userinfo');
-    if (!response.json) {
-        throw new Error('No user info returned from API');
-    }
-    return response.json;
 }
 
 // ============================================================
@@ -364,19 +342,6 @@ export async function getObjectDescribe(
     await setDescribeCache(objectType, data);
 
     return data;
-}
-
-/**
- * Get a single record by ID
- */
-export async function getRecord(objectType: string, recordId: string): Promise<SObject> {
-    const response = await salesforceRequest<SObject>(
-        `/services/data/v${API_VERSION}/sobjects/${objectType}/${recordId}`
-    );
-    if (!response.json) {
-        throw new Error(`No record data returned for ${objectType} with ID ${recordId}`);
-    }
-    return response.json;
 }
 
 export interface RecordWithRelationships {
@@ -584,25 +549,6 @@ export async function deleteInactiveFlowVersions(
 
     const deletedCount = await bulkDeleteTooling('Flow', versionIds);
     return { deletedCount };
-}
-
-interface Profile {
-    Id: string;
-    Name: string;
-}
-
-/**
- * Search Profiles by name
- */
-export async function searchProfiles(searchTerm: string): Promise<Profile[]> {
-    const escaped = escapeSoql(searchTerm);
-    const query = encodeURIComponent(
-        `SELECT Id, Name FROM Profile WHERE Name LIKE '%${escaped}%' ORDER BY Name LIMIT 10`
-    );
-    const response = await salesforceRequest<QueryResult<Profile>>(
-        `/services/data/v${API_VERSION}/query/?q=${query}`
-    );
-    return response.json?.records ?? [];
 }
 
 // ============================================================

@@ -14,7 +14,7 @@ import playIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-syst
 import stopIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/stop.svg?raw';
 import databaseIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/database.svg?raw';
 import apexIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/apex.svg?raw';
-import inspectorPanelIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/inspector_panel.svg?raw';
+import listIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/list.svg?raw';
 import httpIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/http.svg?raw';
 import broadcastIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/broadcast.svg?raw';
 import appsIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/apps.svg?raw';
@@ -70,7 +70,7 @@ export const icons = {
     // Tile icons (size 32 for home screen tiles)
     tileQuery: processSvg(databaseIcon, { size: 32 }),
     tileApex: processSvg(apexIcon, { size: 32 }),
-    tileLogs: processSvg(inspectorPanelIcon, { size: 32 }),
+    tileLogs: processSvg(listIcon, { size: 32 }),
     tileRestApi: processSvg(httpIcon, { size: 32 }),
     tileEvents: processSvg(broadcastIcon, { size: 32 }),
     tileUtils:

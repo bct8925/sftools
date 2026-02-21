@@ -269,9 +269,8 @@ import {
     getTestContext,      // Get current page/context
     createPageObjects,   // Create page objects for current page
     setupMocks,          // Apply MockRouter to browser context
-    navigateToExtension, // Navigate to main app
+    navigateToExtension, // Navigate to main app (home screen)
     navigateToRecord,    // Navigate to record viewer
-    navigateToSchema,    // Navigate to schema browser
     MockRouter,          // Mock Salesforce API responses
 } from '../../test-utils';
 ```
@@ -306,8 +305,8 @@ Each tab/page has a page object with semantic methods:
 const { page } = getTestContext();
 const { queryTab, apexTab, recordPage, schemaPage } = createPageObjects(page);
 
-// Query tab
-await queryTab.navigateTo();
+// Tab navigation (from home screen)
+await queryTab.navigateTo();  // Clicks home tile if on home, or navigates directly
 await queryTab.executeQuery('SELECT Id FROM Account');
 await queryTab.getStatus();
 await queryTab.getResultsCount();
@@ -317,10 +316,24 @@ await apexTab.navigateTo();
 await apexTab.executeCode('System.debug("Hello");');
 await apexTab.getLogContent();
 
+// Schema tab
+await schemaPage.navigateTo();
+
 // Record page
 await navigateToRecord('Account', '001xxx');
 await recordPage.getFieldValue('Name');
 await recordPage.editField('Name', 'New Value');
+```
+
+### Navigation Pattern
+
+Tests navigate using the home screen tile grid:
+
+```typescript
+// Each page object's navigateTo() checks if on home screen
+// If on home screen: clicks the feature tile (e.g., data-testid="tile-query")
+// If already in a feature: may click waffle button first to return home
+await queryTab.navigateTo();
 ```
 
 ### Running Specific Tests

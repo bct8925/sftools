@@ -369,9 +369,9 @@ account.Name; // TypeScript knows this exists
 | `theme.ts` | Theming | `initTheme`, `setTheme`, `getTheme` |
 | `background-utils.ts` | Background | `sendToBackground` |
 | `ui-helpers.ts` | DOM utils | `formatDate`, `formatFileSize` |
-| `icons.ts` | Icons | `getIconSvg` |
+| `icons.ts` | Icons | `getIconSvg`, `IconName` type, tile icons (`tileQuery`, `tileApex`, etc.), header icons (`apps`, `chevrondown`, `salesforce1`) |
 | `text-utils.ts` | Text formatting | `truncate`, `formatNumber` |
-| `app-utils.ts` | App utilities | App-specific helpers |
+| `app-utils.ts` | App utilities | `buildOAuthUrl` (adds `prompt=login` for standard SF domains) |
 | `column-utils.ts` | Column utilities | Column manipulation |
 | `csv-utils.ts` | CSV export | CSV formatting |
 | `date-utils.ts` | Date formatting | Date helpers |

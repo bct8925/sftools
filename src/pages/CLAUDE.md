@@ -10,7 +10,7 @@ This directory contains **HTML entry points** and their corresponding TypeScript
 
 ```
 pages/
-├── app/                    # Main tabbed application
+├── app/                    # Main application (home screen + features)
 │   ├── app.html           # HTML shell
 │   └── app.ts             # Entry point (re-exports index.tsx)
 │
@@ -18,18 +18,14 @@ pages/
 │   ├── callback.html      # HTML shell
 │   └── callback.ts        # OAuth flow handler (no React)
 │
-├── record/                # Record Viewer standalone page
-│   ├── record.html        # HTML shell
-│   └── record.ts          # Entry point (re-exports record.tsx)
-│
-└── schema/                # Schema Browser standalone page
-    ├── schema.html        # HTML shell
-    └── schema.ts          # Entry point (re-exports schema.tsx)
+└── record/                # Record Viewer standalone page
+    ├── record.html        # HTML shell
+    └── record.ts          # Entry point (re-exports record.tsx)
 ```
 
 ## Page Types
 
-### React Pages (app, record, schema)
+### React Pages (app, record)
 
 These pages render React applications:
 
@@ -82,11 +78,12 @@ if (authCode) {
 
 ### app/
 
-The main extension interface with tabbed navigation.
+The main extension interface with home screen and feature navigation.
 
 - **URL**: `chrome-extension://<id>/dist/pages/app/app.html`
+- **Query params**: `feature` (optional — opens directly to a feature tab)
 - **Usage**: Side panel, popup, or standalone tab
-- **Features**: Query, Apex, REST API, Events, Utils, Settings tabs
+- **Features**: Home screen with tile grid, Query, Apex, Debug Logs, REST API, Events, Schema, Utils, Settings
 
 ### callback/
 
@@ -108,14 +105,6 @@ Standalone record viewer/editor.
 - **URL**: `chrome-extension://<id>/dist/pages/record/record.html`
 - **Query params**: `objectType`, `recordId`, `connectionId`
 - **Features**: View/edit any record by ID, field-level editing
-
-### schema/
-
-Standalone schema browser.
-
-- **URL**: `chrome-extension://<id>/dist/pages/schema/schema.html`
-- **Query params**: `object`, `connectionId`
-- **Features**: Browse objects, view field details, formula editor
 
 ## HTML Template
 
@@ -220,7 +209,6 @@ export default defineConfig({
         app: resolve(__dirname, 'src/pages/app/app.html'),
         callback: resolve(__dirname, 'src/pages/callback/callback.html'),
         record: resolve(__dirname, 'src/pages/record/record.html'),
-        schema: resolve(__dirname, 'src/pages/schema/schema.html'),
         mypage: resolve(__dirname, 'src/pages/mypage/mypage.html'),  // Add here
       },
     },
@@ -237,7 +225,6 @@ export default defineConfig({
     "resources": [
       "dist/pages/app/app.html",
       "dist/pages/record/record.html",
-      "dist/pages/schema/schema.html",
       "dist/pages/mypage/mypage.html"
     ],
     "matches": ["<all_urls>"]

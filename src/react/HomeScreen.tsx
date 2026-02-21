@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, type MouseEvent } from 'react';
 import { useConnection } from '../contexts/ConnectionContext';
 import { useProxy } from '../contexts/ProxyContext';
 import { SfIcon } from '../components/sf-icon/SfIcon';
@@ -23,12 +23,32 @@ export function HomeScreen({ onFeatureSelect, onSettingsClick }: HomeScreenProps
         [isAuthenticated, isProxyConnected]
     );
 
+    const openInNewTab = useCallback((featureId: FeatureId | 'settings') => {
+        const url = chrome.runtime.getURL(`dist/pages/app/app.html?feature=${featureId}`);
+        chrome.tabs.create({ url });
+    }, []);
+
     const handleTileClick = useCallback(
-        (feature: Feature) => {
+        (e: MouseEvent, feature: Feature) => {
             if (isDisabled(feature)) return;
-            onFeatureSelect(feature.id);
+            if (e.metaKey || e.ctrlKey) {
+                openInNewTab(feature.id);
+            } else {
+                onFeatureSelect(feature.id);
+            }
         },
-        [isDisabled, onFeatureSelect]
+        [isDisabled, onFeatureSelect, openInNewTab]
+    );
+
+    const handleSettingsClick = useCallback(
+        (e: MouseEvent) => {
+            if (e.metaKey || e.ctrlKey) {
+                openInNewTab('settings');
+            } else {
+                onSettingsClick();
+            }
+        },
+        [onSettingsClick, openInNewTab]
     );
 
     return (
@@ -40,7 +60,7 @@ export function HomeScreen({ onFeatureSelect, onSettingsClick }: HomeScreenProps
                         <button
                             key={feature.id}
                             className={`${styles.tile} ${disabled ? styles.tileDisabled : ''}`}
-                            onClick={() => handleTileClick(feature)}
+                            onClick={e => handleTileClick(e, feature)}
                             disabled={disabled}
                             data-testid={`tile-${feature.id}`}
                         >
@@ -58,7 +78,7 @@ export function HomeScreen({ onFeatureSelect, onSettingsClick }: HomeScreenProps
 
             <button
                 className={styles.settingsBtn}
-                onClick={onSettingsClick}
+                onClick={handleSettingsClick}
                 aria-label="Settings"
                 data-testid="home-settings-btn"
             >

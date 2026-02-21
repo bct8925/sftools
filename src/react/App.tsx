@@ -60,12 +60,20 @@ const TAB_IDS: TabId[] = [
 
 type ViewState = { view: 'home' } | { view: 'feature'; featureId: TabId };
 
+function getInitialViewState(): ViewState {
+    const param = new URLSearchParams(window.location.search).get('feature');
+    if (param && TAB_IDS.includes(param as TabId)) {
+        return { view: 'feature', featureId: param as TabId };
+    }
+    return { view: 'home' };
+}
+
 /**
  * Main App component with home screen tile navigation.
  * Home view shows tile grid, feature view shows the selected tab content.
  */
 function AppContent() {
-    const [viewState, setViewState] = useState<ViewState>({ view: 'home' });
+    const [viewState, setViewState] = useState<ViewState>(getInitialViewState);
 
     const activeTab = viewState.view === 'feature' ? viewState.featureId : null;
 

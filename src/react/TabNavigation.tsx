@@ -54,6 +54,14 @@ export const FEATURES: Feature[] = [
         tileColor: 'var(--icon-events)',
     },
     {
+        id: 'schema',
+        label: 'Schema',
+        requiresAuth: true,
+        requiresProxy: false,
+        tileIcon: 'tileSchema',
+        tileColor: 'var(--icon-schema)',
+    },
+    {
         id: 'utils',
         label: 'Utils',
         requiresAuth: true,

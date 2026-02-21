@@ -83,6 +83,7 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                 >
                     <div className={`card-header-icon ${styles.headerIconPublish}`}>P</div>
                     <h2>Publish</h2>
+                    <CollapseChevron isOpen={!isCollapsed} />
                     {status && (
                         <StatusBadge type={statusType} data-testid="event-publish-status">
                             {status}
@@ -97,7 +98,6 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                             data-testid="event-publish-btn"
                         />
                     </div>
-                    <CollapseChevron isOpen={!isCollapsed} />
                 </div>
             </div>
             {!isCollapsed && (

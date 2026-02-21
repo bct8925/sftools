@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/MonacoEditor';
 import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
 import { ApexOutput } from './ApexOutput';
+import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import { StatusBadge } from '../status-badge/StatusBadge';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useStatusBadge } from '../../hooks/useStatusBadge';
@@ -30,6 +31,7 @@ export function ApexTab() {
     const [isExecuting, setIsExecuting] = useState(false);
     const [output, setOutput] = useState('// Output will appear here after execution');
     const [initialCode, setInitialCode] = useState<string | null>(null);
+    const [isApexCollapsed, setIsApexCollapsed] = useState(false);
     const { statusText, statusType, updateStatus } = useStatusBadge();
 
     // Load last Apex code from history or favorites on mount (whichever is more recent)
@@ -178,36 +180,46 @@ export function ApexTab() {
     return (
         <div className={styles.apexTab} data-testid="apex-tab">
             <div className="card">
-                <div className="card-header">
+                <div
+                    className="card-header card-header-collapsible"
+                    onClick={e => {
+                        if (!(e.target as HTMLElement).closest('button, input, select')) {
+                            setIsApexCollapsed(prev => !prev);
+                        }
+                    }}
+                >
                     <div className={`card-header-icon ${styles.headerIcon}`}>A</div>
                     <h2>Anonymous Apex</h2>
+                    <CollapseChevron isOpen={!isApexCollapsed} />
                     <ApexHistory ref={historyRef} onLoadScript={handleLoadScript} />
                 </div>
-                <div className="card-body">
-                    <div className="form-element">
-                        <MonacoEditor
-                            ref={codeEditorRef}
-                            language="apex"
-                            value={initialCode}
-                            onExecute={handleExecute}
-                            className="monaco-container"
-                            data-testid="apex-editor"
-                        />
+                {!isApexCollapsed && (
+                    <div className="card-body">
+                        <div className="form-element">
+                            <MonacoEditor
+                                ref={codeEditorRef}
+                                language="apex"
+                                value={initialCode}
+                                onExecute={handleExecute}
+                                className="monaco-container"
+                                data-testid="apex-editor"
+                            />
+                        </div>
+                        <div className="m-top_small">
+                            <button
+                                className="button-brand"
+                                onClick={handleExecute}
+                                disabled={isExecuting}
+                                data-testid="apex-execute-btn"
+                            >
+                                Execute
+                            </button>
+                            <StatusBadge type={statusType} data-testid="apex-status">
+                                {statusText}
+                            </StatusBadge>
+                        </div>
                     </div>
-                    <div className="m-top_small">
-                        <button
-                            className="button-brand"
-                            onClick={handleExecute}
-                            disabled={isExecuting}
-                            data-testid="apex-execute-btn"
-                        >
-                            Execute
-                        </button>
-                        <StatusBadge type={statusType} data-testid="apex-status">
-                            {statusText}
-                        </StatusBadge>
-                    </div>
-                </div>
+                )}
             </div>
 
             <ApexOutput output={output} className={styles.outputCard} />

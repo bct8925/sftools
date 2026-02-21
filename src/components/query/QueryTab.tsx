@@ -19,6 +19,7 @@ import {
     downloadCsv,
 } from '../../lib/csv-utils';
 import { StatusBadge } from '../status-badge/StatusBadge';
+import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import type { HistoryManager } from '../../lib/history-manager';
 import styles from './QueryTab.module.css';
 
@@ -59,6 +60,8 @@ export function QueryTab() {
     const [includeDeleted, setIncludeDeleted] = useState(false);
     const [editingEnabled, setEditingEnabled] = useState(false);
     const [bulkExportInProgress, setBulkExportInProgress] = useState(false);
+    const [isQueryCollapsed, setIsQueryCollapsed] = useState(false);
+    const [isResultsCollapsed, setIsResultsCollapsed] = useState(false);
     const { statusText, statusType, updateStatus } = useStatusBadge();
 
     // Filter hook
@@ -337,9 +340,17 @@ export function QueryTab() {
         <div className={styles.queryTab} data-testid="query-tab">
             {/* Query Editor Card */}
             <div className="card">
-                <div className="card-header">
+                <div
+                    className="card-header card-header-collapsible"
+                    onClick={e => {
+                        if (!(e.target as HTMLElement).closest('button, input, select')) {
+                            setIsQueryCollapsed(prev => !prev);
+                        }
+                    }}
+                >
                     <div className={`card-header-icon ${styles.headerIconQuery}`}>S</div>
                     <h2>SOQL Query</h2>
+                    <CollapseChevron isOpen={!isQueryCollapsed} />
                     <QueryHistory
                         onSelectQuery={handleSelectQuery}
                         historyManagerRef={historyManagerRef}
@@ -367,35 +378,47 @@ export function QueryTab() {
                         </ButtonIconCheckbox>
                     </ButtonIcon>
                 </div>
-                <div className="card-body">
-                    <div className="form-element">
-                        <QueryEditor
-                            ref={editorRef}
-                            value={initialQuery}
-                            onExecute={executeQuery}
-                            className={styles.editor}
-                        />
+                {!isQueryCollapsed && (
+                    <div className="card-body">
+                        <div className="form-element">
+                            <QueryEditor
+                                ref={editorRef}
+                                value={initialQuery}
+                                onExecute={executeQuery}
+                                className={styles.editor}
+                            />
+                        </div>
+                        <div className={styles.footer}>
+                            <button
+                                className="button-brand"
+                                onClick={executeQuery}
+                                data-testid="query-execute-btn"
+                            >
+                                Query
+                            </button>
+                            <StatusBadge type={statusType} data-testid="query-status">
+                                {statusText}
+                            </StatusBadge>
+                        </div>
                     </div>
-                    <div className={styles.footer}>
-                        <button
-                            className="button-brand"
-                            onClick={executeQuery}
-                            data-testid="query-execute-btn"
-                        >
-                            Query
-                        </button>
-                        <StatusBadge type={statusType} data-testid="query-status">
-                            {statusText}
-                        </StatusBadge>
-                    </div>
-                </div>
+                )}
             </div>
 
             {/* Results Card */}
-            <div className={`card ${styles.resultsCard}`}>
-                <div className="card-header">
+            <div
+                className={`card ${styles.resultsCard} ${isResultsCollapsed ? styles.resultsCardCollapsed : ''}`}
+            >
+                <div
+                    className="card-header card-header-collapsible"
+                    onClick={e => {
+                        if (!(e.target as HTMLElement).closest('button, input, select')) {
+                            setIsResultsCollapsed(prev => !prev);
+                        }
+                    }}
+                >
                     <div className={`card-header-icon ${styles.headerIconSuccess}`}>Q</div>
                     <h2>Results</h2>
+                    <CollapseChevron isOpen={!isResultsCollapsed} />
                     <div className={styles.resultsSearch}>
                         <input
                             type="text"
@@ -448,23 +471,25 @@ export function QueryTab() {
                         </ButtonIconOption>
                     </ButtonIcon>
                 </div>
-                <div className={`card-body ${styles.cardBody}`} data-testid="query-results">
-                    <QueryTabs
-                        tabs={state.tabs}
-                        activeTabId={state.activeTabId}
-                        onTabSelect={handleTabSelect}
-                        onTabRefresh={handleTabRefresh}
-                        onTabClose={handleTabClose}
-                    />
-                    <QueryResults
-                        activeTab={activeTab}
-                        editingEnabled={editingEnabled}
-                        onFieldChange={handleFieldChange}
-                        filterText={filterText}
-                        onLoadMore={handleLoadMore}
-                        instanceUrl={activeConnection?.instanceUrl}
-                    />
-                </div>
+                {!isResultsCollapsed && (
+                    <div className={`card-body ${styles.cardBody}`} data-testid="query-results">
+                        <QueryTabs
+                            tabs={state.tabs}
+                            activeTabId={state.activeTabId}
+                            onTabSelect={handleTabSelect}
+                            onTabRefresh={handleTabRefresh}
+                            onTabClose={handleTabClose}
+                        />
+                        <QueryResults
+                            activeTab={activeTab}
+                            editingEnabled={editingEnabled}
+                            onFieldChange={handleFieldChange}
+                            filterText={filterText}
+                            onLoadMore={handleLoadMore}
+                            instanceUrl={activeConnection?.instanceUrl}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

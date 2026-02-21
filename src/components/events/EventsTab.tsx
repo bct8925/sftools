@@ -272,13 +272,7 @@ export function EventsTab() {
                         <div className={`card-header-icon ${styles.headerIconEvents}`}>E</div>
                         <h2>Streaming</h2>
                         <CollapseChevron isOpen={!isStreamingCollapsed} />
-                    </div>
-                    <div className={styles.headerRow}>
-                        {streamStatus && (
-                            <StatusBadge type={streamStatusType} data-testid="event-stream-status">
-                                {streamStatus}
-                            </StatusBadge>
-                        )}
+
                         <div className={styles.headerControls}>
                             <ButtonIcon
                                 icon={isSubscribed ? 'stop' : 'play'}
@@ -349,11 +343,10 @@ export function EventsTab() {
                                             {[...events].reverse().map(event => (
                                                 <tr
                                                     key={event.id}
-                                                    className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${
-                                                        event.isSystemMessage
+                                                    className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${event.isSystemMessage
                                                             ? styles.rowSystem
                                                             : ''
-                                                    }`}
+                                                        }`}
                                                     data-testid={`event-row-${event.id}`}
                                                 >
                                                     <td className={styles.time}>

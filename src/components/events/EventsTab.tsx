@@ -97,6 +97,10 @@ export function EventsTab() {
 
     // Settings modal state
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    // Publisher collapse state
+    const [isPublisherCollapsed, setIsPublisherCollapsed] = useState(true);
+    const handleTogglePublisher = useCallback(() => setIsPublisherCollapsed(prev => !prev), []);
     const {
         statusText: streamStatus,
         statusType: streamStatusType,
@@ -295,7 +299,7 @@ export function EventsTab() {
                             <MonacoEditor
                                 ref={streamEditorRef}
                                 language="json"
-                                value="// Click Open on any event to view details\n"
+                                value="// Subscribe to and open an event"
                                 readonly
                                 className={`monaco-container ${styles.streamEditor}`}
                                 data-testid="event-stream-editor"
@@ -306,8 +310,7 @@ export function EventsTab() {
                         <div className={styles.viewerTable}>
                             {events.length === 0 ? (
                                 <div className={styles.emptyState}>
-                                    <div className={styles.emptyStateIcon}>📡</div>
-                                    <p>Subscribe to a channel to see events</p>
+                                    <div className={styles.emptyStateIcon}></div>
                                 </div>
                             ) : (
                                 <table className={styles.eventTable} data-testid="event-table">
@@ -358,7 +361,11 @@ export function EventsTab() {
                 </div>
             </div>
 
-            <EventPublisher platformEvents={channels.platformEvents} />
+            <EventPublisher
+                platformEvents={channels.platformEvents}
+                isCollapsed={isPublisherCollapsed}
+                onToggleCollapse={handleTogglePublisher}
+            />
 
             {/* Settings Modal */}
             <Modal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}>

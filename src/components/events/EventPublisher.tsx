@@ -13,12 +13,22 @@ interface EventPublisherProps {
     onPublishSuccess?: (message: string) => void;
     /** Called when an error occurs */
     onError?: (message: string) => void;
+    /** Whether the publisher card body is collapsed */
+    isCollapsed?: boolean;
+    /** Called when the user toggles the collapse state */
+    onToggleCollapse?: () => void;
 }
 
 /**
  * Event publisher card for publishing Platform Events.
  */
-export function EventPublisher({ platformEvents, onPublishSuccess, onError }: EventPublisherProps) {
+export function EventPublisher({
+    platformEvents,
+    onPublishSuccess,
+    onError,
+    isCollapsed = false,
+    onToggleCollapse,
+}: EventPublisherProps) {
     const editorRef = useRef<MonacoEditorRef>(null);
     const [selectedChannel, setSelectedChannel] = useState('');
     const [status, setStatus] = useState('');
@@ -73,9 +83,29 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
     return (
         <div className="card">
             <div className={`card-header ${styles.header}`}>
-                <div className={styles.headerRow}>
+                <div
+                    className={`${styles.headerRow} ${onToggleCollapse ? styles.publisherHeaderRow : ''}`}
+                    onClick={onToggleCollapse}
+                >
                     <div className={`card-header-icon ${styles.headerIconPublish}`}>P</div>
                     <h2>Publish</h2>
+                    {onToggleCollapse && (
+                        <svg
+                            className={`${styles.collapseChevron} ${!isCollapsed ? styles.collapseChevronOpen : ''}`}
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                        >
+                            <polyline points="9 6 15 12 9 18" />
+                        </svg>
+                    )}
                 </div>
                 <div className={styles.headerRow}>
                     {status && (
@@ -94,33 +124,35 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                     </div>
                 </div>
             </div>
-            <div className="card-body">
-                <div className="form-element">
-                    <label htmlFor="event-publish-channel">Event Type</label>
-                    <ChannelSelector
-                        platformEvents={platformEvents}
-                        standardEvents={[]}
-                        pushTopics={[]}
-                        systemTopics={[]}
-                        value={selectedChannel}
-                        onChange={setSelectedChannel}
-                        disabled={isPublishing}
-                        publishOnly
-                        data-testid="event-publish-channel"
-                    />
+            {!isCollapsed && (
+                <div className="card-body">
+                    <div className="form-element">
+                        <label htmlFor="event-publish-channel">Event Type</label>
+                        <ChannelSelector
+                            platformEvents={platformEvents}
+                            standardEvents={[]}
+                            pushTopics={[]}
+                            systemTopics={[]}
+                            value={selectedChannel}
+                            onChange={setSelectedChannel}
+                            disabled={isPublishing}
+                            publishOnly
+                            data-testid="event-publish-channel"
+                        />
+                    </div>
+                    <div className="form-element">
+                        <label>JSON Payload (Ctrl/Cmd+Enter to publish)</label>
+                        <MonacoEditor
+                            ref={editorRef}
+                            language="json"
+                            value={'{\n  \n}'}
+                            onExecute={handlePublish}
+                            className={`monaco-container ${styles.publishEditor}`}
+                            data-testid="event-publish-editor"
+                        />
+                    </div>
                 </div>
-                <div className="form-element">
-                    <label>JSON Payload (Ctrl/Cmd+Enter to publish)</label>
-                    <MonacoEditor
-                        ref={editorRef}
-                        language="json"
-                        value={'{\n  \n}'}
-                        onExecute={handlePublish}
-                        className={`monaco-container ${styles.publishEditor}`}
-                        data-testid="event-publish-editor"
-                    />
-                </div>
-            </div>
+            )}
         </div>
     );
 }

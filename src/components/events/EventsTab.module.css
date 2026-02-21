@@ -181,3 +181,85 @@
     font-size: 32px;
     opacity: 0.5;
 }
+
+/* ============================================================
+   Collapsible Publisher Header
+   ============================================================ */
+
+.publisherHeaderRow {
+    cursor: pointer;
+    flex: 1;
+}
+
+.publisherHeaderRow:hover {
+    opacity: 0.8;
+}
+
+.collapseChevron {
+    margin-left: auto;
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.collapseChevronOpen {
+    transform: rotate(90deg);
+}
+
+/* ============================================================
+   Responsive Height Breakpoints
+   ============================================================ */
+
+@media (max-height: 1000px) {
+    .eventsTab {
+        gap: 12px;
+    }
+
+    .header {
+        gap: 4px;
+    }
+
+    .viewer {
+        gap: 8px;
+    }
+
+    .viewerEditor {
+        min-height: 120px;
+    }
+
+    .viewerTable {
+        min-height: 100px;
+    }
+
+    .publishEditor {
+        height: 80px;
+    }
+
+    .emptyState {
+        padding: 16px;
+    }
+
+    .emptyStateIcon {
+        font-size: 24px;
+    }
+}
+
+@media (max-height: 750px) {
+    .eventsTab {
+        gap: 8px;
+    }
+
+    .viewerEditor {
+        min-height: 80px;
+    }
+
+    .viewerTable {
+        min-height: 80px;
+    }
+
+    .publishEditor {
+        height: 60px;
+    }
+}

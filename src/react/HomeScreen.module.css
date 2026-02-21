@@ -64,6 +64,34 @@
     text-align: center;
 }
 
+/* Open Org button - fixed bottom left */
+.openOrgBtn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    background: var(--card-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    box-shadow: 0 2px 8px var(--shadow-md);
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.openOrgBtn:hover {
+    background: var(--bg-hover);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
 /* Settings gear button - fixed bottom right */
 .settingsBtn {
     position: fixed;

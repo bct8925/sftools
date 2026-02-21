@@ -11,7 +11,7 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ onFeatureSelect, onSettingsClick }: HomeScreenProps) {
-    const { isAuthenticated } = useConnection();
+    const { activeConnection, isAuthenticated } = useConnection();
     const { isConnected: isProxyConnected } = useProxy();
 
     const isDisabled = useCallback(
@@ -51,6 +51,12 @@ export function HomeScreen({ onFeatureSelect, onSettingsClick }: HomeScreenProps
         [onSettingsClick, openInNewTab]
     );
 
+    const handleOpenOrg = useCallback(() => {
+        if (activeConnection?.instanceUrl) {
+            chrome.tabs.create({ url: activeConnection.instanceUrl });
+        }
+    }, [activeConnection?.instanceUrl]);
+
     return (
         <div className={styles.homeScreen} data-testid="home-screen">
             <div className={styles.tileGrid}>
@@ -75,6 +81,17 @@ export function HomeScreen({ onFeatureSelect, onSettingsClick }: HomeScreenProps
                     );
                 })}
             </div>
+
+            {isAuthenticated && activeConnection?.instanceUrl && (
+                <button
+                    className={styles.openOrgBtn}
+                    onClick={handleOpenOrg}
+                    aria-label="Open Org"
+                    data-testid="home-open-org-btn"
+                >
+                    <SfIcon name="openOrg" />
+                </button>
+            )}
 
             <button
                 className={styles.settingsBtn}

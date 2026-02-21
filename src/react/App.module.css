@@ -5,6 +5,11 @@
     min-height: 100vh;
 }
 
+.appContainerHome {
+    height: 100vh;
+    overflow: hidden;
+}
+
 /* Tab Navigation */
 .tabNav {
     display: flex;
@@ -20,8 +25,8 @@
     z-index: 100;
 }
 
-/* Back button for feature view */
-.backBtn {
+/* Waffle (home) button */
+.waffleBtn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -30,15 +35,16 @@
     padding: 0;
     border: none;
     background: transparent;
-    color: var(--text-main);
+    color: var(--text-muted);
     cursor: pointer;
     border-radius: var(--radius-md);
-    margin-right: 10px;
+    margin-right: 4px;
     transition: background-color 0.15s ease;
 }
 
-.backBtn:hover {
+.waffleBtn:hover {
     background: var(--bg-hover);
+    color: var(--text-main);
 }
 
 /* Clickable brand in feature view */

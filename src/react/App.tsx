@@ -58,19 +58,11 @@ function AppContent() {
 
     const navigateToFeature = useCallback((featureId: FeatureId | 'settings') => {
         setViewState({ view: 'feature', featureId });
-        document.dispatchEvent(new CustomEvent('tab-changed', { detail: { tabId: featureId } }));
     }, []);
 
     const navigateHome = useCallback(() => {
         setViewState({ view: 'home' });
     }, []);
-
-    const handleFeatureSelect = useCallback(
-        (featureId: FeatureId) => {
-            navigateToFeature(featureId);
-        },
-        [navigateToFeature]
-    );
 
     const handleSettingsClick = useCallback(() => {
         navigateToFeature('settings');
@@ -79,23 +71,24 @@ function AppContent() {
     const isHome = viewState.view === 'home';
 
     return (
-        <div className={styles.appContainer} data-testid="app-root">
+        <div
+            className={`${styles.appContainer} ${isHome ? styles.appContainerHome : ''}`}
+            data-testid="app-root"
+        >
             {/* Modal handlers */}
             <AuthExpirationHandler />
             <CorsErrorHandler />
 
             {/* Navigation Header */}
             <nav className={styles.tabNav}>
-                {!isHome && (
-                    <button
-                        className={styles.backBtn}
-                        onClick={navigateHome}
-                        aria-label="Back to home"
-                        data-testid="back-to-home-btn"
-                    >
-                        <SfIcon name="back" />
-                    </button>
-                )}
+                <button
+                    className={styles.waffleBtn}
+                    onClick={!isHome ? navigateHome : undefined}
+                    aria-label="Home"
+                    data-testid="waffle-btn"
+                >
+                    <SfIcon name="apps" />
+                </button>
                 <div
                     className={`nav-brand ${!isHome ? styles.navBrandClickable : ''}`}
                     onClick={!isHome ? navigateHome : undefined}
@@ -109,7 +102,7 @@ function AppContent() {
             {/* Home Screen */}
             {isHome && (
                 <HomeScreen
-                    onFeatureSelect={handleFeatureSelect}
+                    onFeatureSelect={navigateToFeature}
                     onSettingsClick={handleSettingsClick}
                 />
             )}

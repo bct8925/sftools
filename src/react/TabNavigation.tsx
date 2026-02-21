@@ -12,13 +12,6 @@ export interface Feature {
     tileColor: string;
 }
 
-interface Tab {
-    id: TabId;
-    label: string;
-    requiresAuth: boolean;
-    requiresProxy: boolean;
-}
-
 export const FEATURES: Feature[] = [
     {
         id: 'query',
@@ -68,9 +61,4 @@ export const FEATURES: Feature[] = [
         tileIcon: 'tileUtils',
         tileColor: 'var(--icon-utils)',
     },
-];
-
-export const TABS: Tab[] = [
-    ...FEATURES,
-    { id: 'settings', label: 'Settings', requiresAuth: false, requiresProxy: false },
 ];

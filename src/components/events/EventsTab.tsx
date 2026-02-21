@@ -54,6 +54,22 @@ const extractEventType = (payload: unknown, channel: string): string => {
     return channel || 'Unknown';
 };
 
+// Decode gRPC base64 replay ID bytes to a readable number
+const formatReplayId = (replayId: number | string | undefined): string => {
+    if (replayId === undefined) return '-';
+    if (typeof replayId === 'number') return String(replayId);
+    try {
+        const binary = atob(replayId);
+        let value = BigInt(0);
+        for (let i = 0; i < binary.length; i++) {
+            value = (value << BigInt(8)) | BigInt(binary.charCodeAt(i));
+        }
+        return value.toString();
+    } catch {
+        return replayId;
+    }
+};
+
 // Format time for display
 const formatTime = (isoString: string): string => {
     const date = new Date(isoString);
@@ -333,9 +349,7 @@ export function EventsTab() {
                                                     {formatTime(event.timestamp)}
                                                 </td>
                                                 <td className={styles.replayIdCell}>
-                                                    {event.replayId !== undefined
-                                                        ? String(event.replayId)
-                                                        : '-'}
+                                                    {formatReplayId(event.replayId)}
                                                 </td>
                                                 <td>{event.eventType}</td>
                                                 <td>

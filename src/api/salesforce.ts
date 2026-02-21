@@ -248,7 +248,10 @@ export async function executeQueryWithColumns(
     const apiPath = useToolingApi ? 'tooling/query' : includeDeleted ? 'queryAll' : 'query';
     const baseUrl = `/services/data/v${API_VERSION}/${apiPath}/?q=${encodedQuery}`;
 
-    // Execute columns request first to fail fast on query errors
+    // NOTE: These requests are intentionally sequential, not parallel.
+    // The columns request acts as a validation gate — if the SOQL is invalid,
+    // we get the error from this lightweight call before running the full data query.
+    // This also ensures error messages come from the columns endpoint, which is consistent.
     const columnsResponse = await salesforceRequest<{
         columnMetadata?: ColumnMetadata[];
         entityName?: string;

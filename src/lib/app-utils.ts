@@ -47,11 +47,19 @@ export function buildOAuthUrl(
     useCodeFlow = false
 ): string {
     const responseType = useCodeFlow ? 'code' : 'token';
-    return (
+    const isStandardDomain =
+        loginDomain.includes('login.salesforce.com') || loginDomain.includes('test.salesforce.com');
+
+    let url =
         `${loginDomain}/services/oauth2/authorize` +
         `?client_id=${clientId}` +
         `&response_type=${responseType}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-        `&state=${encodeURIComponent(state)}`
-    );
+        `&state=${encodeURIComponent(state)}`;
+
+    if (isStandardDomain) {
+        url += '&prompt=login';
+    }
+
+    return url;
 }

@@ -3,7 +3,7 @@ import {
     getTestContext,
     createPageObjects,
     setupMocks,
-    navigateToSchema,
+    navigateToExtension,
     MockRouter,
 } from '../../test-utils';
 
@@ -36,7 +36,8 @@ describe('Schema Browser External Links', () => {
         const { page } = getTestContext();
         const { schemaPage } = createPageObjects(page);
 
-        await navigateToSchema();
+        await navigateToExtension();
+        await schemaPage.navigateTo();
         await schemaPage.waitForLoad();
 
         const href = await schemaPage.getObjectLinkHref('Account');
@@ -48,7 +49,8 @@ describe('Schema Browser External Links', () => {
         const { page } = getTestContext();
         const { schemaPage } = createPageObjects(page);
 
-        await navigateToSchema();
+        await navigateToExtension();
+        await schemaPage.navigateTo();
         await schemaPage.waitForLoad();
         await schemaPage.selectObject('Account');
 
@@ -63,7 +65,8 @@ describe('Schema Browser External Links', () => {
         const { page } = getTestContext();
         const { schemaPage } = createPageObjects(page);
 
-        await navigateToSchema();
+        await navigateToExtension();
+        await schemaPage.navigateTo();
         await schemaPage.waitForLoad();
 
         // Select Account first

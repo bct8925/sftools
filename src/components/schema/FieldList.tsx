@@ -102,6 +102,13 @@ export function FieldList({
         <div ref={containerRef} className={styles.fieldsPanel} data-testid="schema-fields-panel">
             <div className={styles.fieldsHeader}>
                 <div className={styles.fieldsHeaderTop}>
+                    <button
+                        className={styles.backButton}
+                        onClick={onClose}
+                        data-testid="schema-back-to-objects"
+                    >
+                        <SfIcon name="chevronleft" /> Objects
+                    </button>
                     <h3 data-testid="schema-selected-object-label">{objectLabel}</h3>
                     <div className={styles.fieldsHeaderActions}>
                         <ButtonIcon

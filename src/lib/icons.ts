@@ -19,6 +19,7 @@ import httpIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-syst
 import eventIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/event.svg?raw';
 import appsIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/apps.svg?raw';
 import chevrondownIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/chevrondown.svg?raw';
+import chevronleftIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/chevronleft.svg?raw';
 import sobjectIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/sobject.svg?raw';
 import salesforce1Icon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/salesforce1.svg?raw';
 
@@ -80,6 +81,7 @@ export const icons = {
     // Header icons
     apps: processSvg(appsIcon, { size: 20 }),
     chevrondown: processSvg(chevrondownIcon, { size: 12 }),
+    chevronleft: processSvg(chevronleftIcon, { size: 14 }),
     salesforce1: processSvg(salesforce1Icon, { size: 16 }),
 } as const;
 

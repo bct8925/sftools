@@ -1,16 +1,5 @@
 /* Schema Browser Page Styles */
 
-/* Header Icon */
-.headerIcon {
-    background-color: var(--icon-query);
-}
-
-/* Schema-specific card override */
-.schemaCardBody {
-    padding: 0;
-    overflow: hidden;
-}
-
 /* Layout */
 .schemaContainer {
     display: flex;
@@ -19,7 +8,9 @@
 }
 
 .schemaContainerInline {
-    height: calc(100vh - 120px);
+    height: calc(100vh - 70px);
+    margin: -20px;
+    margin-bottom: 0;
 }
 
 /* Objects Panel */
@@ -510,4 +501,46 @@
 
 .modalStatus.error {
     color: var(--error-color);
+}
+
+/* Back button — hidden by default, shown at narrow widths */
+.backButton {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 4px;
+    font-size: 14px;
+    margin-right: 8px;
+}
+
+.backButton:hover {
+    color: var(--primary-color);
+}
+
+/* Responsive: single-panel layout for narrow widths (e.g. Chrome side panel) */
+@media (max-width: 600px) {
+    .schemaContainer {
+        flex-direction: column;
+    }
+
+    .objectsPanel {
+        flex: 1;
+        border-right: none;
+    }
+
+    .objectsPanel.withFields {
+        display: none;
+    }
+
+    .fieldsPanel {
+        flex: 1 1 100%;
+    }
+
+    .backButton {
+        display: flex;
+    }
 }

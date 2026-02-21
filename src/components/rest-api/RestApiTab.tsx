@@ -128,7 +128,7 @@ export function RestApiTab() {
               <MonacoEditor
                 ref={requestEditorRef}
                 language="json"
-                value="{\n    \n}"
+                value={'{\n  \n}'}
                 onExecute={executeRequest}
                 className={styles.requestEditor}
                 data-testid="rest-request-editor"

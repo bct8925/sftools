@@ -2,15 +2,16 @@ import { useCallback, type MouseEvent } from 'react';
 import { useConnection } from '../contexts/ConnectionContext';
 import { useProxy } from '../contexts/ProxyContext';
 import { SfIcon } from '../components/sf-icon/SfIcon';
-import { FEATURES, type FeatureId, type Feature } from './TabNavigation';
+import { FEATURES, type FeatureId, type TabId, type Feature } from './TabNavigation';
 import styles from './HomeScreen.module.css';
 
 interface HomeScreenProps {
     onFeatureSelect: (featureId: FeatureId) => void;
     onSettingsClick: () => void;
+    onFeatureHover?: (featureId: TabId) => void;
 }
 
-export function HomeScreen({ onFeatureSelect, onSettingsClick }: HomeScreenProps) {
+export function HomeScreen({ onFeatureSelect, onSettingsClick, onFeatureHover }: HomeScreenProps) {
     const { activeConnection, isAuthenticated } = useConnection();
     const { isConnected: isProxyConnected } = useProxy();
 
@@ -67,6 +68,7 @@ export function HomeScreen({ onFeatureSelect, onSettingsClick }: HomeScreenProps
                             key={feature.id}
                             className={`${styles.tile} ${disabled ? styles.tileDisabled : ''}`}
                             onClick={e => handleTileClick(e, feature)}
+                            onMouseEnter={() => onFeatureHover?.(feature.id)}
                             disabled={disabled}
                             data-testid={`tile-${feature.id}`}
                         >
@@ -96,6 +98,7 @@ export function HomeScreen({ onFeatureSelect, onSettingsClick }: HomeScreenProps
             <button
                 className={styles.settingsBtn}
                 onClick={handleSettingsClick}
+                onMouseEnter={() => onFeatureHover?.('settings')}
                 aria-label="Settings"
                 data-testid="home-settings-btn"
             >

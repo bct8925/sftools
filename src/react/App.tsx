@@ -58,6 +58,18 @@ const TAB_IDS: TabId[] = [
     'settings',
 ];
 
+// Prefetch chunk on hover — dynamic imports are cached by the bundler
+const TAB_PRELOADS: Record<TabId, () => void> = {
+    query: () => void import('../components/query/QueryTab'),
+    apex: () => void import('../components/apex/ApexTab'),
+    logs: () => void import('../components/debug-logs/DebugLogsTab'),
+    'rest-api': () => void import('../components/rest-api/RestApiTab'),
+    events: () => void import('../components/events/EventsTab'),
+    schema: () => void import('../components/schema/SchemaTab'),
+    utils: () => void import('../components/utils/UtilsTab'),
+    settings: () => void import('../components/settings/SettingsTab'),
+};
+
 type ViewState = { view: 'home' } | { view: 'feature'; featureId: TabId };
 
 function getInitialViewState(): ViewState {
@@ -74,10 +86,15 @@ function getInitialViewState(): ViewState {
  */
 function AppContent() {
     const [viewState, setViewState] = useState<ViewState>(getInitialViewState);
+    const [visitedTabs, setVisitedTabs] = useState<Set<TabId>>(() => {
+        const initial = getInitialViewState();
+        return initial.view === 'feature' ? new Set([initial.featureId]) : new Set();
+    });
 
     const activeTab = viewState.view === 'feature' ? viewState.featureId : null;
 
     const navigateToFeature = useCallback((featureId: FeatureId | 'settings') => {
+        setVisitedTabs(prev => (prev.has(featureId) ? prev : new Set(prev).add(featureId)));
         setViewState({ view: 'feature', featureId });
     }, []);
 
@@ -88,6 +105,10 @@ function AppContent() {
     const handleSettingsClick = useCallback(() => {
         navigateToFeature('settings');
     }, [navigateToFeature]);
+
+    const preloadFeature = useCallback((featureId: TabId) => {
+        TAB_PRELOADS[featureId]();
+    }, []);
 
     const isHome = viewState.view === 'home';
 
@@ -125,12 +146,13 @@ function AppContent() {
                 <HomeScreen
                     onFeatureSelect={navigateToFeature}
                     onSettingsClick={handleSettingsClick}
+                    onFeatureHover={preloadFeature}
                 />
             )}
 
             {/* Main Content Area - All tabs rendered, only active visible */}
             <main className={`${styles.contentArea} ${isHome ? styles.contentHidden : ''}`}>
-                {TAB_IDS.map(id => {
+                {TAB_IDS.filter(id => visitedTabs.has(id)).map(id => {
                     const TabComponent = TAB_COMPONENTS[id];
                     return (
                         <div

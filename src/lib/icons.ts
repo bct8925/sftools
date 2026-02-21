@@ -22,6 +22,7 @@ import chevrondownIcon from '@salesforce-ux/icons/dist/salesforce-lightning-desi
 import chevronleftIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/chevronleft.svg?raw';
 import sobjectIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/sobject.svg?raw';
 import salesforce1Icon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/salesforce1.svg?raw';
+import sendIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/send.svg?raw';
 
 interface ProcessSvgOptions {
     size?: number;
@@ -51,6 +52,7 @@ export const icons = {
     edit: processSvg(editIcon, { size: 16 }),
     refresh: processSvg(refreshIcon, { size: 16 }),
     refreshSmall: processSvg(refreshIcon, { size: 12 }),
+    send: processSvg(sendIcon, { size: 16 }),
     trash: processSvg(deleteIcon, { size: 16 }),
 
     // Smaller icons for tabs and inline use

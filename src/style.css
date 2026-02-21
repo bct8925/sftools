@@ -401,6 +401,13 @@ code,
     box-shadow: 0 0 0 1px var(--primary-color) inset;
 }
 
+.input:disabled,
+.select:disabled,
+.textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .button-brand {
     background-color: var(--primary-color);
     color: #fff;

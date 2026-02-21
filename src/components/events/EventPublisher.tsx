@@ -2,6 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { ChannelSelector } from './ChannelSelector';
 import { StatusBadge, type StatusType } from '../status-badge/StatusBadge';
+import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { publishPlatformEvent } from '../../api/salesforce';
 import styles from './EventsTab.module.css';
 
@@ -71,9 +72,27 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
 
     return (
         <div className="card">
-            <div className="card-header">
-                <div className={`card-header-icon ${styles.headerIconPublish}`}>P</div>
-                <h2>Publish Event</h2>
+            <div className={`card-header ${styles.header}`}>
+                <div className={styles.headerRow}>
+                    <div className={`card-header-icon ${styles.headerIconPublish}`}>P</div>
+                    <h2>Publish</h2>
+                </div>
+                <div className={styles.headerRow}>
+                    {status && (
+                        <StatusBadge type={statusType} data-testid="event-publish-status">
+                            {status}
+                        </StatusBadge>
+                    )}
+                    <div className={styles.headerControls}>
+                        <ButtonIcon
+                            icon="send"
+                            title="Publish event"
+                            onClick={handlePublish}
+                            disabled={isPublishing}
+                            data-testid="event-publish-btn"
+                        />
+                    </div>
+                </div>
             </div>
             <div className="card-body">
                 <div className="form-element">
@@ -100,22 +119,6 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                         className={`monaco-container ${styles.publishEditor}`}
                         data-testid="event-publish-editor"
                     />
-                </div>
-                <div className="m-top_small">
-                    <button
-                        className="button-brand"
-                        onClick={handlePublish}
-                        disabled={isPublishing}
-                        type="button"
-                        data-testid="event-publish-btn"
-                    >
-                        Publish Event
-                    </button>
-                    {status && (
-                        <StatusBadge type={statusType} data-testid="event-publish-status">
-                            {status}
-                        </StatusBadge>
-                    )}
                 </div>
             </div>
         </div>

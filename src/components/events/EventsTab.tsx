@@ -6,8 +6,10 @@ import { useConnection } from '../../contexts/ConnectionContext';
 import { useProxy } from '../../contexts/ProxyContext';
 import { useStatusBadge } from '../../hooks/useStatusBadge';
 import { getAllStreamingChannels } from '../../api/salesforce';
-import { formatSystemMessage } from '../../lib/events-utils';
 import { StatusBadge } from '../status-badge/StatusBadge';
+import { ButtonIcon } from '../button-icon/ButtonIcon';
+import { Modal } from '../modal/Modal';
+import { EventsSettingsModal } from './EventsSettingsModal';
 import { useStreamSubscription } from './useStreamSubscription';
 import styles from './EventsTab.module.css';
 
@@ -73,7 +75,6 @@ export function EventsTab() {
     const { isConnected: isProxyConnected } = useProxy();
 
     const streamEditorRef = useRef<MonacoEditorRef>(null);
-    const tableScrollRef = useRef<HTMLDivElement>(null);
 
     // Event table state
     const [events, setEvents] = useState<StreamEvent[]>([]);
@@ -93,6 +94,9 @@ export function EventsTab() {
     const [selectedChannel, setSelectedChannel] = useState('');
     const [replayPreset, setReplayPreset] = useState('LATEST');
     const [replayId, setReplayId] = useState('');
+
+    // Settings modal state
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const {
         statusText: streamStatus,
         statusType: streamStatusType,
@@ -153,13 +157,6 @@ export function EventsTab() {
 
                 return next;
             });
-
-            // Auto-scroll table to bottom
-            setTimeout(() => {
-                if (tableScrollRef.current) {
-                    tableScrollRef.current.scrollTop = tableScrollRef.current.scrollHeight;
-                }
-            }, 50);
         },
         [selectedChannel]
     );
@@ -179,21 +176,6 @@ export function EventsTab() {
         setOpenedEventIds(new Set());
         streamEditorRef.current?.setValue('// Click Open on any event to view details\n');
     }, []);
-
-    // Publish event callbacks
-    const handlePublishSuccess = useCallback(
-        (msg: string) => {
-            handleEventReceived({ channel: 'PublishEvent', payload: { message: msg } }, true);
-        },
-        [handleEventReceived]
-    );
-
-    const handlePublishError = useCallback(
-        (msg: string) => {
-            handleEventReceived({ error: msg }, true);
-        },
-        [handleEventReceived]
-    );
 
     // Load channels from API
     const loadChannels = useCallback(async () => {
@@ -261,7 +243,7 @@ export function EventsTab() {
                 <div className={`card-header ${styles.header}`}>
                     <div className={styles.headerRow}>
                         <div className={`card-header-icon ${styles.headerIconEvents}`}>E</div>
-                        <h2>Streaming Events</h2>
+                        <h2>Streaming</h2>
                     </div>
                     <div className={styles.headerRow}>
                         {streamStatus && (
@@ -270,14 +252,25 @@ export function EventsTab() {
                             </StatusBadge>
                         )}
                         <div className={styles.headerControls}>
-                            <button
-                                className="button-neutral"
+                            <ButtonIcon
+                                icon={isSubscribed ? 'stop' : 'play'}
+                                title={isSubscribed ? 'Unsubscribe' : 'Subscribe'}
+                                onClick={toggleSubscription}
+                                disabled={!isAuthenticated || !selectedChannel}
+                                data-testid="event-subscribe-btn"
+                            />
+                            <ButtonIcon
+                                icon="settings"
+                                title="Settings"
+                                onClick={() => setIsSettingsOpen(true)}
+                                data-testid="event-settings-btn"
+                            />
+                            <ButtonIcon
+                                icon="trash"
+                                title="Clear stream"
                                 onClick={clearStream}
-                                type="button"
                                 data-testid="event-clear-btn"
-                            >
-                                Clear Stream
-                            </button>
+                            />
                         </div>
                     </div>
                 </div>
@@ -295,45 +288,6 @@ export function EventsTab() {
                             data-testid="event-channel-select"
                         />
                     </div>
-                    <div className="form-element">
-                        <label htmlFor="event-replay-select">Replay From</label>
-                        <div className={styles.replayRow}>
-                            <select
-                                className="select"
-                                value={replayPreset}
-                                onChange={e => setReplayPreset(e.target.value)}
-                                disabled={isSubscribed}
-                                data-testid="event-replay-select"
-                            >
-                                <option value="LATEST">Latest (new events only)</option>
-                                <option value="EARLIEST">Earliest (all retained events)</option>
-                                <option value="CUSTOM">Custom Replay ID</option>
-                            </select>
-                            <button
-                                className="button-brand"
-                                onClick={toggleSubscription}
-                                type="button"
-                                data-testid="event-subscribe-btn"
-                            >
-                                {isSubscribed ? 'Unsubscribe' : 'Subscribe'}
-                            </button>
-                        </div>
-                    </div>
-                    {replayPreset === 'CUSTOM' && (
-                        <div className="form-element">
-                            <label htmlFor="event-replay-id">Replay ID</label>
-                            <input
-                                type="text"
-                                className="input"
-                                placeholder="Enter base64 replay ID"
-                                value={replayId}
-                                onChange={e => setReplayId(e.target.value)}
-                                disabled={isSubscribed}
-                                data-testid="event-replay-id"
-                            />
-                        </div>
-                    )}
-
                     {/* Viewer Layout */}
                     <div className={styles.viewer}>
                         {/* Monaco Editor (2/3) */}
@@ -349,7 +303,7 @@ export function EventsTab() {
                         </div>
 
                         {/* Event Table (1/3) */}
-                        <div className={styles.viewerTable} ref={tableScrollRef}>
+                        <div className={styles.viewerTable}>
                             {events.length === 0 ? (
                                 <div className={styles.emptyState}>
                                     <div className={styles.emptyStateIcon}>📡</div>
@@ -367,7 +321,7 @@ export function EventsTab() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {events.map(event => (
+                                        {[...events].reverse().map(event => (
                                             <tr
                                                 key={event.id}
                                                 className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${
@@ -404,11 +358,19 @@ export function EventsTab() {
                 </div>
             </div>
 
-            <EventPublisher
-                platformEvents={channels.platformEvents}
-                onPublishSuccess={handlePublishSuccess}
-                onError={handlePublishError}
-            />
+            <EventPublisher platformEvents={channels.platformEvents} />
+
+            {/* Settings Modal */}
+            <Modal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}>
+                <EventsSettingsModal
+                    replayPreset={replayPreset}
+                    onReplayPresetChange={setReplayPreset}
+                    replayId={replayId}
+                    onReplayIdChange={setReplayId}
+                    disabled={isSubscribed}
+                    onClose={() => setIsSettingsOpen(false)}
+                />
+            </Modal>
         </div>
     );
 }

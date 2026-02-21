@@ -318,7 +318,6 @@ export function EventsTab() {
                                         <tr>
                                             <th>Time</th>
                                             <th>Replay ID</th>
-                                            <th>Channel</th>
                                             <th>Event Type</th>
                                             <th></th>
                                         </tr>
@@ -340,7 +339,6 @@ export function EventsTab() {
                                                         ? String(event.replayId)
                                                         : '-'}
                                                 </td>
-                                                <td>{event.channel}</td>
                                                 <td>{event.eventType}</td>
                                                 <td>
                                                     <button

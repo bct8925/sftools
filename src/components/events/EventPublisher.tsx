@@ -89,6 +89,20 @@ export function EventPublisher({
                 >
                     <div className={`card-header-icon ${styles.headerIconPublish}`}>P</div>
                     <h2>Publish</h2>
+                    {status && (
+                        <StatusBadge type={statusType} data-testid="event-publish-status">
+                            {status}
+                        </StatusBadge>
+                    )}
+                    <div className={styles.headerControls} onClick={e => e.stopPropagation()}>
+                        <ButtonIcon
+                            icon="send"
+                            title="Publish event"
+                            onClick={handlePublish}
+                            disabled={isPublishing}
+                            data-testid="event-publish-btn"
+                        />
+                    </div>
                     {onToggleCollapse && (
                         <svg
                             className={`${styles.collapseChevron} ${!isCollapsed ? styles.collapseChevronOpen : ''}`}
@@ -106,22 +120,6 @@ export function EventPublisher({
                             <polyline points="9 6 15 12 9 18" />
                         </svg>
                     )}
-                </div>
-                <div className={styles.headerRow}>
-                    {status && (
-                        <StatusBadge type={statusType} data-testid="event-publish-status">
-                            {status}
-                        </StatusBadge>
-                    )}
-                    <div className={styles.headerControls}>
-                        <ButtonIcon
-                            icon="send"
-                            title="Publish event"
-                            onClick={handlePublish}
-                            disabled={isPublishing}
-                            data-testid="event-publish-btn"
-                        />
-                    </div>
                 </div>
             </div>
             {!isCollapsed && (

@@ -72,7 +72,7 @@
 }
 
 .viewerEditor {
-    flex: 2;
+    flex: 1;
     min-height: 200px;
     display: flex;
     flex-direction: column;
@@ -196,7 +196,6 @@
 }
 
 .collapseChevron {
-    margin-left: auto;
     transition: transform 0.2s ease;
     color: var(--text-muted);
     flex-shrink: 0;

@@ -375,30 +375,28 @@ export function QueryTab() {
                         </ButtonIconCheckbox>
                     </ButtonIcon>
                 </div>
-                {!isQueryCollapsed && (
-                    <div className="card-body">
-                        <div className="form-element">
-                            <QueryEditor
-                                ref={editorRef}
-                                value={initialQuery}
-                                onExecute={executeQuery}
-                                className={styles.editor}
-                            />
-                        </div>
-                        <div className={styles.footer}>
-                            <button
-                                className="button-brand"
-                                onClick={executeQuery}
-                                data-testid="query-execute-btn"
-                            >
-                                Query
-                            </button>
-                            <StatusBadge type={statusType} data-testid="query-status">
-                                {statusText}
-                            </StatusBadge>
-                        </div>
+                <div className="card-body" hidden={isQueryCollapsed}>
+                    <div className="form-element">
+                        <QueryEditor
+                            ref={editorRef}
+                            value={initialQuery}
+                            onExecute={executeQuery}
+                            className={styles.editor}
+                        />
                     </div>
-                )}
+                    <div className={styles.footer}>
+                        <button
+                            className="button-brand"
+                            onClick={executeQuery}
+                            data-testid="query-execute-btn"
+                        >
+                            Query
+                        </button>
+                        <StatusBadge type={statusType} data-testid="query-status">
+                            {statusText}
+                        </StatusBadge>
+                    </div>
+                </div>
             </div>
 
             {/* Results Card */}
@@ -463,25 +461,27 @@ export function QueryTab() {
                         </ButtonIconOption>
                     </ButtonIcon>
                 </div>
-                {!isResultsCollapsed && (
-                    <div className={`card-body ${styles.cardBody}`} data-testid="query-results">
-                        <QueryTabs
-                            tabs={state.tabs}
-                            activeTabId={state.activeTabId}
-                            onTabSelect={handleTabSelect}
-                            onTabRefresh={handleTabRefresh}
-                            onTabClose={handleTabClose}
-                        />
-                        <QueryResults
-                            activeTab={activeTab}
-                            editingEnabled={editingEnabled}
-                            onFieldChange={handleFieldChange}
-                            filterText={filterText}
-                            onLoadMore={handleLoadMore}
-                            instanceUrl={activeConnection?.instanceUrl}
-                        />
-                    </div>
-                )}
+                <div
+                    className={`card-body ${styles.cardBody}`}
+                    hidden={isResultsCollapsed}
+                    data-testid="query-results"
+                >
+                    <QueryTabs
+                        tabs={state.tabs}
+                        activeTabId={state.activeTabId}
+                        onTabSelect={handleTabSelect}
+                        onTabRefresh={handleTabRefresh}
+                        onTabClose={handleTabClose}
+                    />
+                    <QueryResults
+                        activeTab={activeTab}
+                        editingEnabled={editingEnabled}
+                        onFieldChange={handleFieldChange}
+                        filterText={filterText}
+                        onLoadMore={handleLoadMore}
+                        instanceUrl={activeConnection?.instanceUrl}
+                    />
+                </div>
             </div>
         </div>
     );

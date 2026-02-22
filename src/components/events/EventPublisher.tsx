@@ -99,35 +99,33 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                     </div>
                 </div>
             </div>
-            {!isCollapsed && (
-                <div className="card-body">
-                    <div className="form-element">
-                        <label htmlFor="event-publish-channel">Event Type</label>
-                        <ChannelSelector
-                            platformEvents={platformEvents}
-                            standardEvents={[]}
-                            pushTopics={[]}
-                            systemTopics={[]}
-                            value={selectedChannel}
-                            onChange={setSelectedChannel}
-                            disabled={isPublishing}
-                            publishOnly
-                            data-testid="event-publish-channel"
-                        />
-                    </div>
-                    <div className="form-element">
-                        <label>JSON Payload (Ctrl/Cmd+Enter to publish)</label>
-                        <MonacoEditor
-                            ref={editorRef}
-                            language="json"
-                            value={'{\n  \n}'}
-                            onExecute={handlePublish}
-                            className={`monaco-container ${styles.publishEditor}`}
-                            data-testid="event-publish-editor"
-                        />
-                    </div>
+            <div className="card-body" hidden={isCollapsed}>
+                <div className="form-element">
+                    <label htmlFor="event-publish-channel">Event Type</label>
+                    <ChannelSelector
+                        platformEvents={platformEvents}
+                        standardEvents={[]}
+                        pushTopics={[]}
+                        systemTopics={[]}
+                        value={selectedChannel}
+                        onChange={setSelectedChannel}
+                        disabled={isPublishing}
+                        publishOnly
+                        data-testid="event-publish-channel"
+                    />
                 </div>
-            )}
+                <div className="form-element">
+                    <label>JSON Payload (Ctrl/Cmd+Enter to publish)</label>
+                    <MonacoEditor
+                        ref={editorRef}
+                        language="json"
+                        value={'{\n  \n}'}
+                        onExecute={handlePublish}
+                        className={`monaco-container ${styles.publishEditor}`}
+                        data-testid="event-publish-editor"
+                    />
+                </div>
+            </div>
         </div>
     );
 }

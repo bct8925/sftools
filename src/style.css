@@ -168,6 +168,11 @@ html {
     overscroll-behavior: none;
 }
 
+/* Ensure hidden attribute always wins, even against display:flex in CSS modules */
+[hidden] {
+    display: none !important;
+}
+
 body {
     font-family:
         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

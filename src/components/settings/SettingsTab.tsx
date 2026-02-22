@@ -30,15 +30,13 @@ export function SettingsTab() {
                         onClick={() => toggleCard('connections')}
                     />
                 </div>
-                {!collapsed['connections'] && (
-                    <div className="card-body">
-                        <p className={styles.description}>
-                            Manage your Salesforce org connections. Each connection can use its own
-                            Connected App.
-                        </p>
-                        <ConnectionList onEditConnection={setEditingConnectionId} />
-                    </div>
-                )}
+                <div className="card-body" hidden={collapsed['connections']}>
+                    <p className={styles.description}>
+                        Manage your Salesforce org connections. Each connection can use its own
+                        Connected App.
+                    </p>
+                    <ConnectionList onEditConnection={setEditingConnectionId} />
+                </div>
             </div>
 
             <div className="card">
@@ -52,14 +50,10 @@ export function SettingsTab() {
                         onClick={() => toggleCard('appearance')}
                     />
                 </div>
-                {!collapsed['appearance'] && (
-                    <div className="card-body">
-                        <p className={styles.description}>
-                            Customize the look and feel of sftools.
-                        </p>
-                        <ThemeSettings />
-                    </div>
-                )}
+                <div className="card-body" hidden={collapsed['appearance']}>
+                    <p className={styles.description}>Customize the look and feel of sftools.</p>
+                    <ThemeSettings />
+                </div>
             </div>
 
             <div className="card">
@@ -73,11 +67,9 @@ export function SettingsTab() {
                         onClick={() => toggleCard('proxy')}
                     />
                 </div>
-                {!collapsed['proxy'] && (
-                    <div className="card-body">
-                        <ProxySettings />
-                    </div>
-                )}
+                <div className="card-body" hidden={collapsed['proxy']}>
+                    <ProxySettings />
+                </div>
             </div>
 
             <div className="card">
@@ -91,12 +83,10 @@ export function SettingsTab() {
                         onClick={() => toggleCard('data')}
                     />
                 </div>
-                {!collapsed['data'] && (
-                    <div className="card-body">
-                        <CacheSettings />
-                        <DataManagement />
-                    </div>
-                )}
+                <div className="card-body" hidden={collapsed['data']}>
+                    <CacheSettings />
+                    <DataManagement />
+                </div>
             </div>
 
             <EditConnectionModal

@@ -189,33 +189,31 @@ export function ApexTab() {
                     <CollapseChevron isOpen={!isApexCollapsed} onClick={handleToggleApex} />
                     <ApexHistory ref={historyRef} onLoadScript={handleLoadScript} />
                 </div>
-                {!isApexCollapsed && (
-                    <div className="card-body">
-                        <div className="form-element">
-                            <MonacoEditor
-                                ref={codeEditorRef}
-                                language="apex"
-                                value={initialCode}
-                                onExecute={handleExecute}
-                                className="monaco-container"
-                                data-testid="apex-editor"
-                            />
-                        </div>
-                        <div className="m-top_small">
-                            <button
-                                className="button-brand"
-                                onClick={handleExecute}
-                                disabled={isExecuting}
-                                data-testid="apex-execute-btn"
-                            >
-                                Execute
-                            </button>
-                            <StatusBadge type={statusType} data-testid="apex-status">
-                                {statusText}
-                            </StatusBadge>
-                        </div>
+                <div className="card-body" hidden={isApexCollapsed}>
+                    <div className="form-element">
+                        <MonacoEditor
+                            ref={codeEditorRef}
+                            language="apex"
+                            value={initialCode}
+                            onExecute={handleExecute}
+                            className="monaco-container"
+                            data-testid="apex-editor"
+                        />
                     </div>
-                )}
+                    <div className="m-top_small">
+                        <button
+                            className="button-brand"
+                            onClick={handleExecute}
+                            disabled={isExecuting}
+                            data-testid="apex-execute-btn"
+                        >
+                            Execute
+                        </button>
+                        <StatusBadge type={statusType} data-testid="apex-status">
+                            {statusText}
+                        </StatusBadge>
+                    </div>
+                </div>
             </div>
 
             <ApexOutput output={output} className={styles.outputCard} />

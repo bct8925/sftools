@@ -72,18 +72,16 @@ export function ApexOutput({ output, className }: ApexOutputProps) {
                     />
                 </div>
             </div>
-            {!isCollapsed && (
-                <div className={`card-body ${styles.outputCardBody}`}>
-                    <MonacoEditor
-                        ref={editorRef}
-                        language="apex"
-                        readonly
-                        resizable={false}
-                        className={styles.outputEditor}
-                        data-testid="apex-output-editor"
-                    />
-                </div>
-            )}
+            <div className={`card-body ${styles.outputCardBody}`} hidden={isCollapsed}>
+                <MonacoEditor
+                    ref={editorRef}
+                    language="apex"
+                    readonly
+                    resizable={false}
+                    className={styles.outputEditor}
+                    data-testid="apex-output-editor"
+                />
+            </div>
         </div>
     );
 }

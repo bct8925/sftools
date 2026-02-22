@@ -45,6 +45,7 @@
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    margin-top: 0;
     margin-bottom: 16px;
 }
 

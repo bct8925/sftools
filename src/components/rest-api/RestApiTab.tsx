@@ -104,61 +104,59 @@ export function RestApiTab() {
                     )}
                     <CollapseChevron isOpen={!isRequestCollapsed} onClick={handleToggleRequest} />
                 </div>
-                {!isRequestCollapsed && (
-                    <div className="card-body">
-                        <div className="form-element">
-                            <label htmlFor="rest-api-url">API URL (Relative to Instance)</label>
-                            <input
-                                id="rest-api-url"
-                                type="text"
-                                className="input"
-                                value={url}
-                                onChange={e => setUrl(e.target.value)}
-                                data-testid="rest-api-url"
+                <div className="card-body" hidden={isRequestCollapsed}>
+                    <div className="form-element">
+                        <label htmlFor="rest-api-url">API URL (Relative to Instance)</label>
+                        <input
+                            id="rest-api-url"
+                            type="text"
+                            className="input"
+                            value={url}
+                            onChange={e => setUrl(e.target.value)}
+                            data-testid="rest-api-url"
+                        />
+                    </div>
+
+                    <div className="form-element">
+                        <label htmlFor="rest-method-select">HTTP Method</label>
+                        <select
+                            id="rest-method-select"
+                            className="select"
+                            value={method}
+                            onChange={e => setMethod(e.target.value as HttpMethod)}
+                            data-testid="rest-method-select"
+                        >
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PATCH">PATCH</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+                    </div>
+
+                    {showBodyInput && (
+                        <div className="form-element" data-testid="rest-body-container">
+                            <label>Body (JSON)</label>
+                            <MonacoEditor
+                                ref={requestEditorRef}
+                                language="json"
+                                value={'{\n  \n}'}
+                                onExecute={executeRequest}
+                                className={styles.requestEditor}
+                                data-testid="rest-request-editor"
                             />
                         </div>
+                    )}
 
-                        <div className="form-element">
-                            <label htmlFor="rest-method-select">HTTP Method</label>
-                            <select
-                                id="rest-method-select"
-                                className="select"
-                                value={method}
-                                onChange={e => setMethod(e.target.value as HttpMethod)}
-                                data-testid="rest-method-select"
-                            >
-                                <option value="GET">GET</option>
-                                <option value="POST">POST</option>
-                                <option value="PATCH">PATCH</option>
-                                <option value="DELETE">DELETE</option>
-                            </select>
-                        </div>
-
-                        {showBodyInput && (
-                            <div className="form-element" data-testid="rest-body-container">
-                                <label>Body (JSON)</label>
-                                <MonacoEditor
-                                    ref={requestEditorRef}
-                                    language="json"
-                                    value={'{\n  \n}'}
-                                    onExecute={executeRequest}
-                                    className={styles.requestEditor}
-                                    data-testid="rest-request-editor"
-                                />
-                            </div>
-                        )}
-
-                        <div className="m-top_small">
-                            <button
-                                className="button-brand"
-                                onClick={executeRequest}
-                                data-testid="rest-send-btn"
-                            >
-                                Send Request
-                            </button>
-                        </div>
+                    <div className="m-top_small">
+                        <button
+                            className="button-brand"
+                            onClick={executeRequest}
+                            data-testid="rest-send-btn"
+                        >
+                            Send Request
+                        </button>
                     </div>
-                )}
+                </div>
             </div>
 
             {/* Response Card */}
@@ -172,19 +170,20 @@ export function RestApiTab() {
                     </h2>
                     <CollapseChevron isOpen={!isResponseCollapsed} onClick={handleToggleResponse} />
                 </div>
-                {!isResponseCollapsed && (
-                    <div className={`card-body ${styles.responseCardBody}`}>
-                        <MonacoEditor
-                            ref={responseEditorRef}
-                            language="json"
-                            value="// Response will appear here"
-                            readonly
-                            resizable={false}
-                            className={styles.responseEditor}
-                            data-testid="rest-response-editor"
-                        />
-                    </div>
-                )}
+                <div
+                    className={`card-body ${styles.responseCardBody}`}
+                    hidden={isResponseCollapsed}
+                >
+                    <MonacoEditor
+                        ref={responseEditorRef}
+                        language="json"
+                        value="// Response will appear here"
+                        readonly
+                        resizable={false}
+                        className={styles.responseEditor}
+                        data-testid="rest-response-editor"
+                    />
+                </div>
             </div>
         </div>
     );

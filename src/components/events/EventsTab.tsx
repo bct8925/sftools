@@ -323,6 +323,7 @@ export function EventsTab() {
                             {events.length === 0 ? (
                                 <div className={styles.emptyState}>
                                     <div className={styles.emptyStateIcon}></div>
+                                    <p>Subscribe to a channel to see events</p>
                                 </div>
                             ) : (
                                 <table className={styles.eventTable} data-testid="event-table">
@@ -338,8 +339,9 @@ export function EventsTab() {
                                         {[...events].reverse().map(event => (
                                             <tr
                                                 key={event.id}
-                                                className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${event.isSystemMessage ? styles.rowSystem : ''
-                                                    }`}
+                                                className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${
+                                                    event.isSystemMessage ? styles.rowSystem : ''
+                                                }`}
                                                 data-testid={`event-row-${event.id}`}
                                             >
                                                 <td className={styles.time}>

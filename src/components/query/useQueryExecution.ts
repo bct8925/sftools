@@ -129,11 +129,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
                     fieldDescribe,
                 });
 
-                toast.update(
-                    activeToastRef.current!,
-                    `${result.totalSize} record${result.totalSize !== 1 ? 's' : ''}`,
-                    'success'
-                );
+                toast.dismiss(activeToastRef.current!);
                 activeToastRef.current = null;
 
                 // Clear filter
@@ -218,7 +214,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
                     nextRecordsUrl: result.nextRecordsUrl,
                 });
 
-                toast.update(id, `Loaded ${result.records.length} more records`, 'success');
+                toast.dismiss(id);
             } catch {
                 options.setLoadingMore(tabId, false);
                 toast.update(id, 'Error loading more', 'error');

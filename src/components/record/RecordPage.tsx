@@ -42,13 +42,13 @@ type RecordPageAction =
     | { type: 'SET_INSTANCE_URL'; instanceUrl: string }
     | { type: 'SET_LOADING'; isLoading: boolean }
     | {
-          type: 'SET_RECORD_DATA';
-          fieldDescribe: Record<string, FieldDescribe>;
-          nameFieldMap: Record<string, string>;
-          sortedFields: FieldDescribe[];
-          objectLabel: string;
-          recordData: Record<string, unknown>;
-      }
+        type: 'SET_RECORD_DATA';
+        fieldDescribe: Record<string, FieldDescribe>;
+        nameFieldMap: Record<string, string>;
+        sortedFields: FieldDescribe[];
+        objectLabel: string;
+        recordData: Record<string, unknown>;
+    }
     | { type: 'UPDATE_FIELD'; fieldName: string; value: unknown }
     | { type: 'SET_SAVING'; isSaving: boolean }
     | { type: 'COMMIT_CHANGES'; changedFields: Record<string, unknown> }
@@ -252,7 +252,7 @@ export function RecordPage() {
                     objectLabel: describe.label,
                     recordData: { ...record },
                 });
-                toast.update(activeToastRef.current!, 'Loaded', 'success');
+                toast.dismiss(activeToastRef.current!);
                 activeToastRef.current = null;
             } catch (err) {
                 const message = err instanceof Error ? err.message : 'Unknown error';
@@ -334,7 +334,7 @@ export function RecordPage() {
                     objectLabel: describe.label,
                     recordData: { ...record },
                 });
-                toast.update(activeToastRef.current!, 'Loaded', 'success');
+                toast.dismiss(activeToastRef.current!);
                 activeToastRef.current = null;
             } catch (err) {
                 const message = err instanceof Error ? err.message : 'Unknown error';

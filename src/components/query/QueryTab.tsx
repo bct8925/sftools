@@ -256,7 +256,7 @@ export function QueryTab() {
             const filename = getExportFilename(objectName);
 
             downloadCsv(csv, filename);
-            toast.update(id, 'Export complete', 'success');
+            toast.dismiss(id);
         } catch (error) {
             toast.update(id, 'Export failed', 'error');
             alert(`Bulk export failed: ${(error as Error).message}`);

@@ -69,7 +69,6 @@ export function useStreamSubscription({
     const [currentSubscriptionId, setCurrentSubscriptionId] = useState<string | null>(null);
     const [isSubscribed, setIsSubscribed] = useState(false);
     const toast = useToast();
-    const activeToastRef = useRef<string | null>(null);
 
     // Event counting
     const eventCountRef = useRef(0);
@@ -198,9 +197,6 @@ export function useStreamSubscription({
             return;
         }
 
-        const id = toast.show('Connecting...', 'loading');
-        activeToastRef.current = id;
-
         try {
             const response = await chrome.runtime.sendMessage({
                 type: 'subscribe',
@@ -214,10 +210,6 @@ export function useStreamSubscription({
             if (response.success) {
                 setCurrentSubscriptionId(response.subscriptionId);
                 setIsSubscribed(true);
-                if (activeToastRef.current) {
-                    toast.update(activeToastRef.current, 'Subscribed', 'success');
-                    activeToastRef.current = null;
-                }
                 const msg = `Subscribed to ${selectedChannel} (replay: ${replayPreset})`;
                 if (onEventReceived) {
                     onEventReceived({ channel: selectedChannel, payload: { message: msg } }, true);
@@ -230,12 +222,7 @@ export function useStreamSubscription({
             }
         } catch (err) {
             console.error('Subscribe error:', err);
-            if (activeToastRef.current) {
-                toast.update(activeToastRef.current, 'Error', 'error');
-                activeToastRef.current = null;
-            } else {
-                toast.show('Error', 'error');
-            }
+            toast.show('Error', 'error');
             const msg = `Error: ${(err as Error).message}`;
             if (onEventReceived) {
                 onEventReceived({ error: msg }, true);

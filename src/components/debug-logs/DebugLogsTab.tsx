@@ -122,8 +122,7 @@ export function DebugLogsTab() {
         editorRef.current?.setValue(
             '// Watching for new debug logs...\n// Click Refresh to fetch logs or wait for auto-refresh (if proxy connected)'
         );
-        toast.show('Watching started', 'success');
-    }, [toast]);
+    }, []);
 
     // Handle Stop button
     const handleStop = useCallback(async () => {
@@ -153,12 +152,7 @@ export function DebugLogsTab() {
         try {
             const newLogs = await getDebugLogsSince(watchingSince);
             setLogs(newLogs);
-            const autoLabel = isAutoRefreshEnabled ? ' (auto)' : '';
-            toast.update(
-                id,
-                `Found ${newLogs.length} log${newLogs.length !== 1 ? 's' : ''}${autoLabel}`,
-                'success'
-            );
+            toast.dismiss(id);
         } catch (error) {
             toast.update(id, (error as Error).message, 'error');
         } finally {
@@ -177,7 +171,7 @@ export function DebugLogsTab() {
                 setSelectedLogBody(body);
                 editorRef.current?.setValue(body);
                 setOpenedLogIds(prev => new Set(prev).add(logId));
-                toast.update(id, 'Log loaded', 'success');
+                toast.dismiss(id);
             } catch (error) {
                 toast.update(id, (error as Error).message, 'error');
             } finally {
@@ -224,7 +218,7 @@ export function DebugLogsTab() {
                         type: 'unsubscribe',
                         subscriptionId: currentSubId,
                     })
-                    .catch(() => {});
+                    .catch(() => { });
             }
         };
     }, [watchingSince, isProxyConnected, isAuthenticated]);

@@ -61,7 +61,11 @@ export function RestApiTab() {
         try {
             const response: RestApiResponse = await executeRestRequest(urlValue, method, body);
 
-            toast.update(id, response.status.toString(), response.success ? 'success' : 'error');
+            if (response.success) {
+                toast.dismiss(id);
+            } else {
+                toast.update(id, response.status.toString(), 'error');
+            }
 
             if (typeof response.data === 'object') {
                 responseEditorRef.current?.setValue(JSON.stringify(response.data, null, 2));
@@ -73,7 +77,7 @@ export function RestApiTab() {
                 responseEditorRef.current?.setValue(response.statusText || 'No response');
             }
         } catch (error) {
-            toast.update(id, 'Client Error', 'error');
+            toast.show('Client Error', 'error');
             responseEditorRef.current?.setValue(`Error: ${(error as Error).message}`);
             console.error('REST API Error:', error);
         }

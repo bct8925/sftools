@@ -1,14 +1,14 @@
 /* Toast container - fixed top-right, always on top */
 .container {
     position: fixed;
-    top: var(--spacing-md);
-    right: var(--spacing-md);
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
     z-index: var(--z-toast);
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
     pointer-events: none;
-    max-width: 360px;
+    max-width: min(300px, calc(100% - var(--spacing-sm) * 2));
     width: 100%;
 }
 
@@ -23,10 +23,9 @@
     border-left: 4px solid var(--border-color);
     border-radius: var(--radius-lg);
     box-shadow: 0 4px 16px var(--shadow-lg);
-    padding: 10px var(--spacing-sm) 10px var(--spacing-md);
+    padding: 8px var(--spacing-sm) 8px 10px;
     position: relative;
     overflow: hidden;
-    min-width: 240px;
     animation: slideIn 0.2s ease-out;
 }
 
@@ -101,7 +100,7 @@
     left: 0;
     height: 3px;
     width: 100%;
-    animation: progress 4s linear forwards;
+    animation: progress 2s linear forwards;
 }
 
 .toastSuccess .progress {

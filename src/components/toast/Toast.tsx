@@ -10,7 +10,7 @@ interface ToastProps {
     onDismiss: (id: string) => void;
 }
 
-const AUTO_CLOSE_MS = 4000;
+const AUTO_CLOSE_MS = 2000;
 
 export function Toast({ id, message, type, autoClose, onDismiss }: ToastProps) {
     const [isDismissing, setIsDismissing] = useState(false);

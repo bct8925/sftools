@@ -13,7 +13,7 @@ export function ConnectionSelector() {
     const containerRef = useRef<HTMLDivElement>(null);
 
     const toggle = useCallback(() => {
-        if (connections.length > 0) {
+        if (connections.length > 1) {
             setIsOpen(prev => !prev);
         }
     }, [connections.length]);

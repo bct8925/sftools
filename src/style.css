@@ -77,6 +77,12 @@
     --radius-md: 4px;
     --radius-lg: 8px;
 
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+
     /* Typography */
     --font-mono: 'SF Mono', Monaco, Consolas, monospace;
 }
@@ -159,6 +165,12 @@
     --radius-sm: 3px;
     --radius-md: 4px;
     --radius-lg: 8px;
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
 
     /* Typography */
     --font-mono: 'SF Mono', Monaco, Consolas, monospace;

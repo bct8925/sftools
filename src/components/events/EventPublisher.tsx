@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { ChannelSelector } from './ChannelSelector';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
@@ -78,11 +78,6 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                         Publish
                     </h2>
                     <CollapseChevron isOpen={!isCollapsed} onClick={handleToggleCollapse} />
-                    {status && (
-                        <StatusBadge type={statusType} data-testid="event-publish-status">
-                            {status}
-                        </StatusBadge>
-                    )}
                     <div className={styles.headerControls}>
                         <ButtonIcon
                             icon="send"
@@ -120,7 +115,7 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                         data-testid="event-publish-editor"
                     />
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }

@@ -66,7 +66,8 @@ components/
 │   ├── RestApiTab.tsx
 │   └── RestApiTab.module.css
 │
-├── schema/               # Schema Browser (standalone)
+├── schema/               # Schema Browser (tab)
+│   ├── SchemaTab.tsx     # Tab wrapper (bridges context to SchemaPage)
 │   ├── SchemaPage.tsx    # Main component
 │   ├── ObjectList.tsx    # Object sidebar
 │   ├── FieldList.tsx     # Field details
@@ -94,7 +95,6 @@ components/
 │   ├── SearchBox.tsx
 │   ├── DebugLogs.tsx
 │   ├── FlowCleanup.tsx
-│   ├── SchemaBrowserLink.tsx
 │   └── UtilsTools.module.css
 │
 └── index.ts              # Barrel exports
@@ -301,27 +301,20 @@ editorRef.current?.clearMarkers();
    - `<Name>Tab.tsx` - Component
    - `<Name>Tab.module.css` - Styles
 
-3. **Import in App.tsx**:
-   ```typescript
-   // src/react/App.tsx
-   import { NameTab } from '../components/<name>/<Name>Tab';
-   ```
+3. **Add to TabNavigation.tsx**:
+   - Add to `FeatureId` type union
+   - Add entry to `FEATURES` array with icon and color
 
-4. **Add to App.tsx render**:
-   ```tsx
-   // In tab buttons
-   <button
-     className={`tab-link ${activeTab === 'name' ? 'active' : ''}`}
-     onClick={() => setActiveTab('name')}
-   >
-     Tab Name
-   </button>
+4. **Register in App.tsx**:
+   - Add lazy import
+   - Add to `TAB_COMPONENTS` registry
+   - Add to `TAB_IDS` array
 
-   // In tab content
-   {activeTab === 'name' && <NameTab />}
-   ```
+5. **Add tile icon** to `src/lib/icons.ts` and color CSS variable to `src/style.css`
 
 ### New Standalone Page
+
+> **Note:** Prefer adding new features as tabs rather than standalone pages. The Schema Browser was previously standalone and has been integrated as a tab.
 
 1. **Create component folder**: `src/components/<name>/`
 

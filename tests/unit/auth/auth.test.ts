@@ -26,7 +26,6 @@ import {
     getActiveConnectionId,
     setActiveConnection,
     loadConnections,
-    saveConnections,
     addConnection,
     updateConnection,
     removeConnection,
@@ -34,17 +33,20 @@ import {
     onAuthExpired,
     triggerAuthExpired,
     setPendingAuth,
-    consumePendingAuth,
     validateOAuthState,
     generateOAuthState,
-    loadAuthTokens,
     migrateFromSingleConnection,
     migrateCustomConnectedApp,
+} from '../../../src/auth/auth.js';
+import {
+    saveConnections,
+    consumePendingAuth,
+    loadAuthTokens,
     loadCustomConnectedApp,
     saveCustomConnectedApp,
     clearCustomConnectedApp,
     STORAGE_KEYS,
-} from '../../../src/auth/auth.js';
+} from '../../../src/auth/auth.testing.js';
 
 describe('auth', () => {
     beforeEach(() => {

@@ -119,18 +119,6 @@ export async function navigateToRecord(objectType: string, recordId: string): Pr
 }
 
 /**
- * Navigate to the schema browser page
- */
-export async function navigateToSchema(): Promise<void> {
-    const { page, baseUrl, salesforce } = getTestContext();
-    const connectionId = salesforce.getConnectionId();
-    const url = `${baseUrl}/pages/schema/schema.html?connectionId=${connectionId}`;
-
-    await page.goto(url);
-    await page.waitForLoadState('networkidle');
-}
-
-/**
  * Wait helper for tests
  */
 export async function wait(ms: number): Promise<void> {

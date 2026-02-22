@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/MonacoEditor';
 import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
 import { ApexOutput } from './ApexOutput';
+import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import { StatusBadge } from '../status-badge/StatusBadge';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useStatusBadge } from '../../hooks/useStatusBadge';
@@ -30,6 +31,8 @@ export function ApexTab() {
     const [isExecuting, setIsExecuting] = useState(false);
     const [output, setOutput] = useState('// Output will appear here after execution');
     const [initialCode, setInitialCode] = useState<string | null>(null);
+    const [isApexCollapsed, setIsApexCollapsed] = useState(false);
+    const handleToggleApex = useCallback(() => setIsApexCollapsed(prev => !prev), []);
     const { statusText, statusType, updateStatus } = useStatusBadge();
 
     // Load last Apex code from history or favorites on mount (whichever is more recent)
@@ -180,10 +183,13 @@ export function ApexTab() {
             <div className="card">
                 <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIcon}`}>A</div>
-                    <h2>Anonymous Apex</h2>
+                    <h2 className="card-collapse-title" onClick={handleToggleApex}>
+                        Anonymous Apex
+                    </h2>
+                    <CollapseChevron isOpen={!isApexCollapsed} onClick={handleToggleApex} />
                     <ApexHistory ref={historyRef} onLoadScript={handleLoadScript} />
                 </div>
-                <div className="card-body">
+                <div className="card-body" hidden={isApexCollapsed}>
                     <div className="form-element">
                         <MonacoEditor
                             ref={codeEditorRef}

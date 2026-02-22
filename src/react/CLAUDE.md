@@ -4,56 +4,131 @@
 
 ## Overview
 
-This directory contains the **React application shell** - the main App component, context providers wrapper, navigation components, and entry points for different pages. It serves as the orchestration layer between pages and components.
+This directory contains the **React application shell** - the main App component with home screen navigation, context providers wrapper, connection selector, and entry points for different pages. It serves as the orchestration layer between pages and components.
 
 ## Directory Structure
 
 ```
 react/
-├── App.tsx                    # Main tabbed interface component
+├── App.tsx                    # Main app with home/feature view state
 ├── App.module.css             # App-specific styles
 ├── AppProviders.tsx           # Context provider wrapper
-├── TabNavigation.tsx          # Desktop tab navigation
-├── TabNavigation.module.css   # Tab navigation styles
-├── MobileMenu.tsx             # Mobile responsive menu
-├── MobileMenu.module.css      # Mobile menu styles
-├── ConnectionSelector.tsx     # Org dropdown in header
+├── HomeScreen.tsx             # Tile-based feature navigation
+├── HomeScreen.module.css      # Home screen styles
+├── TabNavigation.tsx          # Feature/tab type definitions and data
+├── ConnectionSelector.tsx     # Org dropdown selector in header
 ├── ConnectionSelector.module.css
 ├── AuthExpirationHandler.tsx  # Auth expiration modal handler
 ├── CorsErrorHandler.tsx       # CORS error detection/display
 ├── index.tsx                  # Main app entry point
-├── record.tsx                 # Record Viewer entry point
-└── schema.tsx                 # Schema Browser entry point
+└── record.tsx                 # Record Viewer entry point
 ```
 
 ## Key Files
 
 ### App.tsx - Main Application
 
-The primary application component with tabbed interface:
+The primary application component with home screen and feature views:
 
 ```typescript
-function App() {
-  return (
-    <AppProviders>
-      <AppContent />
-    </AppProviders>
-  );
-}
+type ViewState = { view: 'home' } | { view: 'feature'; featureId: TabId };
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState<TabId>('query');
+  const [viewState, setViewState] = useState<ViewState>(getInitialViewState);
 
-  // Renders 6 tabs: Query, Apex, REST API, Events, Utils, Settings
+  // Home view: shows tile grid (HomeScreen)
+  // Feature view: shows the selected tab content
   // All tabs are rendered but only active one is visible (for state preservation)
 }
 ```
 
 **Key Features:**
-- Uses `AppProviders` wrapper for all context providers
-- Dispatches `tab-changed` custom event on tab change
-- Renders all tabs simultaneously, hides inactive ones
+- Uses `ViewState` to switch between home screen and feature views
+- Reads `?feature=<id>` URL parameter for direct feature navigation
+- Waffle button (apps icon) in header navigates back to home
+- Brand text is clickable in feature view to return home
+- All tabs rendered simultaneously, only active visible (state preservation)
 - Includes `AuthExpirationHandler` and `CorsErrorHandler` modals
+- Lazy loads tab components with `React.lazy()`
+
+**Tab Registry:**
+```typescript
+const TAB_COMPONENTS: Record<TabId, ComponentType> = {
+    query: QueryTab,
+    apex: ApexTab,
+    logs: DebugLogsTab,
+    'rest-api': RestApiTab,
+    events: EventsTab,
+    schema: SchemaTab,
+    utils: UtilsTab,
+    settings: SettingsTab,
+};
+```
+
+### HomeScreen.tsx - Tile Navigation
+
+Renders a grid of feature tiles for navigating to each feature:
+
+```typescript
+interface HomeScreenProps {
+    onFeatureSelect: (featureId: FeatureId) => void;
+    onSettingsClick: () => void;
+}
+
+export function HomeScreen({ onFeatureSelect, onSettingsClick }: HomeScreenProps) {
+    // Renders FEATURES array as clickable tiles
+    // Tiles show icon + label with color-coded backgrounds
+    // Cmd/Ctrl+click opens feature in a new browser tab
+    // Disables tiles requiring auth/proxy when unavailable
+}
+```
+
+**Key Features:**
+- Uses `FEATURES` array from `TabNavigation.tsx` for tile data
+- Each tile has a colored icon container and label
+- Auth-required tiles disabled when not authenticated
+- Proxy-required tiles disabled when proxy not connected
+- Settings button rendered separately at bottom
+
+### TabNavigation.tsx - Type Definitions & Data
+
+Exports feature/tab type definitions and the `FEATURES` data array. **Not a component** — purely data and types:
+
+```typescript
+export type FeatureId = 'query' | 'apex' | 'logs' | 'rest-api' | 'events' | 'schema' | 'utils';
+export type TabId = FeatureId | 'settings';
+
+export interface Feature {
+    id: FeatureId;
+    label: string;
+    requiresAuth: boolean;
+    requiresProxy: boolean;
+    tileIcon: IconName;
+    tileColor: string;
+}
+
+export const FEATURES: Feature[] = [
+    { id: 'query', label: 'Query', requiresAuth: true, requiresProxy: false, tileIcon: 'tileQuery', tileColor: 'var(--icon-query)' },
+    { id: 'schema', label: 'Schema', requiresAuth: true, requiresProxy: false, tileIcon: 'tileSchema', tileColor: 'var(--icon-schema)' },
+    // ... other features
+];
+```
+
+### ConnectionSelector.tsx - Org Dropdown
+
+Dropdown selector for switching between Salesforce org connections:
+
+```typescript
+export function ConnectionSelector() {
+    const { connections, activeConnection, setActiveConnection } = useConnection();
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Shows active connection label with Salesforce icon
+    // Chevron indicator when multiple connections available
+    // Dropdown list with all connections, active one highlighted
+    // Closes on click outside or Escape key
+}
+```
 
 ### AppProviders.tsx - Context Wrapper
 
@@ -105,59 +180,6 @@ root.render(
     <RecordPage />
   </AppProviders>
 );
-```
-
-#### schema.tsx - Schema Browser Entry
-
-```typescript
-initTheme();
-
-const root = createRoot(document.getElementById('root')!);
-root.render(
-  <AppProviders>
-    <SchemaPage />
-  </AppProviders>
-);
-```
-
-## Navigation Components
-
-### ConnectionSelector.tsx
-
-Dropdown for switching between Salesforce orgs:
-
-```typescript
-export function ConnectionSelector() {
-  const { connections, activeConnection, setActiveConnection } = useConnection();
-
-  // Renders dropdown with org labels
-  // Shows "No connection" when disconnected
-}
-```
-
-### MobileMenu.tsx
-
-Hamburger menu for mobile/narrow viewports:
-
-```typescript
-export function MobileMenu({ activeTab, onTabChange }: MobileMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  // Renders hamburger button + slide-out menu
-  // Shows all 6 tabs as menu items
-}
-```
-
-### TabNavigation.tsx
-
-Desktop tab bar (if used separately):
-
-```typescript
-export type TabId = 'query' | 'apex' | 'rest-api' | 'events' | 'utils' | 'settings';
-
-export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
-  // Renders horizontal tab buttons
-}
 ```
 
 ## Error Handlers
@@ -232,7 +254,7 @@ rollupOptions: {
 
 ## Tab Configuration
 
-To add a new tab to the main app:
+To add a new feature tab to the main app:
 
 ### 1. Create Tab Component
 
@@ -243,27 +265,49 @@ export function MyTab() {
 }
 ```
 
-### 2. Add to TabId Type
+### 2. Add to Feature Types and Data
 
 ```typescript
 // src/react/TabNavigation.tsx
-export type TabId = 'query' | 'apex' | 'rest-api' | 'events' | 'utils' | 'settings' | 'mytab';
+
+// Add to FeatureId type
+export type FeatureId = 'query' | 'apex' | 'logs' | 'rest-api' | 'events' | 'schema' | 'utils' | 'mytab';
+
+// Add to FEATURES array
+export const FEATURES: Feature[] = [
+  // ...existing features
+  {
+    id: 'mytab',
+    label: 'My Tab',
+    requiresAuth: true,
+    requiresProxy: false,
+    tileIcon: 'tileMyTab',
+    tileColor: 'var(--icon-mytab)',
+  },
+];
 ```
 
 ### 3. Import and Register in App.tsx
 
 ```typescript
-import { MyTab } from '../components/mytab/MyTab';
+// Lazy load the component
+const MyTab = lazy(() =>
+    import('../components/mytab/MyTab').then(m => ({ default: m.MyTab }))
+);
 
-const tabs: { id: TabId; component: ReactNode }[] = [
-  // ...existing tabs
-  { id: 'mytab', component: <MyTab /> },
-];
+// Add to TAB_COMPONENTS registry
+const TAB_COMPONENTS: Record<TabId, ComponentType> = {
+    // ...existing tabs
+    mytab: MyTab,
+};
+
+// Add to TAB_IDS array
+const TAB_IDS: TabId[] = [..., 'mytab', ...];
 ```
 
-### 4. Add to MobileMenu
+### 4. Add Tile Icon
 
-Update the menu items array in `MobileMenu.tsx` to include the new tab.
+Add the tile icon SVG to `src/lib/icons.ts` and its color CSS variable to `src/style.css`.
 
 ## Patterns
 
@@ -310,6 +354,16 @@ Promise.all([
 });
 ```
 
+### URL-Based Feature Navigation
+
+Features can be opened directly via URL parameter:
+
+```typescript
+// Open feature in new tab
+const url = chrome.runtime.getURL(`dist/pages/app/app.html?feature=${featureId}`);
+chrome.tabs.create({ url });
+```
+
 ## Best Practices
 
 ### MUST Follow
@@ -317,13 +371,14 @@ Promise.all([
 1. **Always wrap with AppProviders** - All pages need context access
 2. **Initialize theme first** - Call `initTheme()` before render
 3. **Use CSS Modules** - All styles in `*.module.css` files
-4. **Export TabId type** - Keep tab types in sync across components
+4. **Use TabNavigation types** - Keep `FeatureId`/`TabId` types in sync
 
 ### SHOULD Follow
 
 1. **Keep App.tsx simple** - Complex logic belongs in components
 2. **Use useCallback for handlers** - Memoize functions passed to children
 3. **Render all tabs** - Hide inactive tabs rather than conditional rendering
+4. **Lazy load tab components** - Use `React.lazy()` for code splitting
 
 ### SHOULD NOT
 

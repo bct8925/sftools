@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "sftools",
-    "version": "2.3.6",
+    "version": "2.4.0",
     "description": "Salesforce developer tools: SOQL editor, Apex execution, REST API explorer, debug logs, record viewer, etc.",
     "icons": {
         "16": "dist/icons/icon-16.png",
@@ -34,7 +34,9 @@
     },
     "web_accessible_resources": [
         {
-            "resources": ["dist/*"],
+            "resources": [
+                "dist/*"
+            ],
             "matches": [
                 "*://*.salesforce.com/*",
                 "*://*.force.com/*",

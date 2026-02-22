@@ -62,7 +62,6 @@ vi.mock('@jetstreamapp/soql-parser-js', () => ({
 
 import {
     activateSOQLAutocomplete,
-    deactivateSOQLAutocomplete,
     clearState,
     registerSOQLCompletionProvider,
 } from '../../../src/api/soql-autocomplete.js';
@@ -72,32 +71,14 @@ import { monaco } from '../../../src/components/monaco-editor/MonacoEditor';
 describe('soql-autocomplete', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // Reset state between tests
+        // Reset state between tests (also resets active to false)
         clearState();
-        deactivateSOQLAutocomplete();
     });
 
-    describe('activateSOQLAutocomplete / deactivateSOQLAutocomplete', () => {
+    describe('activateSOQLAutocomplete', () => {
         it('activateSOQLAutocomplete enables autocomplete', () => {
-            // Initially should be inactive after deactivate in beforeEach
             activateSOQLAutocomplete();
             // Can't directly check state, but the function should not throw
-            expect(true).toBe(true);
-        });
-
-        it('deactivateSOQLAutocomplete disables autocomplete', () => {
-            activateSOQLAutocomplete();
-            deactivateSOQLAutocomplete();
-            // Function should not throw
-            expect(true).toBe(true);
-        });
-
-        it('can be toggled multiple times', () => {
-            activateSOQLAutocomplete();
-            deactivateSOQLAutocomplete();
-            activateSOQLAutocomplete();
-            deactivateSOQLAutocomplete();
-            // Should not throw
             expect(true).toBe(true);
         });
     });
@@ -244,9 +225,7 @@ describe('soql-autocomplete', () => {
                 return;
             }
 
-            const autocomplete = await import('../../../src/api/soql-autocomplete.js');
-            autocomplete.deactivateSOQLAutocomplete();
-
+            // Module starts with active=false after vi.resetModules()
             const model = {
                 getValue: () => 'SELECT Id FROM Account',
                 getOffsetAt: () => 10,

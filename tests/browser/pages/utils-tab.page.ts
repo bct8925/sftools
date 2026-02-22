@@ -25,9 +25,6 @@ export class UtilsTabPage extends BasePage {
     readonly flowCleanupStatusIndicator: Locator;
     readonly flowCleanupStatusText: Locator;
 
-    // Schema Browser Link
-    readonly openSchemaBtn: Locator;
-
     constructor(page: Page) {
         super(page);
 
@@ -59,9 +56,6 @@ export class UtilsTabPage extends BasePage {
             '[data-testid="flow-cleanup-status"] .status-indicator'
         );
         this.flowCleanupStatusText = page.locator('[data-testid="flow-cleanup-status-text"]');
-
-        // Schema Browser Link
-        this.openSchemaBtn = page.locator('[data-testid="open-schema-btn"]');
     }
 
     /**
@@ -73,11 +67,14 @@ export class UtilsTabPage extends BasePage {
         const isVisible = await tabContent.isVisible();
         if (isVisible) return;
 
-        await this.slowClick(this.page.locator('[data-testid="hamburger-btn"]'));
-        const navItem = this.page.locator('[data-testid="mobile-nav-utils"]');
-        await navItem.waitFor({ state: 'visible', timeout: 5000 });
-
-        await this.slowClick(navItem);
+        // Go home first if in a feature view
+        const homeScreen = this.page.locator('[data-testid="home-screen"]');
+        if (!(await homeScreen.isVisible())) {
+            await this.slowClick(this.page.locator('[data-testid="back-to-home-btn"]'));
+            await homeScreen.waitFor({ state: 'visible', timeout: 5000 });
+        }
+        // Click feature tile
+        await this.slowClick(this.page.locator('[data-testid="tile-utils"]'));
         await this.page.waitForSelector('[data-testid="tab-content-utils"]', { timeout: 5000 });
         await this.afterNavigation();
     }
@@ -375,16 +372,5 @@ export class UtilsTabPage extends BasePage {
         else if (classList.includes('status-loading')) type = 'loading';
 
         return { text, type };
-    }
-
-    // ============================================================
-    // Schema Browser Link Methods
-    // ============================================================
-
-    /**
-     * Click the Schema Browser link
-     */
-    async clickSchemaBrowserLink(): Promise<void> {
-        await this.slowClick(this.openSchemaBtn);
     }
 }

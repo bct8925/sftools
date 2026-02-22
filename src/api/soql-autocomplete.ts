@@ -579,11 +579,6 @@ export function activateSOQLAutocomplete(): void {
     state.active = true;
 }
 
-// Deactivate autocomplete (not currently used - query-tab is persistent)
-export function deactivateSOQLAutocomplete(): void {
-    state.active = false;
-}
-
 // Clear state (on connection change)
 export function clearState(): void {
     state.fromObject = null;

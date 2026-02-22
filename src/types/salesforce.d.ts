@@ -145,19 +145,6 @@ export interface ApexExecutionResult {
     column: number;
 }
 
-// Request/Response
-export interface SalesforceRequestOptions {
-    method?: string;
-    params?: Record<string, string>;
-    body?: string;
-    headers?: Record<string, string>;
-}
-
-export interface SalesforceRequestResult<T = unknown> {
-    json: T;
-    status: number;
-}
-
 // REST API Response
 export interface RestApiResponse<T = unknown> {
     success: boolean;
@@ -166,26 +153,6 @@ export interface RestApiResponse<T = unknown> {
     error?: string;
     data: T;
     raw: string;
-}
-
-// Tooling API
-export interface ToolingQueryResult<T = unknown> {
-    size: number;
-    totalSize: number;
-    done: boolean;
-    records: T[];
-    nextRecordsUrl?: string;
-}
-
-// Debug Logs
-export interface DebugLog {
-    Id: string;
-    LogUser: { Name: string };
-    Operation: string;
-    Application: string;
-    Status: string;
-    LogLength: number;
-    StartTime: string;
 }
 
 // Flow Definition

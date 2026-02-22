@@ -1,16 +1,5 @@
 /* Schema Browser Page Styles */
 
-/* Header Icon */
-.headerIcon {
-    background-color: var(--icon-query);
-}
-
-/* Schema-specific card override */
-.schemaCardBody {
-    padding: 0;
-    overflow: hidden;
-}
-
 /* Layout */
 .schemaContainer {
     display: flex;
@@ -18,11 +7,18 @@
     min-height: 500px;
 }
 
+.schemaContainerInline {
+    height: calc(100vh - 70px);
+    min-height: 0;
+    margin-bottom: 0;
+}
+
 /* Objects Panel */
 .objectsPanel {
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     border-right: 1px solid var(--border-color);
     transition: flex 0.3s linear;
 }
@@ -122,6 +118,7 @@
     flex: 0 0 66.666%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     background-color: var(--bg-primary);
 }
 
@@ -136,6 +133,10 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+}
+
+.fieldsHeaderCenter {
+    min-width: 0;
 }
 
 .fieldsHeaderTop h3 {
@@ -506,4 +507,50 @@
 
 .modalStatus.error {
     color: var(--error-color);
+}
+
+/* Back button — hidden by default, shown at narrow widths */
+.backButton {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 4px;
+    font-size: 14px;
+    margin-right: 8px;
+}
+
+.backButton:hover {
+    color: var(--primary-color);
+}
+
+/* Responsive: single-panel layout for narrow widths (e.g. Chrome side panel) */
+@media (max-width: 600px) {
+    .schemaContainer {
+        flex-direction: column;
+    }
+
+    .objectsPanel {
+        flex: 1;
+        border-right: none;
+    }
+
+    .objectsPanel.withFields {
+        display: none;
+    }
+
+    .fieldsPanel {
+        flex: 1 1 100%;
+    }
+
+    .backButton {
+        display: flex;
+    }
+
+    .fieldsHeaderCenter {
+        text-align: center;
+    }
 }

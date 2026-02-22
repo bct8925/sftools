@@ -4,9 +4,9 @@ import {
     formatCellValue,
     escapeCsvField,
     getExportFilename,
-    recordsToCsv,
     downloadCsv,
 } from '../../../src/lib/csv-utils.js';
+import { recordsToCsv } from '../../../src/lib/csv-utils.testing.js';
 
 describe('getValueByPath', () => {
     it('returns undefined for empty path', () => {

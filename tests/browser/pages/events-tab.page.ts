@@ -19,6 +19,10 @@ export class EventsTabPage extends BasePage {
     readonly publishBtn: Locator;
     readonly publishStatus: Locator;
 
+    // Settings
+    readonly settingsBtn: Locator;
+    readonly settingsModal: Locator;
+
     // Overlay
     readonly tabOverlay: Locator;
 
@@ -34,6 +38,10 @@ export class EventsTabPage extends BasePage {
         this.subscribeBtn = page.locator('[data-testid="event-subscribe-btn"]');
         this.streamStatus = page.locator('[data-testid="event-stream-status"]');
         this.clearStreamBtn = page.locator('[data-testid="event-clear-btn"]');
+
+        // Settings
+        this.settingsBtn = page.locator('[data-testid="event-settings-btn"]');
+        this.settingsModal = page.locator('[data-testid="events-settings-modal"]');
 
         // Publish selectors
         this.publishChannelSelect = page.locator('[data-testid="event-publish-channel"]');
@@ -53,15 +61,24 @@ export class EventsTabPage extends BasePage {
         const isVisible = await tabContent.isVisible();
         if (isVisible) return;
 
-        // Open hamburger menu and wait for nav item
-        await this.slowClick(this.page.locator('[data-testid="hamburger-btn"]'));
-        const navItem = this.page.locator('[data-testid="mobile-nav-events"]');
-        await navItem.waitFor({ state: 'visible', timeout: 5000 });
-
-        // Click the nav item
-        await this.slowClick(navItem);
+        // Go home first if in a feature view
+        const homeScreen = this.page.locator('[data-testid="home-screen"]');
+        if (!(await homeScreen.isVisible())) {
+            await this.slowClick(this.page.locator('[data-testid="back-to-home-btn"]'));
+            await homeScreen.waitFor({ state: 'visible', timeout: 5000 });
+        }
+        // Click feature tile
+        await this.slowClick(this.page.locator('[data-testid="tile-events"]'));
         await this.page.waitForSelector('[data-testid="tab-content-events"]', { timeout: 5000 });
         await this.afterNavigation();
+    }
+
+    /**
+     * Open the settings modal
+     */
+    async openSettings(): Promise<void> {
+        await this.slowClick(this.settingsBtn);
+        await this.settingsModal.waitFor({ state: 'visible', timeout: 3000 });
     }
 
     /**

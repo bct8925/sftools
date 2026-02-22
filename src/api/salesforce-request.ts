@@ -11,7 +11,7 @@ import { isCorsError, showCorsErrorModal } from './cors-detection';
 
 // --- Types ---
 
-export interface SalesforceRequestOptions {
+interface SalesforceRequestOptions {
     method?: string;
     headers?: Record<string, string>;
     body?: string;

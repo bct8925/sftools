@@ -35,6 +35,9 @@ describe('Events Replay Options', () => {
         // Wait for tab to load
         await page.waitForTimeout(1000);
 
+        // Open settings modal where replay options live
+        await eventsTab.openSettings();
+
         // Test E-F-007: Select replay option LATEST - default selected
         const replayOptions = await eventsTab.getReplayOptions();
         expect(replayOptions.length).toBeGreaterThanOrEqual(3);

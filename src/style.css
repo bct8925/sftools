@@ -39,6 +39,11 @@
     --icon-events: #e96d63;
     --icon-events-publish: #706e6b;
     --icon-query: #0070d2;
+    --icon-logs: #f59e0b;
+    --icon-rest-api: #06b6d4;
+    --icon-utils: #8b5cf6;
+    --icon-schema: #10b981;
+    --icon-settings: #6b7280;
     --icon-success: #4bca81;
     --icon-appearance: #6366f1;
     --icon-warning: #ff9a3c;
@@ -117,6 +122,11 @@
     --icon-events: #e96d63;
     --icon-events-publish: #706e6b;
     --icon-query: #0070d2;
+    --icon-logs: #f59e0b;
+    --icon-rest-api: #06b6d4;
+    --icon-utils: #a78bfa;
+    --icon-schema: #10b981;
+    --icon-settings: #9ca3af;
     --icon-success: #4bca81;
     --icon-appearance: #6366f1;
     --icon-warning: #ff9a3c;
@@ -156,6 +166,11 @@
 
 html {
     overscroll-behavior: none;
+}
+
+/* Ensure hidden attribute always wins, even against display:flex in CSS modules */
+[hidden] {
+    display: none !important;
 }
 
 body {
@@ -355,6 +370,45 @@ code,
     overflow: visible;
 }
 
+/* Collapsible card title */
+.card-collapse-title {
+    cursor: pointer;
+    user-select: none;
+}
+
+.card-collapse-title:hover {
+    color: var(--primary-color);
+}
+
+/* Collapsible card chevron button */
+.card-collapse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: inherit;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+.card-collapse-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+.card-collapse-chevron {
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+}
+
+.card-collapse-chevron-open {
+    transform: rotate(90deg);
+}
+
 .form-element {
     margin-bottom: 15px;
 }
@@ -389,6 +443,13 @@ code,
     outline: 0;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 1px var(--primary-color) inset;
+}
+
+.input:disabled,
+.select:disabled,
+.textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .button-brand {

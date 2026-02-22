@@ -19,6 +19,10 @@
     margin-bottom: 0;
 }
 
+.outputCardCollapsed {
+    flex: none;
+}
+
 .outputCardBody {
     flex: 1;
     display: flex;

@@ -45,11 +45,11 @@ src/
 │   ├── query/            # Query tab: QueryTab, QueryEditor, QueryTabs, QueryResults, QueryResultsTable, QueryHistory
 │   ├── record/           # Record Viewer: RecordPage, FieldRow, RichTextModal
 │   ├── rest-api/         # REST API tab: RestApiTab
-│   ├── schema/           # Schema Browser: SchemaPage, ObjectList, FieldList, FormulaEditor
+│   ├── schema/           # Schema Browser: SchemaTab, SchemaPage, ObjectList, FieldList, FormulaEditor
 │   ├── settings/         # Settings tab: SettingsTab, ConnectionList, ConnectionCard, EditConnectionModal, ThemeSettings, ProxySettings, CacheSettings
 │   ├── sf-icon/          # SfIcon.tsx
 │   ├── utils/            # Utils tab: UtilsTab
-│   └── utils-tools/      # Utility tools: SearchBox, DebugLogs, FlowCleanup, SchemaBrowserLink
+│   └── utils-tools/      # Utility tools: SearchBox, DebugLogs, FlowCleanup
 │
 ├── contexts/             # React Context API (3 providers)
 │   ├── ConnectionContext.tsx  # Multi-org state
@@ -60,15 +60,14 @@ src/
 │   ├── useFilteredResults.ts
 │   └── useStatusBadge.ts
 │
-├── react/                # App shell (8 TSX files)
-│   ├── App.tsx           # Main tabbed interface
+├── react/                # App shell (7 TSX files)
+│   ├── App.tsx           # Main app with home/feature view state
 │   ├── AppProviders.tsx  # Context provider wrapper
-│   ├── TabNavigation.tsx # Tab navigation
-│   ├── ConnectionSelector.tsx
-│   ├── MobileMenu.tsx
+│   ├── TabNavigation.tsx # Feature/tab type definitions and data
+│   ├── HomeScreen.tsx    # Tile-based feature navigation
+│   ├── ConnectionSelector.tsx  # Org dropdown selector
 │   ├── index.tsx         # Main app entry
-│   ├── record.tsx        # Record page entry
-│   └── schema.tsx        # Schema page entry
+│   └── record.tsx        # Record page entry
 │
 ├── api/                  # Salesforce API operations (8 TS files)
 │   ├── salesforce.ts     # API operations (executeQuery, executeApex, etc.)
@@ -99,10 +98,9 @@ src/
 │   └── components.d.ts   # Component types
 │
 ├── pages/                # HTML entry points
-│   ├── app/              # Main tabbed app
+│   ├── app/              # Main app (home screen + features)
 │   ├── callback/         # OAuth callback
-│   ├── record/           # Record Viewer
-│   └── schema/           # Schema Browser
+│   └── record/           # Record Viewer
 │
 ├── background/           # Service worker (4 TS files)
 │   ├── background.ts     # Message routing, context menu
@@ -120,9 +118,11 @@ src/
 |-----|---------|-----------|
 | **Query** | SOQL editor with tabbed results | `components/query/QueryTab.tsx` |
 | **Apex** | Anonymous Apex execution | `components/apex/ApexTab.tsx` |
+| **Debug Logs** | Debug log management | `components/debug-logs/DebugLogsTab.tsx` |
 | **REST API** | REST explorer with Monaco | `components/rest-api/RestApiTab.tsx` |
 | **Events** | Streaming (requires proxy) | `components/events/EventsTab.tsx` |
-| **Utils** | Debug logs, flow cleanup | `components/utils/UtilsTab.tsx` |
+| **Schema** | Browse object metadata | `components/schema/SchemaTab.tsx` |
+| **Utils** | Flow cleanup | `components/utils/UtilsTab.tsx` |
 | **Settings** | Connections, appearance | `components/settings/SettingsTab.tsx` |
 
 ## Standalone Tools
@@ -130,7 +130,6 @@ src/
 | Tool | Purpose | Entry Point |
 |------|---------|-------------|
 | **Record Viewer** | View/edit record fields | `pages/record/record.html` |
-| **Schema Browser** | Browse object metadata | `pages/schema/schema.html` |
 
 ## React Component Architecture
 
@@ -219,12 +218,14 @@ export function ExampleComponent({ initialValue = '', onComplete }: ExampleProps
    - `<Name>Tab.tsx` - Component
    - `<Name>Tab.module.css` - Styles
 
-2. Import in `src/react/App.tsx`:
-   ```typescript
-   import { NameTab } from '../components/<name>/<Name>Tab';
-   ```
+2. Add to `FeatureId` type and `FEATURES` array in `src/react/TabNavigation.tsx`
 
-3. Add tab button and content in `App.tsx` render
+3. Lazy-load and register in `src/react/App.tsx`:
+   - Add lazy import
+   - Add to `TAB_COMPONENTS` registry
+   - Add to `TAB_IDS` array
+
+4. Add tile icon to `src/lib/icons.ts` and color CSS variable to `src/style.css`
 
 ### Adding a Standalone Page
 

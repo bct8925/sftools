@@ -2,12 +2,15 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { ChannelSelector } from './ChannelSelector';
 import { EventPublisher } from './EventPublisher';
+import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useProxy } from '../../contexts/ProxyContext';
 import { useStatusBadge } from '../../hooks/useStatusBadge';
 import { getAllStreamingChannels } from '../../api/salesforce';
-import { formatSystemMessage } from '../../lib/events-utils';
 import { StatusBadge } from '../status-badge/StatusBadge';
+import { ButtonIcon } from '../button-icon/ButtonIcon';
+import { Modal } from '../modal/Modal';
+import { EventsSettingsModal } from './EventsSettingsModal';
 import { useStreamSubscription } from './useStreamSubscription';
 import styles from './EventsTab.module.css';
 
@@ -52,6 +55,22 @@ const extractEventType = (payload: unknown, channel: string): string => {
     return channel || 'Unknown';
 };
 
+// Decode gRPC base64 replay ID bytes to a readable number
+const formatReplayId = (replayId: number | string | undefined): string => {
+    if (replayId === undefined) return '-';
+    if (typeof replayId === 'number') return String(replayId);
+    try {
+        const binary = atob(replayId);
+        let value = BigInt(0);
+        for (let i = 0; i < binary.length; i++) {
+            value = (value << BigInt(8)) | BigInt(binary.charCodeAt(i));
+        }
+        return value.toString();
+    } catch {
+        return replayId;
+    }
+};
+
 // Format time for display
 const formatTime = (isoString: string): string => {
     const date = new Date(isoString);
@@ -73,7 +92,6 @@ export function EventsTab() {
     const { isConnected: isProxyConnected } = useProxy();
 
     const streamEditorRef = useRef<MonacoEditorRef>(null);
-    const tableScrollRef = useRef<HTMLDivElement>(null);
 
     // Event table state
     const [events, setEvents] = useState<StreamEvent[]>([]);
@@ -93,6 +111,14 @@ export function EventsTab() {
     const [selectedChannel, setSelectedChannel] = useState('');
     const [replayPreset, setReplayPreset] = useState('LATEST');
     const [replayId, setReplayId] = useState('');
+
+    // Settings modal state
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    // Streaming card collapse state
+    const [isStreamingCollapsed, setIsStreamingCollapsed] = useState(false);
+    const handleToggleStreaming = useCallback(() => setIsStreamingCollapsed(prev => !prev), []);
+
     const {
         statusText: streamStatus,
         statusType: streamStatusType,
@@ -153,13 +179,6 @@ export function EventsTab() {
 
                 return next;
             });
-
-            // Auto-scroll table to bottom
-            setTimeout(() => {
-                if (tableScrollRef.current) {
-                    tableScrollRef.current.scrollTop = tableScrollRef.current.scrollHeight;
-                }
-            }, 50);
         },
         [selectedChannel]
     );
@@ -179,21 +198,6 @@ export function EventsTab() {
         setOpenedEventIds(new Set());
         streamEditorRef.current?.setValue('// Click Open on any event to view details\n');
     }, []);
-
-    // Publish event callbacks
-    const handlePublishSuccess = useCallback(
-        (msg: string) => {
-            handleEventReceived({ channel: 'PublishEvent', payload: { message: msg } }, true);
-        },
-        [handleEventReceived]
-    );
-
-    const handlePublishError = useCallback(
-        (msg: string) => {
-            handleEventReceived({ error: msg }, true);
-        },
-        [handleEventReceived]
-    );
 
     // Load channels from API
     const loadChannels = useCallback(async () => {
@@ -257,31 +261,47 @@ export function EventsTab() {
 
     return (
         <div className={styles.eventsTab} data-testid="events-tab">
-            <div className={`card ${styles.streamingCard}`}>
+            <div
+                className={`card ${styles.streamingCard} ${isStreamingCollapsed ? styles.streamingCardCollapsed : ''}`}
+            >
                 <div className={`card-header ${styles.header}`}>
                     <div className={styles.headerRow}>
                         <div className={`card-header-icon ${styles.headerIconEvents}`}>E</div>
-                        <h2>Streaming Events</h2>
-                    </div>
-                    <div className={styles.headerRow}>
-                        {streamStatus && (
-                            <StatusBadge type={streamStatusType} data-testid="event-stream-status">
-                                {streamStatus}
-                            </StatusBadge>
-                        )}
+                        <h2 className="card-collapse-title" onClick={handleToggleStreaming}>
+                            Streaming
+                        </h2>
+                        <CollapseChevron
+                            isOpen={!isStreamingCollapsed}
+                            onClick={handleToggleStreaming}
+                        />
+
                         <div className={styles.headerControls}>
-                            <button
-                                className="button-neutral"
+                            <ButtonIcon
+                                icon={isSubscribed ? 'stop' : 'play'}
+                                title={isSubscribed ? 'Unsubscribe' : 'Subscribe'}
+                                onClick={toggleSubscription}
+                                disabled={!isAuthenticated || !selectedChannel}
+                                data-testid="event-subscribe-btn"
+                            />
+                            <ButtonIcon
+                                icon="settings"
+                                title="Settings"
+                                onClick={() => setIsSettingsOpen(true)}
+                                data-testid="event-settings-btn"
+                            />
+                            <ButtonIcon
+                                icon="trash"
+                                title="Clear stream"
                                 onClick={clearStream}
-                                type="button"
                                 data-testid="event-clear-btn"
-                            >
-                                Clear Stream
-                            </button>
+                            />
                         </div>
                     </div>
                 </div>
-                <div className={`card-body ${styles.streamingCardBody}`}>
+                <div
+                    className={`card-body ${styles.streamingCardBody}`}
+                    hidden={isStreamingCollapsed}
+                >
                     <div className="form-element">
                         <label htmlFor="event-channel-select">Channel</label>
                         <ChannelSelector
@@ -295,64 +315,23 @@ export function EventsTab() {
                             data-testid="event-channel-select"
                         />
                     </div>
-                    <div className="form-element">
-                        <label htmlFor="event-replay-select">Replay From</label>
-                        <div className={styles.replayRow}>
-                            <select
-                                className="select"
-                                value={replayPreset}
-                                onChange={e => setReplayPreset(e.target.value)}
-                                disabled={isSubscribed}
-                                data-testid="event-replay-select"
-                            >
-                                <option value="LATEST">Latest (new events only)</option>
-                                <option value="EARLIEST">Earliest (all retained events)</option>
-                                <option value="CUSTOM">Custom Replay ID</option>
-                            </select>
-                            <button
-                                className="button-brand"
-                                onClick={toggleSubscription}
-                                type="button"
-                                data-testid="event-subscribe-btn"
-                            >
-                                {isSubscribed ? 'Unsubscribe' : 'Subscribe'}
-                            </button>
-                        </div>
-                    </div>
-                    {replayPreset === 'CUSTOM' && (
-                        <div className="form-element">
-                            <label htmlFor="event-replay-id">Replay ID</label>
-                            <input
-                                type="text"
-                                className="input"
-                                placeholder="Enter base64 replay ID"
-                                value={replayId}
-                                onChange={e => setReplayId(e.target.value)}
-                                disabled={isSubscribed}
-                                data-testid="event-replay-id"
-                            />
-                        </div>
-                    )}
-
                     {/* Viewer Layout */}
                     <div className={styles.viewer}>
-                        {/* Monaco Editor (2/3) */}
-                        <div className={styles.viewerEditor}>
-                            <MonacoEditor
-                                ref={streamEditorRef}
-                                language="json"
-                                value="// Click Open on any event to view details\n"
-                                readonly
-                                className={`monaco-container ${styles.streamEditor}`}
-                                data-testid="event-stream-editor"
-                            />
-                        </div>
+                        {/* Monaco Editor */}
+                        <MonacoEditor
+                            ref={streamEditorRef}
+                            language="json"
+                            value="// Subscribe to and open an event"
+                            readonly
+                            className={`monaco-container ${styles.streamEditor}`}
+                            data-testid="event-stream-editor"
+                        />
 
                         {/* Event Table (1/3) */}
-                        <div className={styles.viewerTable} ref={tableScrollRef}>
+                        <div className={styles.viewerTable}>
                             {events.length === 0 ? (
                                 <div className={styles.emptyState}>
-                                    <div className={styles.emptyStateIcon}>📡</div>
+                                    <div className={styles.emptyStateIcon}></div>
                                     <p>Subscribe to a channel to see events</p>
                                 </div>
                             ) : (
@@ -361,13 +340,12 @@ export function EventsTab() {
                                         <tr>
                                             <th>Time</th>
                                             <th>Replay ID</th>
-                                            <th>Channel</th>
                                             <th>Event Type</th>
                                             <th></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {events.map(event => (
+                                        {[...events].reverse().map(event => (
                                             <tr
                                                 key={event.id}
                                                 className={`${openedEventIds.has(event.id) ? styles.rowOpened : ''} ${
@@ -379,11 +357,8 @@ export function EventsTab() {
                                                     {formatTime(event.timestamp)}
                                                 </td>
                                                 <td className={styles.replayIdCell}>
-                                                    {event.replayId !== undefined
-                                                        ? String(event.replayId)
-                                                        : '-'}
+                                                    {formatReplayId(event.replayId)}
                                                 </td>
-                                                <td>{event.channel}</td>
                                                 <td>{event.eventType}</td>
                                                 <td>
                                                     <button
@@ -404,11 +379,19 @@ export function EventsTab() {
                 </div>
             </div>
 
-            <EventPublisher
-                platformEvents={channels.platformEvents}
-                onPublishSuccess={handlePublishSuccess}
-                onError={handlePublishError}
-            />
+            <EventPublisher platformEvents={channels.platformEvents} />
+
+            {/* Settings Modal */}
+            <Modal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}>
+                <EventsSettingsModal
+                    replayPreset={replayPreset}
+                    onReplayPresetChange={setReplayPreset}
+                    replayId={replayId}
+                    onReplayIdChange={setReplayId}
+                    disabled={isSubscribed}
+                    onClose={() => setIsSettingsOpen(false)}
+                />
+            </Modal>
         </div>
     );
 }

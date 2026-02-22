@@ -1,20 +1,16 @@
 /**
- * Tests for src/lib/fetch.js
+ * Tests for src/api/fetch.ts
  *
- * Test IDs: FE-U-001 through FE-U-013
- * - FE-U-001: isProxyConnected() - Returns cached status
- * - FE-U-002: checkProxyStatus() - Queries background
+ * Test IDs: FE-U-003 through FE-U-024
  * - FE-U-003: extensionFetch() - Routes via background
  * - FE-U-004: proxyFetch() - Routes via proxy
  * - FE-U-005: smartFetch() - Uses proxy if connected
  * - FE-U-006: smartFetch() - Falls back to extension
- * - FE-U-007: checkProxyStatus() - Returns false when proxy is not connected
- * - FE-U-008: checkProxyStatus() - Returns false on error
- * - FE-U-009: checkProxyStatus() - Sends checkProxyConnection message
  * - FE-U-010: extensionFetch() - Uses provided connectionId over active connection
  * - FE-U-011: extensionFetch() - Returns response from background
  * - FE-U-012: proxyFetch() - Returns response from background
  * - FE-U-013: Auth expiration handling - Triggers auth expired when response has authExpired flag
+ * - FE-U-014 through FE-U-024: directFetch, auth expiration, proxy error handling
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -36,69 +32,6 @@ describe('fetch', () => {
 
         // Clear active connection
         authModule.setActiveConnection(null);
-    });
-
-    describe('isProxyConnected', () => {
-        it('FE-U-001: returns false by default', () => {
-            expect(fetchModule.isProxyConnected()).toBe(false);
-        });
-    });
-
-    describe('checkProxyStatus', () => {
-        it('FE-U-002: returns true when proxy is connected', async () => {
-            chrome.runtime.sendMessage.mockResolvedValueOnce({ connected: true });
-
-            const result = await fetchModule.checkProxyStatus();
-
-            expect(result).toBe(true);
-            expect(fetchModule.isProxyConnected()).toBe(true);
-        });
-
-        it('FE-U-007: returns false when proxy is not connected', async () => {
-            chrome.runtime.sendMessage.mockResolvedValueOnce({ connected: false });
-
-            const result = await fetchModule.checkProxyStatus();
-
-            expect(result).toBe(false);
-            expect(fetchModule.isProxyConnected()).toBe(false);
-        });
-
-        it('FE-U-008: returns false on error', async () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-            chrome.runtime.sendMessage.mockRejectedValueOnce(new Error('Connection failed'));
-
-            const result = await fetchModule.checkProxyStatus();
-
-            expect(result).toBe(false);
-            expect(consoleSpy).toHaveBeenCalledWith(
-                'Error checking proxy status:',
-                expect.any(Error)
-            );
-            consoleSpy.mockRestore();
-        });
-
-        it('FE-U-009: sends checkProxyConnection message', async () => {
-            chrome.runtime.sendMessage.mockResolvedValueOnce({ connected: false });
-
-            await fetchModule.checkProxyStatus();
-
-            expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-                type: 'checkProxyConnection',
-            });
-        });
-
-        it('FE-U-020: returns false when chrome.runtime is undefined', async () => {
-            // Temporarily remove chrome.runtime
-            const originalRuntime = chrome.runtime;
-            (chrome as { runtime: unknown }).runtime = undefined;
-
-            const result = await fetchModule.checkProxyStatus();
-
-            expect(result).toBe(false);
-
-            // Restore chrome.runtime
-            (chrome as { runtime: unknown }).runtime = originalRuntime;
-        });
     });
 
     describe('extensionFetch', () => {
@@ -203,9 +136,8 @@ describe('fetch', () => {
         });
 
         it('FE-U-005: uses proxyFetch when proxy is connected', async () => {
-            // First connect the proxy
-            chrome.runtime.sendMessage.mockResolvedValueOnce({ connected: true });
-            await fetchModule.checkProxyStatus();
+            // Set proxy as connected
+            fetchModule.setProxyConnected(true);
 
             // Then make a smartFetch call
             chrome.runtime.sendMessage.mockResolvedValueOnce({ ok: true, data: {} });

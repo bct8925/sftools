@@ -44,11 +44,14 @@ export class DebugLogsTabPage extends BasePage {
         const isVisible = await tabContent.isVisible();
         if (isVisible) return;
 
-        await this.slowClick(this.page.locator('[data-testid="hamburger-btn"]'));
-        const navItem = this.page.locator('[data-testid="mobile-nav-logs"]');
-        await navItem.waitFor({ state: 'visible', timeout: 5000 });
-
-        await this.slowClick(navItem);
+        // Go home first if in a feature view
+        const homeScreen = this.page.locator('[data-testid="home-screen"]');
+        if (!(await homeScreen.isVisible())) {
+            await this.slowClick(this.page.locator('[data-testid="back-to-home-btn"]'));
+            await homeScreen.waitFor({ state: 'visible', timeout: 5000 });
+        }
+        // Click feature tile
+        await this.slowClick(this.page.locator('[data-testid="tile-logs"]'));
         await this.page.waitForSelector('[data-testid="tab-content-logs"]', { timeout: 5000 });
         await this.afterNavigation();
     }

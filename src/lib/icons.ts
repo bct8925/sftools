@@ -12,6 +12,17 @@ import clockIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-sys
 import settingsIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/settings.svg?raw';
 import playIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/play.svg?raw';
 import stopIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/stop.svg?raw';
+import databaseIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/database.svg?raw';
+import apexIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/apex.svg?raw';
+import listIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/list.svg?raw';
+import httpIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/http.svg?raw';
+import broadcastIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/broadcast.svg?raw';
+import appsIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/apps.svg?raw';
+import chevrondownIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/chevrondown.svg?raw';
+import chevronleftIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/chevronleft.svg?raw';
+import sobjectIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/sobject.svg?raw';
+import salesforce1Icon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/salesforce1.svg?raw';
+import sendIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/send.svg?raw';
 
 interface ProcessSvgOptions {
     size?: number;
@@ -41,6 +52,7 @@ export const icons = {
     edit: processSvg(editIcon, { size: 16 }),
     refresh: processSvg(refreshIcon, { size: 16 }),
     refreshSmall: processSvg(refreshIcon, { size: 12 }),
+    send: processSvg(sendIcon, { size: 16 }),
     trash: processSvg(deleteIcon, { size: 16 }),
 
     // Smaller icons for tabs and inline use
@@ -56,6 +68,26 @@ export const icons = {
     // External link icon (custom SVG)
     externalLink:
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+
+    // Tile icons (size 32 for home screen tiles)
+    tileQuery: processSvg(databaseIcon, { size: 32 }),
+    tileApex: processSvg(apexIcon, { size: 32 }),
+    tileLogs: processSvg(listIcon, { size: 32 }),
+    tileRestApi: processSvg(httpIcon, { size: 32 }),
+    tileEvents: processSvg(broadcastIcon, { size: 32 }),
+    tileUtils:
+        '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    tileSchema: processSvg(sobjectIcon, { size: 32 }),
+    tileSettings: processSvg(settingsIcon, { size: 24 }),
+
+    // Home screen action icons
+    openOrg: processSvg(salesforce1Icon, { size: 24 }),
+
+    // Header icons
+    apps: processSvg(appsIcon, { size: 20 }),
+    chevrondown: processSvg(chevrondownIcon, { size: 12 }),
+    chevronleft: processSvg(chevronleftIcon, { size: 14 }),
+    salesforce1: processSvg(salesforce1Icon, { size: 16 }),
 } as const;
 
 export type IconName = keyof typeof icons;

@@ -22,6 +22,8 @@ export class SchemaPage extends BasePage {
     readonly modalCancelBtn: Locator;
     readonly modalStatus: Locator;
 
+    readonly backToObjectsBtn: Locator;
+
     constructor(page: Page) {
         super(page);
 
@@ -36,11 +38,33 @@ export class SchemaPage extends BasePage {
         this.selectedObjectName = page.locator('[data-testid="schema-selected-object-name"]');
         this.closeFieldsBtn = page.locator('[data-testid="schema-close-fields"]');
 
+        this.backToObjectsBtn = page.locator('[data-testid="schema-back-to-objects"]');
+
         this.formulaModal = page.locator('[data-testid="schema-formula-modal"]');
         this.formulaEditor = new MonacoHelpers(page, '[data-testid="schema-formula-editor"]');
         this.modalSaveBtn = page.locator('[data-testid="schema-formula-save"]');
         this.modalCancelBtn = page.locator('[data-testid="schema-formula-cancel"]');
         this.modalStatus = page.locator('[data-testid="schema-formula-status"]');
+    }
+
+    /**
+     * Navigate to the Schema tab from the home screen
+     */
+    async navigateTo(): Promise<void> {
+        const tabContent = this.page.locator('[data-testid="tab-content-schema"]');
+        const isVisible = await tabContent.isVisible();
+        if (isVisible) return;
+
+        // Go home first if in a feature view
+        const homeScreen = this.page.locator('[data-testid="home-screen"]');
+        if (!(await homeScreen.isVisible())) {
+            await this.slowClick(this.page.locator('[data-testid="back-to-home-btn"]'));
+            await homeScreen.waitFor({ state: 'visible', timeout: 5000 });
+        }
+        // Click feature tile
+        await this.slowClick(this.page.locator('[data-testid="tile-schema"]'));
+        await this.page.waitForSelector('[data-testid="tab-content-schema"]', { timeout: 5000 });
+        await this.afterNavigation();
     }
 
     /**

@@ -116,6 +116,14 @@ function ConnectionManager() {
 }
 ```
 
+### Connection Auto-Selection
+
+`refreshConnections()` centralizes all initialization and auto-selection logic:
+- Loads connections from Chrome storage
+- If an active connection ID is stored, selects it
+- If no active connection, auto-selects the most recently used connection
+- Handles both initial load and cross-tab sync scenarios
+
 ### Storage Sync
 
 ConnectionContext syncs with Chrome storage across tabs:

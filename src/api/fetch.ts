@@ -24,39 +24,11 @@ export interface FetchResponse {
     connectionId?: string;
 }
 
-interface ProxyStatusResponse {
-    connected: boolean;
-}
-
 // --- Proxy Connection State ---
 let PROXY_CONNECTED = false;
 
-export function isProxyConnected(): boolean {
-    return PROXY_CONNECTED;
-}
-
 export function setProxyConnected(connected: boolean): void {
     PROXY_CONNECTED = connected;
-}
-
-/**
- * Check and update proxy connection status
- */
-export async function checkProxyStatus(): Promise<boolean> {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-        try {
-            const response = (await chrome.runtime.sendMessage({
-                type: 'checkProxyConnection',
-            })) as ProxyStatusResponse;
-            PROXY_CONNECTED = response.connected;
-            return PROXY_CONNECTED;
-        } catch (err) {
-            console.error('Error checking proxy status:', err);
-            PROXY_CONNECTED = false;
-            return false;
-        }
-    }
-    return false;
 }
 
 /**

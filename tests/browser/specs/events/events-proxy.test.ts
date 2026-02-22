@@ -31,13 +31,10 @@ describe('Events Proxy Connection', () => {
 
         await navigateToExtension();
 
-        // Open hamburger menu
-        await page.locator('[data-testid="hamburger-btn"]').click();
-        const navItem = page.locator('[data-testid="mobile-nav-events"]');
-        await navItem.waitFor({ state: 'visible', timeout: 5000 });
-
-        // Verify Events nav item is disabled when proxy is not connected
-        const isDisabled = await navItem.isDisabled();
+        // Verify Events tile is disabled on home screen when proxy is not connected
+        const eventsTile = page.locator('[data-testid="tile-events"]');
+        await eventsTile.waitFor({ state: 'visible', timeout: 5000 });
+        const isDisabled = await eventsTile.isDisabled();
         expect(isDisabled).toBe(true);
     });
 });

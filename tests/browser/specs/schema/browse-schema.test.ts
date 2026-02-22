@@ -3,7 +3,7 @@ import {
     getTestContext,
     createPageObjects,
     setupMocks,
-    navigateToSchema,
+    navigateToExtension,
     MockRouter,
 } from '../../test-utils';
 
@@ -43,7 +43,8 @@ describe('Schema Browser', () => {
         const { schemaPage } = createPageObjects(page);
 
         // Navigate to schema browser
-        await navigateToSchema();
+        await navigateToExtension();
+        await schemaPage.navigateTo();
         await schemaPage.waitForLoad();
 
         // Verify objects are loaded

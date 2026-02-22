@@ -6,8 +6,8 @@
  * - PC-U-002: Starts disconnected by default
  * - PC-U-003: connect() sets isConnected and syncs fetch routing flag
  * - PC-U-004: disconnect() clears isConnected and syncs fetch routing flag
- * - PC-U-005: connect() failure sets error and keeps fetch routing flag false
- * - PC-U-006: checkStatus() syncs connected state to fetch routing flag
+ * - PC-U-005: connect() failure sets error
+ * - PC-U-006: checkStatus() syncs connected state
  * - PC-U-007: smartFetch routes through proxyFetch after ProxyContext connect
  * - PC-U-008: smartFetch routes through extensionFetch after ProxyContext disconnect
  */
@@ -49,16 +49,15 @@ describe('ProxyContext', () => {
         spy.mockRestore();
     });
 
-    it('PC-U-002: starts disconnected and fetch routing flag is false', async () => {
+    it('PC-U-002: starts disconnected', async () => {
         const { result } = renderHook(() => useProxy(), { wrapper });
 
         await act(async () => {});
 
         expect(result.current.isConnected).toBe(false);
-        expect(fetchModule.isProxyConnected()).toBe(false);
     });
 
-    it('PC-U-003: connect() sets isConnected and syncs fetch routing flag', async () => {
+    it('PC-U-003: connect() sets isConnected', async () => {
         const { result } = renderHook(() => useProxy(), { wrapper });
         await act(async () => {});
 
@@ -75,10 +74,9 @@ describe('ProxyContext', () => {
         expect(result.current.isConnected).toBe(true);
         expect(result.current.httpPort).toBe(3000);
         expect(result.current.version).toBe('1.0.0');
-        expect(fetchModule.isProxyConnected()).toBe(true);
     });
 
-    it('PC-U-004: disconnect() clears isConnected and syncs fetch routing flag', async () => {
+    it('PC-U-004: disconnect() clears isConnected', async () => {
         const { result } = renderHook(() => useProxy(), { wrapper });
         await act(async () => {});
 
@@ -91,7 +89,7 @@ describe('ProxyContext', () => {
         await act(async () => {
             await result.current.connect();
         });
-        expect(fetchModule.isProxyConnected()).toBe(true);
+        expect(result.current.isConnected).toBe(true);
 
         // Now disconnect
         chrome.runtime.sendMessage.mockResolvedValueOnce({ success: true });
@@ -100,10 +98,9 @@ describe('ProxyContext', () => {
         });
 
         expect(result.current.isConnected).toBe(false);
-        expect(fetchModule.isProxyConnected()).toBe(false);
     });
 
-    it('PC-U-005: connect() failure sets error and keeps fetch routing flag false', async () => {
+    it('PC-U-005: connect() failure sets error', async () => {
         const { result } = renderHook(() => useProxy(), { wrapper });
         await act(async () => {});
 
@@ -118,14 +115,13 @@ describe('ProxyContext', () => {
 
         expect(result.current.isConnected).toBe(false);
         expect(result.current.error).toBe('Native host not found');
-        expect(fetchModule.isProxyConnected()).toBe(false);
     });
 
-    it('PC-U-006: checkStatus() syncs connected state to fetch routing flag', async () => {
+    it('PC-U-006: checkStatus() syncs connected state', async () => {
         const { result } = renderHook(() => useProxy(), { wrapper });
         await act(async () => {});
 
-        expect(fetchModule.isProxyConnected()).toBe(false);
+        expect(result.current.isConnected).toBe(false);
 
         // Proxy connected externally (e.g. auto-connect on startup)
         chrome.runtime.sendMessage.mockResolvedValueOnce({
@@ -140,7 +136,6 @@ describe('ProxyContext', () => {
         });
 
         expect(result.current.isConnected).toBe(true);
-        expect(fetchModule.isProxyConnected()).toBe(true);
     });
 
     describe('fetch routing integration', () => {

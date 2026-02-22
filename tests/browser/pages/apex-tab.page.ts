@@ -32,13 +32,14 @@ export class ApexTabPage extends BasePage {
         const isVisible = await tabContent.isVisible();
         if (isVisible) return;
 
-        // Open hamburger menu and wait for nav item to be visible and stable
-        await this.slowClick(this.page.locator('[data-testid="hamburger-btn"]'));
-        const navItem = this.page.locator('[data-testid="mobile-nav-apex"]');
-        await navItem.waitFor({ state: 'visible', timeout: 5000 });
-
-        // Click the nav item
-        await this.slowClick(navItem);
+        // Go home first if in a feature view
+        const homeScreen = this.page.locator('[data-testid="home-screen"]');
+        if (!(await homeScreen.isVisible())) {
+            await this.slowClick(this.page.locator('[data-testid="back-to-home-btn"]'));
+            await homeScreen.waitFor({ state: 'visible', timeout: 5000 });
+        }
+        // Click feature tile
+        await this.slowClick(this.page.locator('[data-testid="tile-apex"]'));
         await this.page.waitForSelector('[data-testid="tab-content-apex"]', { timeout: 5000 });
         await this.afterNavigation();
     }

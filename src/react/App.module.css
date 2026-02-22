@@ -5,6 +5,11 @@
     min-height: 100vh;
 }
 
+.appContainerHome {
+    height: 100vh;
+    overflow: hidden;
+}
+
 /* Tab Navigation */
 .tabNav {
     display: flex;
@@ -20,14 +25,45 @@
     z-index: 100;
 }
 
+/* Waffle (home) button */
+.waffleBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    margin-left: -8px;
+    margin-right: 12px;
+    transition: background-color 0.15s ease;
+}
+
+.waffleBtn:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+}
+
+/* Clickable brand in feature view */
+.navBrandClickable {
+    cursor: pointer;
+}
+
 /* Content Area */
 .contentArea {
     flex: 1;
-    padding: 20px;
-    padding-bottom: 0;
     width: 100%;
     margin: 0 auto;
     box-sizing: border-box;
+}
+
+/* Hide main content when on home view */
+.contentHidden {
+    display: none;
 }
 
 /* Tab Panel States - keeps components mounted to retain state */

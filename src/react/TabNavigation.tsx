@@ -1,69 +1,72 @@
-import { useProxy } from '../contexts/ProxyContext';
-import { useConnection } from '../contexts/ConnectionContext';
-import styles from './TabNavigation.module.css';
+import type { IconName } from '../lib/icons';
 
-export type TabId = 'query' | 'apex' | 'logs' | 'rest-api' | 'events' | 'utils' | 'settings';
+export type FeatureId = 'query' | 'apex' | 'logs' | 'rest-api' | 'events' | 'schema' | 'utils';
+export type TabId = FeatureId | 'settings';
 
-interface Tab {
-  id: TabId;
-  label: string;
-  requiresAuth: boolean;
-  requiresProxy: boolean;
+export interface Feature {
+    id: FeatureId;
+    label: string;
+    requiresAuth: boolean;
+    requiresProxy: boolean;
+    tileIcon: IconName;
+    tileColor: string;
 }
 
-const TABS: Tab[] = [
-  { id: 'query', label: 'Query', requiresAuth: true, requiresProxy: false },
-  { id: 'apex', label: 'Apex', requiresAuth: true, requiresProxy: false },
-  { id: 'logs', label: 'Debug Logs', requiresAuth: true, requiresProxy: false },
-  { id: 'rest-api', label: 'REST API', requiresAuth: true, requiresProxy: false },
-  { id: 'events', label: 'Platform Events', requiresAuth: true, requiresProxy: true },
-  { id: 'utils', label: 'Utils', requiresAuth: true, requiresProxy: false },
-  { id: 'settings', label: 'Settings', requiresAuth: false, requiresProxy: false },
+export const FEATURES: Feature[] = [
+    {
+        id: 'query',
+        label: 'Query',
+        requiresAuth: true,
+        requiresProxy: false,
+        tileIcon: 'tileQuery',
+        tileColor: 'var(--icon-query)',
+    },
+    {
+        id: 'apex',
+        label: 'Apex',
+        requiresAuth: true,
+        requiresProxy: false,
+        tileIcon: 'tileApex',
+        tileColor: 'var(--icon-apex)',
+    },
+    {
+        id: 'logs',
+        label: 'Debug Logs',
+        requiresAuth: true,
+        requiresProxy: false,
+        tileIcon: 'tileLogs',
+        tileColor: 'var(--icon-logs)',
+    },
+    {
+        id: 'rest-api',
+        label: 'REST API',
+        requiresAuth: true,
+        requiresProxy: false,
+        tileIcon: 'tileRestApi',
+        tileColor: 'var(--icon-rest-api)',
+    },
+    {
+        id: 'schema',
+        label: 'Schema',
+        requiresAuth: true,
+        requiresProxy: false,
+        tileIcon: 'tileSchema',
+        tileColor: 'var(--icon-schema)',
+    },
+    {
+        id: 'events',
+        label: 'Platform Events',
+        requiresAuth: true,
+        requiresProxy: true,
+        tileIcon: 'tileEvents',
+        tileColor: 'var(--icon-events)',
+    },
+    {
+        id: 'utils',
+        label: 'Utils',
+        requiresAuth: true,
+        requiresProxy: false,
+        tileIcon: 'tileUtils',
+        tileColor: 'var(--icon-utils)',
+    },
 ];
-
-interface TabNavigationProps {
-  activeTab: TabId;
-  onTabChange: (tab: TabId) => void;
-}
-
-/**
- * Tab navigation for mobile menu - renders the list of tabs
- * with proper disabled states based on auth and proxy status.
- */
-export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
-  const { isConnected: isProxyConnected } = useProxy();
-  const { isAuthenticated } = useConnection();
-
-  const isTabDisabled = (tab: Tab): boolean => {
-    if (tab.requiresAuth && !isAuthenticated) return true;
-    if (tab.requiresProxy && !isProxyConnected) return true;
-    return false;
-  };
-
-  const handleTabClick = (tab: Tab) => {
-    if (isTabDisabled(tab)) return;
-    onTabChange(tab.id);
-  };
-
-  return (
-    <nav className={styles.mobileNav}>
-      {TABS.map((tab) => {
-        const disabled = isTabDisabled(tab);
-        return (
-          <button
-            key={tab.id}
-            className={`${styles.mobileNavItem} ${activeTab === tab.id ? styles.active : ''} ${disabled ? styles.disabled : ''}`}
-            onClick={() => handleTabClick(tab)}
-            disabled={disabled}
-            data-tab={tab.id}
-            data-testid={`mobile-nav-${tab.id}`}
-          >
-            {tab.label}
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
-
-export { TABS };

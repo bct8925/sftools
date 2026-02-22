@@ -19,6 +19,7 @@ import {
     downloadCsv,
 } from '../../lib/csv-utils';
 import { StatusBadge } from '../status-badge/StatusBadge';
+import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import type { HistoryManager } from '../../lib/history-manager';
 import styles from './QueryTab.module.css';
 
@@ -59,6 +60,10 @@ export function QueryTab() {
     const [includeDeleted, setIncludeDeleted] = useState(false);
     const [editingEnabled, setEditingEnabled] = useState(false);
     const [bulkExportInProgress, setBulkExportInProgress] = useState(false);
+    const [isQueryCollapsed, setIsQueryCollapsed] = useState(false);
+    const [isResultsCollapsed, setIsResultsCollapsed] = useState(false);
+    const handleToggleQuery = useCallback(() => setIsQueryCollapsed(prev => !prev), []);
+    const handleToggleResults = useCallback(() => setIsResultsCollapsed(prev => !prev), []);
     const { statusText, statusType, updateStatus } = useStatusBadge();
 
     // Filter hook
@@ -339,7 +344,10 @@ export function QueryTab() {
             <div className="card">
                 <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconQuery}`}>S</div>
-                    <h2>SOQL Query</h2>
+                    <h2 className="card-collapse-title" onClick={handleToggleQuery}>
+                        SOQL Query
+                    </h2>
+                    <CollapseChevron isOpen={!isQueryCollapsed} onClick={handleToggleQuery} />
                     <QueryHistory
                         onSelectQuery={handleSelectQuery}
                         historyManagerRef={historyManagerRef}
@@ -367,7 +375,7 @@ export function QueryTab() {
                         </ButtonIconCheckbox>
                     </ButtonIcon>
                 </div>
-                <div className="card-body">
+                <div className="card-body" hidden={isQueryCollapsed}>
                     <div className="form-element">
                         <QueryEditor
                             ref={editorRef}
@@ -392,10 +400,15 @@ export function QueryTab() {
             </div>
 
             {/* Results Card */}
-            <div className={`card ${styles.resultsCard}`}>
+            <div
+                className={`card ${styles.resultsCard} ${isResultsCollapsed ? styles.resultsCardCollapsed : ''}`}
+            >
                 <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconSuccess}`}>Q</div>
-                    <h2>Results</h2>
+                    <h2 className="card-collapse-title" onClick={handleToggleResults}>
+                        Results
+                    </h2>
+                    <CollapseChevron isOpen={!isResultsCollapsed} onClick={handleToggleResults} />
                     <div className={styles.resultsSearch}>
                         <input
                             type="text"
@@ -448,7 +461,11 @@ export function QueryTab() {
                         </ButtonIconOption>
                     </ButtonIcon>
                 </div>
-                <div className={`card-body ${styles.cardBody}`} data-testid="query-results">
+                <div
+                    className={`card-body ${styles.cardBody}`}
+                    hidden={isResultsCollapsed}
+                    data-testid="query-results"
+                >
                     <QueryTabs
                         tabs={state.tabs}
                         activeTabId={state.activeTabId}

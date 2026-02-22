@@ -332,6 +332,7 @@ export function EventsTab() {
                             {events.length === 0 ? (
                                 <div className={styles.emptyState}>
                                     <div className={styles.emptyStateIcon}></div>
+                                    <p>Subscribe to a channel to see events</p>
                                 </div>
                             ) : (
                                 <table className={styles.eventTable} data-testid="event-table">

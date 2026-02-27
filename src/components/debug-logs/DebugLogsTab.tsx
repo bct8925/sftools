@@ -1,10 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useProxy } from '../../contexts/ProxyContext';
-import { useStatusBadge } from '../../hooks/useStatusBadge';
+import { useToast } from '../../contexts/ToastContext';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { Modal } from '../modal/Modal';
-import { StatusBadge } from '../status-badge/StatusBadge';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { DebugLogsSettingsModal } from './DebugLogsSettingsModal';
 import { getDebugLogsSince, getLogBody, type DebugLogEntry } from '../../api/debug-logs';
@@ -21,7 +20,7 @@ const formatTime = (isoString: string): string => {
     return date.toLocaleTimeString(undefined, {
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit'
+        second: '2-digit',
     });
 };
 
@@ -56,8 +55,7 @@ export function DebugLogsTab() {
     // Settings modal state
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-    // Status
-    const { statusText, statusType, updateStatus, clearStatus } = useStatusBadge();
+    const toast = useToast();
 
     // Editor ref
     const editorRef = useRef<MonacoEditorRef>(null);
@@ -78,8 +76,7 @@ export function DebugLogsTab() {
         setSubscriptionId(null);
         setIsAutoRefreshEnabled(false);
         setOpenedLogIds(new Set());
-        clearStatus();
-    }, [activeConnection?.id, clearStatus]);
+    }, [activeConnection?.id]);
 
     // Apply filter to log content with debouncing
     const applyFilter = useCallback(() => {
@@ -93,9 +90,8 @@ export function DebugLogsTab() {
 
         const lines = selectedLogBody.split('\n');
         const filtered = filterLines(lines, filter);
-        const result = filtered.length > 0
-            ? filtered.join('\n')
-            : `// No lines match "${filterText}"`;
+        const result =
+            filtered.length > 0 ? filtered.join('\n') : `// No lines match "${filterText}"`;
 
         editorRef.current.setValue(result);
     }, [selectedLogBody, filterText]);
@@ -123,9 +119,10 @@ export function DebugLogsTab() {
         setWatchingSince(now);
         setLogs([]);
         setSelectedLogBody('');
-        editorRef.current?.setValue('// Watching for new debug logs...\n// Click Refresh to fetch logs or wait for auto-refresh (if proxy connected)');
-        updateStatus('Watching started', 'success');
-    }, [updateStatus]);
+        editorRef.current?.setValue(
+            '// Watching for new debug logs...\n// Click Refresh to fetch logs or wait for auto-refresh (if proxy connected)'
+        );
+    }, []);
 
     // Handle Stop button
     const handleStop = useCallback(async () => {
@@ -143,45 +140,46 @@ export function DebugLogsTab() {
             setIsAutoRefreshEnabled(false);
         }
         setWatchingSince(null);
-        clearStatus();
-    }, [subscriptionId, clearStatus]);
+    }, [subscriptionId]);
 
     // Handle Refresh button
     const handleRefresh = useCallback(async () => {
         if (!watchingSince || !isAuthenticated) return;
 
         setIsLoading(true);
-        updateStatus('Fetching logs...', 'loading');
+        const id = toast.show('Fetching logs...', 'loading');
 
         try {
             const newLogs = await getDebugLogsSince(watchingSince);
             setLogs(newLogs);
-            const autoLabel = isAutoRefreshEnabled ? ' (auto)' : '';
-            updateStatus(`Found ${newLogs.length} log${newLogs.length !== 1 ? 's' : ''}${autoLabel}`, 'success');
+            toast.dismiss(id);
         } catch (error) {
-            updateStatus((error as Error).message, 'error');
+            toast.update(id, (error as Error).message, 'error');
         } finally {
             setIsLoading(false);
         }
-    }, [watchingSince, isAuthenticated, isAutoRefreshEnabled, updateStatus]);
+    }, [watchingSince, isAuthenticated, isAutoRefreshEnabled, toast]);
 
     // Handle Open Log button
-    const handleOpenLog = useCallback(async (logId: string) => {
-        setIsLoading(true);
-        updateStatus('Loading log...', 'loading');
+    const handleOpenLog = useCallback(
+        async (logId: string) => {
+            setIsLoading(true);
+            const id = toast.show('Loading log...', 'loading');
 
-        try {
-            const body = await getLogBody(logId);
-            setSelectedLogBody(body);
-            editorRef.current?.setValue(body);
-            setOpenedLogIds(prev => new Set(prev).add(logId));
-            clearStatus();
-        } catch (error) {
-            updateStatus((error as Error).message, 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    }, [updateStatus, clearStatus]);
+            try {
+                const body = await getLogBody(logId);
+                setSelectedLogBody(body);
+                editorRef.current?.setValue(body);
+                setOpenedLogIds(prev => new Set(prev).add(logId));
+                toast.dismiss(id);
+            } catch (error) {
+                toast.update(id, (error as Error).message, 'error');
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [toast]
+    );
 
     // CometD subscription for auto-refresh
     useEffect(() => {
@@ -215,10 +213,12 @@ export function DebugLogsTab() {
 
         return () => {
             if (currentSubId) {
-                chrome.runtime.sendMessage({
-                    type: 'unsubscribe',
-                    subscriptionId: currentSubId,
-                }).catch(() => { });
+                chrome.runtime
+                    .sendMessage({
+                        type: 'unsubscribe',
+                        subscriptionId: currentSubId,
+                    })
+                    .catch(() => { });
             }
         };
     }, [watchingSince, isProxyConnected, isAuthenticated]);
@@ -247,9 +247,7 @@ export function DebugLogsTab() {
             <div className="card">
                 <div className={`card-header ${styles.header}`}>
                     <div className={styles.headerRow}>
-                        <div className={`card-header-icon ${styles.headerIcon}`}>
-                            L
-                        </div>
+                        <div className={`card-header-icon ${styles.headerIcon}`}>L</div>
                         <h2>Debug Logs</h2>
                         <div className={styles.headerControls}>
                             <input
@@ -257,17 +255,12 @@ export function DebugLogsTab() {
                                 className="search-input"
                                 placeholder="Filter..."
                                 value={filterText}
-                                onChange={(e) => setFilterText(e.target.value)}
+                                onChange={e => setFilterText(e.target.value)}
                                 data-testid="debug-logs-filter-input"
                             />
                         </div>
                     </div>
                     <div className={styles.headerRow}>
-                        {statusText && (
-                            <StatusBadge type={statusType} data-testid="debug-logs-status">
-                                {statusText}
-                            </StatusBadge>
-                        )}
                         <div className={styles.headerControls}>
                             <ButtonIcon
                                 icon={watchingSince ? 'stop' : 'play'}
@@ -312,7 +305,11 @@ export function DebugLogsTab() {
                             {logs.length === 0 ? (
                                 <div className={styles.emptyState}>
                                     <div className={styles.emptyStateIcon}>📋</div>
-                                    <p>{watchingSince ? 'No logs yet. Click Refresh to check.' : 'Click ▶ to start monitoring.'}</p>
+                                    <p>
+                                        {watchingSince
+                                            ? 'No logs yet. Click Refresh to check.'
+                                            : 'Click ▶ to start monitoring.'}
+                                    </p>
                                 </div>
                             ) : (
                                 <table className={styles.logTable} data-testid="debug-logs-table">
@@ -327,21 +324,33 @@ export function DebugLogsTab() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {logs.map((log) => (
+                                        {logs.map(log => (
                                             <tr
                                                 key={log.Id}
-                                                className={openedLogIds.has(log.Id) ? styles.rowOpened : ''}
+                                                className={
+                                                    openedLogIds.has(log.Id) ? styles.rowOpened : ''
+                                                }
                                                 data-testid={`debug-log-row-${log.Id}`}
                                             >
-                                                <td className={styles.time}>{formatTime(log.StartTime)}</td>
+                                                <td className={styles.time}>
+                                                    {formatTime(log.StartTime)}
+                                                </td>
                                                 <td>{log.LogUser?.Name ?? 'Unknown'}</td>
                                                 <td>{log.Operation}</td>
                                                 <td className={styles.status}>
-                                                    <span className={log.Status === 'Success' ? styles.statusSuccess : styles.statusError}>
+                                                    <span
+                                                        className={
+                                                            log.Status === 'Success'
+                                                                ? styles.statusSuccess
+                                                                : styles.statusError
+                                                        }
+                                                    >
                                                         {log.Status}
                                                     </span>
                                                 </td>
-                                                <td className={styles.size}>{formatBytes(log.LogLength)}</td>
+                                                <td className={styles.size}>
+                                                    {formatBytes(log.LogLength)}
+                                                </td>
                                                 <td>
                                                     <button
                                                         className="button-neutral button-sm"

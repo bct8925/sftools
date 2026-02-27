@@ -1,0 +1,157 @@
+/* Toast container - fixed top-right, always on top */
+.container {
+    position: fixed;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    pointer-events: none;
+    max-width: min(300px, calc(100% - var(--spacing-sm) * 2));
+    width: 100%;
+}
+
+/* Individual toast */
+.toast {
+    pointer-events: all;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 16px var(--shadow-lg);
+    padding: 8px var(--spacing-sm) 8px 10px;
+    position: relative;
+    overflow: hidden;
+    animation: slideIn 0.2s ease-out;
+}
+
+.toastDismissing {
+    animation: slideOut 0.2s ease-in forwards;
+}
+
+.toastSuccess {
+    border-left-color: var(--success-color);
+}
+
+.toastError {
+    border-left-color: var(--error-color);
+}
+
+.toastLoading {
+    border-left-color: var(--primary-color);
+}
+
+/* Icon */
+.icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Spinner animation for loading icon */
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Message */
+.message {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-main);
+    line-height: 1.4;
+    word-break: break-word;
+    padding-top: 1px;
+}
+
+/* Close button */
+.closeBtn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 0;
+    border-radius: var(--radius-sm);
+    margin-left: 2px;
+}
+
+.closeBtn:hover {
+    color: var(--text-main);
+    background: var(--bg-hover);
+}
+
+/* Progress bar - only shown during auto-close countdown */
+.progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    animation: progress 2s linear forwards;
+}
+
+.toastSuccess .progress {
+    background: var(--success-color);
+}
+
+.toastError .progress {
+    background: var(--error-color);
+}
+
+.toastLoading .progress {
+    background: var(--primary-color);
+}
+
+/* Keyframes */
+@keyframes slideIn {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+}
+
+@keyframes progress {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

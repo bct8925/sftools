@@ -2,9 +2,10 @@ import type { ReactNode } from 'react';
 import { ConnectionProvider } from '../contexts/ConnectionContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { ProxyProvider } from '../contexts/ProxyContext';
+import { ToastProvider } from '../contexts/ToastContext';
 
 interface AppProvidersProps {
-  children: ReactNode;
+    children: ReactNode;
 }
 
 /**
@@ -12,13 +13,13 @@ interface AppProvidersProps {
  * Order matters: ConnectionProvider is outermost as other contexts may depend on it.
  */
 export function AppProviders({ children }: AppProvidersProps) {
-  return (
-    <ConnectionProvider>
-      <ThemeProvider>
-        <ProxyProvider>
-          {children}
-        </ProxyProvider>
-      </ThemeProvider>
-    </ConnectionProvider>
-  );
+    return (
+        <ConnectionProvider>
+            <ThemeProvider>
+                <ProxyProvider>
+                    <ToastProvider>{children}</ToastProvider>
+                </ProxyProvider>
+            </ThemeProvider>
+        </ConnectionProvider>
+    );
 }

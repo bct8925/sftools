@@ -19,7 +19,7 @@ export class ApexTabPage extends BasePage {
 
         this.executeBtn = page.locator('[data-testid="apex-execute-btn"]');
         this.historyBtn = page.locator('[data-testid="apex-history-btn"]');
-        this.statusBadge = page.locator('[data-testid="apex-status"]');
+        this.statusBadge = page.locator('[role="alert"]').first();
         this.searchInput = page.locator('[data-testid="apex-search-input"]');
     }
 
@@ -65,16 +65,13 @@ export class ApexTabPage extends BasePage {
     async execute(): Promise<void> {
         await this.slowClick(this.executeBtn);
 
-        // Wait for execution to complete - status badge will have status-success or status-error class
+        // Wait for execution to complete - toast will have data-type="success" or "error"
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('[data-testid="apex-status"]');
-                if (!status) return false;
-                // Execution is complete when status has success or error class (not loading)
-                return (
-                    status.classList.contains('status-error') ||
-                    status.classList.contains('status-success')
+                const toast = document.querySelector(
+                    '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
+                return toast !== null;
             },
             { timeout: 60000 } // Apex execution can take longer
         );
@@ -91,12 +88,10 @@ export class ApexTabPage extends BasePage {
 
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('[data-testid="apex-status"]');
-                if (!status) return false;
-                return (
-                    status.classList.contains('status-error') ||
-                    status.classList.contains('status-success')
+                const toast = document.querySelector(
+                    '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
+                return toast !== null;
             },
             { timeout: 60000 }
         );
@@ -108,13 +103,18 @@ export class ApexTabPage extends BasePage {
     /**
      * Get the status
      */
-    async getStatus(): Promise<{ text: string; success: boolean }> {
-        const text = (await this.statusBadge.textContent()) || '';
-        const classList = await this.statusBadge.evaluate(el => Array.from(el.classList));
-
-        const success = classList.includes('status-success');
-
-        return { text: text.trim(), success };
+    async getStatus(): Promise<{
+        text: string;
+        type: 'success' | 'error' | 'loading' | 'default';
+    }> {
+        const toast = this.page.locator('[role="alert"]').first();
+        const text = (await toast.textContent()) || '';
+        const type = (await toast.getAttribute('data-type')) as
+            | 'success'
+            | 'error'
+            | 'loading'
+            | null;
+        return { text: text.trim(), type: type ?? 'default' };
     }
 
     /**

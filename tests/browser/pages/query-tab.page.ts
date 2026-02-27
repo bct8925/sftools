@@ -31,7 +31,7 @@ export class QueryTabPage extends BasePage {
         this.editingCheckbox = page.locator('[data-testid="query-editing-checkbox"]');
         this.tabsContainer = page.locator('[data-testid="query-tabs"]');
         this.resultsContainer = page.locator('[data-testid="query-results"]');
-        this.statusBadge = page.locator('[data-testid="query-status"]');
+        this.statusBadge = page.locator('[role="alert"]').first();
         this.searchInput = page.locator('[data-testid="query-search-input"]');
     }
 
@@ -72,18 +72,13 @@ export class QueryTabPage extends BasePage {
         await this.monaco.setValue(query);
         await this.slowClick(this.executeBtn);
 
-        // Wait for query to complete - status badge will have status-success or status-error class
-        // Note: The selector uses .status-badge because the original .query-status class gets removed
-        // when updateStatusBadge() replaces className
+        // Wait for query to complete - toast will have data-type="success" or "error"
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('[data-testid="query-status"]');
-                if (!status) return false;
-                // Query is complete when status has success or error class (not loading)
-                return (
-                    status.classList.contains('status-error') ||
-                    status.classList.contains('status-success')
+                const toast = document.querySelector(
+                    '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
+                return toast !== null;
             },
             { timeout: 30000 }
         );
@@ -97,13 +92,10 @@ export class QueryTabPage extends BasePage {
 
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('[data-testid="query-status"]');
-                if (!status) return false;
-                // Complete when status has success or error class (not loading)
-                return (
-                    status.classList.contains('status-error') ||
-                    status.classList.contains('status-success')
+                const toast = document.querySelector(
+                    '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
+                return toast !== null;
             },
             { timeout: 30000 }
         );
@@ -116,15 +108,14 @@ export class QueryTabPage extends BasePage {
         text: string;
         type: 'success' | 'error' | 'loading' | 'default';
     }> {
-        const text = (await this.statusBadge.textContent()) || '';
-        const classList = await this.statusBadge.evaluate(el => Array.from(el.classList));
-
-        let type: 'success' | 'error' | 'loading' | 'default' = 'default';
-        if (classList.includes('status-success')) type = 'success';
-        else if (classList.includes('status-error')) type = 'error';
-        else if (classList.includes('status-loading')) type = 'loading';
-
-        return { text: text.trim(), type };
+        const toast = this.page.locator('[role="alert"]').first();
+        const text = (await toast.textContent()) || '';
+        const type = (await toast.getAttribute('data-type')) as
+            | 'success'
+            | 'error'
+            | 'loading'
+            | null;
+        return { text: text.trim(), type: type ?? 'default' };
     }
 
     /**
@@ -353,12 +344,10 @@ export class QueryTabPage extends BasePage {
         // Wait for save to complete
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('[data-testid="query-status"]');
-                if (!status) return false;
-                return (
-                    status.classList.contains('status-success') ||
-                    status.classList.contains('status-error')
+                const toast = document.querySelector(
+                    '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
+                return toast !== null;
             },
             { timeout: 15000 }
         );
@@ -429,17 +418,14 @@ export class QueryTabPage extends BasePage {
         const bulkExportBtn = this.page.locator('[data-testid="query-bulk-export-btn"]');
         await this.slowClick(bulkExportBtn);
 
-        // Wait for bulk export to complete (status will show "Export complete" or error)
+        // Wait for bulk export to complete (toast will show "Export complete" or error)
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('[data-testid="query-status"]');
-                if (!status) return false;
-                const text = status.textContent || '';
-                return (
-                    (text.includes('Export complete') &&
-                        status.classList.contains('status-success')) ||
-                    status.classList.contains('status-error')
-                );
+                const successToast = document.querySelector('[role="alert"][data-type="success"]');
+                if (successToast && (successToast.textContent || '').includes('Export complete'))
+                    return true;
+                const errorToast = document.querySelector('[role="alert"][data-type="error"]');
+                return errorToast !== null;
             },
             { timeout: 120000 } // 2 min timeout for bulk jobs
         );
@@ -675,12 +661,10 @@ export class QueryTabPage extends BasePage {
         // Wait for refresh to complete
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('[data-testid="query-status"]');
-                if (!status) return false;
-                return (
-                    status.classList.contains('status-error') ||
-                    status.classList.contains('status-success')
+                const toast = document.querySelector(
+                    '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
+                return toast !== null;
             },
             { timeout: 30000 }
         );

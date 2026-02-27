@@ -36,7 +36,7 @@ export class EventsTabPage extends BasePage {
         this.replaySelect = page.locator('[data-testid="event-replay-select"]');
         this.replayIdInput = page.locator('[data-testid="event-replay-id"]');
         this.subscribeBtn = page.locator('[data-testid="event-subscribe-btn"]');
-        this.streamStatus = page.locator('[data-testid="event-stream-status"]');
+        this.streamStatus = page.locator('[role="alert"]').first();
         this.clearStreamBtn = page.locator('[data-testid="event-clear-btn"]');
 
         // Settings
@@ -46,7 +46,7 @@ export class EventsTabPage extends BasePage {
         // Publish selectors
         this.publishChannelSelect = page.locator('[data-testid="event-publish-channel"]');
         this.publishBtn = page.locator('[data-testid="event-publish-btn"]');
-        this.publishStatus = page.locator('[data-testid="event-publish-status"]');
+        this.publishStatus = page.locator('[role="alert"]').first();
 
         // Overlay
         this.tabOverlay = page.locator('[data-testid="feature-gate-overlay"]');
@@ -158,33 +158,37 @@ export class EventsTabPage extends BasePage {
     }
 
     /**
-     * Get stream status badge
+     * Get stream status toast
      */
-    async getStatus(): Promise<{ text: string; type: string }> {
-        const text = (await this.streamStatus.textContent()) || '';
-        const classList = (await this.streamStatus.getAttribute('class')) || '';
-
-        let type = '';
-        if (classList.includes('status-success')) type = 'success';
-        else if (classList.includes('status-error')) type = 'error';
-        else if (classList.includes('status-loading')) type = 'loading';
-
-        return { text: text.trim(), type };
+    async getStatus(): Promise<{
+        text: string;
+        type: 'success' | 'error' | 'loading' | 'default';
+    }> {
+        const toast = this.page.locator('[role="alert"]').first();
+        const text = (await toast.textContent()) || '';
+        const type = (await toast.getAttribute('data-type')) as
+            | 'success'
+            | 'error'
+            | 'loading'
+            | null;
+        return { text: text.trim(), type: type ?? 'default' };
     }
 
     /**
-     * Get publish status badge
+     * Get publish status toast
      */
-    async getPublishStatus(): Promise<{ text: string; type: string }> {
-        const text = (await this.publishStatus.textContent()) || '';
-        const classList = (await this.publishStatus.getAttribute('class')) || '';
-
-        let type = '';
-        if (classList.includes('status-success')) type = 'success';
-        else if (classList.includes('status-error')) type = 'error';
-        else if (classList.includes('status-loading')) type = 'loading';
-
-        return { text: text.trim(), type };
+    async getPublishStatus(): Promise<{
+        text: string;
+        type: 'success' | 'error' | 'loading' | 'default';
+    }> {
+        const toast = this.page.locator('[role="alert"]').first();
+        const text = (await toast.textContent()) || '';
+        const type = (await toast.getAttribute('data-type')) as
+            | 'success'
+            | 'error'
+            | 'loading'
+            | null;
+        return { text: text.trim(), type: type ?? 'default' };
     }
 
     /**
@@ -229,12 +233,10 @@ export class EventsTabPage extends BasePage {
         // Wait for publish to complete
         await this.page.waitForFunction(
             () => {
-                const status = document.querySelector('[data-testid="event-publish-status"]');
-                if (!status) return false;
-                return (
-                    status.classList.contains('status-error') ||
-                    status.classList.contains('status-success')
+                const toast = document.querySelector(
+                    '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
+                return toast !== null;
             },
             { timeout: 10000 }
         );

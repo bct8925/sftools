@@ -847,6 +847,7 @@ describe('salesforce', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 data: 'Id,Name\n001abc,Test',
+                headers: {},
             });
 
             await getBulkQueryResults('750abc');
@@ -866,6 +867,7 @@ describe('salesforce', () => {
             smartFetch.mockResolvedValue({
                 success: true,
                 data: csvData,
+                headers: {},
             });
 
             const result = await getBulkQueryResults('750abc');
@@ -918,7 +920,7 @@ describe('salesforce', () => {
                     json: { id: '750poll', state: 'JobComplete', numberRecordsProcessed: 1000 },
                 }); // poll 2
 
-            smartFetch.mockResolvedValue({ success: true, data: 'Id\n001abc' });
+            smartFetch.mockResolvedValue({ success: true, data: 'Id\n001abc', headers: {} });
 
             const promise = executeBulkQueryExport('SELECT Id FROM Account', vi.fn());
 
@@ -937,7 +939,7 @@ describe('salesforce', () => {
                 .mockResolvedValueOnce({ json: { id: '750csv', state: 'JobComplete' } });
 
             const csvContent = 'Id,Name\n001abc,Test Account';
-            smartFetch.mockResolvedValue({ success: true, data: csvContent });
+            smartFetch.mockResolvedValue({ success: true, data: csvContent, headers: {} });
 
             const promise = executeBulkQueryExport('SELECT Id, Name FROM Account', vi.fn());
             await vi.advanceTimersByTimeAsync(2000);
@@ -957,7 +959,7 @@ describe('salesforce', () => {
                     json: { id: '750prog', state: 'JobComplete', numberRecordsProcessed: 200 },
                 });
 
-            smartFetch.mockResolvedValue({ success: true, data: 'data' });
+            smartFetch.mockResolvedValue({ success: true, data: 'data', headers: {} });
 
             const onProgress = vi.fn();
             const promise = executeBulkQueryExport('SELECT Id FROM Account', onProgress);

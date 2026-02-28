@@ -314,6 +314,28 @@ describe('Bulk Query API v2 Integration', () => {
         });
     });
 
+    describe('BQ-I-008: Sforce-Locator header for small result sets', () => {
+        it('returns Sforce-Locator: null for results that fit in a single chunk', async () => {
+            const job = await createBulkQueryJob('SELECT Id FROM Account LIMIT 5');
+            createdJobIds.push(job.id);
+
+            await waitForJobCompletion(job.id);
+
+            const url = `${salesforce.instanceUrl}/services/data/v${API_VERSION}/jobs/query/${job.id}/results?maxRecords=2000`;
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${salesforce.accessToken}`,
+                    Accept: 'text/csv',
+                },
+            });
+
+            expect(response.ok).toBe(true);
+            // Small result sets that fit in one chunk should have locator = 'null'
+            const locator = response.headers.get('Sforce-Locator');
+            expect(locator).toBe('null');
+        });
+    });
+
     describe('BQ-I-007: Job metadata and progress tracking', () => {
         it('tracks record count during processing', async () => {
             const job = await createBulkQueryJob('SELECT Id FROM Account LIMIT 50');

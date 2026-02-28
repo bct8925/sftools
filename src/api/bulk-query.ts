@@ -49,24 +49,50 @@ export async function getBulkQueryJobStatus(jobId: string): Promise<BulkQueryJob
 }
 
 /**
- * Get the CSV results of a completed Bulk API v2 query job
+ * Get the CSV results of a completed Bulk API v2 query job.
+ * Handles multi-chunk pagination via the Sforce-Locator response header.
  */
-export async function getBulkQueryResults(jobId: string): Promise<string> {
-    const response = await smartFetch(
-        `${getInstanceUrl()}/services/data/v${API_VERSION}/jobs/query/${jobId}/results`,
-        {
-            headers: {
-                Authorization: `Bearer ${getAccessToken()}`,
-                Accept: 'text/csv',
-            },
+export async function getBulkQueryResults(
+    jobId: string,
+    onChunkProgress?: (chunksDownloaded: number) => void
+): Promise<string> {
+    const baseUrl = `${getInstanceUrl()}/services/data/v${API_VERSION}/jobs/query/${jobId}/results`;
+    const headers = {
+        Authorization: `Bearer ${getAccessToken()}`,
+        Accept: 'text/csv',
+    };
+
+    const chunks: string[] = [];
+    let locator: string | undefined;
+
+    do {
+        const url = locator
+            ? `${baseUrl}?locator=${locator}&maxRecords=2000`
+            : `${baseUrl}?maxRecords=2000`;
+
+        const response = await smartFetch(url, { headers });
+
+        if (!response.success) {
+            throw new Error(response.error ?? 'Failed to fetch results');
         }
-    );
 
-    if (!response.success) {
-        throw new Error(response.error ?? 'Failed to fetch results');
-    }
+        const chunk = response.data ?? '';
 
-    return response.data ?? '';
+        if (chunks.length === 0) {
+            chunks.push(chunk);
+        } else {
+            // Strip the CSV header row from subsequent chunks
+            const newlineIndex = chunk.indexOf('\n');
+            chunks.push(newlineIndex >= 0 ? chunk.slice(newlineIndex + 1) : chunk);
+        }
+
+        onChunkProgress?.(chunks.length);
+
+        const nextLocator = response.headers?.['sforce-locator'];
+        locator = nextLocator && nextLocator !== 'null' ? nextLocator : undefined;
+    } while (locator);
+
+    return chunks.join('');
 }
 
 /**
@@ -85,7 +111,7 @@ export async function abortBulkQueryJob(jobId: string): Promise<void> {
  */
 export async function executeBulkQueryExport(
     soql: string,
-    onProgress?: (state: string, recordCount?: number) => void,
+    onProgress?: (state: string, recordCount?: number, chunksDownloaded?: number) => void,
     includeDeleted = false
 ): Promise<string> {
     onProgress?.('Creating job...');
@@ -102,7 +128,9 @@ export async function executeBulkQueryExport(
 
         if (status.state === 'JobComplete') {
             onProgress?.('Downloading...');
-            return getBulkQueryResults(jobId);
+            return getBulkQueryResults(jobId, chunksDownloaded => {
+                onProgress?.('Downloading...', undefined, chunksDownloaded);
+            });
         }
 
         if (status.state === 'Failed' || status.state === 'Aborted') {

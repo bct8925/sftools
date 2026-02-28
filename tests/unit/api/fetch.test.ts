@@ -245,6 +245,7 @@ describe('fetch', () => {
                 status: 200,
                 statusText: 'OK',
                 text: async () => '{"success":true}',
+                headers: new Headers(),
             });
 
             const result = await fetchModule.smartFetch('https://api.salesforce.com/test');
@@ -254,6 +255,7 @@ describe('fetch', () => {
                 status: 200,
                 statusText: 'OK',
                 data: '{"success":true}',
+                headers: {},
             });
 
             // Restore chrome object
@@ -266,6 +268,7 @@ describe('fetch', () => {
                 status: 200,
                 statusText: 'OK',
                 text: async () => '{"records":[]}',
+                headers: new Headers(),
             });
 
             const result = await fetchModule.smartFetch('https://api.salesforce.com/test', {
@@ -283,6 +286,7 @@ describe('fetch', () => {
                 status: 200,
                 statusText: 'OK',
                 data: '{"records":[]}',
+                headers: {},
             });
         });
 
@@ -304,6 +308,7 @@ describe('fetch', () => {
                 status: 201,
                 statusText: 'Created',
                 text: async () => '{"id":"001xxx"}',
+                headers: new Headers(),
             });
 
             const result = await fetchModule.smartFetch('https://api.salesforce.com/test', {
@@ -323,6 +328,7 @@ describe('fetch', () => {
                 status: 201,
                 statusText: 'Created',
                 data: '{"id":"001xxx"}',
+                headers: {},
             });
         });
 
@@ -332,6 +338,7 @@ describe('fetch', () => {
                 status: 404,
                 statusText: 'Not Found',
                 text: async () => '{"error":"Resource not found"}',
+                headers: new Headers(),
             });
 
             const result = await fetchModule.smartFetch('https://api.salesforce.com/test');
@@ -341,6 +348,29 @@ describe('fetch', () => {
                 status: 404,
                 statusText: 'Not Found',
                 data: '{"error":"Resource not found"}',
+                headers: {},
+            });
+        });
+
+        it('FE-U-025: captures response headers in directFetch', async () => {
+            const mockHeaders = new Headers({
+                'Sforce-Locator': 'abc123',
+                'Content-Type': 'text/csv',
+            });
+
+            global.fetch = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                text: async () => 'Id\n001abc',
+                headers: mockHeaders,
+            });
+
+            const result = await fetchModule.smartFetch('https://api.salesforce.com/test');
+
+            expect(result.headers).toEqual({
+                'sforce-locator': 'abc123',
+                'content-type': 'text/csv',
             });
         });
 

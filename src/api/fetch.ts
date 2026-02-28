@@ -22,6 +22,7 @@ export interface FetchResponse {
     error?: string;
     authExpired?: boolean;
     connectionId?: string;
+    headers?: Record<string, string>;
 }
 
 // --- Proxy Connection State ---
@@ -105,11 +106,16 @@ async function directFetch(url: string, options: FetchOptions = {}): Promise<Fet
             body: options.body,
         });
         const data = await response.text();
+        const headers: Record<string, string> = {};
+        response.headers.forEach((value, key) => {
+            headers[key.toLowerCase()] = value;
+        });
         return {
             success: response.ok,
             status: response.status,
             statusText: response.statusText,
             data,
+            headers,
         };
     } catch (error) {
         return {

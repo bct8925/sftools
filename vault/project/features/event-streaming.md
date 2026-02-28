@@ -14,7 +14,7 @@ tags:
 aliases:
   - Events Tab
 created: 2026-02-08
-updated: 2026-02-08
+updated: 2026-02-28
 status: active
 related-code:
   - src/components/events/
@@ -58,6 +58,17 @@ The Events tab enables subscribing to Salesforce Platform Events, Change Data Ca
 | `EventsTab.tsx` | Main tab (proxy check + streaming UI) |
 | `ChannelSelector.tsx` | Channel discovery + selection |
 | `EventPublisher.tsx` | Publish Platform Events |
+| `EventsSettingsModal.tsx` | Replay settings modal (start position, replay ID) |
+
+## UI Changes
+
+> [!note] PR #139 Redesign
+> The Events tab received several UX improvements in the PR #139 redesign.
+
+- **Newest-first ordering** — events are displayed in reversed order so the most recent event appears at the top of the list
+- **gRPC replay ID decoding** — base64-encoded replay IDs from the Pub/Sub API are decoded to readable numeric strings for display
+- **Collapsible EventPublisher** — the EventPublisher card uses [[collapse-chevron|CollapseChevron]] and can be collapsed to reduce visual noise
+- **Channel column removed** — the Channel column was removed from the event display table
 
 ## Key Files
 

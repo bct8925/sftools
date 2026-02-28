@@ -9,7 +9,7 @@ tags:
 aliases:
   - Architecture
 created: 2026-02-08
-updated: 2026-02-08
+updated: 2026-02-28
 status: active
 related-code:
   - src/react/App.tsx
@@ -35,17 +35,17 @@ sftools is a Chrome Extension (Manifest V3) providing developer tools for Salesf
 │  ┌─────────────┐  ┌─────────────────────────────────┐  │
 │  │ Background   │  │ Extension Pages (React)          │  │
 │  │ Service      │  │                                  │  │
-│  │ Worker       │◄─┤  Main App (6 tabs)               │  │
+│  │ Worker       │◄─┤  Main App (7 tabs)               │  │
 │  │              │  │  ├─ Query Editor                 │  │
 │  │ • Auth       │  │  ├─ Apex Executor                │  │
 │  │ • Fetch      │  │  ├─ REST API Explorer            │  │
 │  │ • Native Msg │  │  ├─ Event Streaming              │  │
 │  │ • Context    │  │  ├─ Utils                        │  │
-│  │   Menu       │  │  └─ Settings                     │  │
+│  │   Menu       │  │  ├─ Schema Browser               │  │
+│  │              │  │  └─ Settings                     │  │
 │  └──────┬───────┘  │                                  │  │
 │         │          │  Standalone Pages                 │  │
 │         │          │  ├─ Record Viewer                 │  │
-│         │          │  ├─ Schema Browser                │  │
 │         │          │  └─ OAuth Callback                │  │
 │         │          └─────────────────────────────────┘  │
 └─────────┼───────────────────────────────────────────────┘
@@ -73,19 +73,19 @@ sftools is a Chrome Extension (Manifest V3) providing developer tools for Salesf
 
 | Page | Type | Entry Point | Purpose |
 |------|------|-------------|---------|
-| Main App | React | `pages/app/app.html` | 6-tab developer tools |
+| Main App | React | `pages/app/app.html` | 7-tab developer tools |
 | Record Viewer | React | `pages/record/record.html` | View/edit record fields |
-| Schema Browser | React | `pages/schema/schema.html` | Browse object metadata |
 | OAuth Callback | Vanilla | `pages/callback/callback.html` | Handle OAuth redirects |
 
 ### Tab Architecture
 
-All 6 tabs render simultaneously (hidden when inactive) for state preservation:
+All 7 tabs render simultaneously (hidden when inactive) for state preservation:
 - **Query** — SOQL editor with Monaco, tabbed results, bulk export
 - **Apex** — Anonymous Apex execution with debug log retrieval
 - **REST API** — Raw REST explorer with Monaco JSON editor
 - **Events** — Platform Event/CDC/PushTopic streaming (requires proxy)
 - **Utils** — Debug log management, flow cleanup
+- **Schema** — Browse Salesforce object metadata, fields, and formula definitions
 - **Settings** — Multi-org connections, theme, proxy, cache
 
 ## Key Files
@@ -119,6 +119,9 @@ All 6 tabs render simultaneously (hidden when inactive) for state preservation:
 - [[css-variables-theming|CSS Variables and Theming]]
 
 ## Notes
+
+> [!note] HomeScreen Navigation
+> A tile-based HomeScreen (`src/components/home-screen/HomeScreen.tsx`) serves as the navigation hub. Navigating to a tab sets it active; the Home button returns to the tile grid. ConnectionSelector is a header-level dropdown for switching orgs.
 
 - Uses OpenSpec workflow for spec-driven development
 - Follows Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`)

@@ -10,7 +10,7 @@ tags:
 aliases:
   - Component Patterns
 created: 2026-02-08
-updated: 2026-02-08
+updated: 2026-02-28
 status: active
 related-code:
   - src/components/
@@ -30,9 +30,10 @@ All UI is built with [[React]] 19 functional components using [[TypeScript]] str
 
 | Type | Pattern | Location | Example |
 |------|---------|----------|---------|
-| Tab | `*Tab.tsx` | `components/<name>/` | `QueryTab.tsx` |
+| Tab | `*Tab.tsx` | `components/<name>/` | `QueryTab.tsx`, `SchemaTab.tsx` |
 | Standalone Page | `*Page.tsx` | `components/<name>/` | `RecordPage.tsx` |
 | Utility Tool | `*.tsx` | `components/utils-tools/` | `DebugLogs.tsx` |
+| Navigation | `*.tsx` | `components/<name>/` | `HomeScreen.tsx` |
 | Reusable | `*.tsx` | `components/<name>/` | `MonacoEditor.tsx`, `Modal.tsx` |
 
 ### Component Directory Layout
@@ -51,7 +52,7 @@ components/
 ├── rest-api/           # REST API explorer
 ├── events/             # Event streaming (proxy required)
 ├── record/             # Record Viewer standalone page
-├── schema/             # Schema Browser standalone page
+├── schema/             # Schema Browser tab component
 ├── settings/           # Multi-section settings (7 components)
 ├── utils/ + utils-tools/ # Utility tools
 ├── monaco-editor/      # Monaco editor wrapper
@@ -59,7 +60,10 @@ components/
 ├── button-dropdown/    # Dropdown button
 ├── button-icon/        # Icon button
 ├── sf-icon/            # Salesforce icon component
-└── status-badge/       # Status indicator
+├── toast/              # Global toast notification system (Toast.tsx)
+├── collapse-chevron/   # Animated chevron for collapsible sections
+├── home-screen/        # Home screen with tile-based navigation
+└── connection-selector/ # Header-level connection dropdown (used in App.tsx)
 ```
 
 ### Standard Component Pattern
@@ -127,7 +131,7 @@ export function ExampleComponent({ initialValue = '' }: ExampleProps) {
 | Inputs | `.input`, `.select`, `.search-input` |
 | Modal | `.modal-overlay`, `.modal-dialog`, `.modal-buttons` |
 | Dropdown | `.dropdown-menu`, `.dropdown-item` |
-| Status | `.status-badge[data-status="loading/success/error"]` |
+| Toast | `[role="alert"][data-type="success/error/info/warning"]` |
 
 ### Monaco Editor Component
 
@@ -137,6 +141,13 @@ Reusable wrapper at `components/monaco-editor/MonacoEditor.tsx`:
 - Uncontrolled value (use ref methods for updates)
 - `onExecute` handler for Ctrl/Cmd+Enter
 - Ref methods: `getValue()`, `setValue()`, `appendValue()`, `clear()`, `setMarkers()`, `clearMarkers()`, `focus()`
+
+### ConnectionSelector Component
+
+`components/connection-selector/ConnectionSelector.tsx` is a header-level dropdown rendered directly in `src/react/App.tsx`. It sits outside the tab/page hierarchy and provides global org switching. It is not used inside any tab or feature component.
+
+> [!note] Placement
+> `ConnectionSelector` lives in the App header, not inside any tab. It replaces the earlier approach of embedding connection controls within individual feature components.
 
 ### Complex State with useReducer
 

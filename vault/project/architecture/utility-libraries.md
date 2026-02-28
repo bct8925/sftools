@@ -10,7 +10,7 @@ aliases:
   - lib/
   - Shared Utilities
 created: 2026-02-08
-updated: 2026-02-08
+updated: 2026-02-28
 status: active
 related-code:
   - src/lib/
@@ -39,7 +39,6 @@ confidence: high
 | `history-manager.ts` | Query/Apex history | `HistoryManager` class (history + favorites) |
 | `theme.ts` | Dark/light mode | `initTheme`, `setTheme`, `getTheme`, `onThemeChange` |
 | `background-utils.ts` | Service worker helpers | `sendToBackground` |
-| `ui-helpers.ts` | DOM utilities | `formatDate`, `formatFileSize` |
 | `column-utils.ts` | Column manipulation | Column helpers for query results |
 | `csv-utils.ts` | CSV export | CSV formatting for export |
 | `date-utils.ts` | Date formatting | Date display helpers |
@@ -52,7 +51,7 @@ confidence: high
 
 ### HistoryManager
 
-Class-based manager for query/apex history with Chrome storage persistence:
+Class-based manager for query/apex history with Chrome storage persistence. Includes a `loaded` flag and `ensureLoaded()` method — storage is read before any write to prevent overwriting existing history on first save after reopening the extension.
 
 ```typescript
 const history = new HistoryManager('query'); // or 'apex'
@@ -68,9 +67,13 @@ const results = await history.search('account');
 | Hook | Purpose |
 |------|---------|
 | `useFilteredResults` | Debounced text filtering state |
-| `useStatusBadge` | Status badge state management |
+| `useToast` | Access ToastContext (show/update/dismiss notifications) |
 
 Hooks used by a single component are colocated (e.g., `query/useQueryState.ts`).
+
+### Dead Code Detection
+
+Dead code analysis is driven by `scripts/dead-code.sh`. To keep test-only exports out of dead-code results without polluting production modules, they live in `.testing.ts` companion files (e.g., `fetch.testing.ts` re-exports internals from `fetch.ts`). Production code imports from the main module; test code imports from the `.testing` companion. When adding a new test-only export, add it to the corresponding `.testing.ts` file (create one if needed).
 
 ## Key Files
 

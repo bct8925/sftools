@@ -11,12 +11,13 @@ aliases:
   - Contexts
   - React Context
 created: 2026-02-08
-updated: 2026-02-08
+updated: 2026-02-28
 status: active
 related-code:
   - src/contexts/ConnectionContext.tsx
   - src/contexts/ThemeContext.tsx
   - src/contexts/ProxyContext.tsx
+  - src/contexts/ToastContext.tsx
   - src/react/AppProviders.tsx
 confidence: high
 ---
@@ -36,7 +37,9 @@ Global state is managed via three [[React]] Context providers, wrapped in `AppPr
 <ConnectionProvider>     // Outermost — Salesforce org connections
   <ThemeProvider>        // Dark/light mode
     <ProxyProvider>      // Native proxy connection
-      {children}
+      <ToastProvider>    // Global notifications — innermost
+        {children}
+      </ToastProvider>
     </ProxyProvider>
   </ThemeProvider>
 </ConnectionProvider>
@@ -106,6 +109,30 @@ const {
 
 Events tab requires `isConnected === true` to function.
 
+### ToastContext — Global Notifications
+
+Replaced the old `StatusBadge` / `useStatusBadge` pattern (removed in PR #142). Provides a single app-wide toast notification system used across all feature tabs.
+
+```typescript
+const {
+  show,    // (message: string, type: ToastType, options?: ToastOptions) => string — returns toast id
+  update,  // (id: string, updates: Partial<ToastState>) => void
+  dismiss, // (id: string) => void
+} = useToast();
+```
+
+**Toast types:** `'success' | 'error' | 'info' | 'warning'`
+
+**Features:**
+- Auto-close with animated progress bar
+- Slide-in animation
+- Themed accent border matching toast type
+- Fixed top-right position (above all content)
+
+**Test selector:** `[role="alert"][data-type]`
+
+**Used by:** [[apex-executor|ApexTab]], [[query-editor|QueryTab]], DebugLogsTab, EventsTab, EventPublisher, RestApiTab, RecordPage
+
 ### Creating a New Context
 
 1. Create `src/contexts/ExampleContext.tsx`
@@ -129,6 +156,7 @@ Events tab requires `isConnected === true` to function.
 - `src/contexts/ConnectionContext.tsx` — Multi-org state
 - `src/contexts/ThemeContext.tsx` — Theme state
 - `src/contexts/ProxyContext.tsx` — Proxy state
+- `src/contexts/ToastContext.tsx` — Global notifications
 - `src/react/AppProviders.tsx` — Provider wrapper
 
 ## Related

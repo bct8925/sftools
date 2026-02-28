@@ -15,7 +15,7 @@ aliases:
   - SOQL Editor
   - Query Tab
 created: 2026-02-08
-updated: 2026-02-08
+updated: 2026-02-28
 status: active
 related-code:
   - src/components/query/
@@ -40,6 +40,7 @@ The Query tab provides a full-featured SOQL editor with [[monaco-editor|Monaco E
 - **Column metadata**: Parses query columns including nested relationships (e.g., `Account.Owner.Name`)
 - **Pagination**: Automatic `fetchQueryMore()` for queries with `done: false`
 - **Bulk export**: Large datasets exported via Bulk API v2 as CSV
+- **Include Deleted Records**: Toggle switches `/query/` to `/queryAll/` endpoint to include soft-deleted and archived records. Bulk export uses the `queryAll` Bulk API v2 job operation.
 - **History & Favorites**: Managed by `HistoryManager` class in `lib/history-manager.ts` using [[script-list-component|Script List Component Pattern]]
 
 ### SOQL Autocomplete

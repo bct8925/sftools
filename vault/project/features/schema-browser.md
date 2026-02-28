@@ -9,11 +9,11 @@ tags:
   - describe
   - formula-fields
   - relationships
-  - standalone-page
+  - tab
 aliases:
   - Schema Page
 created: 2026-02-08
-updated: 2026-02-08
+updated: 2026-02-28
 status: active
 related-code:
   - src/components/schema/
@@ -26,7 +26,7 @@ confidence: high
 
 ## Overview
 
-Standalone page for browsing Salesforce object metadata, fields, relationships, and formula definitions. Opens in its own tab (not inside the main app).
+Integrated tab for browsing Salesforce object metadata, fields, relationships, and formula definitions. Opens directly within the main app (no separate window).
 
 ## How It Works
 
@@ -39,6 +39,7 @@ Standalone page for browsing Salesforce object metadata, fields, relationships, 
 
 | Component | Purpose |
 |-----------|---------|
+| `SchemaTab.tsx` | Tab wrapper entry point |
 | `SchemaPage.tsx` | Main page component |
 | `ObjectList.tsx` | Object sidebar with search |
 | `FieldList.tsx` | Field details table |
@@ -47,8 +48,7 @@ Standalone page for browsing Salesforce object metadata, fields, relationships, 
 ## Key Files
 
 - `src/components/schema/` — Schema components
-- `src/react/schema.tsx` — Entry point
-- `src/pages/schema/schema.html` — HTML shell
+- `src/components/schema/SchemaTab.tsx` — Tab wrapper entry point
 - `src/api/salesforce.ts` — `getGlobalDescribe`, `getObjectDescribe`
 - `src/lib/schema-utils.ts` — `formatFieldType`, `isFormulaField`
 

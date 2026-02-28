@@ -239,14 +239,11 @@ export function QueryTab() {
         try {
             const csv = await executeBulkQueryExport(
                 query,
-                (jobState, recordCount, chunksDownloaded) => {
+                (jobState, recordCount) => {
                     if (jobState === 'InProgress' || jobState === 'UploadComplete') {
                         toast.update(id, `Processing: ${recordCount || 0} records`, 'loading');
                     } else if (jobState === 'Creating job...') {
                         toast.update(id, 'Creating bulk job...', 'loading');
-                    } else if (jobState === 'Downloading...') {
-                        const chunkInfo = chunksDownloaded ? ` (chunk ${chunksDownloaded})` : '';
-                        toast.update(id, `Downloading results...${chunkInfo}`, 'loading');
                     }
                 },
                 includeDeleted

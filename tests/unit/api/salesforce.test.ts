@@ -971,7 +971,7 @@ describe('salesforce', () => {
             expect(onProgress).toHaveBeenCalledWith('Creating job...');
             expect(onProgress).toHaveBeenCalledWith('InProgress', 100);
             expect(onProgress).toHaveBeenCalledWith('JobComplete', 200);
-            expect(onProgress).toHaveBeenCalledWith('Downloading...');
+            expect(onProgress).toHaveBeenCalledWith('InProgress', 0);
         });
 
         it('throws on Failed state', async () => {

@@ -54,7 +54,7 @@ export async function getBulkQueryJobStatus(jobId: string): Promise<BulkQueryJob
  */
 export async function getBulkQueryResults(
     jobId: string,
-    onChunkProgress?: (chunksDownloaded: number) => void
+    onChunkProgress?: (totalRows: number) => void
 ): Promise<string> {
     const baseUrl = `${getInstanceUrl()}/services/data/v${API_VERSION}/jobs/query/${jobId}/results`;
     const headers = {
@@ -64,6 +64,7 @@ export async function getBulkQueryResults(
 
     const chunks: string[] = [];
     let locator: string | undefined;
+    let totalRows = 0;
 
     do {
         const url = locator
@@ -80,13 +81,18 @@ export async function getBulkQueryResults(
 
         if (chunks.length === 0) {
             chunks.push(chunk);
+            // Count data rows, excluding the header row
+            const lines = chunk.split('\n').filter(l => l.length > 0).length;
+            totalRows += Math.max(0, lines - 1);
         } else {
             // Strip the CSV header row from subsequent chunks
             const newlineIndex = chunk.indexOf('\n');
-            chunks.push(newlineIndex >= 0 ? chunk.slice(newlineIndex + 1) : chunk);
+            const strippedChunk = newlineIndex >= 0 ? chunk.slice(newlineIndex + 1) : chunk;
+            chunks.push(strippedChunk);
+            totalRows += strippedChunk.split('\n').filter(l => l.length > 0).length;
         }
 
-        onChunkProgress?.(chunks.length);
+        onChunkProgress?.(totalRows);
 
         const nextLocator = response.headers?.['sforce-locator'];
         locator = nextLocator && nextLocator !== 'null' ? nextLocator : undefined;
@@ -111,7 +117,7 @@ export async function abortBulkQueryJob(jobId: string): Promise<void> {
  */
 export async function executeBulkQueryExport(
     soql: string,
-    onProgress?: (state: string, recordCount?: number, chunksDownloaded?: number) => void,
+    onProgress?: (state: string, recordCount?: number) => void,
     includeDeleted = false
 ): Promise<string> {
     onProgress?.('Creating job...');
@@ -127,9 +133,8 @@ export async function executeBulkQueryExport(
         onProgress?.(status.state, status.numberRecordsProcessed || 0);
 
         if (status.state === 'JobComplete') {
-            onProgress?.('Downloading...');
-            return getBulkQueryResults(jobId, chunksDownloaded => {
-                onProgress?.('Downloading...', undefined, chunksDownloaded);
+            return getBulkQueryResults(jobId, rowsDownloaded => {
+                onProgress?.('InProgress', rowsDownloaded);
             });
         }
 

@@ -202,7 +202,7 @@ describe('bulk-query', () => {
             await expect(getBulkQueryResults('job-123')).rejects.toThrow('Server error');
         });
 
-        it('calls onChunkProgress for each chunk', async () => {
+        it('calls onChunkProgress with running row total for each chunk', async () => {
             vi.mocked(smartFetch)
                 .mockResolvedValueOnce({
                     success: true,
@@ -220,6 +220,7 @@ describe('bulk-query', () => {
             const onChunkProgress = vi.fn();
             await getBulkQueryResults('job-123', onChunkProgress);
 
+            // Each chunk has 1 data row; running totals are 1 then 2
             expect(onChunkProgress).toHaveBeenCalledTimes(2);
             expect(onChunkProgress).toHaveBeenNthCalledWith(1, 1);
             expect(onChunkProgress).toHaveBeenNthCalledWith(2, 2);
@@ -317,7 +318,7 @@ describe('bulk-query', () => {
 
             expect(onProgress).toHaveBeenCalledWith('Creating job...');
             expect(onProgress).toHaveBeenCalledWith('JobComplete', 10);
-            expect(onProgress).toHaveBeenCalledWith('Downloading...');
+            expect(onProgress).toHaveBeenCalledWith('InProgress', 0);
 
             vi.useRealTimers();
         });

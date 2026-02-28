@@ -64,7 +64,7 @@ describe('Debug Logs User Search', () => {
         await page.waitForTimeout(500);
 
         // Verify success status is shown
-        const statusText = page.locator('[data-testid="debug-logs-trace-status-text"]');
+        const statusText = page.locator('[role="alert"][data-type="success"]');
         await statusText.waitFor({ state: 'visible', timeout: 5000 });
         const status = await statusText.textContent();
         expect(status || '').toContain('enabled');

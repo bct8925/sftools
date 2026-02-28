@@ -72,13 +72,15 @@ export class QueryTabPage extends BasePage {
         await this.monaco.setValue(query);
         await this.slowClick(this.executeBtn);
 
-        // Wait for query to complete - toast will have data-type="success" or "error"
+        // Wait for query to complete - loading toast must resolve first, then success or error
         await this.page.waitForFunction(
             () => {
-                const toast = document.querySelector(
+                const loading = document.querySelector('[role="alert"][data-type="loading"]');
+                if (loading) return false;
+                const result = document.querySelector(
                     '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
-                return toast !== null;
+                return result !== null;
             },
             { timeout: 30000 }
         );
@@ -92,10 +94,12 @@ export class QueryTabPage extends BasePage {
 
         await this.page.waitForFunction(
             () => {
-                const toast = document.querySelector(
+                const loading = document.querySelector('[role="alert"][data-type="loading"]');
+                if (loading) return false;
+                const result = document.querySelector(
                     '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
-                return toast !== null;
+                return result !== null;
             },
             { timeout: 30000 }
         );
@@ -344,10 +348,12 @@ export class QueryTabPage extends BasePage {
         // Wait for save to complete
         await this.page.waitForFunction(
             () => {
-                const toast = document.querySelector(
+                const loading = document.querySelector('[role="alert"][data-type="loading"]');
+                if (loading) return false;
+                const result = document.querySelector(
                     '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
                 );
-                return toast !== null;
+                return result !== null;
             },
             { timeout: 15000 }
         );

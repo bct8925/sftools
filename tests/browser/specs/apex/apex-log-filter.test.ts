@@ -89,7 +89,7 @@ USER_DEBUG|[6]|DEBUG|Calculation result: 30`;
 
         // Verify execution succeeded
         const status = await apexTab.getStatus();
-        expect(status.success).toBe(true);
+        expect(status.type).toBe('success');
 
         // Get full debug log content
         const fullLogContent = await apexTab.getLogContent();

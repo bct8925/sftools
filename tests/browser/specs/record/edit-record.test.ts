@@ -72,6 +72,6 @@ describe('EditRecordTest', () => {
 
         // Verify status shows saved
         const status = await recordPage.getStatus();
-        expect(status).toContain('Saved');
+        expect(status.text).toContain('Saved');
     });
 });

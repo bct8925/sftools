@@ -49,7 +49,7 @@ System.debug('Result: ' + result);`;
 
         // Verify execution was successful
         const status = await apexTab.getStatus();
-        expect(status.success).toBe(true);
+        expect(status.type).toBe('success');
 
         // A-F-008: Verify script appears in history
         await apexTab.openHistory();

@@ -129,7 +129,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
                     fieldDescribe,
                 });
 
-                toast.dismiss(activeToastRef.current!);
+                toast.update(activeToastRef.current!, `${result.totalSize} record(s)`, 'success');
                 activeToastRef.current = null;
 
                 // Clear filter

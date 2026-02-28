@@ -149,7 +149,7 @@ export function ApexTab() {
             } else if (!result.execution.success) {
                 toast.update(id, 'Runtime Error', 'error');
             } else {
-                toast.dismiss(id);
+                toast.update(id, 'Executed successfully', 'success');
             }
             toastIdRef.current = null;
 

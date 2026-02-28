@@ -62,7 +62,7 @@ export function RestApiTab() {
             const response: RestApiResponse = await executeRestRequest(urlValue, method, body);
 
             if (response.success) {
-                toast.dismiss(id);
+                toast.update(id, `${response.status} ${response.statusText}`, 'success');
             } else {
                 toast.update(id, response.status.toString(), 'error');
             }

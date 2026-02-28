@@ -136,13 +136,10 @@ export class RecordPage extends BasePage {
 
         // Wait for save to complete
         await this.page.waitForFunction(
-            () => {
-                const status = document.getElementById('status');
-                return (
-                    status &&
-                    (status.textContent?.includes('Saved') || status.textContent?.includes('Error'))
-                );
-            },
+            () =>
+                document.querySelector(
+                    '[role="alert"][data-type="success"], [role="alert"][data-type="error"]'
+                ) !== null,
             { timeout: 30000 }
         );
     }
@@ -156,10 +153,13 @@ export class RecordPage extends BasePage {
     }
 
     /**
-     * Get the status text
+     * Get the status text from toast notification
      */
-    async getStatus(): Promise<string> {
-        return (await this.status.textContent()) || '';
+    async getStatus(): Promise<{ text: string; type: string }> {
+        const toast = this.page.locator('[role="alert"]').first();
+        const text = (await toast.textContent()) || '';
+        const type = (await toast.getAttribute('data-type')) || 'default';
+        return { text: text.trim(), type };
     }
 
     /**

@@ -44,7 +44,7 @@ describe('Apex Errors (A-F-004, A-F-016, A-F-018)', () => {
 
         // Verify status indicates failure (Compile Error or Error)
         const status = await apexTab.getStatus();
-        expect(status.success).toBe(false);
+        expect(status.type).toBe('error');
 
         // Status text should indicate compile error
         expect(status.text).toContain('Error');

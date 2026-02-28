@@ -52,7 +52,7 @@ describe('Apex Favorites (A-F-011, A-F-012, A-F-013)', () => {
 
         // Verify execution succeeded
         const status = await apexTab.getStatus();
-        expect(status.success).toBe(true);
+        expect(status.type).toBe('success');
 
         // Save to favorites with a label (A-F-011)
         await apexTab.saveToFavorites(favoriteLabel);

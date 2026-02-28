@@ -78,7 +78,7 @@ describe('Apex Keyboard Shortcut', () => {
 
         // Verify success
         const status = await apexTab.getStatus();
-        expect(status.success).toBe(true);
+        expect(status.type).toBe('success');
 
         // Verify debug log contains our output
         const logContent = await apexTab.getLogContent();

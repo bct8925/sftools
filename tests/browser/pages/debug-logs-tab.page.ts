@@ -164,17 +164,17 @@ export class DebugLogsTabPage extends BasePage {
      * Get delete status text
      */
     async getDeleteStatusText(): Promise<string> {
-        const statusText = this.page.locator('[data-testid="debug-logs-delete-status-text"]');
-        const isVisible = await statusText.isVisible();
+        const toast = this.page.locator('[role="alert"][data-type="success"]').last();
+        const isVisible = await toast.isVisible();
         if (!isVisible) return '';
-        return (await statusText.textContent()) || '';
+        return (await toast.textContent()) || '';
     }
 
     /**
      * Wait for delete status to be visible
      */
     async waitForDeleteStatus(): Promise<void> {
-        const statusText = this.page.locator('[data-testid="debug-logs-delete-status-text"]');
-        await statusText.waitFor({ state: 'visible', timeout: 5000 });
+        const toast = this.page.locator('[role="alert"][data-type="success"]').last();
+        await toast.waitFor({ state: 'visible', timeout: 5000 });
     }
 }

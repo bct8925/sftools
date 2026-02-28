@@ -547,10 +547,10 @@ describe('Debug Logs Integration', () => {
 
                 // Execute apex with unique marker
                 const testMarker = uniqueName('DL_BODY');
+                const beforeTime = new Date().toISOString();
                 await salesforce.executeAnonymousApex(`System.debug('${testMarker}');`);
 
                 // Wait for log
-                const beforeTime = new Date(Date.now() - 60000).toISOString(); // 1 minute ago
                 let logs: ApexLog[] = [];
 
                 await waitFor(

@@ -1,6 +1,6 @@
 ---
 description: Generate release notes and create a GitHub release for the current version
-allowed-tools: Bash(jq:*), Bash(gh release view:*), Bash(gh release list:*), Bash(gh release create:*), Bash(git log:*), Bash(git diff:*), Read
+allowed-tools: Bash(jq:*), Bash(gh release view:*), Bash(gh release list:*), Bash(gh release create:*), Bash(git log:*), Bash(git diff:*), Bash(git tag:*), Read
 ---
 
 # Generate Release Notes
@@ -17,7 +17,14 @@ Use `gh release view "<version>"` to check if a release for this version already
 
 ## Step 3: Find the previous release
 
-Use `gh release list --limit 1 --json tagName -q '.[0].tagName'` to get the most recent release tag.
+Do NOT use `gh release list` — it sorts by creation date, not version, and can return the wrong tag.
+
+Instead, use version-sorted git tags:
+1. Run `git tag --sort=-version:refname` to list all tags sorted by semver, highest first
+2. Find the first tag in that list that (a) is not the current version and (b) is an ancestor of HEAD: `git merge-base --is-ancestor <tag> HEAD`
+3. Confirm the tag has a corresponding GitHub release: `gh release view <tag> --json tagName -q '.tagName'`
+
+This guarantees you select the true version predecessor, not just the most recently created release.
 
 ## Step 4: Get changes since previous release
 
@@ -25,12 +32,26 @@ First, get the list of commit subjects:
 `git log <prev_tag>..HEAD --oneline`
 If no previous release exists, get all commits.
 
+**Sanity check before proceeding:** Count the commits and inspect the date range:
+- `git log <prev_tag>..HEAD --oneline | wc -l` — total commit count
+- `git log <prev_tag>..HEAD --format="%ci" | tail -1` — date of earliest commit in range
+- `git log <prev_tag>..HEAD --format="%ci" | head -1` — date of most recent commit in range
+
+If the range spans **more than ~50 commits** or **more than 60 days**, stop and flag this as a potentially wrong tag selection. Re-examine Step 3 and verify the previous tag before continuing.
+
 Then, to understand what each commit actually changed, iterate through the commits in batches of ~10 using:
 `git log <prev_tag>..HEAD --stat --skip=N --max-count=10`
 
 Walk through all batches (skip=0, skip=10, skip=20, etc.) until you've covered every commit. Use the file change stats to determine which commits are customer-facing vs internal.
 
 If a commit message is ambiguous, use `git log <hash> -1 -p` or read the changed source files to understand what the change actually does.
+
+## Step 4.5: Cross-reference previous release notes
+
+Fetch the body of the previous release:
+`gh release view <prev_tag> --json body -q '.body'`
+
+Read the previous release notes carefully. **Any item already described in the previous release notes MUST NOT appear in the new notes**, even if a related commit shows up in the log range. This prevents duplicate items from bleeding across releases.
 
 ## Step 5: Write release notes
 

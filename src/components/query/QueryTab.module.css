@@ -7,8 +7,8 @@
 .queryTab {
     display: flex;
     flex-direction: column;
-    /* 100vh minus: nav(50px) + padding(20px top) + padding(20px bottom) */
-    height: calc(100vh - 90px);
+    /* 100vh minus: nav(50px) + nav border-bottom(2px) */
+    height: calc(100vh - 52px);
     overflow: hidden;
 }
 

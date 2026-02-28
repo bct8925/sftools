@@ -352,7 +352,7 @@ npx tsx <project_root>/capture-screenshots.ts
 If the script fails, read the error, fix the script, and re-run. Common failures:
 - Selector not found → check `data-testid` values by reading the component source
 - Timeout → increase `waitForTimeout` or add `waitForSelector` before interaction
-- Vite port conflict → kill stale Vite processes: `lsof -ti:5175 | xargs kill`
+- Vite port conflict → kill stale Vite processes: `ports kill 5175`
 
 ### Step 5: Verify Screenshots
 

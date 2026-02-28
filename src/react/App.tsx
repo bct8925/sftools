@@ -6,6 +6,7 @@ import { AuthExpirationHandler } from './AuthExpirationHandler';
 import { CorsErrorHandler } from './CorsErrorHandler';
 import { SfIcon } from '../components/sf-icon/SfIcon';
 import { type TabId, type FeatureId } from './TabNavigation';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 import styles from './App.module.css';
 
@@ -101,6 +102,8 @@ function AppContent() {
     const navigateHome = useCallback(() => {
         setViewState({ view: 'home' });
     }, []);
+
+    useKeyboardShortcuts({ navigateToFeature, navigateHome });
 
     const handleSettingsClick = useCallback(() => {
         navigateToFeature('settings');

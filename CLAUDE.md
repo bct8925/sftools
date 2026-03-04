@@ -4,43 +4,9 @@ GitHub repo: `bct8925/sftools`
 
 Chrome Extension (Manifest V3) for Salesforce developers. React 19, TypeScript 5.9, Vite 7, Monaco Editor. Vitest (unit) + Playwright (frontend) testing.
 
-## Tool Use
-
-- **MUST** use `dora` for all code exploration — file search, symbol lookup, dependency tracing, architecture analysis
-- Only fall back to Grep for non-code files or when dora fails
-- Use Read for file contents, Edit/Write for changes
-
 ## Workflow
 
 - **MUST** follow `/brain` coding standards before writing any code
-- **MUST** use [OpenSpec](https://github.com/Fission-AI/OpenSpec) for new features and non-trivial changes
-
-### OpenSpec
-
-Spec-driven development — align on requirements before implementation.
-
-```
-openspec/
-├── config.yaml           # Configuration
-├── specs/                # Master specs (persisted from completed changes)
-└── changes/              # Active and archived changes
-    ├── <change-name>/    # proposal.md, specs/, design.md, tasks.md
-    └── archive/          # Completed changes
-```
-
-**Workflow:** `/opsx:new` → `/opsx:ff` → `/opsx:apply` → `/opsx:verify` → `/opsx:archive`
-
-| Command | Purpose |
-|---------|---------|
-| `/opsx:new` | Create a new change workspace |
-| `/opsx:ff` | Fast-forward: generate all planning artifacts at once |
-| `/opsx:continue` | Create the next artifact in sequence |
-| `/opsx:explore` | Think through ideas or investigate problems |
-| `/opsx:apply` | Implement tasks from a change |
-| `/opsx:verify` | Verify implementation matches change artifacts |
-| `/opsx:sync` | Sync delta specs to master specs |
-| `/opsx:archive` | Archive a completed change |
-| `/opsx:bulk-archive` | Archive multiple changes at once |
 
 ## Commands
 
@@ -48,7 +14,6 @@ openspec/
 
 ```bash
 npm run build                  # Build for development (debug mode)
-npm run watch                  # Build with watch mode
 npm run package                # Build production + create zip archive
 npm run typecheck              # TypeScript validation
 ```
@@ -71,8 +36,6 @@ npm run test:integration                 # Run all integration tests
 npm run validate               # Auto-fix lint + format, then run all checks
 npm run check                  # Run typecheck + lint + format:check (no fix)
 npm run fix                    # Auto-fix lint + format only
-npm run dead-code              # Find unused exports (dora-based)
-npm run dead-code -- --all     # Include known exceptions
 ```
 
 **Run `npm run validate` after changing code files (`.ts`, `.tsx`, `.js`, `.jsx`, `.css`). Skip for docs, config, or non-code changes.**

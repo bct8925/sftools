@@ -844,10 +844,16 @@ describe('salesforce', () => {
 
     describe('getBulkQueryResults', () => {
         it('fetches CSV with correct Accept header', async () => {
+            salesforceRequest.mockResolvedValueOnce({
+                json: {
+                    resultChunks: [{ resultLink: '/jobs/query/750abc/results?locator=abc' }],
+                    done: true,
+                },
+            });
             smartFetch.mockResolvedValue({
                 success: true,
+                status: 200,
                 data: 'Id,Name\n001abc,Test',
-                headers: {},
             });
 
             await getBulkQueryResults('750abc');
@@ -864,10 +870,16 @@ describe('salesforce', () => {
 
         it('returns CSV data', async () => {
             const csvData = 'Id,Name\n001abc,Account 1\n001def,Account 2';
+            salesforceRequest.mockResolvedValueOnce({
+                json: {
+                    resultChunks: [{ resultLink: '/jobs/query/750abc/results?locator=abc' }],
+                    done: true,
+                },
+            });
             smartFetch.mockResolvedValue({
                 success: true,
+                status: 200,
                 data: csvData,
-                headers: {},
             });
 
             const result = await getBulkQueryResults('750abc');
@@ -876,6 +888,12 @@ describe('salesforce', () => {
         });
 
         it('throws on failure', async () => {
+            salesforceRequest.mockResolvedValueOnce({
+                json: {
+                    resultChunks: [{ resultLink: '/jobs/query/bad123/results?locator=abc' }],
+                    done: true,
+                },
+            });
             smartFetch.mockResolvedValue({
                 success: false,
                 error: 'Job not found',
@@ -918,9 +936,15 @@ describe('salesforce', () => {
                 }) // poll 1
                 .mockResolvedValueOnce({
                     json: { id: '750poll', state: 'JobComplete', numberRecordsProcessed: 1000 },
-                }); // poll 2
+                }) // poll 2
+                .mockResolvedValueOnce({
+                    json: {
+                        resultChunks: [{ resultLink: '/jobs/query/750poll/results?locator=abc' }],
+                        done: true,
+                    },
+                }); // resultPages
 
-            smartFetch.mockResolvedValue({ success: true, data: 'Id\n001abc', headers: {} });
+            smartFetch.mockResolvedValue({ success: true, status: 200, data: 'Id\n001abc' });
 
             const promise = executeBulkQueryExport('SELECT Id FROM Account', vi.fn());
 
@@ -936,10 +960,16 @@ describe('salesforce', () => {
         it('returns CSV on success', async () => {
             salesforceRequest
                 .mockResolvedValueOnce({ json: { id: '750csv', state: 'UploadComplete' } })
-                .mockResolvedValueOnce({ json: { id: '750csv', state: 'JobComplete' } });
+                .mockResolvedValueOnce({ json: { id: '750csv', state: 'JobComplete' } })
+                .mockResolvedValueOnce({
+                    json: {
+                        resultChunks: [{ resultLink: '/jobs/query/750csv/results?locator=abc' }],
+                        done: true,
+                    },
+                });
 
             const csvContent = 'Id,Name\n001abc,Test Account';
-            smartFetch.mockResolvedValue({ success: true, data: csvContent, headers: {} });
+            smartFetch.mockResolvedValue({ success: true, status: 200, data: csvContent });
 
             const promise = executeBulkQueryExport('SELECT Id, Name FROM Account', vi.fn());
             await vi.advanceTimersByTimeAsync(2000);
@@ -957,9 +987,15 @@ describe('salesforce', () => {
                 })
                 .mockResolvedValueOnce({
                     json: { id: '750prog', state: 'JobComplete', numberRecordsProcessed: 200 },
+                })
+                .mockResolvedValueOnce({
+                    json: {
+                        resultChunks: [{ resultLink: '/jobs/query/750prog/results?locator=abc' }],
+                        done: true,
+                    },
                 });
 
-            smartFetch.mockResolvedValue({ success: true, data: 'data', headers: {} });
+            smartFetch.mockResolvedValue({ success: true, status: 200, data: 'Id\nrow1' });
 
             const onProgress = vi.fn();
             const promise = executeBulkQueryExport('SELECT Id FROM Account', onProgress);
@@ -971,7 +1007,7 @@ describe('salesforce', () => {
             expect(onProgress).toHaveBeenCalledWith('Creating job...');
             expect(onProgress).toHaveBeenCalledWith('InProgress', 100);
             expect(onProgress).toHaveBeenCalledWith('JobComplete', 200);
-            expect(onProgress).toHaveBeenCalledWith('InProgress', 0);
+            expect(onProgress).toHaveBeenCalledWith('Downloading', 1, 200);
         });
 
         it('throws on Failed state', async () => {

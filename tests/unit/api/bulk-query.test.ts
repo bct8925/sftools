@@ -98,145 +98,191 @@ describe('bulk-query', () => {
     });
 
     describe('getBulkQueryResults', () => {
-        it('returns CSV for single chunk (no locator)', async () => {
-            vi.mocked(smartFetch).mockResolvedValue({
+        /** Helper to mock a /resultPages response with actual API field names */
+        function mockResultPages(resultLinks: string[], done: boolean, nextRecordsUrl?: string) {
+            return {
+                json: {
+                    resultChunks: resultLinks.map(link => ({ resultLink: link })),
+                    done,
+                    ...(nextRecordsUrl ? { nextRecordsUrl } : {}),
+                },
+            };
+        }
+
+        it('returns CSV for single page with single result URL', async () => {
+            vi.mocked(salesforceRequest).mockResolvedValueOnce(
+                mockResultPages(['/jobs/query/job-123/results?locator=abc'], true)
+            );
+
+            vi.mocked(smartFetch).mockResolvedValueOnce({
                 success: true,
                 status: 200,
                 data: 'Id,Name\n001abc,Test',
-                headers: { 'sforce-locator': 'null' },
             });
 
             const result = await getBulkQueryResults('job-123');
 
             expect(result).toBe('Id,Name\n001abc,Test');
+            expect(salesforceRequest).toHaveBeenCalledTimes(1);
+            expect(salesforceRequest).toHaveBeenCalledWith(expect.stringContaining('/resultPages'));
             expect(smartFetch).toHaveBeenCalledTimes(1);
             expect(smartFetch).toHaveBeenCalledWith(
-                expect.stringContaining('/results?maxRecords=2000'),
+                expect.stringContaining('/results?locator=abc'),
                 expect.objectContaining({
                     headers: expect.objectContaining({ Accept: 'text/csv' }),
                 })
             );
         });
 
-        it('concatenates multiple chunks stripping subsequent headers', async () => {
+        it('paginates through multiple resultPages and concatenates CSV', async () => {
+            // First /resultPages call returns 2 chunks, not done
+            vi.mocked(salesforceRequest)
+                .mockResolvedValueOnce(
+                    mockResultPages(
+                        [
+                            '/jobs/query/job-123/results?locator=abc',
+                            '/jobs/query/job-123/results?locator=def',
+                        ],
+                        false,
+                        '/jobs/query/job-123/resultPages?locator=next1'
+                    )
+                )
+                // Second /resultPages call returns 1 chunk, done
+                .mockResolvedValueOnce(
+                    mockResultPages(['/jobs/query/job-123/results?locator=ghi'], true)
+                );
+
             vi.mocked(smartFetch)
-                .mockResolvedValueOnce({
-                    success: true,
-                    status: 200,
-                    data: 'Id,Name\n001abc,First\n',
-                    headers: { 'sforce-locator': 'abc123' },
-                })
-                .mockResolvedValueOnce({
-                    success: true,
-                    status: 200,
-                    data: 'Id,Name\n001def,Second',
-                    headers: { 'sforce-locator': 'null' },
-                });
-
-            const result = await getBulkQueryResults('job-123');
-
-            expect(result).toBe('Id,Name\n001abc,First\n001def,Second');
-            expect(smartFetch).toHaveBeenCalledTimes(2);
-            expect(smartFetch).toHaveBeenNthCalledWith(
-                2,
-                expect.stringContaining('locator=abc123'),
-                expect.anything()
-            );
-        });
-
-        it('handles three chunks (two locators)', async () => {
-            vi.mocked(smartFetch)
-                .mockResolvedValueOnce({
-                    success: true,
-                    status: 200,
-                    data: 'Id\n001a\n',
-                    headers: { 'sforce-locator': 'loc1' },
-                })
-                .mockResolvedValueOnce({
-                    success: true,
-                    status: 200,
-                    data: 'Id\n001b\n',
-                    headers: { 'sforce-locator': 'loc2' },
-                })
-                .mockResolvedValueOnce({
-                    success: true,
-                    status: 200,
-                    data: 'Id\n001c',
-                    headers: { 'sforce-locator': 'null' },
-                });
+                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001a\n' })
+                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001b\n' })
+                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001c' });
 
             const result = await getBulkQueryResults('job-123');
 
             expect(result).toBe('Id\n001a\n001b\n001c');
+            expect(salesforceRequest).toHaveBeenCalledTimes(2);
+            // nextRecordsUrl gets prefixed with /services/data/v62.0
+            expect(salesforceRequest).toHaveBeenNthCalledWith(
+                2,
+                expect.stringContaining(
+                    '/services/data/v62.0/jobs/query/job-123/resultPages?locator=next1'
+                )
+            );
             expect(smartFetch).toHaveBeenCalledTimes(3);
         });
 
-        it('returns empty string for empty result set', async () => {
-            vi.mocked(smartFetch).mockResolvedValue({
-                success: true,
-                status: 200,
-                data: '',
-                headers: { 'sforce-locator': 'null' },
-            });
+        it('returns empty string when resultChunks is empty', async () => {
+            vi.mocked(salesforceRequest).mockResolvedValueOnce(mockResultPages([], true));
 
             const result = await getBulkQueryResults('job-123');
 
             expect(result).toBe('');
+            expect(smartFetch).not.toHaveBeenCalled();
         });
 
-        it('throws on fetch failure mid-pagination', async () => {
+        it('throws when response has unexpected shape (e.g. 404)', async () => {
+            // salesforceRequest passes through 404 responses without throwing,
+            // so the JSON body may be an error object without resultChunks
+            vi.mocked(salesforceRequest).mockResolvedValueOnce({
+                json: [{ errorCode: 'NOT_FOUND', message: 'Resource does not exist' }],
+            });
+
+            await expect(getBulkQueryResults('job-123')).rejects.toThrow(
+                'Unexpected response from resultPages endpoint'
+            );
+        });
+
+        it('throws when a CSV fetch fails', async () => {
+            vi.mocked(salesforceRequest).mockResolvedValueOnce(
+                mockResultPages(
+                    [
+                        '/jobs/query/job-123/results?locator=abc',
+                        '/jobs/query/job-123/results?locator=def',
+                    ],
+                    true
+                )
+            );
+
             vi.mocked(smartFetch)
-                .mockResolvedValueOnce({
-                    success: true,
-                    status: 200,
-                    data: 'Id\n001a',
-                    headers: { 'sforce-locator': 'loc1' },
-                })
+                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001a' })
                 .mockResolvedValueOnce({
                     success: false,
                     status: 500,
                     error: 'Server error',
-                    headers: {},
                 });
 
             await expect(getBulkQueryResults('job-123')).rejects.toThrow('Server error');
         });
 
-        it('calls onChunkProgress with running row total for each chunk', async () => {
+        it('calls onChunkProgress with running row totals', async () => {
+            vi.mocked(salesforceRequest).mockResolvedValueOnce(
+                mockResultPages(
+                    [
+                        '/jobs/query/job-123/results?locator=abc',
+                        '/jobs/query/job-123/results?locator=def',
+                    ],
+                    true
+                )
+            );
+
             vi.mocked(smartFetch)
-                .mockResolvedValueOnce({
-                    success: true,
-                    status: 200,
-                    data: 'Id\n001a',
-                    headers: { 'sforce-locator': 'loc1' },
-                })
-                .mockResolvedValueOnce({
-                    success: true,
-                    status: 200,
-                    data: 'Id\n001b',
-                    headers: { 'sforce-locator': 'null' },
-                });
+                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001a' })
+                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001b' });
 
             const onChunkProgress = vi.fn();
             await getBulkQueryResults('job-123', onChunkProgress);
 
-            // Each chunk has 1 data row; running totals are 1 then 2
             expect(onChunkProgress).toHaveBeenCalledTimes(2);
             expect(onChunkProgress).toHaveBeenNthCalledWith(1, 1);
             expect(onChunkProgress).toHaveBeenNthCalledWith(2, 2);
         });
 
-        it('works without headers field in response (backward compat)', async () => {
-            vi.mocked(smartFetch).mockResolvedValue({
-                success: true,
-                status: 200,
-                data: 'Id\n001abc',
-            });
+        it('preserves result order regardless of fetch completion order', async () => {
+            vi.mocked(salesforceRequest).mockResolvedValueOnce(
+                mockResultPages(
+                    [
+                        '/jobs/query/job-123/results?locator=first',
+                        '/jobs/query/job-123/results?locator=second',
+                        '/jobs/query/job-123/results?locator=third',
+                    ],
+                    true
+                )
+            );
+
+            // Simulate out-of-order completion using delays
+            vi.mocked(smartFetch)
+                .mockImplementationOnce(
+                    () =>
+                        new Promise(resolve =>
+                            setTimeout(
+                                () => resolve({ success: true, status: 200, data: 'Id\n001a\n' }),
+                                30
+                            )
+                        )
+                )
+                .mockImplementationOnce(
+                    () =>
+                        new Promise(resolve =>
+                            setTimeout(
+                                () => resolve({ success: true, status: 200, data: 'Id\n001b\n' }),
+                                10
+                            )
+                        )
+                )
+                .mockImplementationOnce(
+                    () =>
+                        new Promise(resolve =>
+                            setTimeout(
+                                () => resolve({ success: true, status: 200, data: 'Id\n001c' }),
+                                20
+                            )
+                        )
+                );
 
             const result = await getBulkQueryResults('job-123');
 
-            expect(result).toBe('Id\n001abc');
-            expect(smartFetch).toHaveBeenCalledTimes(1);
+            // Despite second completing first, order is preserved
+            expect(result).toBe('Id\n001a\n001b\n001c');
         });
     });
 
@@ -245,19 +291,32 @@ describe('bulk-query', () => {
             vi.useFakeTimers();
 
             vi.mocked(salesforceRequest)
+                // createBulkQueryJob
                 .mockResolvedValueOnce({ json: { id: 'job-123', state: 'UploadComplete' } })
+                // getBulkQueryJobStatus (InProgress)
                 .mockResolvedValueOnce({
                     json: { id: 'job-123', state: 'InProgress', numberRecordsProcessed: 0 },
                 })
+                // getBulkQueryJobStatus (JobComplete)
                 .mockResolvedValueOnce({
                     json: { id: 'job-123', state: 'JobComplete', numberRecordsProcessed: 50 },
+                })
+                // getAllResultPageUrls (/resultPages)
+                .mockResolvedValueOnce({
+                    json: {
+                        resultChunks: [
+                            {
+                                resultLink: '/jobs/query/job-123/results?locator=abc',
+                            },
+                        ],
+                        done: true,
+                    },
                 });
 
             vi.mocked(smartFetch).mockResolvedValue({
                 success: true,
                 data: 'Id\n001xx',
                 status: 200,
-                headers: {},
             });
 
             const promise = executeBulkQueryExport('SELECT Id FROM Account');
@@ -299,16 +358,28 @@ describe('bulk-query', () => {
             vi.useFakeTimers();
 
             vi.mocked(salesforceRequest)
+                // createBulkQueryJob
                 .mockResolvedValueOnce({ json: { id: 'job-123', state: 'UploadComplete' } })
+                // getBulkQueryJobStatus (JobComplete)
                 .mockResolvedValueOnce({
                     json: { id: 'job-123', state: 'JobComplete', numberRecordsProcessed: 10 },
+                })
+                // getAllResultPageUrls (/resultPages)
+                .mockResolvedValueOnce({
+                    json: {
+                        resultChunks: [
+                            {
+                                resultLink: '/jobs/query/job-123/results?locator=abc',
+                            },
+                        ],
+                        done: true,
+                    },
                 });
 
             vi.mocked(smartFetch).mockResolvedValue({
                 success: true,
                 data: 'csv',
                 status: 200,
-                headers: {},
             });
 
             const onProgress = vi.fn();
@@ -318,7 +389,7 @@ describe('bulk-query', () => {
 
             expect(onProgress).toHaveBeenCalledWith('Creating job...');
             expect(onProgress).toHaveBeenCalledWith('JobComplete', 10);
-            expect(onProgress).toHaveBeenCalledWith('InProgress', 0);
+            expect(onProgress).toHaveBeenCalledWith('Downloading', 0, 10);
 
             vi.useRealTimers();
         });

@@ -239,8 +239,17 @@ export function QueryTab() {
         try {
             const csv = await executeBulkQueryExport(
                 query,
-                (jobState, recordCount) => {
-                    if (jobState === 'InProgress' || jobState === 'UploadComplete') {
+                (jobState, recordCount, totalRecords) => {
+                    if (jobState === 'Downloading') {
+                        const pct = totalRecords
+                            ? ` (${Math.round(((recordCount || 0) / totalRecords) * 100)}%)`
+                            : '';
+                        toast.update(
+                            id,
+                            `Downloading: ${recordCount || 0}/${totalRecords || '?'} ${pct}`,
+                            'loading'
+                        );
+                    } else if (jobState === 'InProgress' || jobState === 'UploadComplete') {
                         toast.update(id, `Processing: ${recordCount || 0} records`, 'loading');
                     } else if (jobState === 'Creating job...') {
                         toast.update(id, 'Creating bulk job...', 'loading');
@@ -254,7 +263,8 @@ export function QueryTab() {
             const filename = getExportFilename(objectName);
 
             downloadCsv(csv, filename);
-            toast.dismiss(id);
+            const rowCount = csv.split('\n').filter(l => l.length > 0).length - 1;
+            toast.update(id, `Exported ${rowCount.toLocaleString()} records`, 'success');
         } catch (error) {
             toast.update(id, 'Export failed', 'error');
             alert(`Bulk export failed: ${(error as Error).message}`);

@@ -12,6 +12,16 @@ export interface BulkQueryJob {
     errorMessage?: string;
 }
 
+interface ResultChunk {
+    resultLink: string;
+}
+
+interface ResultPagesResponse {
+    resultChunks: ResultChunk[];
+    nextRecordsUrl?: string;
+    done: boolean;
+}
+
 /**
  * Create a Bulk API v2 query job
  */
@@ -49,43 +59,78 @@ export async function getBulkQueryJobStatus(jobId: string): Promise<BulkQueryJob
 }
 
 /**
+ * Collect all result page URLs for a completed Bulk API v2 query job.
+ * Sequentially paginates through the /resultPages endpoint, which returns
+ * locators in the JSON response body (works through CORS unlike Sforce-Locator header).
+ */
+async function getAllResultPageUrls(jobId: string): Promise<string[]> {
+    const instanceUrl = getInstanceUrl();
+    const urls: string[] = [];
+    let nextUrl: string | undefined =
+        `/services/data/v${API_VERSION}/jobs/query/${jobId}/resultPages`;
+
+    while (nextUrl) {
+        const response: { json: ResultPagesResponse | null } =
+            await salesforceRequest<ResultPagesResponse>(nextUrl);
+        if (!response.json || !Array.isArray(response.json.resultChunks)) {
+            throw new Error(`Unexpected response from resultPages endpoint for job ${jobId}`);
+        }
+
+        for (const chunk of response.json.resultChunks) {
+            urls.push(`${instanceUrl}/services/data/v${API_VERSION}${chunk.resultLink}`);
+        }
+
+        // nextRecordsUrl omits the /services/data/vXX.X prefix
+        nextUrl = response.json.done
+            ? undefined
+            : `/services/data/v${API_VERSION}${response.json.nextRecordsUrl}`;
+    }
+
+    return urls;
+}
+
+/**
  * Get the CSV results of a completed Bulk API v2 query job.
- * Handles multi-chunk pagination via the Sforce-Locator response header.
+ * Uses the /resultPages endpoint to discover all result URLs, then fetches
+ * all CSV pages in parallel for faster downloads.
  */
 export async function getBulkQueryResults(
     jobId: string,
     onChunkProgress?: (totalRows: number) => void
 ): Promise<string> {
-    const baseUrl = `${getInstanceUrl()}/services/data/v${API_VERSION}/jobs/query/${jobId}/results`;
+    const resultUrls = await getAllResultPageUrls(jobId);
+
+    if (resultUrls.length === 0) {
+        return '';
+    }
+
     const headers = {
         Authorization: `Bearer ${getAccessToken()}`,
         Accept: 'text/csv',
     };
 
-    const chunks: string[] = [];
-    let locator: string | undefined;
-    let totalRows = 0;
-
-    do {
-        const url = locator
-            ? `${baseUrl}?locator=${locator}&maxRecords=2000`
-            : `${baseUrl}?maxRecords=2000`;
-
+    // Fetch all CSV pages in parallel, reporting progress as each completes in order.
+    // Each slot resolves independently; we await them in index order so progress
+    // is reported incrementally as the next sequential chunk becomes available.
+    const fetchPromises = resultUrls.map(async url => {
         const response = await smartFetch(url, { headers });
-
         if (!response.success) {
             throw new Error(response.error ?? 'Failed to fetch results');
         }
+        return response.data ?? '';
+    });
 
-        const chunk = response.data ?? '';
+    const chunks: string[] = [];
+    let totalRows = 0;
 
-        if (chunks.length === 0) {
+    for (let i = 0; i < fetchPromises.length; i++) {
+        const chunk = await fetchPromises[i];
+
+        if (i === 0) {
             chunks.push(chunk);
-            // Count data rows, excluding the header row
             const lines = chunk.split('\n').filter(l => l.length > 0).length;
             totalRows += Math.max(0, lines - 1);
         } else {
-            // Strip the CSV header row from subsequent chunks
             const newlineIndex = chunk.indexOf('\n');
             const strippedChunk = newlineIndex >= 0 ? chunk.slice(newlineIndex + 1) : chunk;
             chunks.push(strippedChunk);
@@ -93,10 +138,7 @@ export async function getBulkQueryResults(
         }
 
         onChunkProgress?.(totalRows);
-
-        const nextLocator = response.headers?.['sforce-locator'];
-        locator = nextLocator && nextLocator !== 'null' ? nextLocator : undefined;
-    } while (locator);
+    }
 
     return chunks.join('');
 }
@@ -117,7 +159,7 @@ export async function abortBulkQueryJob(jobId: string): Promise<void> {
  */
 export async function executeBulkQueryExport(
     soql: string,
-    onProgress?: (state: string, recordCount?: number) => void,
+    onProgress?: (state: string, recordCount?: number, totalRecords?: number) => void,
     includeDeleted = false
 ): Promise<string> {
     onProgress?.('Creating job...');
@@ -133,8 +175,9 @@ export async function executeBulkQueryExport(
         onProgress?.(status.state, status.numberRecordsProcessed || 0);
 
         if (status.state === 'JobComplete') {
+            const totalRecords = status.numberRecordsProcessed || 0;
             return getBulkQueryResults(jobId, rowsDownloaded => {
-                onProgress?.('InProgress', rowsDownloaded);
+                onProgress?.('Downloading', rowsDownloaded, totalRecords);
             });
         }
 

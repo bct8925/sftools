@@ -330,8 +330,8 @@ export function QueryResultsTable({
                 </tr>
             </thead>
             <tbody>
-                {filteredRecords.map(record => {
-                    const recordId = String(record.Id);
+                {filteredRecords.map((record, index) => {
+                    const recordId = record.Id != null ? String(record.Id) : `row-${index}`;
                     const modifiedFields = modifiedRecords.get(recordId);
                     const subqueryColumns = columns.filter(c => c.isSubquery);
 

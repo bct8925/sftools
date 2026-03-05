@@ -188,7 +188,7 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
                 automaticLayout: true,
                 scrollBeyondLastLine: false,
                 lineNumbers,
-                lineNumbersMinChars: lineNumbers === 'on' ? 2 : 0,
+                lineNumbersMinChars: lineNumbers === 'on' ? 3 : 0,
                 lineDecorationsWidth: lineNumbers === 'on' ? undefined : 6,
                 wordWrap,
                 fontSize: 13,

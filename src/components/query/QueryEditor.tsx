@@ -20,6 +20,10 @@ interface QueryEditorProps {
     onChange?: (value: string) => void;
     /** Called on Ctrl/Cmd+Enter */
     onExecute?: () => void;
+    /** Show/hide line numbers */
+    lineNumbers?: 'on' | 'off';
+    /** Enable word wrap */
+    wordWrap?: 'on' | 'off';
     /** Additional CSS class */
     className?: string;
 }
@@ -32,7 +36,7 @@ let autocompleteRegistered = false;
  * Wraps MonacoEditor with SOQL-specific autocomplete configuration.
  */
 export const QueryEditor = forwardRef<QueryEditorRef, QueryEditorProps>(
-    ({ value, onChange, onExecute, className }, ref) => {
+    ({ value, onChange, onExecute, lineNumbers, wordWrap, className }, ref) => {
         const editorRef = useRef<MonacoEditorRef>(null);
 
         // Initialize SOQL autocomplete on mount
@@ -77,6 +81,8 @@ export const QueryEditor = forwardRef<QueryEditorRef, QueryEditorProps>(
                 value={value}
                 onChange={handleChange}
                 onExecute={handleExecute}
+                lineNumbers={lineNumbers}
+                wordWrap={wordWrap}
                 className={className}
                 resizable={true}
                 data-testid="query-editor"

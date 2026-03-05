@@ -42,6 +42,10 @@ interface MonacoEditorProps {
     readonly?: boolean;
     /** Enable vertical resize handle */
     resizable?: boolean;
+    /** Show/hide line numbers */
+    lineNumbers?: 'on' | 'off';
+    /** Enable word wrap */
+    wordWrap?: 'on' | 'off';
     /** Additional CSS class */
     className?: string;
     /** Test ID for the container element */
@@ -61,6 +65,8 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
             onExecute,
             readonly = false,
             resizable = true,
+            lineNumbers = 'on',
+            wordWrap = 'off',
             className,
             'data-testid': dataTestId,
         },
@@ -181,10 +187,13 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
                 minimap: { enabled: false },
                 automaticLayout: true,
                 scrollBeyondLastLine: false,
-                lineNumbers: 'on' as const,
+                lineNumbers,
+                lineNumbersMinChars: lineNumbers === 'on' ? 2 : 0,
+                lineDecorationsWidth: lineNumbers === 'on' ? undefined : 6,
+                wordWrap,
                 fontSize: 13,
             }),
-            [readonly]
+            [readonly, lineNumbers, wordWrap]
         );
 
         return (

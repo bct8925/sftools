@@ -61,6 +61,11 @@ export function QueryTab() {
     const [bulkExportInProgress, setBulkExportInProgress] = useState(false);
     const [isQueryCollapsed, setIsQueryCollapsed] = useState(false);
     const [isResultsCollapsed, setIsResultsCollapsed] = useState(false);
+
+    // Editor display settings
+    const [lineNumbers, setLineNumbers] = useState<'on' | 'off'>('on');
+    const [wordWrap, setWordWrap] = useState<'on' | 'off'>('on');
+    const editorSettingsLoadedRef = useRef(false);
     const handleToggleQuery = useCallback(() => setIsQueryCollapsed(prev => !prev), []);
     const handleToggleResults = useCallback(() => setIsResultsCollapsed(prev => !prev), []);
     const toast = useToast();
@@ -106,6 +111,24 @@ export function QueryTab() {
             setInitialQuery(lastQuery ?? DEFAULT_QUERY);
         });
     }, []);
+
+    // Load editor settings on mount
+    useEffect(() => {
+        chrome.storage.local.get('queryEditorSettings').then(data => {
+            const settings = data.queryEditorSettings as
+                | { lineNumbers?: 'on' | 'off'; wordWrap?: 'on' | 'off' }
+                | undefined;
+            if (settings?.lineNumbers) setLineNumbers(settings.lineNumbers);
+            if (settings?.wordWrap) setWordWrap(settings.wordWrap);
+            editorSettingsLoadedRef.current = true;
+        });
+    }, []);
+
+    // Persist editor settings when they change
+    useEffect(() => {
+        if (!editorSettingsLoadedRef.current) return;
+        chrome.storage.local.set({ queryEditorSettings: { lineNumbers, wordWrap } });
+    }, [lineNumbers, wordWrap]);
 
     // History manager ref
     const historyManagerRef = useRef<HistoryManager | null>(null);
@@ -315,6 +338,15 @@ export function QueryTab() {
         }
     }, [activeTab, clearAllModified]);
 
+    // Toggle editor settings
+    const handleLineNumbersChange = useCallback((checked: boolean) => {
+        setLineNumbers(checked ? 'on' : 'off');
+    }, []);
+
+    const handleWordWrapChange = useCallback((checked: boolean) => {
+        setWordWrap(checked ? 'on' : 'off');
+    }, []);
+
     // Handle query selection from history
     const handleSelectQuery = useCallback((query: string) => {
         editorRef.current?.setValue(query);
@@ -341,7 +373,7 @@ export function QueryTab() {
                         <div className={`card-header-icon ${styles.headerIconQuery}`}>S</div>
                         <h2>SOQL Query</h2>
                     </div>
-                    <div className="card-body">
+                    <div className={`card-body ${styles.editorCardBody}`}>
                         <div className={styles.editorPlaceholder} />
                     </div>
                 </div>
@@ -384,17 +416,31 @@ export function QueryTab() {
                         >
                             Include Deleted
                         </ButtonIconCheckbox>
+                        <ButtonIconCheckbox
+                            checked={lineNumbers === 'on'}
+                            onChange={handleLineNumbersChange}
+                            data-testid="query-line-numbers-checkbox"
+                        >
+                            Line Numbers
+                        </ButtonIconCheckbox>
+                        <ButtonIconCheckbox
+                            checked={wordWrap === 'on'}
+                            onChange={handleWordWrapChange}
+                            data-testid="query-word-wrap-checkbox"
+                        >
+                            Word Wrap
+                        </ButtonIconCheckbox>
                     </ButtonIcon>
                 </div>
-                <div className="card-body" hidden={isQueryCollapsed}>
-                    <div className="form-element">
-                        <QueryEditor
-                            ref={editorRef}
-                            value={initialQuery}
-                            onExecute={executeQuery}
-                            className={styles.editor}
-                        />
-                    </div>
+                <div className={`card-body ${styles.editorCardBody}`} hidden={isQueryCollapsed}>
+                    <QueryEditor
+                        ref={editorRef}
+                        value={initialQuery}
+                        onExecute={executeQuery}
+                        lineNumbers={lineNumbers}
+                        wordWrap={wordWrap}
+                        className={styles.editor}
+                    />
                     <div className={styles.footer}>
                         <button
                             className="button-brand"

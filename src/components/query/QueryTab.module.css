@@ -189,6 +189,10 @@
     color: var(--text-inverse);
 }
 
+.editorCardBody {
+    padding: 0;
+}
+
 .editor {
     height: 120px;
 }
@@ -196,14 +200,13 @@
 .editorPlaceholder {
     height: 120px;
     background: var(--bg-secondary);
-    border-radius: var(--radius-md);
 }
 
 .footer {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-top: 10px;
+    padding: 10px var(--spacing-md);
 }
 
 /* ============================================================

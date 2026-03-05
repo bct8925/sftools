@@ -218,7 +218,7 @@ export function DebugLogsTab() {
                         type: 'unsubscribe',
                         subscriptionId: currentSubId,
                     })
-                    .catch(() => { });
+                    .catch(() => {});
             }
         };
     }, [watchingSince, isProxyConnected, isAuthenticated]);

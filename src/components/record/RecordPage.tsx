@@ -42,13 +42,13 @@ type RecordPageAction =
     | { type: 'SET_INSTANCE_URL'; instanceUrl: string }
     | { type: 'SET_LOADING'; isLoading: boolean }
     | {
-        type: 'SET_RECORD_DATA';
-        fieldDescribe: Record<string, FieldDescribe>;
-        nameFieldMap: Record<string, string>;
-        sortedFields: FieldDescribe[];
-        objectLabel: string;
-        recordData: Record<string, unknown>;
-    }
+          type: 'SET_RECORD_DATA';
+          fieldDescribe: Record<string, FieldDescribe>;
+          nameFieldMap: Record<string, string>;
+          sortedFields: FieldDescribe[];
+          objectLabel: string;
+          recordData: Record<string, unknown>;
+      }
     | { type: 'UPDATE_FIELD'; fieldName: string; value: unknown }
     | { type: 'SET_SAVING'; isSaving: boolean }
     | { type: 'COMMIT_CHANGES'; changedFields: Record<string, unknown> }

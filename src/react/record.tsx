@@ -10,16 +10,16 @@ initTheme();
  * Record page entry point - wraps RecordPage with providers.
  */
 function RecordApp() {
-  return (
-    <AppProviders>
-      <RecordPage />
-    </AppProviders>
-  );
+    return (
+        <AppProviders>
+            <RecordPage />
+        </AppProviders>
+    );
 }
 
 // Mount the React app
 const rootElement = document.getElementById('root');
 if (rootElement) {
-  const root = createRoot(rootElement);
-  root.render(<RecordApp />);
+    const root = createRoot(rootElement);
+    root.render(<RecordApp />);
 }

@@ -58,7 +58,7 @@ export class SchemaPage extends BasePage {
         // Go home first if in a feature view
         const homeScreen = this.page.locator('[data-testid="home-screen"]');
         if (!(await homeScreen.isVisible())) {
-            await this.slowClick(this.page.locator('[data-testid="back-to-home-btn"]'));
+            await this.slowClick(this.page.locator('[data-testid="waffle-btn"]'));
             await homeScreen.waitFor({ state: 'visible', timeout: 5000 });
         }
         // Click feature tile

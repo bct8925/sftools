@@ -53,8 +53,9 @@
     justify-content: center;
     width: 56px;
     height: 56px;
-    border-radius: 14px;
-    color: white;
+    border-radius: var(--radius-xl);
+    background-color: var(--tile-color);
+    color: var(--text-inverse);
 }
 
 .tileLabel {

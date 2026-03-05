@@ -1,4 +1,4 @@
-import { useCallback, type MouseEvent } from 'react';
+import { useCallback, type CSSProperties, type MouseEvent } from 'react';
 import { useConnection } from '../contexts/ConnectionContext';
 import { useProxy } from '../contexts/ProxyContext';
 import { SfIcon } from '../components/sf-icon/SfIcon';
@@ -74,7 +74,7 @@ export function HomeScreen({ onFeatureSelect, onSettingsClick, onFeatureHover }:
                         >
                             <div
                                 className={styles.tileIconContainer}
-                                style={{ backgroundColor: feature.tileColor }}
+                                style={{ '--tile-color': feature.tileColor } as CSSProperties}
                             >
                                 <SfIcon name={feature.tileIcon} />
                             </div>

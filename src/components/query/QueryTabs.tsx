@@ -1,5 +1,5 @@
 // Query Tabs - Tab bar for multiple query result tabs
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { icons } from '../../lib/icons';
 import type { QueryTabState } from './useQueryState';
 import styles from './QueryTab.module.css';
@@ -28,6 +28,19 @@ export function QueryTabs({
     onTabRefresh,
     onTabClose,
 }: QueryTabsProps) {
+    const tabRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+    const setTabRef = useCallback((tabId: string, el: HTMLDivElement | null) => {
+        if (el) tabRefs.current.set(tabId, el);
+        else tabRefs.current.delete(tabId);
+    }, []);
+
+    useEffect(() => {
+        if (!activeTabId) return;
+        const el = tabRefs.current.get(activeTabId);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }, [activeTabId]);
+
     // Get display label for a tab
     const getTabLabel = useCallback((tab: QueryTabState): string => {
         if (tab.objectName) {
@@ -77,6 +90,7 @@ export function QueryTabs({
             {tabs.map(tab => (
                 <div
                     key={tab.id}
+                    ref={el => setTabRef(tab.id, el)}
                     className={`${styles.tab}${tab.id === activeTabId ? ` ${styles.tabActive}` : ''}`}
                     onClick={() => handleTabClick(tab.id)}
                     data-testid="query-tab"

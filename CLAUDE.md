@@ -34,8 +34,6 @@ npm run test:integration                 # Run all integration tests
 
 ```bash
 npm run validate               # Auto-fix lint + format, then run all checks
-npm run check                  # Run typecheck + lint + format:check (no fix)
-npm run fix                    # Auto-fix lint + format only
 ```
 
 **Run `npm run validate` after changing code files (`.ts`, `.tsx`, `.js`, `.jsx`, `.css`). Skip for docs, config, or non-code changes.**

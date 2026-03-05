@@ -258,6 +258,8 @@ const FieldItem = memo(function FieldItem({
     );
 
     const handleRowClick = useCallback(() => {
+        const selection = window.getSelection();
+        if (selection && selection.toString().length > 0) return;
         onFieldClick(field.name);
     }, [field.name, onFieldClick]);
 

@@ -60,6 +60,8 @@ export function ObjectList({
     // Handle object selection
     const handleObjectClick = useCallback(
         (objectName: string) => {
+            const selection = window.getSelection();
+            if (selection && selection.toString().length > 0) return;
             onSelect(objectName);
         },
         [onSelect]

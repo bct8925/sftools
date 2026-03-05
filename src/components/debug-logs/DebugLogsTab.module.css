@@ -47,7 +47,6 @@
 .viewer {
     display: flex;
     flex-direction: column;
-    gap: 16px;
     flex: 1;
     min-height: 0;
 }
@@ -154,4 +153,12 @@
 
 .headerIcon {
     background-color: var(--icon-apex-output);
+}
+
+/* ============================================================
+   Card Body
+   ============================================================ */
+
+.viewerCardBody {
+    padding: 0;
 }

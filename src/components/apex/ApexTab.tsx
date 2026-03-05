@@ -3,6 +3,7 @@ import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/Mon
 import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
 import { ApexOutput } from './ApexOutput';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
+import { ButtonIcon, ButtonIconCheckbox } from '../button-icon/ButtonIcon';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useToast } from '../../contexts/ToastContext';
 import { executeAnonymousApex } from '../../api/salesforce';
@@ -34,6 +35,11 @@ export function ApexTab() {
     const handleToggleApex = useCallback(() => setIsApexCollapsed(prev => !prev), []);
     const toast = useToast();
     const toastIdRef = useRef<string | null>(null);
+
+    // Editor display settings
+    const [lineNumbers, setLineNumbers] = useState<'on' | 'off'>('on');
+    const [wordWrap, setWordWrap] = useState<'on' | 'off'>('on');
+    const editorSettingsLoadedRef = useRef(false);
 
     // Load last Apex code from history or favorites on mount (whichever is more recent)
     useEffect(() => {
@@ -68,6 +74,24 @@ export function ApexTab() {
             setInitialCode(lastCode ?? DEFAULT_CODE);
         });
     }, []);
+
+    // Load editor settings on mount
+    useEffect(() => {
+        chrome.storage.local.get('apexEditorSettings').then(data => {
+            const settings = data.apexEditorSettings as
+                | { lineNumbers?: 'on' | 'off'; wordWrap?: 'on' | 'off' }
+                | undefined;
+            if (settings?.lineNumbers) setLineNumbers(settings.lineNumbers);
+            if (settings?.wordWrap) setWordWrap(settings.wordWrap);
+            editorSettingsLoadedRef.current = true;
+        });
+    }, []);
+
+    // Persist editor settings when they change
+    useEffect(() => {
+        if (!editorSettingsLoadedRef.current) return;
+        chrome.storage.local.set({ apexEditorSettings: { lineNumbers, wordWrap } });
+    }, [lineNumbers, wordWrap]);
 
     // Set editor markers for compile/runtime errors
     const setEditorMarkers = useCallback((result: ApexExecutionResult) => {
@@ -167,6 +191,15 @@ export function ApexTab() {
         }
     }, [isAuthenticated, toast, setEditorMarkers]);
 
+    // Toggle editor settings
+    const handleLineNumbersChange = useCallback((checked: boolean) => {
+        setLineNumbers(checked ? 'on' : 'off');
+    }, []);
+
+    const handleWordWrapChange = useCallback((checked: boolean) => {
+        setWordWrap(checked ? 'on' : 'off');
+    }, []);
+
     // Load script from history/favorites
     const handleLoadScript = useCallback((code: string) => {
         codeEditorRef.current?.setValue(code);
@@ -181,7 +214,7 @@ export function ApexTab() {
                         <div className={`card-header-icon ${styles.headerIcon}`}>A</div>
                         <h2>Anonymous Apex</h2>
                     </div>
-                    <div className="card-body">
+                    <div className={`card-body ${styles.editorCardBody}`}>
                         <div className={styles.editorPlaceholder} />
                     </div>
                 </div>
@@ -199,19 +232,39 @@ export function ApexTab() {
                     </h2>
                     <CollapseChevron isOpen={!isApexCollapsed} onClick={handleToggleApex} />
                     <ApexHistory ref={historyRef} onLoadScript={handleLoadScript} />
+                    <ButtonIcon
+                        icon="settings"
+                        title="Settings"
+                        className={styles.settingsBtn}
+                        data-testid="apex-settings-btn"
+                    >
+                        <ButtonIconCheckbox
+                            checked={lineNumbers === 'on'}
+                            onChange={handleLineNumbersChange}
+                            data-testid="apex-line-numbers-checkbox"
+                        >
+                            Line Numbers
+                        </ButtonIconCheckbox>
+                        <ButtonIconCheckbox
+                            checked={wordWrap === 'on'}
+                            onChange={handleWordWrapChange}
+                            data-testid="apex-word-wrap-checkbox"
+                        >
+                            Word Wrap
+                        </ButtonIconCheckbox>
+                    </ButtonIcon>
                 </div>
-                <div className="card-body" hidden={isApexCollapsed}>
-                    <div className="form-element">
-                        <MonacoEditor
-                            ref={codeEditorRef}
-                            language="apex"
-                            value={initialCode}
-                            onExecute={handleExecute}
-                            className="monaco-container"
-                            data-testid="apex-editor"
-                        />
-                    </div>
-                    <div className="m-top_small">
+                <div className={`card-body ${styles.editorCardBody}`} hidden={isApexCollapsed}>
+                    <MonacoEditor
+                        ref={codeEditorRef}
+                        language="apex"
+                        value={initialCode}
+                        onExecute={handleExecute}
+                        lineNumbers={lineNumbers}
+                        wordWrap={wordWrap}
+                        data-testid="apex-editor"
+                    />
+                    <div className={styles.footer}>
                         <button
                             className="button-brand"
                             onClick={handleExecute}

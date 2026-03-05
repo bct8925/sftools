@@ -285,7 +285,7 @@ export function DebugLogsTab() {
                         </div>
                     </div>
                 </div>
-                <div className="card-body">
+                <div className={`card-body ${styles.viewerCardBody}`}>
                     {/* Viewer Layout */}
                     <div className={styles.viewer}>
                         {/* Monaco Editor (2/3) */}

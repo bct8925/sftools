@@ -24,6 +24,7 @@
 }
 
 .outputCardBody {
+    padding: 0;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -55,6 +56,10 @@
 
 .historyBtn {
     margin-left: auto;
+    flex-shrink: 0;
+}
+
+.settingsBtn {
     flex-shrink: 0;
 }
 
@@ -121,9 +126,16 @@
    Editor Placeholder (loading state)
    ============================================================ */
 
+.editorCardBody {
+    padding: 0;
+}
+
+.footer {
+    padding: 10px var(--spacing-md);
+}
+
 .editorPlaceholder {
     height: 220px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
 }

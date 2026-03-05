@@ -4,7 +4,6 @@
 // Import SLDS utility icons as raw SVG strings
 import closeIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/close.svg?raw';
 import refreshIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/refresh.svg?raw';
-import rowsIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/rows.svg?raw';
 import threedotsVerticalIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/threedots_vertical.svg?raw';
 import editIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/edit.svg?raw';
 import deleteIcon from '@salesforce-ux/icons/dist/salesforce-lightning-design-system-icons/utility/delete.svg?raw';
@@ -43,7 +42,6 @@ function processSvg(svg: string, { size = 16 }: ProcessSvgOptions = {}): string 
 
 export const icons = {
     // Navigation and UI
-    hamburger: processSvg(rowsIcon, { size: 20 }),
     close: processSvg(closeIcon, { size: 16 }),
     closeLarge: processSvg(closeIcon, { size: 20 }),
     verticalDots: processSvg(threedotsVerticalIcon, { size: 16 }),

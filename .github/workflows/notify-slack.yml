@@ -1,0 +1,41 @@
+name: Notify Slack
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version tag (e.g. v2.5.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Post to Slack
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_JSON=$(gh release view "${{ inputs.version }}" --json tagName,body,assets)
+          VERSION=$(echo "$RELEASE_JSON" | jq -r '.tagName')
+          BODY=$(echo "$RELEASE_JSON" | jq -r '.body')
+          ASSET_URL=$(echo "$RELEASE_JSON" | jq -r '.assets[0].url // empty')
+
+          if [ -z "$ASSET_URL" ]; then
+            ASSET_URL="https://github.com/${{ github.repository }}/releases/tag/$VERSION"
+          fi
+
+          curl -X POST "https://hooks.slack.com/triggers/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" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg link "$ASSET_URL" \
+              --arg version "$VERSION" \
+              --arg body "$BODY" \
+              '{link: $link, version: $version, body: $body}')"

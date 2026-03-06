@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
+import { RestApiHistory, type RestApiHistoryRef, type RestApiRequest } from './RestApiHistory';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { executeRestRequest } from '../../api/salesforce';
 import { shouldShowBody } from '../../lib/rest-api-utils';
@@ -20,13 +21,67 @@ export function RestApiTab() {
     const [method, setMethod] = useState<HttpMethod>('GET');
     const [isRequestCollapsed, setIsRequestCollapsed] = useState(false);
     const [isResponseCollapsed, setIsResponseCollapsed] = useState(false);
+    const [initialBody, setInitialBody] = useState('{\n  \n}');
     const handleToggleRequest = useCallback(() => setIsRequestCollapsed(prev => !prev), []);
     const handleToggleResponse = useCallback(() => setIsResponseCollapsed(prev => !prev), []);
 
     const requestEditorRef = useRef<MonacoEditorRef>(null);
     const responseEditorRef = useRef<MonacoEditorRef>(null);
+    const historyRef = useRef<RestApiHistoryRef>(null);
 
     const showBodyInput = shouldShowBody(method);
+
+    // Restore most recently used request from history on mount
+    useEffect(() => {
+        chrome.storage.local.get(['restApiHistory', 'restApiFavorites']).then(data => {
+            const history = data.restApiHistory as
+                | Array<{ request: string; timestamp: number }>
+                | undefined;
+            const favorites = data.restApiFavorites as
+                | Array<{ request: string; timestamp: number }>
+                | undefined;
+
+            const lastHistory = history?.[0];
+            const lastFavorite = favorites?.reduce(
+                (latest, fav) => (!latest || fav.timestamp > latest.timestamp ? fav : latest),
+                undefined as (typeof favorites)[0] | undefined
+            );
+
+            let lastRequest: string | undefined;
+            if (lastHistory && lastFavorite) {
+                lastRequest =
+                    lastHistory.timestamp > lastFavorite.timestamp
+                        ? lastHistory.request
+                        : lastFavorite.request;
+            } else if (lastHistory) {
+                lastRequest = lastHistory.request;
+            } else if (lastFavorite) {
+                lastRequest = lastFavorite.request;
+            }
+
+            if (!lastRequest) return;
+
+            try {
+                const parsed = JSON.parse(lastRequest) as RestApiRequest;
+                setUrl(parsed.url);
+                setMethod(parsed.method as HttpMethod);
+                if (parsed.body) setInitialBody(parsed.body);
+            } catch {
+                // Ignore malformed history entries
+            }
+        });
+    }, []);
+
+    const handleLoadRequest = useCallback((request: RestApiRequest) => {
+        setUrl(request.url);
+        setMethod(request.method as HttpMethod);
+        if (request.body) {
+            // Update initialBody for when the body editor mounts (method switching to body-type)
+            setInitialBody(request.body);
+            // Also set directly if the editor is already mounted (same method, different body)
+            requestEditorRef.current?.setValue(request.body);
+        }
+    }, []);
 
     const executeRequest = useCallback(async () => {
         const urlValue = url.trim();
@@ -76,6 +131,10 @@ export function RestApiTab() {
             } else {
                 responseEditorRef.current?.setValue(response.statusText || 'No response');
             }
+
+            // Save to history after successful request
+            const request = JSON.stringify({ method, url: urlValue, ...(body && { body }) });
+            await historyRef.current?.saveToHistory(request);
         } catch (error) {
             toast.show('Client Error', 'error');
             responseEditorRef.current?.setValue(`Error: ${(error as Error).message}`);
@@ -93,6 +152,7 @@ export function RestApiTab() {
                         Request
                     </h2>
                     <CollapseChevron isOpen={!isRequestCollapsed} onClick={handleToggleRequest} />
+                    <RestApiHistory ref={historyRef} onLoadRequest={handleLoadRequest} />
                 </div>
                 <div className="card-body" hidden={isRequestCollapsed}>
                     <div className="form-element">
@@ -129,7 +189,7 @@ export function RestApiTab() {
                             <MonacoEditor
                                 ref={requestEditorRef}
                                 language="json"
-                                value={'{\n  \n}'}
+                                value={initialBody}
                                 onExecute={executeRequest}
                                 className={styles.requestEditor}
                                 data-testid="rest-request-editor"

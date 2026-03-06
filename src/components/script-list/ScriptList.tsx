@@ -12,7 +12,7 @@ interface HistoryListProps<T extends HistoryEntry> {
     getContent: ContentAccessor<T>;
     getPreview: (content: string) => string;
     formatTime: (timestamp: number) => string;
-    onLoad: (content: string) => void;
+    onLoad: (content: string, item: T) => void;
     onAddToFavorites: (content: string, item: T) => void;
     onDelete: (id: string) => void;
     renderMeta?: (item: T) => ReactNode;
@@ -33,9 +33,8 @@ export function HistoryList<T extends HistoryEntry>({
     renderMeta,
 }: HistoryListProps<T>) {
     const handleLoad = useCallback(
-        (content: string, e?: React.MouseEvent) => {
-            e?.stopPropagation();
-            onLoad(content);
+        (content: string, item: T) => {
+            onLoad(content, item);
         },
         [onLoad]
     );
@@ -68,7 +67,7 @@ export function HistoryList<T extends HistoryEntry>({
                     <div
                         key={item.id}
                         className={styles.scriptItem}
-                        onClick={() => handleLoad(content)}
+                        onClick={() => handleLoad(content, item)}
                         data-testid="script-item"
                     >
                         <div className={styles.scriptPreview} data-testid="script-preview">
@@ -110,7 +109,7 @@ interface FavoritesListProps<T extends FavoriteEntry> {
     emptyMessage: ReactNode;
     getContent: ContentAccessor<T>;
     formatTime: (timestamp: number) => string;
-    onLoad: (content: string) => void;
+    onLoad: (content: string, item: T) => void;
     onDelete: (id: string) => void;
     renderMeta?: (item: T) => ReactNode;
 }
@@ -128,9 +127,8 @@ export function FavoritesList<T extends FavoriteEntry>({
     renderMeta,
 }: FavoritesListProps<T>) {
     const handleLoad = useCallback(
-        (content: string, e?: React.MouseEvent) => {
-            e?.stopPropagation();
-            onLoad(content);
+        (content: string, item: T) => {
+            onLoad(content, item);
         },
         [onLoad]
     );
@@ -155,7 +153,7 @@ export function FavoritesList<T extends FavoriteEntry>({
                     <div
                         key={item.id}
                         className={styles.scriptItem}
-                        onClick={() => handleLoad(content)}
+                        onClick={() => handleLoad(content, item)}
                         data-testid="script-item"
                     >
                         <div className={styles.scriptPreview} data-testid="script-label">

@@ -38,7 +38,7 @@ interface ScriptHistoryProps {
         content: string,
         item: HistoryEntry
     ) => Record<string, unknown> | undefined;
-    onLoad: (content: string) => void;
+    onLoad: (content: string, item: HistoryEntry) => void;
 }
 
 export const ScriptHistory = forwardRef<ScriptHistoryRef, ScriptHistoryProps>(
@@ -91,8 +91,8 @@ export const ScriptHistory = forwardRef<ScriptHistoryRef, ScriptHistoryProps>(
         }, [manager, refreshLists]);
 
         const handleLoad = useCallback(
-            (content: string) => {
-                onLoad(content);
+            (content: string, item: HistoryEntry) => {
+                onLoad(content, item);
                 setIsOpen(false);
             },
             [onLoad]

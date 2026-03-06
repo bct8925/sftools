@@ -21,6 +21,14 @@ interface QueryResultsProps {
     onLoadMore?: () => void;
     /** Instance URL for opening records in org */
     instanceUrl?: string;
+    /** Whether row selection checkboxes are shown */
+    selectionEnabled: boolean;
+    /** Set of selected record IDs */
+    selectedRecords: Set<string>;
+    /** Called to toggle selection of a single record */
+    onToggleSelection: (recordId: string) => void;
+    /** Called to select all (with IDs) or deselect all (with empty array) visible records */
+    onToggleSelectAll: (recordIds: string[]) => void;
 }
 
 /**
@@ -34,6 +42,10 @@ export function QueryResults({
     filterText,
     onLoadMore,
     instanceUrl,
+    selectionEnabled,
+    selectedRecords,
+    onToggleSelection,
+    onToggleSelectAll,
 }: QueryResultsProps) {
     // No active tab
     if (!activeTab) {
@@ -95,6 +107,10 @@ export function QueryResults({
                     onFieldChange={onFieldChange}
                     filterText={filterText}
                     instanceUrl={instanceUrl}
+                    selectionEnabled={selectionEnabled}
+                    selectedRecords={selectedRecords}
+                    onToggleSelection={onToggleSelection}
+                    onToggleSelectAll={onToggleSelectAll}
                 />
             </div>
             <div className={styles.resultsFooter} data-testid="query-results-footer">

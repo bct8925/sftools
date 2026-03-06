@@ -377,6 +377,29 @@
 }
 
 /* ============================================================
+   Checkbox Column (Row Selection)
+   ============================================================ */
+
+.checkboxCol {
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    text-align: center !important;
+    padding: 4px !important;
+}
+
+.checkboxCol input[type='checkbox'] {
+    cursor: pointer;
+    margin: 0;
+    display: block;
+    margin-inline: auto;
+}
+
+.rowSelected {
+    background-color: var(--bg-selected) !important;
+}
+
+/* ============================================================
    Editable Table Styles
    ============================================================ */
 

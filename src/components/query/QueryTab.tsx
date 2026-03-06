@@ -10,7 +10,7 @@ import { QueryResults } from './QueryResults';
 import { QueryHistory, type ScriptHistoryRef } from './QueryHistory';
 import { useQueryState, normalizeQuery } from './useQueryState';
 import { useQueryExecution } from './useQueryExecution';
-import { executeBulkQueryExport, updateRecord } from '../../api/salesforce';
+import { executeBulkQueryExport, updateRecord, deleteRecord } from '../../api/salesforce';
 import {
     getValueByPath,
     formatCellValue,
@@ -51,6 +51,10 @@ export function QueryTab() {
         clearModified,
         clearAllModified,
         updateRecordData,
+        toggleRecordSelection,
+        selectAllRecords,
+        clearSelection,
+        removeRecords,
     } = useQueryState();
 
     // UI state
@@ -339,6 +343,63 @@ export function QueryTab() {
         }
     }, [activeTab, clearAllModified]);
 
+    // Toggle selection for a single record
+    const handleToggleSelection = useCallback(
+        (recordId: string) => {
+            if (activeTab) toggleRecordSelection(activeTab.id, recordId);
+        },
+        [activeTab, toggleRecordSelection]
+    );
+
+    // Select all or clear selection for visible records
+    const handleToggleSelectAll = useCallback(
+        (recordIds: string[]) => {
+            if (!activeTab) return;
+            if (recordIds.length === 0) {
+                clearSelection(activeTab.id);
+            } else {
+                selectAllRecords(activeTab.id, recordIds);
+            }
+        },
+        [activeTab, selectAllRecords, clearSelection]
+    );
+
+    // Delete selected records
+    const handleDeleteSelected = useCallback(async () => {
+        if (!activeTab || activeTab.selectedRecords.size === 0 || !activeTab.objectName) return;
+
+        const count = activeTab.selectedRecords.size;
+        if (!window.confirm(`Delete ${count} record(s)? This cannot be undone.`)) return;
+
+        const id = toast.show('Deleting...', 'loading');
+
+        const errors: Array<{ recordId: string; error: string }> = [];
+        const succeeded: string[] = [];
+
+        const deletePromises = Array.from(activeTab.selectedRecords).map(async recordId => {
+            try {
+                await deleteRecord(activeTab.objectName!, recordId);
+                succeeded.push(recordId);
+            } catch (error) {
+                errors.push({ recordId, error: (error as Error).message });
+            }
+        });
+
+        await Promise.all(deletePromises);
+
+        if (succeeded.length > 0) {
+            removeRecords(activeTab.id, succeeded);
+        }
+
+        if (errors.length === 0) {
+            toast.update(id, 'Deleted', 'success');
+        } else {
+            toast.update(id, 'Delete Failed', 'error');
+            const errorMsg = errors.map(e => `Record ${e.recordId}: ${e.error}`).join('\n');
+            alert(`Failed to delete some records:\n\n${errorMsg}`);
+        }
+    }, [activeTab, toast, removeRecords]);
+
     // Toggle editor settings
     const handleLineNumbersChange = useCallback((checked: boolean) => {
         setLineNumbers(checked ? 'on' : 'off');
@@ -511,6 +572,13 @@ export function QueryTab() {
                         >
                             Clear Changes
                         </ButtonIconOption>
+                        <ButtonIconOption
+                            disabled={!isEditMode || !activeTab?.selectedRecords.size}
+                            onClick={handleDeleteSelected}
+                            data-testid="query-delete-btn"
+                        >
+                            Delete Selected ({activeTab?.selectedRecords.size ?? 0})
+                        </ButtonIconOption>
                     </ButtonIcon>
                 </div>
                 <div
@@ -532,6 +600,10 @@ export function QueryTab() {
                         filterText={filterText}
                         onLoadMore={handleLoadMore}
                         instanceUrl={activeConnection?.instanceUrl}
+                        selectionEnabled={!!isEditMode}
+                        selectedRecords={activeTab?.selectedRecords ?? new Set()}
+                        onToggleSelection={handleToggleSelection}
+                        onToggleSelectAll={handleToggleSelectAll}
                     />
                 </div>
             </div>

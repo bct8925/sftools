@@ -1,5 +1,5 @@
 // Query Results Table - Data table with inline editing and subquery support
-import { useState, useCallback, useMemo, Fragment } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef, Fragment } from 'react';
 import type { SObject, FieldDescribe } from '../../types/salesforce';
 import { flattenColumnMetadata, type QueryColumn } from '../../lib/column-utils';
 import { getValueByPath, formatCellValue } from '../../lib/csv-utils';
@@ -30,6 +30,14 @@ interface QueryResultsTableProps {
     filterText: string;
     /** Instance URL for opening records in org */
     instanceUrl?: string;
+    /** Whether row selection checkboxes are shown */
+    selectionEnabled: boolean;
+    /** Set of selected record IDs */
+    selectedRecords: Set<string>;
+    /** Called to toggle selection of a single record */
+    onToggleSelection: (recordId: string) => void;
+    /** Called to select all (with IDs) or deselect all (with empty array) visible records */
+    onToggleSelectAll: (recordIds: string[]) => void;
 }
 
 /**
@@ -45,9 +53,16 @@ export function QueryResultsTable({
     onFieldChange,
     filterText,
     instanceUrl,
+    selectionEnabled,
+    selectedRecords,
+    onToggleSelection,
+    onToggleSelectAll,
 }: QueryResultsTableProps) {
     // Track expanded subquery rows
     const [expandedSubqueries, setExpandedSubqueries] = useState<Set<string>>(new Set());
+
+    // Ref for the select-all checkbox (to set indeterminate state)
+    const selectAllRef = useRef<HTMLInputElement>(null);
 
     // Filter records based on filterText
     const filteredRecords = useMemo(() => {
@@ -66,6 +81,35 @@ export function QueryResultsTable({
             return false;
         });
     }, [records, columns, filterText]);
+
+    // Visible record IDs (only records with real IDs, for selection)
+    const visibleIds = useMemo(
+        () => filteredRecords.filter(r => r.Id != null).map(r => String(r.Id)),
+        [filteredRecords]
+    );
+
+    const selectedVisibleCount = useMemo(
+        () => visibleIds.filter(id => selectedRecords.has(id)).length,
+        [visibleIds, selectedRecords]
+    );
+
+    const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+    const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
+
+    // Set indeterminate state imperatively (React doesn't support it as a prop)
+    useEffect(() => {
+        if (selectAllRef.current) {
+            selectAllRef.current.indeterminate = someVisibleSelected;
+        }
+    }, [someVisibleSelected]);
+
+    const handleSelectAllChange = useCallback(() => {
+        if (allVisibleSelected || someVisibleSelected) {
+            onToggleSelectAll([]);
+        } else {
+            onToggleSelectAll(visibleIds);
+        }
+    }, [allVisibleSelected, someVisibleSelected, visibleIds, onToggleSelectAll]);
 
     // Toggle subquery expansion
     const toggleSubquery = useCallback((rowId: string, colPath: string) => {
@@ -318,12 +362,26 @@ export function QueryResultsTable({
         );
     };
 
+    const totalColCount = columns.length + (selectionEnabled ? 1 : 0);
+
     return (
         <table
             className={`${styles.resultsTable}${isEditMode ? ` ${styles.resultsEditable}` : ''}`}
         >
             <thead>
                 <tr>
+                    {selectionEnabled && (
+                        <th className={styles.checkboxCol}>
+                            <input
+                                ref={selectAllRef}
+                                type="checkbox"
+                                checked={allVisibleSelected}
+                                onChange={handleSelectAllChange}
+                                aria-label="Select all visible records"
+                                data-testid="query-select-all"
+                            />
+                        </th>
+                    )}
                     {columns.map(col => (
                         <th key={col.path}>{col.title}</th>
                     ))}
@@ -334,17 +392,33 @@ export function QueryResultsTable({
                     const recordId = record.Id != null ? String(record.Id) : `row-${index}`;
                     const modifiedFields = modifiedRecords.get(recordId);
                     const subqueryColumns = columns.filter(c => c.isSubquery);
+                    const isSelected = selectionEnabled && selectedRecords.has(recordId);
 
                     return (
                         <Fragment key={recordId}>
-                            <tr data-record-id={recordId}>
+                            <tr
+                                data-record-id={recordId}
+                                className={isSelected ? styles.rowSelected : undefined}
+                            >
+                                {selectionEnabled && (
+                                    <td className={styles.checkboxCol}>
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={() => onToggleSelection(recordId)}
+                                            aria-label={`Select record ${recordId}`}
+                                            data-testid="query-row-checkbox"
+                                            disabled={record.Id == null}
+                                        />
+                                    </td>
+                                )}
                                 {columns.map(col =>
                                     renderCell(record, col, recordId, modifiedFields)
                                 )}
                             </tr>
                             {/* Render expanded subquery rows */}
                             {subqueryColumns.map(col =>
-                                renderSubqueryDetailRow(record, col, columns.length)
+                                renderSubqueryDetailRow(record, col, totalColCount)
                             )}
                         </Fragment>
                     );

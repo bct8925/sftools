@@ -430,6 +430,15 @@ export async function updateRecord(
 }
 
 /**
+ * Delete a record
+ */
+export async function deleteRecord(objectType: string, recordId: string): Promise<void> {
+    await salesforceRequest(`/services/data/v${API_VERSION}/sobjects/${objectType}/${recordId}`, {
+        method: 'DELETE',
+    });
+}
+
+/**
  * Execute a generic REST API request
  * Returns raw response data for the REST API explorer
  */

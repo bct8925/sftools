@@ -16,6 +16,7 @@ export interface QueryTabState {
     nextRecordsUrl: string | null;
     fieldDescribe: Record<string, FieldDescribe> | null;
     modifiedRecords: Map<string, Record<string, unknown>>;
+    selectedRecords: Set<string>;
     isEditable: boolean;
     isLoading: boolean;
     isLoadingMore: boolean;
@@ -60,7 +61,11 @@ export type QueryAction =
     | { type: 'SET_MODIFIED'; id: string; recordId: string; fieldName: string; value: unknown }
     | { type: 'CLEAR_MODIFIED'; id: string; recordId: string; fieldName: string }
     | { type: 'CLEAR_ALL_MODIFIED'; id: string }
-    | { type: 'UPDATE_RECORD_DATA'; id: string; recordId: string; fields: Record<string, unknown> };
+    | { type: 'UPDATE_RECORD_DATA'; id: string; recordId: string; fields: Record<string, unknown> }
+    | { type: 'TOGGLE_RECORD_SELECTION'; id: string; recordId: string }
+    | { type: 'SELECT_ALL_RECORDS'; id: string; recordIds: string[] }
+    | { type: 'CLEAR_SELECTION'; id: string }
+    | { type: 'REMOVE_RECORDS'; id: string; recordIds: string[] };
 
 // Initial state
 const initialState: QueryState = {
@@ -91,6 +96,7 @@ function queryReducer(state: QueryState, action: QueryAction): QueryState {
                 nextRecordsUrl: null,
                 fieldDescribe: null,
                 modifiedRecords: new Map(),
+                selectedRecords: new Set(),
                 isEditable: false,
                 isLoading: false,
                 isLoadingMore: false,
@@ -203,6 +209,7 @@ function queryReducer(state: QueryState, action: QueryAction): QueryState {
                               isLoading: false,
                               error: null,
                               modifiedRecords: new Map(), // Clear modifications on new results
+                              selectedRecords: new Set(), // Clear selection on new results
                           }
                         : tab
                 ),
@@ -289,6 +296,70 @@ function queryReducer(state: QueryState, action: QueryAction): QueryState {
                     });
 
                     return { ...tab, records: updatedRecords };
+                }),
+            };
+        }
+
+        case 'TOGGLE_RECORD_SELECTION': {
+            return {
+                ...state,
+                tabs: state.tabs.map(tab => {
+                    if (tab.id !== action.id) return tab;
+                    const next = new Set(tab.selectedRecords);
+                    if (next.has(action.recordId)) {
+                        next.delete(action.recordId);
+                    } else {
+                        next.add(action.recordId);
+                    }
+                    return { ...tab, selectedRecords: next };
+                }),
+            };
+        }
+
+        case 'SELECT_ALL_RECORDS': {
+            return {
+                ...state,
+                tabs: state.tabs.map(tab =>
+                    tab.id === action.id
+                        ? { ...tab, selectedRecords: new Set(action.recordIds) }
+                        : tab
+                ),
+            };
+        }
+
+        case 'CLEAR_SELECTION': {
+            return {
+                ...state,
+                tabs: state.tabs.map(tab =>
+                    tab.id === action.id ? { ...tab, selectedRecords: new Set() } : tab
+                ),
+            };
+        }
+
+        case 'REMOVE_RECORDS': {
+            return {
+                ...state,
+                tabs: state.tabs.map(tab => {
+                    if (tab.id !== action.id) return tab;
+
+                    const toRemove = new Set(action.recordIds);
+                    const newRecords = tab.records.filter(r => !toRemove.has(String(r.Id)));
+                    const removed = tab.records.length - newRecords.length;
+
+                    const newModified = new Map(tab.modifiedRecords);
+                    const newSelected = new Set(tab.selectedRecords);
+                    for (const recordId of toRemove) {
+                        newModified.delete(recordId);
+                        newSelected.delete(recordId);
+                    }
+
+                    return {
+                        ...tab,
+                        records: newRecords,
+                        totalSize: tab.totalSize - removed,
+                        modifiedRecords: newModified,
+                        selectedRecords: newSelected,
+                    };
                 }),
             };
         }
@@ -404,6 +475,22 @@ export function useQueryState() {
         []
     );
 
+    const toggleRecordSelection = useCallback((id: string, recordId: string) => {
+        dispatch({ type: 'TOGGLE_RECORD_SELECTION', id, recordId });
+    }, []);
+
+    const selectAllRecords = useCallback((id: string, recordIds: string[]) => {
+        dispatch({ type: 'SELECT_ALL_RECORDS', id, recordIds });
+    }, []);
+
+    const clearSelection = useCallback((id: string) => {
+        dispatch({ type: 'CLEAR_SELECTION', id });
+    }, []);
+
+    const removeRecords = useCallback((id: string, recordIds: string[]) => {
+        dispatch({ type: 'REMOVE_RECORDS', id, recordIds });
+    }, []);
+
     return {
         state,
         activeTab,
@@ -421,5 +508,9 @@ export function useQueryState() {
         clearModified,
         clearAllModified,
         updateRecordData,
+        toggleRecordSelection,
+        selectAllRecords,
+        clearSelection,
+        removeRecords,
     };
 }

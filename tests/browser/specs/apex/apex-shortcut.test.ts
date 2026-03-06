@@ -25,6 +25,31 @@ describe('Apex Keyboard Shortcut', () => {
             'USER_DEBUG|[1]|DEBUG|Executed via keyboard shortcut\nUSER_DEBUG|[3]|DEBUG|Result: 100'
         );
 
+        // Mock current user ID (required when debug mode is enabled)
+        router.addRoute(
+            /\/services\/data\/v[\d.]+\/chatter\/users\/me/,
+            { id: 'mock-user-001' },
+            'GET'
+        );
+
+        // Mock TraceFlag query — return an existing valid flag so no creation is needed
+        router.addRoute(
+            /\/services\/data\/v[\d.]+\/tooling\/query.*TraceFlag/,
+            {
+                done: true,
+                totalSize: 1,
+                records: [
+                    {
+                        Id: '07FTRACE001',
+                        DebugLevelId: 'DBGLVL001',
+                        ExpirationDate: '2099-12-31T23:59:59.000Z',
+                        DebugLevel: { DeveloperName: 'SFTOOLS_DEBUG' },
+                    },
+                ],
+            },
+            'GET'
+        );
+
         // Mock ApexLog query (returns the log record metadata)
         router.addRoute(
             /\/services\/data\/v[\d.]+\/tooling\/query.*ApexLog/,
@@ -61,6 +86,11 @@ describe('Apex Keyboard Shortcut', () => {
 
         // Navigate to extension
         await navigateToExtension();
+
+        // Enable debug mode so the log body is fetched after execution
+        await page.evaluate(() => {
+            window.__chromeMock?.setStorage({ apexEditorSettings: { debug: true } });
+        });
 
         // Navigate to Apex tab
         await apexTab.navigateTo();

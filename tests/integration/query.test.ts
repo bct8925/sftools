@@ -276,6 +276,33 @@ describe('Query Tab Integration', () => {
         });
     });
 
+    describe('Q-I-011: Delete a record via API', () => {
+        it('removes the record so it no longer appears in queries', async () => {
+            const accountId = await testData.create('Account', {
+                Name: uniqueName('DeleteTest'),
+            });
+
+            // Verify it exists
+            const before = await salesforce.query<{ Id: string }>(
+                `SELECT Id FROM Account WHERE Id = '${accountId}'`
+            );
+            expect(before).toHaveLength(1);
+
+            // Delete it
+            await salesforce.deleteRecord('Account', accountId);
+            // Remove from tracking — already deleted, no cleanup needed
+            testData['createdRecords'] = testData['createdRecords'].filter(
+                r => r.recordId !== accountId
+            );
+
+            // Verify it no longer exists
+            const after = await salesforce.query<{ Id: string }>(
+                `SELECT Id FROM Account WHERE Id = '${accountId}'`
+            );
+            expect(after).toHaveLength(0);
+        });
+    });
+
     describe('Q-I-009: Query Tooling API object', () => {
         it('returns results from Tooling API', async () => {
             // Query ApexClass (Tooling API object)

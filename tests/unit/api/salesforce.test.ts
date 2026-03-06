@@ -28,6 +28,7 @@
  * - SF-U-025: clearDescribeCache() - Clears cache
  * - SF-U-027: deleteAllDebugLogs() - Deletes logs in batches of 25
  * - SF-U-028: deleteInactiveFlowVersions() - Deletes flow versions
+ * - SF-U-029: deleteRecord() - Sends DELETE request
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -56,6 +57,7 @@ import {
     getObjectDescribe,
     getRecordWithRelationships,
     updateRecord,
+    deleteRecord,
     searchUsers,
     searchFlows,
     getFlowVersions,
@@ -259,6 +261,21 @@ describe('salesforce', () => {
                 expect.objectContaining({
                     method: 'PATCH',
                     body: JSON.stringify({ Name: 'Updated Name' }),
+                })
+            );
+        });
+    });
+
+    describe('deleteRecord', () => {
+        it('SF-U-029: sends DELETE request to correct sObject URL', async () => {
+            salesforceRequest.mockResolvedValue({ json: null });
+
+            await deleteRecord('Account', '001abc');
+
+            expect(salesforceRequest).toHaveBeenCalledWith(
+                expect.stringContaining('/sobjects/Account/001abc'),
+                expect.objectContaining({
+                    method: 'DELETE',
                 })
             );
         });

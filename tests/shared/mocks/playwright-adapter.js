@@ -206,6 +206,21 @@ export class MockRouter {
     }
 
     /**
+     * Mock record deletion
+     * @param {string} objectType - Salesforce object type
+     * @param {string} recordId - Record ID
+     */
+    onDeleteRecord(objectType, recordId) {
+        const response = { ok: true, status: 204, data: null };
+        this.addRoute(
+            new RegExp(`/services/data/v[\\d.]+/sobjects/${objectType}/${recordId}`),
+            response,
+            'DELETE'
+        );
+        return this;
+    }
+
+    /**
      * Mock REST API request
      * @param {string} path - API path
      * @param {string} method - HTTP method

@@ -155,6 +155,74 @@ export class QueryTabPage extends BasePage {
     }
 
     /**
+     * Get the count of row checkboxes in the results table
+     */
+    async getRowCheckboxes(): Promise<number> {
+        return this.page.$$eval(
+            '[data-testid="query-row-checkbox"]',
+            checkboxes => checkboxes.length
+        );
+    }
+
+    /**
+     * Get the select-all checkbox locator
+     */
+    getSelectAllCheckbox(): Locator {
+        return this.page.locator('[data-testid="query-select-all"]');
+    }
+
+    /**
+     * Toggle the row checkbox at the given index (0-based)
+     */
+    async toggleRowCheckbox(rowIndex: number): Promise<void> {
+        const checkboxes = await this.page.$$('[data-testid="query-row-checkbox"]');
+        if (!checkboxes[rowIndex]) {
+            throw new Error(`Row checkbox at index ${rowIndex} not found`);
+        }
+        await this.slowClick(checkboxes[rowIndex]);
+    }
+
+    /**
+     * Get the number of selected rows
+     */
+    async getSelectedRowCount(): Promise<number> {
+        return this.page.$$eval(
+            '[data-testid="query-row-checkbox"]:checked',
+            checkboxes => checkboxes.length
+        );
+    }
+
+    /**
+     * Click the delete selected button from the results dropdown
+     */
+    async deleteSelected(): Promise<void> {
+        const deleteBtn = this.page.locator('[data-testid="query-delete-btn"]');
+        const isVisible = await deleteBtn.isVisible().catch(() => false);
+
+        if (!isVisible) {
+            await this.resultsBtn.click();
+            await deleteBtn.waitFor({ state: 'visible', timeout: 5000 });
+        }
+
+        await this.slowClick(deleteBtn);
+    }
+
+    /**
+     * Get the text of the delete button (shows selected count)
+     */
+    async getDeleteButtonText(): Promise<string> {
+        const deleteBtn = this.page.locator('[data-testid="query-delete-btn"]');
+        const isVisible = await deleteBtn.isVisible().catch(() => false);
+
+        if (!isVisible) {
+            await this.resultsBtn.click();
+            await deleteBtn.waitFor({ state: 'visible', timeout: 5000 });
+        }
+
+        return (await deleteBtn.textContent()) || '';
+    }
+
+    /**
      * Check if results contain a subquery toggle
      */
     async hasSubqueryResults(): Promise<boolean> {

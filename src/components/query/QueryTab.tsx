@@ -7,7 +7,7 @@ import { ButtonIcon, ButtonIconOption, ButtonIconCheckbox } from '../button-icon
 import { QueryEditor, clearQueryAutocompleteState, type QueryEditorRef } from './QueryEditor';
 import { QueryTabs } from './QueryTabs';
 import { QueryResults } from './QueryResults';
-import { QueryHistory, useSaveToHistory } from './QueryHistory';
+import { QueryHistory, type ScriptHistoryRef } from './QueryHistory';
 import { useQueryState, normalizeQuery } from './useQueryState';
 import { useQueryExecution } from './useQueryExecution';
 import { executeBulkQueryExport, updateRecord } from '../../api/salesforce';
@@ -19,7 +19,6 @@ import {
     downloadCsv,
 } from '../../lib/csv-utils';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
-import type { HistoryManager } from '../../lib/history-manager';
 import styles from './QueryTab.module.css';
 
 const DEFAULT_QUERY = `SELECT
@@ -130,9 +129,11 @@ export function QueryTab() {
         chrome.storage.local.set({ queryEditorSettings: { lineNumbers, wordWrap } });
     }, [lineNumbers, wordWrap]);
 
-    // History manager ref
-    const historyManagerRef = useRef<HistoryManager | null>(null);
-    const saveToHistory = useSaveToHistory(historyManagerRef);
+    // History ref
+    const historyRef = useRef<ScriptHistoryRef>(null);
+    const saveToHistory = useCallback(async (query: string, metadata?: { objectName?: string }) => {
+        await historyRef.current?.saveToHistory(query, metadata);
+    }, []);
 
     // Query execution hook
     const { fetchQueryData, executeQuery, loadMore } = useQueryExecution({
@@ -391,10 +392,7 @@ export function QueryTab() {
                         SOQL Query
                     </h2>
                     <CollapseChevron isOpen={!isQueryCollapsed} onClick={handleToggleQuery} />
-                    <QueryHistory
-                        onSelectQuery={handleSelectQuery}
-                        historyManagerRef={historyManagerRef}
-                    />
+                    <QueryHistory ref={historyRef} onSelectQuery={handleSelectQuery} />
                     <ButtonIcon
                         icon="settings"
                         title="Settings"

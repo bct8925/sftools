@@ -54,14 +54,6 @@
     flex-shrink: 0;
 }
 
-.historyModal {
-    width: clamp(320px, 90vw, 720px);
-    height: 340px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
 .objectBadge {
     font-size: 11px;
     font-weight: 600;
@@ -70,47 +62,6 @@
     border-radius: var(--radius-sm);
     padding: 1px 6px;
     white-space: nowrap;
-}
-
-/* ============================================================
-   Modal Tabs
-   ============================================================ */
-
-.dropdownTabs {
-    display: flex;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--card-bg);
-}
-
-.dropdownTab {
-    flex: 1;
-    padding: 10px 16px;
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.dropdownTab:hover {
-    color: var(--text-main);
-    background: var(--bg-hover);
-}
-
-.dropdownTabActive {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
-}
-
-.dropdownContent {
-    flex: 1;
-    overflow-x: hidden;
-    overflow-y: auto;
-    min-height: 0;
 }
 
 /* ============================================================

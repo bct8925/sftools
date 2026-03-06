@@ -158,7 +158,7 @@ export function FavoritesList<T extends FavoriteEntry>({
                         onClick={() => handleLoad(content)}
                         data-testid="script-item"
                     >
-                        <div className={styles.scriptLabel} data-testid="script-label">
+                        <div className={styles.scriptPreview} data-testid="script-label">
                             {item.label}
                         </div>
                         <div className={styles.scriptMeta}>

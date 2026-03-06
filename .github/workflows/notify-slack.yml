@@ -32,7 +32,7 @@ jobs:
             ASSET_URL="https://github.com/${{ github.repository }}/releases/tag/$VERSION"
           fi
 
-          curl -X POST "https://hooks.slack.com/triggers/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" \
+          curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
             -d "$(jq -n \
               --arg link "$ASSET_URL" \

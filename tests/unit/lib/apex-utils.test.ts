@@ -133,7 +133,7 @@ List<Account> accounts = [SELECT Id FROM Account];`;
             expect(output).toContain('=== COMPILATION ERROR ===');
             expect(output).toContain('Line 5, Column 12');
             expect(output).toContain('Unexpected token');
-            expect(output).toContain('(No debug log available)');
+            expect(output).not.toContain('(No debug log available)');
         });
 
         it('A-U-010: formats runtime error', () => {

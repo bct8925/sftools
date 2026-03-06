@@ -186,16 +186,20 @@ export interface ExecuteAnonymousResult {
 
 /**
  * Execute anonymous Apex code
- * Sets up trace flags, executes the code, and retrieves the debug log
+ * When debug is true, sets up trace flags and retrieves the debug log.
+ * When debug is false (default), skips trace flag setup and log retrieval for faster execution.
  */
 export async function executeAnonymousApex(
     apexCode: string,
-    onProgress?: (message: string) => void
+    onProgress?: (message: string) => void,
+    debug = false
 ): Promise<ExecuteAnonymousResult> {
-    // Step 1: Setup trace flag
-    onProgress?.('Setting up trace...');
-    const userId = await getCurrentUserId();
-    await ensureTraceFlag(userId);
+    if (debug) {
+        // Step 1: Setup trace flag
+        onProgress?.('Setting up trace...');
+        const userId = await getCurrentUserId();
+        await ensureTraceFlag(userId);
+    }
 
     // Step 2: Execute the apex
     onProgress?.('Executing...');
@@ -209,9 +213,9 @@ export async function executeAnonymousApex(
         throw new Error('No execution result returned from API');
     }
 
-    // Step 3: Get debug log (only if execution was attempted)
+    // Step 3: Get debug log (only if debug mode and execution compiled)
     let debugLog: string | null = null;
-    if (execution.compiled) {
+    if (debug && execution.compiled) {
         onProgress?.('Fetching log...');
         await new Promise(resolve => setTimeout(resolve, 500));
         debugLog = await getLatestAnonymousLog();

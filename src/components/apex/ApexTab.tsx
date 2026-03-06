@@ -39,6 +39,7 @@ export function ApexTab() {
     // Editor display settings
     const [lineNumbers, setLineNumbers] = useState<'on' | 'off'>('on');
     const [wordWrap, setWordWrap] = useState<'on' | 'off'>('on');
+    const [debug, setDebug] = useState(false);
     const editorSettingsLoadedRef = useRef(false);
 
     // Load last Apex code from history or favorites on mount (whichever is more recent)
@@ -79,10 +80,11 @@ export function ApexTab() {
     useEffect(() => {
         chrome.storage.local.get('apexEditorSettings').then(data => {
             const settings = data.apexEditorSettings as
-                | { lineNumbers?: 'on' | 'off'; wordWrap?: 'on' | 'off' }
+                | { lineNumbers?: 'on' | 'off'; wordWrap?: 'on' | 'off'; debug?: boolean }
                 | undefined;
             if (settings?.lineNumbers) setLineNumbers(settings.lineNumbers);
             if (settings?.wordWrap) setWordWrap(settings.wordWrap);
+            if (settings?.debug !== undefined) setDebug(settings.debug);
             editorSettingsLoadedRef.current = true;
         });
     }, []);
@@ -90,8 +92,8 @@ export function ApexTab() {
     // Persist editor settings when they change
     useEffect(() => {
         if (!editorSettingsLoadedRef.current) return;
-        chrome.storage.local.set({ apexEditorSettings: { lineNumbers, wordWrap } });
-    }, [lineNumbers, wordWrap]);
+        chrome.storage.local.set({ apexEditorSettings: { lineNumbers, wordWrap, debug } });
+    }, [lineNumbers, wordWrap, debug]);
 
     // Set editor markers for compile/runtime errors
     const setEditorMarkers = useCallback((result: ApexExecutionResult) => {
@@ -161,10 +163,14 @@ export function ApexTab() {
         toastIdRef.current = id;
 
         try {
-            const result = await executeAnonymousApex(apexCode, (status: string) => {
-                toast.update(id, status, 'loading');
-                setOutput(`// ${status}`);
-            });
+            const result = await executeAnonymousApex(
+                apexCode,
+                (status: string) => {
+                    toast.update(id, status, 'loading');
+                    setOutput(`// ${status}`);
+                },
+                debug
+            );
 
             setEditorMarkers(result.execution);
 
@@ -189,7 +195,7 @@ export function ApexTab() {
         } finally {
             setIsExecuting(false);
         }
-    }, [isAuthenticated, toast, setEditorMarkers]);
+    }, [isAuthenticated, toast, setEditorMarkers, debug]);
 
     // Toggle editor settings
     const handleLineNumbersChange = useCallback((checked: boolean) => {
@@ -198,6 +204,10 @@ export function ApexTab() {
 
     const handleWordWrapChange = useCallback((checked: boolean) => {
         setWordWrap(checked ? 'on' : 'off');
+    }, []);
+
+    const handleDebugChange = useCallback((checked: boolean) => {
+        setDebug(checked);
     }, []);
 
     // Load script from history/favorites
@@ -251,6 +261,13 @@ export function ApexTab() {
                             data-testid="apex-word-wrap-checkbox"
                         >
                             Word Wrap
+                        </ButtonIconCheckbox>
+                        <ButtonIconCheckbox
+                            checked={debug}
+                            onChange={handleDebugChange}
+                            data-testid="apex-debug-checkbox"
+                        >
+                            Debug
                         </ButtonIconCheckbox>
                     </ButtonIcon>
                 </div>

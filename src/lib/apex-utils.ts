@@ -52,8 +52,6 @@ export function formatOutput(result: ApexExecutionResult, debugLog: string | nul
     if (debugLog) {
         lines.push('=== DEBUG LOG ===');
         lines.push(debugLog);
-    } else {
-        lines.push('(No debug log available)');
     }
 
     return lines.join('\n');

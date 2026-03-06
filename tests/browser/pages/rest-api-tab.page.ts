@@ -12,6 +12,7 @@ export class RestApiTabPage extends BasePage {
     readonly sendBtn: Locator;
     readonly statusBadge: Locator;
     readonly bodyContainer: Locator;
+    readonly historyBtn: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -23,6 +24,7 @@ export class RestApiTabPage extends BasePage {
         this.sendBtn = page.locator('[data-testid="rest-send-btn"]');
         this.statusBadge = page.locator('[role="alert"]').first();
         this.bodyContainer = page.locator('[data-testid="rest-body-container"]');
+        this.historyBtn = page.locator('[data-testid="rest-api-history-btn"]');
     }
 
     /**
@@ -133,5 +135,122 @@ export class RestApiTabPage extends BasePage {
      */
     async isBodyEditorVisible(): Promise<boolean> {
         return this.bodyContainer.isVisible();
+    }
+
+    /**
+     * Get the current endpoint URL value
+     */
+    async getEndpoint(): Promise<string> {
+        return (await this.urlInput.inputValue()) || '';
+    }
+
+    /**
+     * Get the current HTTP method value
+     */
+    async getMethod(): Promise<string> {
+        return (await this.methodSelect.inputValue()) || '';
+    }
+
+    /**
+     * Open the history modal
+     */
+    async openHistory(): Promise<void> {
+        await this.slowClick(this.historyBtn);
+        await this.page.waitForSelector('[data-testid="rest-api-history-modal"]', {
+            state: 'visible',
+            timeout: 5000,
+        });
+    }
+
+    /**
+     * Close the history modal
+     */
+    async closeHistory(): Promise<void> {
+        await this.page.keyboard.press('Escape');
+        await this.page.waitForSelector('[data-testid="rest-api-history-modal"]', {
+            state: 'hidden',
+            timeout: 5000,
+        });
+    }
+
+    /**
+     * Get the number of items in history
+     */
+    async getHistoryCount(): Promise<number> {
+        const historyTab = this.page.locator('[data-testid="rest-api-history-tab"]');
+        const isHistoryActive = await historyTab.evaluate(
+            (el: Element) => el.classList.contains('active') || el.classList.contains('_active_')
+        );
+        if (!isHistoryActive) {
+            await this.slowClick(historyTab);
+        }
+
+        return this.page.$$eval(
+            '[data-testid="rest-api-history-list"] [data-testid="script-item"]',
+            (items: Element[]) => items.length
+        );
+    }
+
+    /**
+     * Get the text of all history item previews
+     */
+    async getHistoryItems(): Promise<string[]> {
+        const historyTab = this.page.locator('[data-testid="rest-api-history-tab"]');
+        const isHistoryActive = await historyTab.evaluate(
+            (el: Element) => el.classList.contains('active') || el.classList.contains('_active_')
+        );
+        if (!isHistoryActive) {
+            await this.slowClick(historyTab);
+        }
+
+        return this.page.$$eval(
+            '[data-testid="rest-api-history-list"] [data-testid="script-preview"]',
+            (previews: Element[]) => previews.map(p => p.textContent?.trim() || '')
+        );
+    }
+
+    /**
+     * Load a request from history by index
+     */
+    async loadFromHistory(index: number): Promise<void> {
+        await this.openHistory();
+
+        const historyTab = this.page.locator('[data-testid="rest-api-history-tab"]');
+        await this.slowClick(historyTab);
+
+        await this.delay('beforeClick');
+        const historyItems = await this.page.$$(
+            '[data-testid="rest-api-history-list"] [data-testid="script-item"]'
+        );
+        if (historyItems[index]) {
+            await historyItems[index].click();
+        } else {
+            throw new Error(`History item ${index} not found`);
+        }
+
+        await this.page.waitForSelector('[data-testid="rest-api-history-modal"]', {
+            state: 'hidden',
+            timeout: 5000,
+        });
+    }
+
+    /**
+     * Delete a request from history by index
+     */
+    async deleteFromHistory(index: number): Promise<void> {
+        await this.openHistory();
+
+        const historyTab = this.page.locator('[data-testid="rest-api-history-tab"]');
+        await this.slowClick(historyTab);
+
+        await this.delay('beforeClick');
+        const deleteButtons = await this.page.$$(
+            '[data-testid="rest-api-history-list"] [data-testid="script-action-delete"]'
+        );
+        if (deleteButtons[index]) {
+            await deleteButtons[index].click();
+        } else {
+            throw new Error(`History item ${index} not found`);
+        }
     }
 }

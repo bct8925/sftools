@@ -15,7 +15,7 @@ interface RestApiHistoryProps {
     onLoadRequest: (request: RestApiRequest) => void;
 }
 
-function parseRequest(content: string): RestApiRequest | null {
+export function parseRequest(content: string): RestApiRequest | null {
     try {
         return JSON.parse(content) as RestApiRequest;
     } catch {
@@ -23,7 +23,7 @@ function parseRequest(content: string): RestApiRequest | null {
     }
 }
 
-function getPreview(content: string): string {
+export function getPreview(content: string): string {
     const req = parseRequest(content);
     if (!req) return content;
     const truncatedUrl = req.url.length > 40 ? `${req.url.slice(0, 40)}...` : req.url;

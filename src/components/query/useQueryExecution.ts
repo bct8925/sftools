@@ -38,7 +38,7 @@ interface UseQueryExecutionOptions {
     addTab: (query: string) => string;
     normalizeQuery: (query: string) => string;
     setFilterText: (text: string) => void;
-    saveToHistory: (query: string) => Promise<void>;
+    saveToHistory: (query: string, metadata?: { objectName?: string }) => Promise<void>;
 }
 
 /**
@@ -76,9 +76,12 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
     }, []);
 
     // Execute query and fetch data
-    // Returns true if successful, false if there was an error
+    // Returns success status and object name if successful
     const fetchQueryData = useCallback(
-        async (tabId: string, query: string): Promise<boolean> => {
+        async (
+            tabId: string,
+            query: string
+        ): Promise<{ success: boolean; objectName?: string }> => {
             options.setLoading(tabId, true);
             if (activeToastRef.current) {
                 toast.dismiss(activeToastRef.current);
@@ -134,12 +137,12 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
 
                 // Clear filter
                 options.setFilterText('');
-                return true;
+                return { success: true, objectName: result.entityName ?? undefined };
             } catch (error) {
                 options.setError(tabId, (error as Error).message);
                 toast.update(activeToastRef.current!, 'Error', 'error');
                 activeToastRef.current = null;
-                return false;
+                return { success: false };
             }
         },
         [
@@ -175,18 +178,18 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
         const existingTab = options.findTabByQuery(normalized);
         if (existingTab) {
             options.setActiveTab(existingTab.id);
-            const success = await fetchQueryData(existingTab.id, query);
-            if (success) {
-                await options.saveToHistory(query);
+            const result = await fetchQueryData(existingTab.id, query);
+            if (result.success) {
+                await options.saveToHistory(query, { objectName: result.objectName });
             }
             return;
         }
 
         // Create new tab
         const tabId = options.addTab(query);
-        const success = await fetchQueryData(tabId, query);
-        if (success) {
-            await options.saveToHistory(query);
+        const result = await fetchQueryData(tabId, query);
+        if (result.success) {
+            await options.saveToHistory(query, { objectName: result.objectName });
         }
     }, [
         options.editorRef,

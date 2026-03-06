@@ -62,7 +62,7 @@ export class HistoryManager {
      * If item is already in favorites, just update timestamp
      * If item exists in history, move it to the top
      */
-    async saveToHistory(content: string): Promise<void> {
+    async saveToHistory(content: string, metadata?: Record<string, unknown>): Promise<void> {
         const trimmed = content.trim();
         if (!trimmed) return;
 
@@ -92,6 +92,7 @@ export class HistoryManager {
             id: Date.now().toString(),
             [contentProp]: trimmed,
             timestamp: Date.now(),
+            ...metadata,
         });
 
         // Trim to max size
@@ -105,7 +106,11 @@ export class HistoryManager {
     /**
      * Add item to favorites with a label
      */
-    async addToFavorites(content: string, label: string): Promise<void> {
+    async addToFavorites(
+        content: string,
+        label: string,
+        metadata?: Record<string, unknown>
+    ): Promise<void> {
         const trimmedContent = content.trim();
         const trimmedLabel = label.trim();
 
@@ -119,6 +124,7 @@ export class HistoryManager {
             [contentProp]: trimmedContent,
             label: trimmedLabel,
             timestamp: Date.now(),
+            ...metadata,
         });
 
         await this.saveFavorites();

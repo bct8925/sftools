@@ -13,8 +13,9 @@ interface HistoryListProps<T extends HistoryEntry> {
     getPreview: (content: string) => string;
     formatTime: (timestamp: number) => string;
     onLoad: (content: string) => void;
-    onAddToFavorites: (content: string) => void;
+    onAddToFavorites: (content: string, item: T) => void;
     onDelete: (id: string) => void;
+    renderMeta?: (item: T) => ReactNode;
 }
 
 /**
@@ -29,6 +30,7 @@ export function HistoryList<T extends HistoryEntry>({
     onLoad,
     onAddToFavorites,
     onDelete,
+    renderMeta,
 }: HistoryListProps<T>) {
     const handleLoad = useCallback(
         (content: string, e?: React.MouseEvent) => {
@@ -39,9 +41,9 @@ export function HistoryList<T extends HistoryEntry>({
     );
 
     const handleFavorite = useCallback(
-        (content: string, e: React.MouseEvent) => {
+        (content: string, item: T, e: React.MouseEvent) => {
             e.stopPropagation();
-            onAddToFavorites(content);
+            onAddToFavorites(content, item);
         },
         [onAddToFavorites]
     );
@@ -73,12 +75,15 @@ export function HistoryList<T extends HistoryEntry>({
                             {getPreview(content)}
                         </div>
                         <div className={styles.scriptMeta}>
-                            <span>{formatTime(item.timestamp)}</span>
+                            <div className={styles.scriptMetaLeft}>
+                                {renderMeta?.(item)}
+                                <span>{formatTime(item.timestamp)}</span>
+                            </div>
                             <div className={styles.scriptActions}>
                                 <button
                                     className={styles.scriptAction}
                                     title="Add to favorites"
-                                    onClick={e => handleFavorite(content, e)}
+                                    onClick={e => handleFavorite(content, item, e)}
                                     data-testid="script-action-favorite"
                                 >
                                     &#9733;
@@ -107,6 +112,7 @@ interface FavoritesListProps<T extends FavoriteEntry> {
     formatTime: (timestamp: number) => string;
     onLoad: (content: string) => void;
     onDelete: (id: string) => void;
+    renderMeta?: (item: T) => ReactNode;
 }
 
 /**
@@ -119,6 +125,7 @@ export function FavoritesList<T extends FavoriteEntry>({
     formatTime,
     onLoad,
     onDelete,
+    renderMeta,
 }: FavoritesListProps<T>) {
     const handleLoad = useCallback(
         (content: string, e?: React.MouseEvent) => {
@@ -155,7 +162,10 @@ export function FavoritesList<T extends FavoriteEntry>({
                             {item.label}
                         </div>
                         <div className={styles.scriptMeta}>
-                            <span>{formatTime(item.timestamp)}</span>
+                            <div className={styles.scriptMetaLeft}>
+                                {renderMeta?.(item)}
+                                <span>{formatTime(item.timestamp)}</span>
+                            </div>
                             <div className={styles.scriptActions}>
                                 <button
                                     className={styles.scriptAction}

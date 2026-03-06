@@ -56,6 +56,13 @@
     color: var(--text-muted);
 }
 
+.scriptMetaLeft {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
 .scriptActions {
     display: flex;
     gap: 4px;

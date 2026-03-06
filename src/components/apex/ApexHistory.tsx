@@ -77,7 +77,7 @@ export const ApexHistory = forwardRef<ApexHistoryRef, ApexHistoryProps>(({ onLoa
         setPendingFavorite({ code, label: defaultLabel });
         setFavoriteModalOpen(true);
         setIsOpen(false);
-    }, []);
+    }, []) as (content: string, item: ApexHistoryEntry) => void;
 
     const handleSaveFavorite = useCallback(
         async (label: string) => {

@@ -55,11 +55,21 @@
 }
 
 .historyModal {
-    width: 320px;
+    width: clamp(320px, 90vw, 720px);
     height: 340px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+
+.objectBadge {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary-color);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    padding: 1px 6px;
+    white-space: nowrap;
 }
 
 /* ============================================================
@@ -98,6 +108,7 @@
 
 .dropdownContent {
     flex: 1;
+    overflow-x: hidden;
     overflow-y: auto;
     min-height: 0;
 }

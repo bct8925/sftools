@@ -188,6 +188,20 @@ describe('HistoryManager', () => {
             expect(storage.testHistory[0].content).toBe('persisted');
         });
 
+        it('HM-U-041: stores metadata fields in history entry', async () => {
+            await manager.saveToHistory('SELECT Id FROM Account', { objectName: 'Account' });
+
+            expect(manager.history[0].objectName).toBe('Account');
+        });
+
+        it('HM-U-042: updates metadata when re-saving a duplicate entry', async () => {
+            await manager.saveToHistory('SELECT Id FROM Account', { objectName: 'Account' });
+            await manager.saveToHistory('SELECT Id FROM Account', { objectName: 'AccountUpdated' });
+
+            expect(manager.history).toHaveLength(1);
+            expect(manager.history[0].objectName).toBe('AccountUpdated');
+        });
+
         it('HM-U-040: preserves existing storage entries when saving without prior load', async () => {
             // Simulate a previous session that stored history
             chrome._setStorageData({

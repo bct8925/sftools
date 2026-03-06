@@ -17,10 +17,12 @@ interface QueryHistoryProps {
 // Extended history entry with query property
 interface QueryHistoryEntry extends HistoryEntry {
     query: string;
+    objectName?: string;
 }
 
 interface QueryFavoriteEntry extends FavoriteEntry {
     query: string;
+    objectName?: string;
 }
 
 /**
@@ -35,9 +37,11 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
 
     // Favorite modal state
     const [favoriteModalOpen, setFavoriteModalOpen] = useState(false);
-    const [pendingFavorite, setPendingFavorite] = useState<{ query: string; label: string } | null>(
-        null
-    );
+    const [pendingFavorite, setPendingFavorite] = useState<{
+        query: string;
+        label: string;
+        objectName?: string;
+    } | null>(null);
 
     // Initialize history manager
     useEffect(() => {
@@ -84,12 +88,12 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
 
     // Handle adding to favorites (opens modal)
     const handleAddToFavorites = useCallback(
-        (query: string) => {
+        (query: string, item: QueryHistoryEntry) => {
             const manager = historyManagerRef.current;
             if (!manager) return;
 
             const defaultLabel = manager.getPreview(query);
-            setPendingFavorite({ query, label: defaultLabel });
+            setPendingFavorite({ query, label: defaultLabel, objectName: item.objectName });
             setFavoriteModalOpen(true);
             setIsOpen(false);
         },
@@ -102,7 +106,9 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
             const manager = historyManagerRef.current;
             if (!manager || !pendingFavorite) return;
 
-            await manager.addToFavorites(pendingFavorite.query, label);
+            await manager.addToFavorites(pendingFavorite.query, label, {
+                objectName: pendingFavorite.objectName,
+            });
             refreshLists();
             setFavoriteModalOpen(false);
             setPendingFavorite(null);
@@ -145,11 +151,8 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
     // Content accessor for history entries
     const getQueryContent = useCallback((item: QueryHistoryEntry) => item.query, []);
 
-    // Preview generator
-    const getPreview = useCallback(
-        (query: string) => manager?.getPreview(query) || query,
-        [manager]
-    );
+    // Preview generator — collapse whitespace only; CSS handles visual truncation
+    const getPreview = useCallback((query: string) => query.replace(/\s+/g, ' ').trim(), []);
 
     // Time formatter
     const formatTime = useCallback(
@@ -204,6 +207,13 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
                                     onLoad={handleSelectQuery}
                                     onAddToFavorites={handleAddToFavorites}
                                     onDelete={handleDeleteFromHistory}
+                                    renderMeta={item =>
+                                        item.objectName ? (
+                                            <span className={styles.objectBadge}>
+                                                {item.objectName}
+                                            </span>
+                                        ) : null
+                                    }
                                 />
                             </div>
                         )}
@@ -223,6 +233,13 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
                                     formatTime={formatTime}
                                     onLoad={handleSelectQuery}
                                     onDelete={handleDeleteFromFavorites}
+                                    renderMeta={item =>
+                                        item.objectName ? (
+                                            <span className={styles.objectBadge}>
+                                                {item.objectName}
+                                            </span>
+                                        ) : null
+                                    }
                                 />
                             </div>
                         )}
@@ -246,10 +263,10 @@ export function QueryHistory({ onSelectQuery, historyManagerRef }: QueryHistoryP
 // Export a hook for saving to history
 export function useSaveToHistory(historyManagerRef: React.MutableRefObject<HistoryManager | null>) {
     return useCallback(
-        async (query: string) => {
+        async (query: string, metadata?: { objectName?: string }) => {
             const manager = historyManagerRef.current;
             if (manager) {
-                await manager.saveToHistory(query);
+                await manager.saveToHistory(query, metadata);
             }
         },
         [historyManagerRef]

@@ -8,6 +8,8 @@ import {
     type ReactNode,
 } from 'react';
 import type { SalesforceConnection } from '../types/salesforce';
+import { salesforceRequest } from '../api/salesforce-request';
+import { API_VERSION } from '../api/constants';
 import {
     loadConnections,
     setActiveConnection as setActiveConn,
@@ -69,7 +71,14 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
 
     // Initial load
     useEffect(() => {
-        refreshConnections().then(() => setIsLoading(false));
+        refreshConnections().then(() => {
+            setIsLoading(false);
+
+            // Validate session on panel open — triggers reauth modal on 401
+            if (checkAuth()) {
+                salesforceRequest(`/services/data/v${API_VERSION}/`).catch(() => {});
+            }
+        });
 
         // Listen for storage changes from other tabs
         const handleStorageChange = (

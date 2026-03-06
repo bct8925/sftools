@@ -26,7 +26,7 @@ export function parseRequest(content: string): RestApiRequest | null {
 export function getPreview(content: string): string {
     const req = parseRequest(content);
     if (!req) return content;
-    return `${req.method} ${req.url}`;
+    return req.url;
 }
 
 export const RestApiHistory = forwardRef<RestApiHistoryRef, RestApiHistoryProps>(

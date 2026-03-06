@@ -6,8 +6,8 @@
  * - RH-U-002: parseRequest() - invalid JSON returns null
  * - RH-U-003: parseRequest() - includes body when present
  * - RH-U-004: parseRequest() - no body key when absent
- * - RH-U-005: getPreview() - short URL returns "METHOD /path"
- * - RH-U-006: getPreview() - long URL (>40 chars) is truncated with "..."
+ * - RH-U-005: getPreview() - returns URL only (method shown as badge)
+ * - RH-U-006: getPreview() - long URL returns full URL without truncation
  * - RH-U-007: getPreview() - invalid JSON returns raw content string
  */
 
@@ -50,17 +50,16 @@ describe('RestApiHistory helpers', () => {
     });
 
     describe('getPreview', () => {
-        it('RH-U-005: short URL returns "METHOD /path"', () => {
+        it('RH-U-005: returns URL only (method shown as badge)', () => {
             const content = JSON.stringify({ method: 'GET', url: '/services/data/v62.0/limits' });
-            expect(getPreview(content)).toBe('GET /services/data/v62.0/limits');
+            expect(getPreview(content)).toBe('/services/data/v62.0/limits');
         });
 
-        it('RH-U-006: long URL returns full "METHOD /path" without truncation', () => {
+        it('RH-U-006: long URL returns full URL without truncation', () => {
             const longUrl = '/services/data/v62.0/sobjects/Account/describe/extra-stuff-here';
             const content = JSON.stringify({ method: 'GET', url: longUrl });
             const preview = getPreview(content);
-            expect(preview).toBe(`GET ${longUrl}`);
-            expect(preview.startsWith('GET ')).toBe(true);
+            expect(preview).toBe(longUrl);
             expect(preview).not.toContain('...');
         });
 

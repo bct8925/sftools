@@ -53,7 +53,6 @@ describe('REST API History (R-F-010, R-F-011, R-F-012)', () => {
         expect(historyCount).toBeGreaterThan(0);
 
         const historyItems = await restApiTab.getHistoryItems();
-        expect(historyItems[0]).toContain('GET');
         expect(historyItems[0]).toContain('/limits');
 
         await restApiTab.closeHistory();

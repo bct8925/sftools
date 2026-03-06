@@ -43,12 +43,9 @@
 }
 
 .methodBadge {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--primary-color);
-    background: var(--bg-secondary);
-    border-radius: var(--radius-sm);
-    padding: 1px 6px;
     white-space: nowrap;
 }
 

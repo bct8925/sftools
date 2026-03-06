@@ -100,7 +100,7 @@ export const ScriptHistory = forwardRef<ScriptHistoryRef, ScriptHistoryProps>(
 
         const handleAddToFavorites = useCallback(
             (content: string, item: HistoryEntry) => {
-                const defaultLabel = getPreview(content);
+                const defaultLabel = '';
                 const metadata = getFavoriteMetadata?.(content, item);
                 setPendingFavorite({ content, label: defaultLabel, metadata });
                 setFavoriteModalOpen(true);
@@ -215,6 +215,7 @@ export const ScriptHistory = forwardRef<ScriptHistoryRef, ScriptHistoryProps>(
                                         items={favorites}
                                         emptyMessage={emptyFavoritesMessage}
                                         getContent={getContent}
+                                        getPreview={getPreview}
                                         formatTime={formatTime}
                                         onLoad={handleLoad}
                                         onDelete={handleDeleteFromFavorites}

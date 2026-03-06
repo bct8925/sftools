@@ -244,13 +244,14 @@ export class RestApiTabPage extends BasePage {
         await this.slowClick(historyTab);
 
         await this.delay('beforeClick');
-        const deleteButtons = await this.page.$$(
-            '[data-testid="rest-api-history-list"] [data-testid="script-action-delete"]'
+        const items = this.page.locator(
+            '[data-testid="rest-api-history-list"] [data-testid="script-item"]'
         );
-        if (deleteButtons[index]) {
-            await deleteButtons[index].click();
-        } else {
+        const item = items.nth(index);
+        if (!(await item.isVisible())) {
             throw new Error(`History item ${index} not found`);
         }
+        await item.hover();
+        await item.locator('[data-testid="script-action-delete"]').click();
     }
 }

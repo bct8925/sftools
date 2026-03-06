@@ -2,19 +2,19 @@
  * Tests for src/lib/apex-utils.js
  *
  * Test IDs:
- * - A-U-001: getPreview() - Returns short lines unchanged
+ * - A-U-001: getPreview() - Returns single-line code unchanged
  * - A-U-002: applyFilter() - Filters to matching lines
  * - A-U-003: applyFilter() - Case insensitive match
  * - A-U-004: clearFilter() - Shows all output
- * - A-U-005: getPreview() - Returns first non-comment line
- * - A-U-006: getPreview() - Truncates long lines
- * - A-U-007: getPreview() - Skips empty lines
- * - A-U-008: getPreview() - Skips multiple comment lines
+ * - A-U-005: getPreview() - Collapses multi-line code to single line
+ * - A-U-006: getPreview() - Returns full text without truncation
+ * - A-U-007: getPreview() - Collapses leading/trailing whitespace
+ * - A-U-008: getPreview() - Collapses all whitespace including comments
  * - A-U-009: formatOutput() - Formats success result
  * - A-U-010: formatOutput() - Formats error result
- * - A-U-011: getPreview() - Returns first line as fallback if all comments
+ * - A-U-011: getPreview() - Returns all lines collapsed together
  * - A-U-012: getPreview() - Returns "Empty script" for empty string
- * - A-U-013: getPreview() - Truncates first line fallback if over 50 chars
+ * - A-U-013: getPreview() - Does not truncate long lines
  * - A-U-014: getPreview() - Handles code with only whitespace
  * - A-U-015: formatOutput() - Formats runtime error without line number
  * - A-U-016: formatOutput() - Formats runtime error without stack trace
@@ -34,30 +34,32 @@ import { getPreview, formatOutput, filterLines } from '../../../src/lib/apex-uti
 
 describe('apex-utils', () => {
     describe('getPreview', () => {
-        it('A-U-005: returns first non-comment line', () => {
+        it('A-U-005: collapses multi-line code to single line', () => {
             const code = `// This is a comment
 System.debug('Hello World');`;
 
-            expect(getPreview(code)).toBe("System.debug('Hello World');");
+            expect(getPreview(code)).toBe("// This is a comment System.debug('Hello World');");
         });
 
-        it('A-U-006: truncates long lines to 50 chars', () => {
+        it('A-U-006: returns full text without truncation', () => {
             const code =
                 'System.debug("This is a very long debug statement that should be truncated");';
 
             const result = getPreview(code);
 
-            expect(result).toBe('System.debug("This is a very long debug statement ...');
-            expect(result.length).toBe(53); // 50 + '...'
+            expect(result).toBe(
+                'System.debug("This is a very long debug statement that should be truncated");'
+            );
+            expect(result).not.toContain('...');
         });
 
-        it('A-U-001: returns short lines unchanged', () => {
+        it('A-U-001: returns single-line code unchanged', () => {
             const code = 'System.debug("Short");';
 
             expect(getPreview(code)).toBe('System.debug("Short");');
         });
 
-        it('A-U-007: skips empty lines', () => {
+        it('A-U-007: collapses leading/trailing whitespace', () => {
             const code = `
 
 System.debug('Test');`;
@@ -65,35 +67,38 @@ System.debug('Test');`;
             expect(getPreview(code)).toBe("System.debug('Test');");
         });
 
-        it('A-U-008: skips multiple comment lines', () => {
+        it('A-U-008: collapses all whitespace including comments', () => {
             const code = `// Comment 1
 // Comment 2
 // Comment 3
 List<Account> accounts = [SELECT Id FROM Account];`;
 
-            expect(getPreview(code)).toBe('List<Account> accounts = [SELECT Id FROM Account];');
+            expect(getPreview(code)).toBe(
+                '// Comment 1 // Comment 2 // Comment 3 List<Account> accounts = [SELECT Id FROM Account];'
+            );
         });
 
-        it('A-U-011: returns first line as fallback if all comments', () => {
+        it('A-U-011: returns all lines collapsed together', () => {
             const code = `// Only a comment
 // Another comment`;
 
-            expect(getPreview(code)).toBe('// Only a comment');
+            expect(getPreview(code)).toBe('// Only a comment // Another comment');
         });
 
         it('A-U-012: returns "Empty script" for empty string', () => {
             expect(getPreview('')).toBe('Empty script');
         });
 
-        it('A-U-013: truncates first line fallback if over 50 chars', () => {
+        it('A-U-013: does not truncate long lines', () => {
             const code =
                 '// This is a very long comment that should be truncated when used as fallback';
 
             const result = getPreview(code);
 
-            // Substring(0, 50) = 50 chars + '...' = 53 total
-            expect(result).toBe('// This is a very long comment that should be trun...');
-            expect(result.length).toBe(53);
+            expect(result).toBe(
+                '// This is a very long comment that should be truncated when used as fallback'
+            );
+            expect(result).not.toContain('...');
         });
 
         it('A-U-014: handles code with only whitespace', () => {

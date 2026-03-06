@@ -26,8 +26,7 @@ export function parseRequest(content: string): RestApiRequest | null {
 export function getPreview(content: string): string {
     const req = parseRequest(content);
     if (!req) return content;
-    const truncatedUrl = req.url.length > 40 ? `${req.url.slice(0, 40)}...` : req.url;
-    return `${req.method} ${truncatedUrl}`;
+    return `${req.method} ${req.url}`;
 }
 
 export const RestApiHistory = forwardRef<RestApiHistoryRef, RestApiHistoryProps>(

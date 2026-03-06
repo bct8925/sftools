@@ -23,7 +23,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { escapeHtml } from '../../../src/lib/text-utils.js';
+import { escapeHtml, formatCompactNumber } from '../../../src/lib/text-utils.js';
 import { escapeAttr, truncate } from '../../../src/lib/text-utils.testing.js';
 
 describe('text-utils', () => {
@@ -123,6 +123,29 @@ describe('text-utils', () => {
 
         it('UT-U-033: truncates at exact position', () => {
             expect(truncate('abcdefghij', 3)).toBe('abc...');
+        });
+    });
+
+    describe('formatCompactNumber', () => {
+        it('UT-U-034: returns plain string for values under 1000', () => {
+            expect(formatCompactNumber(0)).toBe('0');
+            expect(formatCompactNumber(783)).toBe('783');
+            expect(formatCompactNumber(999)).toBe('999');
+        });
+
+        it('UT-U-035: formats exact thousands as NK', () => {
+            expect(formatCompactNumber(1000)).toBe('1K');
+            expect(formatCompactNumber(50000)).toBe('50K');
+        });
+
+        it('UT-U-036: formats fractional thousands with one decimal', () => {
+            expect(formatCompactNumber(1500)).toBe('1.5K');
+            expect(formatCompactNumber(101759)).toBe('101.8K');
+        });
+
+        it('UT-U-037: formats millions', () => {
+            expect(formatCompactNumber(1_000_000)).toBe('1M');
+            expect(formatCompactNumber(1_200_000)).toBe('1.2M');
         });
     });
 });

@@ -55,13 +55,13 @@ describe('RestApiHistory helpers', () => {
             expect(getPreview(content)).toBe('GET /services/data/v62.0/limits');
         });
 
-        it('RH-U-006: long URL (>40 chars) is truncated with "..."', () => {
+        it('RH-U-006: long URL returns full "METHOD /path" without truncation', () => {
             const longUrl = '/services/data/v62.0/sobjects/Account/describe/extra-stuff-here';
             const content = JSON.stringify({ method: 'GET', url: longUrl });
             const preview = getPreview(content);
-            expect(preview).toContain('...');
+            expect(preview).toBe(`GET ${longUrl}`);
             expect(preview.startsWith('GET ')).toBe(true);
-            expect(preview.length).toBeLessThan('GET '.length + longUrl.length);
+            expect(preview).not.toContain('...');
         });
 
         it('RH-U-007: invalid JSON returns raw content string', () => {

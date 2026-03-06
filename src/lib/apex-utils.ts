@@ -6,19 +6,10 @@ import type { ApexExecutionResult } from '../types/salesforce';
 
 /**
  * Gets a preview of code for display in history/favorites
- * Returns first non-empty, non-comment line, truncated to 50 chars
+ * Returns whitespace-collapsed full text; CSS line-clamp handles visual overflow
  */
 export function getPreview(code: string): string {
-    const lines = code.split('\n');
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed && !trimmed.startsWith('//')) {
-            return trimmed.length > 50 ? `${trimmed.substring(0, 50)}...` : trimmed;
-        }
-    }
-    // Fallback to first line
-    const firstLine = lines[0]?.trim() || 'Empty script';
-    return firstLine.length > 50 ? `${firstLine.substring(0, 50)}...` : firstLine;
+    return code.replace(/\s+/g, ' ').trim() || 'Empty script';
 }
 
 /**

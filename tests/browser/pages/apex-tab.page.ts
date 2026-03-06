@@ -212,14 +212,15 @@ export class ApexTabPage extends BasePage {
         await this.slowClick(historyTab);
 
         await this.delay('beforeClick');
-        const deleteButtons = await this.page.$$(
-            '[data-testid="apex-history-list"] [data-testid="script-action-delete"]'
+        const items = this.page.locator(
+            '[data-testid="apex-history-list"] [data-testid="script-item"]'
         );
-        if (deleteButtons[index]) {
-            await deleteButtons[index].click();
-        } else {
+        const item = items.nth(index);
+        if (!(await item.isVisible())) {
             throw new Error(`History item ${index} not found`);
         }
+        await item.hover();
+        await item.locator('[data-testid="script-action-delete"]').click();
     }
 
     /**
@@ -249,11 +250,13 @@ export class ApexTabPage extends BasePage {
     async saveToFavorites(label: string): Promise<void> {
         await this.openHistory();
 
-        // Click the favorite button on the first history item
+        // Hover the first history item to reveal actions, then click favorite button
         await this.delay('beforeClick');
-        const favoriteBtn = this.page
-            .locator('[data-testid="apex-history-list"] [data-testid="script-action-favorite"]')
+        const firstItem = this.page
+            .locator('[data-testid="apex-history-list"] [data-testid="script-item"]')
             .first();
+        await firstItem.hover();
+        const favoriteBtn = firstItem.locator('[data-testid="script-action-favorite"]');
         await this.slowClick(favoriteBtn);
 
         // Wait for favorite modal to open
@@ -307,14 +310,15 @@ export class ApexTabPage extends BasePage {
         await this.openFavorites();
 
         await this.delay('beforeClick');
-        const deleteButtons = await this.page.$$(
-            '[data-testid="apex-favorites-list"] [data-testid="script-action-delete"]'
+        const items = this.page.locator(
+            '[data-testid="apex-favorites-list"] [data-testid="script-item"]'
         );
-        if (deleteButtons[index]) {
-            await deleteButtons[index].click();
-        } else {
+        const item = items.nth(index);
+        if (!(await item.isVisible())) {
             throw new Error(`Favorite item ${index} not found`);
         }
+        await item.hover();
+        await item.locator('[data-testid="script-action-delete"]').click();
     }
 
     /**

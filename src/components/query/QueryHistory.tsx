@@ -2,6 +2,7 @@
 import { forwardRef } from 'react';
 import { ScriptHistory, type ScriptHistoryRef } from '../script-list/ScriptHistory';
 import type { HistoryEntry } from '../../lib/history-manager';
+import { formatCompactNumber } from '../../lib/text-utils';
 import styles from './QueryTab.module.css';
 
 export type { ScriptHistoryRef };
@@ -14,6 +15,7 @@ interface QueryHistoryProps {
 interface QueryHistoryEntry extends HistoryEntry {
     query: string;
     objectName?: string;
+    totalSize?: number;
 }
 
 export const QueryHistory = forwardRef<ScriptHistoryRef, QueryHistoryProps>(
@@ -43,13 +45,26 @@ export const QueryHistory = forwardRef<ScriptHistoryRef, QueryHistoryProps>(
             buttonClassName={styles.historyBtn}
             renderMeta={item => {
                 const qItem = item as QueryHistoryEntry;
-                return qItem.objectName ? (
-                    <span className={styles.objectBadge}>{qItem.objectName}</span>
-                ) : null;
+                return (
+                    <>
+                        {qItem.objectName && (
+                            <span className={styles.objectBadge}>{qItem.objectName}</span>
+                        )}
+                        {qItem.totalSize != null && (
+                            <span className={styles.resultCount}>
+                                {formatCompactNumber(qItem.totalSize)}{' '}
+                                {qItem.totalSize !== 1 ? 'results' : 'result'}
+                            </span>
+                        )}
+                    </>
+                );
             }}
             getFavoriteMetadata={(_, item) => {
                 const qItem = item as QueryHistoryEntry;
-                return qItem.objectName ? { objectName: qItem.objectName } : undefined;
+                const metadata: { objectName?: string; totalSize?: number } = {};
+                if (qItem.objectName) metadata.objectName = qItem.objectName;
+                if (qItem.totalSize != null) metadata.totalSize = qItem.totalSize;
+                return Object.keys(metadata).length > 0 ? metadata : undefined;
             }}
             onLoad={onSelectQuery}
         />

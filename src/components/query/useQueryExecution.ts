@@ -38,7 +38,10 @@ interface UseQueryExecutionOptions {
     addTab: (query: string) => string;
     normalizeQuery: (query: string) => string;
     setFilterText: (text: string) => void;
-    saveToHistory: (query: string, metadata?: { objectName?: string }) => Promise<void>;
+    saveToHistory: (
+        query: string,
+        metadata?: { objectName?: string; totalSize?: number }
+    ) => Promise<void>;
 }
 
 /**
@@ -76,12 +79,12 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
     }, []);
 
     // Execute query and fetch data
-    // Returns success status and object name if successful
+    // Returns success status, object name, and total size if successful
     const fetchQueryData = useCallback(
         async (
             tabId: string,
             query: string
-        ): Promise<{ success: boolean; objectName?: string }> => {
+        ): Promise<{ success: boolean; objectName?: string; totalSize?: number }> => {
             options.setLoading(tabId, true);
             if (activeToastRef.current) {
                 toast.dismiss(activeToastRef.current);
@@ -137,7 +140,11 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
 
                 // Clear filter
                 options.setFilterText('');
-                return { success: true, objectName: result.entityName ?? undefined };
+                return {
+                    success: true,
+                    objectName: result.entityName ?? undefined,
+                    totalSize: result.totalSize,
+                };
             } catch (error) {
                 options.setError(tabId, (error as Error).message);
                 toast.update(activeToastRef.current!, 'Error', 'error');
@@ -180,7 +187,10 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
             options.setActiveTab(existingTab.id);
             const result = await fetchQueryData(existingTab.id, query);
             if (result.success) {
-                await options.saveToHistory(query, { objectName: result.objectName });
+                await options.saveToHistory(query, {
+                    objectName: result.objectName,
+                    totalSize: result.totalSize,
+                });
             }
             return;
         }
@@ -189,7 +199,10 @@ export function useQueryExecution(options: UseQueryExecutionOptions) {
         const tabId = options.addTab(query);
         const result = await fetchQueryData(tabId, query);
         if (result.success) {
-            await options.saveToHistory(query, { objectName: result.objectName });
+            await options.saveToHistory(query, {
+                objectName: result.objectName,
+                totalSize: result.totalSize,
+            });
         }
     }, [
         options.editorRef,

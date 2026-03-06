@@ -70,9 +70,6 @@ export function HistoryList<T extends HistoryEntry>({
                         onClick={() => handleLoad(content, item)}
                         data-testid="script-item"
                     >
-                        <div className={styles.scriptPreview} data-testid="script-preview">
-                            {getPreview(content)}
-                        </div>
                         <div className={styles.scriptMeta}>
                             <div className={styles.scriptMetaLeft}>
                                 {renderMeta?.(item)}
@@ -97,6 +94,9 @@ export function HistoryList<T extends HistoryEntry>({
                                 </button>
                             </div>
                         </div>
+                        <div className={styles.scriptPreview} data-testid="script-preview">
+                            {getPreview(content)}
+                        </div>
                     </div>
                 );
             })}
@@ -108,6 +108,7 @@ interface FavoritesListProps<T extends FavoriteEntry> {
     items: T[];
     emptyMessage: ReactNode;
     getContent: ContentAccessor<T>;
+    getPreview: (content: string) => string;
     formatTime: (timestamp: number) => string;
     onLoad: (content: string, item: T) => void;
     onDelete: (id: string) => void;
@@ -121,6 +122,7 @@ export function FavoritesList<T extends FavoriteEntry>({
     items,
     emptyMessage,
     getContent,
+    getPreview,
     formatTime,
     onLoad,
     onDelete,
@@ -156,9 +158,11 @@ export function FavoritesList<T extends FavoriteEntry>({
                         onClick={() => handleLoad(content, item)}
                         data-testid="script-item"
                     >
-                        <div className={styles.scriptPreview} data-testid="script-label">
-                            {item.label}
-                        </div>
+                        {item.label && (
+                            <div className={styles.scriptLabel} data-testid="script-label">
+                                {item.label}
+                            </div>
+                        )}
                         <div className={styles.scriptMeta}>
                             <div className={styles.scriptMetaLeft}>
                                 {renderMeta?.(item)}
@@ -174,6 +178,9 @@ export function FavoritesList<T extends FavoriteEntry>({
                                     &times;
                                 </button>
                             </div>
+                        </div>
+                        <div className={styles.scriptPreview} data-testid="script-preview">
+                            {getPreview(content)}
                         </div>
                     </div>
                 );

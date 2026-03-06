@@ -4,6 +4,7 @@ import { useConnection } from '../../contexts/ConnectionContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useFilteredResults } from '../../hooks/useFilteredResults';
 import { ButtonIcon, ButtonIconOption, ButtonIconCheckbox } from '../button-icon/ButtonIcon';
+import { ButtonDropdown } from '../button-dropdown/ButtonDropdown';
 import { QueryEditor, clearQueryAutocompleteState, type QueryEditorRef } from './QueryEditor';
 import { QueryTabs } from './QueryTabs';
 import { QueryResults } from './QueryResults';
@@ -501,13 +502,18 @@ export function QueryTab() {
                         className={styles.editor}
                     />
                     <div className={styles.footer}>
-                        <button
-                            className="button-brand"
-                            onClick={executeQuery}
+                        <ButtonDropdown
+                            label="Query"
+                            onClickMain={executeQuery}
+                            options={[
+                                {
+                                    label: 'Bulk Export',
+                                    disabled: !hasResults || bulkExportInProgress,
+                                },
+                            ]}
+                            onClickOption={() => handleBulkExport()}
                             data-testid="query-execute-btn"
-                        >
-                            Query
-                        </button>
+                        />
                     </div>
                 </div>
             </div>
@@ -542,14 +548,7 @@ export function QueryTab() {
                             onClick={exportCurrentResults}
                             data-testid="query-export-btn"
                         >
-                            Export
-                        </ButtonIconOption>
-                        <ButtonIconOption
-                            disabled={!hasResults || bulkExportInProgress}
-                            onClick={handleBulkExport}
-                            data-testid="query-bulk-export-btn"
-                        >
-                            Bulk Export
+                            Export table
                         </ButtonIconOption>
                         <ButtonIconCheckbox
                             checked={editingEnabled}

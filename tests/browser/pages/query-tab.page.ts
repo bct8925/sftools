@@ -22,7 +22,7 @@ export class QueryTabPage extends BasePage {
         super(page);
         this.monaco = new MonacoHelpers(page, '[data-testid="query-editor"]');
 
-        this.executeBtn = page.locator('[data-testid="query-execute-btn"]');
+        this.executeBtn = page.locator('[data-testid="query-execute-btn"] button').first();
         this.historyBtn = page.locator('[data-testid="query-history-btn"]');
         this.settingsBtn = page.locator('[data-testid="query-settings-btn"]');
         this.resultsBtn = page.locator('[data-testid="query-results-btn"]');
@@ -487,9 +487,10 @@ export class QueryTabPage extends BasePage {
      * Bulk export using Salesforce Bulk API v2
      */
     async bulkExport(): Promise<void> {
-        await this.resultsBtn.click();
+        const triggerBtn = this.page.locator('[data-testid="query-execute-btn"] button').nth(1);
+        await this.slowClick(triggerBtn);
         await this.delay('beforeClick');
-        const bulkExportBtn = this.page.locator('[data-testid="query-bulk-export-btn"]');
+        const bulkExportBtn = this.page.getByRole('button', { name: 'Bulk Export' });
         await this.slowClick(bulkExportBtn);
 
         // Wait for bulk export to complete (toast will show "Export complete" or error)

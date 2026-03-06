@@ -18,6 +18,7 @@ interface ButtonDropdownProps {
     /** Called when a dropdown option is clicked */
     onClickOption?: (index: number, option: DropdownOption) => void;
     className?: string;
+    'data-testid'?: string;
 }
 
 /**
@@ -30,6 +31,7 @@ export function ButtonDropdown({
     onClickMain,
     onClickOption,
     className,
+    'data-testid': dataTestId,
 }: ButtonDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -76,6 +78,7 @@ export function ButtonDropdown({
         <div
             ref={containerRef}
             className={`${styles.buttonDropdown}${isOpen ? ` ${styles.open}` : ''}${className ? ` ${className}` : ''}`}
+            data-testid={dataTestId}
         >
             <button
                 className={`${styles.main} button-brand`}

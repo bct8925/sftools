@@ -43,17 +43,24 @@ function makeKeyEvent(overrides: Partial<KeyboardEvent>): KeyboardEvent {
 
 describe('keyboard-shortcuts', () => {
     describe('SHORTCUT_BINDINGS', () => {
-        it('contains bindings for Digit1 through Digit7 for features', () => {
+        it('contains bindings for Digit1 through Digit8 for features', () => {
             const featureBindings = SHORTCUT_BINDINGS.filter(b =>
-                ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7'].includes(
-                    b.code
-                )
+                [
+                    'Digit1',
+                    'Digit2',
+                    'Digit3',
+                    'Digit4',
+                    'Digit5',
+                    'Digit6',
+                    'Digit7',
+                    'Digit8',
+                ].includes(b.code)
             );
-            expect(featureBindings).toHaveLength(7);
+            expect(featureBindings).toHaveLength(8);
         });
 
-        it('contains binding for Digit8 mapped to settings', () => {
-            const binding = SHORTCUT_BINDINGS.find(b => b.code === 'Digit8');
+        it('contains binding for Digit9 mapped to settings', () => {
+            const binding = SHORTCUT_BINDINGS.find(b => b.code === 'Digit9');
             expect(binding?.target).toBe('settings');
         });
 
@@ -115,8 +122,8 @@ describe('keyboard-shortcuts', () => {
             expect(binding?.target).toBe('open-org');
         });
 
-        it('KS-U-009: returns binding for Alt+Digit8 (settings)', () => {
-            const e = makeKeyEvent({ altKey: true, code: 'Digit8' });
+        it('KS-U-009: returns binding for Alt+Digit9 (settings)', () => {
+            const e = makeKeyEvent({ altKey: true, code: 'Digit9' });
             const binding = matchShortcut(e);
             expect(binding).not.toBeNull();
             expect(binding?.target).toBe('settings');
@@ -137,8 +144,8 @@ describe('keyboard-shortcuts', () => {
         });
 
         it('KS-U-012: events binding has requiresAuth=true, requiresProxy=true', () => {
-            // Events is Digit6 (6th feature, 0-indexed = 5, so index+1 = 6)
-            const e = makeKeyEvent({ altKey: true, code: 'Digit6' });
+            // Events is Digit7 (7th feature, 0-indexed = 6, so index+1 = 7)
+            const e = makeKeyEvent({ altKey: true, code: 'Digit7' });
             const binding = matchShortcut(e);
             expect(binding?.target).toBe('events');
             expect(binding?.requiresAuth).toBe(true);

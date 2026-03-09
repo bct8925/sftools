@@ -8,15 +8,18 @@ SOQL Query Editor
 - Results displayed in formatted tables with relationship field support
 - Subquery results expandable inline
 - Inline record editing: edit fields directly in query results and save back to Salesforce
+- Delete selected records directly from query results
+- Include deleted and archived records (queryAll)
 - Toggle between standard and Tooling API queries
 - Filter and search within results
+- Collapsible editor and results panels
 - Export results as CSV or via Bulk API for large datasets
 - Query history and favorites
 - Keyboard shortcut: Ctrl/Cmd+Enter
 
 Anonymous Apex Execution
 - Run anonymous Apex with Monaco editor
-- Automatic trace flag setup and debug log retrieval
+- Debug toggle: opt in to trace flag and log retrieval per execution
 - Compile errors shown with line/column markers
 - Runtime errors shown with stack traces
 - Apex history and favorites
@@ -26,12 +29,16 @@ REST API Explorer
 - GET, POST, PATCH, DELETE requests to Salesforce REST endpoints
 - JSON formatting in request/response editors
 - Request body validation and HTTP status display
+- Request history and favorites
 - Keyboard shortcut: Ctrl/Cmd+Enter
 
 Schema Browser
 - Browse objects and fields
+- Expandable field detail panel: description, help text, picklist values, required, default value, and field properties
 - View field metadata (label, API name, type, length, relationships)
+- Filter fields by type
 - Search and filter objects
+- Direct links to open objects and fields in Salesforce Setup
 - Edit formula fields directly
 
 Record Viewer
@@ -43,17 +50,18 @@ Debug Logs
 - Watch mode: monitor new logs in real time
 - Auto-refresh when local proxy is connected
 - Filter and search log content
-- Manage trace flags for users
+- Set trace flags for specific users via user lookup
+- Delete all trace flags
 - Bulk delete debug logs
 
 Utility Tools
 - Delete inactive flow versions
-- View and delete debug logs (count and total size)
 
 Platform Events (requires local proxy)
 - Subscribe to Platform Events via gRPC
 - Publish Platform Events with JSON payload editor
 - Monitor standard events, PushTopics, and system topics via CometD
+- Event table viewer with split view layout for inspecting payloads
 - Replay modes: latest, earliest, or custom replay ID
 
 MULTI-ORG SUPPORT
@@ -66,8 +74,12 @@ SETTINGS
 - Theme: system, light, or dark mode
 - Local proxy connection status and configuration
 - Refresh cached SObject definitions
+- Export and import all data (connections, history, favorites, settings)
 
 INTERFACE
 - Opens in Chrome side panel or standalone tab
 - Monaco editor with syntax highlighting across all code panels
-- Ctrl/Cmd+Enter keyboard shortcut across all tabs
+- Ctrl/Cmd+Enter to execute across all tabs
+- Alt+1–7 keyboard shortcuts for quick tab navigation
+- Cmd/Ctrl+Click any feature tile to open it in a standalone browser tab
+- Open Org button to launch the current org in a new tab

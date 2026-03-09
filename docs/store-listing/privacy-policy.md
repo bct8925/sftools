@@ -1,6 +1,6 @@
 # Privacy Policy for sftools
 
-**Last Updated:** January 30, 2026
+**Last Updated:** March 9, 2026
 
 ## Overview
 
@@ -77,6 +77,7 @@ sftools includes an optional local proxy feature for advanced streaming capabili
 
 - Data is retained until you remove a connection or uninstall the extension
 - You can delete individual connections at any time through Settings
+- All stored data (connections, history, favorites, and settings) can be exported to a local JSON file or imported from a previous export via the Data Management section in Settings — no data ever leaves your device during this process
 - Uninstalling the extension removes all stored data
 
 ## Security

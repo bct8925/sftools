@@ -1,6 +1,14 @@
 import type { IconName } from '../lib/icons';
 
-export type FeatureId = 'query' | 'apex' | 'logs' | 'rest-api' | 'events' | 'schema' | 'utils';
+export type FeatureId =
+    | 'query'
+    | 'apex'
+    | 'logs'
+    | 'rest-api'
+    | 'events'
+    | 'schema'
+    | 'data-import'
+    | 'utils';
 export type TabId = FeatureId | 'settings';
 
 export interface Feature {
@@ -52,6 +60,14 @@ export const FEATURES: Feature[] = [
         requiresProxy: false,
         tileIcon: 'tileSchema',
         tileColor: 'var(--icon-schema)',
+    },
+    {
+        id: 'data-import',
+        label: 'Data Import',
+        requiresAuth: true,
+        requiresProxy: false,
+        tileIcon: 'tileDataImport',
+        tileColor: 'var(--icon-data-import)',
     },
     {
         id: 'events',

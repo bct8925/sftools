@@ -1,0 +1,340 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* ---- Form layout ---- */
+
+.formRow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+}
+
+.formLabel {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* ---- Object search select ---- */
+
+.objectSearch {
+    position: relative;
+}
+
+.objectSelected {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: 6px var(--spacing-sm);
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.objectSelectedName {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.objectSelectedApi {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    flex: 1;
+}
+
+.objectClearBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0 2px;
+}
+
+.objectClearBtn:hover {
+    color: var(--error-color);
+}
+
+.objectDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 12px var(--shadow-md);
+    z-index: var(--z-dropdown);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.objectDropdownItem {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: 6px var(--spacing-sm);
+    cursor: pointer;
+}
+
+.objectDropdownItem:hover {
+    background: var(--bg-hover);
+}
+
+.objectItemLabel {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.objectItemApi {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ---- CSV upload section ---- */
+
+.dropZone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--bg-secondary);
+    transition:
+        border-color 0.15s,
+        background 0.15s;
+    text-align: center;
+}
+
+.dropZoneActive {
+    border-color: var(--primary-color);
+    background: var(--bg-selected);
+}
+
+.dropZoneDisabled {
+    opacity: 0.5;
+}
+
+.dropZoneText {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.hiddenInput {
+    display: none;
+}
+
+.csvSummary {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.csvSummaryInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.csvFilename {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+.csvMeta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ---- Banners ---- */
+
+.warningBanner {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: color-mix(in srgb, var(--icon-warning) 15%, transparent);
+    border: 1px solid var(--icon-warning);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    color: var(--text-main);
+}
+
+.errorBanner {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--status-error-bg);
+    border: 1px solid var(--error-color);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    color: var(--status-error-text);
+}
+
+/* ---- Column mapping ---- */
+
+.mappingCount {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+.mappingHeader {
+    display: flex;
+    gap: var(--spacing-xs);
+    padding: 4px var(--spacing-xs);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: var(--spacing-xs);
+}
+
+.mappingHeaderCheckbox {
+    width: 28px;
+    flex-shrink: 0;
+}
+
+.mappingHeaderCsv {
+    width: 120px;
+    flex-shrink: 0;
+}
+
+.mappingHeaderField {
+    flex: 1;
+}
+
+.mappingList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mappingRow {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.mappingCheckbox {
+    width: 28px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.mappingCsvHeader {
+    width: 120px;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.autoMappedDot {
+    color: var(--success-color);
+    margin-left: 3px;
+    font-size: 1.1rem;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.mappingSelect {
+    flex: 1;
+    min-width: 0;
+}
+
+.mappingNote {
+    margin-top: var(--spacing-sm);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.emptyMessage {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ---- Settings section ---- */
+
+.settingsNote {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* ---- Execute section ---- */
+
+.executeActions {
+    margin-bottom: var(--spacing-sm);
+}
+
+.results {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.resultSummary {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+    flex-wrap: wrap;
+}
+
+.resultSuccess {
+    color: var(--success-color);
+}
+
+.resultFailure {
+    color: var(--error-color);
+}
+
+.resultUnprocessed {
+    color: var(--text-muted);
+}
+
+.downloadButtons {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}

@@ -32,6 +32,9 @@ const SchemaTab = lazy(() =>
 const UtilsTab = lazy(() =>
     import('../components/utils/UtilsTab').then(m => ({ default: m.UtilsTab }))
 );
+const DataImportTab = lazy(() =>
+    import('../components/data-import/DataImportTab').then(m => ({ default: m.DataImportTab }))
+);
 const SettingsTab = lazy(() =>
     import('../components/settings/SettingsTab').then(m => ({ default: m.SettingsTab }))
 );
@@ -44,6 +47,7 @@ const TAB_COMPONENTS: Record<TabId, ComponentType> = {
     'rest-api': RestApiTab,
     events: EventsTab,
     schema: SchemaTab,
+    'data-import': DataImportTab,
     utils: UtilsTab,
     settings: SettingsTab,
 };
@@ -53,8 +57,9 @@ const TAB_IDS: TabId[] = [
     'apex',
     'logs',
     'rest-api',
-    'events',
     'schema',
+    'data-import',
+    'events',
     'utils',
     'settings',
 ];
@@ -67,6 +72,7 @@ const TAB_PRELOADS: Record<TabId, () => void> = {
     'rest-api': () => void import('../components/rest-api/RestApiTab'),
     events: () => void import('../components/events/EventsTab'),
     schema: () => void import('../components/schema/SchemaTab'),
+    'data-import': () => void import('../components/data-import/DataImportTab'),
     utils: () => void import('../components/utils/UtilsTab'),
     settings: () => void import('../components/settings/SettingsTab'),
 };

@@ -581,6 +581,22 @@ export {
 } from './bulk-query';
 
 // ============================================================
+// Bulk API v2 - Ingest (Re-exports)
+// ============================================================
+
+export {
+    createBulkIngestJob,
+    uploadBulkIngestData,
+    closeBulkIngestJob,
+    getBulkIngestJobStatus,
+    getBulkIngestSuccessResults,
+    getBulkIngestFailedResults,
+    getBulkIngestUnprocessedResults,
+    abortBulkIngestJob,
+    executeBulkIngest,
+} from './bulk-ingest';
+
+// ============================================================
 // Formula Field Editor
 // ============================================================
 

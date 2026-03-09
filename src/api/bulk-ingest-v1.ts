@@ -78,6 +78,7 @@ export async function getV1BatchResult(jobId: string, batchId: string): Promise<
     const response = await smartFetch(url, {
         headers: {
             Authorization: `Bearer ${getAccessToken()}`,
+            'X-SFDC-Session': getAccessToken(),
             Accept: 'text/csv',
         },
     });

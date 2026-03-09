@@ -24,6 +24,8 @@ export interface SalesforceResponse<T = unknown> extends FetchResponse {
 
 interface SalesforceErrorResponse {
     message?: string;
+    exceptionMessage?: string;
+    exceptionCode?: string;
 }
 
 /**
@@ -36,12 +38,14 @@ export async function salesforceRequest<T = unknown>(
     options: SalesforceRequestOptions = {}
 ): Promise<SalesforceResponse<T>> {
     const url = `${getInstanceUrl()}${endpoint}`;
+    const isAsyncApi = endpoint.startsWith('/services/async/');
     const response = await smartFetch(url, {
         method: options.method || 'GET',
         headers: {
             Authorization: `Bearer ${getAccessToken()}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
+            ...(isAsyncApi && { 'X-SFDC-Session': getAccessToken() }),
             ...options.headers,
         },
         body: options.body,
@@ -80,7 +84,9 @@ export async function salesforceRequest<T = unknown>(
                 error = { message: response.data.substring(0, 200) };
             }
         }
-        const errorMessage = Array.isArray(error) ? error[0]?.message : error.message;
+        const errorMessage = Array.isArray(error)
+            ? error[0]?.message
+            : (error.message ?? error.exceptionMessage);
         throw new Error(errorMessage || 'Request failed');
     }
 

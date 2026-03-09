@@ -209,6 +209,12 @@ export function DataImportTab() {
         }
     }, [state.apiVersion]);
 
+    const handleReset = useCallback(() => {
+        reset();
+        rawCsvRef.current = null;
+        setFields([]);
+    }, [reset]);
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -270,6 +276,7 @@ export function DataImportTab() {
                 objectName={state.objectName}
                 onExecute={handleExecute}
                 onCancel={handleCancel}
+                onReset={handleReset}
             />
         </div>
     );

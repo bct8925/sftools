@@ -13,6 +13,7 @@ interface ExecuteSectionProps {
     objectName: string | null;
     onExecute: () => void;
     onCancel: () => void;
+    onReset: () => void;
 }
 
 export function ExecuteSection({
@@ -24,6 +25,7 @@ export function ExecuteSection({
     objectName,
     onExecute,
     onCancel,
+    onReset,
 }: ExecuteSectionProps) {
     const handleExecute = useCallback(() => {
         const label = objectName ?? 'records';
@@ -72,6 +74,14 @@ export function ExecuteSection({
                 </div>
 
                 {error && <div className={styles.errorBanner}>{error}</div>}
+
+                {(jobPhase === 'complete' || jobPhase === 'failed') && (
+                    <div className={styles.resetActions}>
+                        <button className="button-neutral" onClick={onReset} type="button">
+                            New Import
+                        </button>
+                    </div>
+                )}
 
                 {jobResult && (
                     <div className={styles.results}>

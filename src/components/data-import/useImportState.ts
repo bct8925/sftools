@@ -60,6 +60,13 @@ const initialState: ImportState = {
 // Reducer
 // ============================================================
 
+const JOB_RESET = { jobPhase: 'idle' as const, jobResult: null, error: null };
+
+// Returns job-reset fields when in a terminal phase; no-op during 'idle'/'running'
+function maybeResetJob(state: ImportState) {
+    return state.jobPhase === 'complete' || state.jobPhase === 'failed' ? JOB_RESET : {};
+}
+
 function importReducer(state: ImportState, action: ImportAction): ImportState {
     switch (action.type) {
         case 'SET_OPERATION':
@@ -69,6 +76,7 @@ function importReducer(state: ImportState, action: ImportAction): ImportState {
                 operation: action.operation,
                 externalIdField: null,
                 mappings: [],
+                ...maybeResetJob(state),
             };
 
         case 'SET_OBJECT':
@@ -78,10 +86,11 @@ function importReducer(state: ImportState, action: ImportAction): ImportState {
                 objectName: action.objectName,
                 externalIdField: null,
                 mappings: [],
+                ...maybeResetJob(state),
             };
 
         case 'SET_EXTERNAL_ID_FIELD':
-            return { ...state, externalIdField: action.field };
+            return { ...state, externalIdField: action.field, ...maybeResetJob(state) };
 
         case 'SET_CSV':
             return {
@@ -94,7 +103,7 @@ function importReducer(state: ImportState, action: ImportAction): ImportState {
             };
 
         case 'CLEAR_CSV':
-            return { ...state, csv: null, mappings: [] };
+            return { ...state, csv: null, mappings: [], ...maybeResetJob(state) };
 
         case 'SET_MAPPINGS':
             return { ...state, mappings: action.mappings };
@@ -105,6 +114,7 @@ function importReducer(state: ImportState, action: ImportAction): ImportState {
                 mappings: state.mappings.map(m =>
                     m.csvIndex === action.csvIndex ? { ...m, included: !m.included } : m
                 ),
+                ...maybeResetJob(state),
             };
 
         case 'SET_MAPPING_TARGET':
@@ -120,10 +130,11 @@ function importReducer(state: ImportState, action: ImportAction): ImportState {
                           }
                         : m
                 ),
+                ...maybeResetJob(state),
             };
 
         case 'SET_BATCH_SIZE':
-            return { ...state, batchSize: action.batchSize };
+            return { ...state, batchSize: action.batchSize, ...maybeResetJob(state) };
 
         case 'SET_JOB_PHASE':
             return { ...state, jobPhase: action.phase, error: null };

@@ -338,3 +338,7 @@
     gap: var(--spacing-sm);
     flex-wrap: wrap;
 }
+
+.resetActions {
+    margin-top: var(--spacing-sm);
+}

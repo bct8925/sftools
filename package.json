@@ -36,6 +36,7 @@
         "watch": "SFTOOLS_PRODUCTION=false vite build --watch",
         "package": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'",
         "package-prod": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json",
+        "package-store": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json src",
         "typecheck": "tsc --noEmit",
         "typecheck:watch": "tsc --noEmit --watch",
         "test:unit": "vitest run",

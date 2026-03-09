@@ -50,11 +50,11 @@
         "test:refresh-token": "node scripts/refresh-test-token.js",
         "lint": "eslint src tests scripts",
         "lint:fix": "eslint src tests scripts --fix",
-        "format": "prettier --write \"src/**/*.{js,ts,tsx,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.js\"",
-        "format:check": "prettier --check \"src/**/*.{js,ts,tsx,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.js\"",
+        "format": "prettier --write \"src/**/*.{js,ts,tsx,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.{js,ts}\"",
+        "format:check": "prettier --check \"src/**/*.{js,ts,tsx,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.{js,ts}\"",
         "fix": "npm run lint:fix && npm run format",
         "check": "npm run typecheck && npm run lint && npm run format:check",
         "validate": "npm run lint:fix && npm run format && npm run typecheck && npm run lint && npm run format:check",
-        "dead-code": "scripts/dead-code.sh"
+        "screenshots": "npx tsx scripts/take-screenshots.ts"
     }
 }

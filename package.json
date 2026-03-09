@@ -3,6 +3,7 @@
     "devDependencies": {
         "@testing-library/react": "^16.3.2",
         "@types/chrome": "^0.1.36",
+        "@types/papaparse": "^5.5.2",
         "@types/react": "^19.2.9",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.2",
@@ -28,6 +29,7 @@
         "@salesforce-ux/icons": "^10.5.4",
         "dompurify": "^3.3.1",
         "monaco-editor": "^0.53.0",
+        "papaparse": "^5.5.3",
         "react": "^19.2.3",
         "react-dom": "^19.2.3"
     },

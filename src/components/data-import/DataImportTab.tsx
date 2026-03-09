@@ -1,10 +1,10 @@
-// Data Import Tab — CSV import via Salesforce Bulk API v2
+// Data Import Tab — CSV import via Salesforce Bulk API
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getGlobalDescribe, getObjectDescribe } from '../../api/salesforce';
-import { executeBulkIngest, abortBulkIngestJob } from '../../api/bulk-ingest';
-import { reconstructCsv, splitCsvIntoChunks } from '../../lib/csv-parse';
+import { executeBulkIngest, abortBulkIngest } from '../../api/bulk-ingest';
+import { reconstructCsv } from '../../lib/csv-parse';
 import { getEligibleFields, autoMapColumns, validateMappings } from '../../lib/column-mapping';
 import { useImportState } from './useImportState';
 import { OperationSection } from './OperationSection';
@@ -30,7 +30,9 @@ export function DataImportTab() {
         setMappings,
         toggleMapping,
         setMappingTarget,
+        setApiVersion,
         setBatchSize,
+        setConcurrencyMode,
         setJobPhase,
         setJobResult,
         setError,
@@ -157,15 +159,17 @@ export function DataImportTab() {
 
         try {
             const reconstructed = reconstructCsv(rawCsvRef.current, state.mappings);
-            const chunks = splitCsvIntoChunks(reconstructed, state.batchSize);
 
             const result = await executeBulkIngest(
                 {
                     object: state.objectName,
                     operation: state.operation,
                     externalIdFieldName: state.externalIdField ?? undefined,
+                    apiVersion: state.apiVersion,
+                    batchSize: state.batchSize,
+                    concurrencyMode: state.concurrencyMode,
                 },
-                chunks,
+                reconstructed,
                 (_stage, message) => toast.update(toastId, message, 'loading'),
                 cancelledRef,
                 activeJobIdRef
@@ -187,7 +191,9 @@ export function DataImportTab() {
         state.operation,
         state.externalIdField,
         state.mappings,
+        state.apiVersion,
         state.batchSize,
+        state.concurrencyMode,
         toast,
         setJobPhase,
         setJobResult,
@@ -197,11 +203,11 @@ export function DataImportTab() {
     const handleCancel = useCallback(() => {
         cancelledRef.current = true;
         if (activeJobIdRef.current) {
-            abortBulkIngestJob(activeJobIdRef.current).catch(() => {
+            abortBulkIngest(state.apiVersion, activeJobIdRef.current).catch(() => {
                 /* ignore */
             });
         }
-    }, []);
+    }, [state.apiVersion]);
 
     return (
         <div className={styles.container}>
@@ -246,9 +252,13 @@ export function DataImportTab() {
             )}
 
             <ImportSettingsSection
+                apiVersion={state.apiVersion}
                 batchSize={state.batchSize}
+                concurrencyMode={state.concurrencyMode}
                 disabled={state.jobPhase === 'running'}
-                onChange={setBatchSize}
+                onApiVersionChange={setApiVersion}
+                onBatchSizeChange={setBatchSize}
+                onConcurrencyModeChange={setConcurrencyMode}
             />
 
             <ExecuteSection

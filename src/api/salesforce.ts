@@ -594,6 +594,7 @@ export {
     getBulkIngestUnprocessedResults,
     abortBulkIngestJob,
     executeBulkIngest,
+    abortBulkIngest,
 } from './bulk-ingest';
 
 // ============================================================

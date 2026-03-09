@@ -1,13 +1,20 @@
 // Bulk Ingest API v2 — Functions for CSV data import operations
 
 import { getInstanceUrl, getAccessToken } from '../auth/auth';
-import type { BulkIngestJob, BulkIngestOperation, BulkIngestResults } from '../types/salesforce';
+import type {
+    BulkApiVersion,
+    BulkIngestConfig,
+    BulkIngestJob,
+    BulkIngestOperation,
+    BulkIngestResults,
+} from '../types/salesforce';
 import { API_VERSION } from './constants';
 import { smartFetch } from './fetch';
 import { salesforceRequest } from './salesforce-request';
+import { executeV1Ingest, abortV1Job } from './bulk-ingest-v1';
 
 // ============================================================
-// Individual Job Operations
+// Individual V2 Job Operations
 // ============================================================
 
 /**
@@ -93,7 +100,6 @@ export async function getBulkIngestJobStatus(jobId: string): Promise<BulkIngestJ
 
 /**
  * Get the success result CSV for a completed Bulk API v2 ingest job.
- * Must use smartFetch directly — result is CSV, not JSON.
  */
 export async function getBulkIngestSuccessResults(jobId: string): Promise<string> {
     return fetchResultCsv(jobId, 'successfulResults');
@@ -138,17 +144,8 @@ export async function abortBulkIngestJob(jobId: string): Promise<void> {
 }
 
 // ============================================================
-// Result CSV Aggregation
+// Utilities
 // ============================================================
-
-/**
- * Strip the header row from a CSV (jobs 2+ in multi-job aggregation)
- */
-function stripCsvHeader(csv: string): string {
-    const newlineIndex = csv.indexOf('\n');
-    if (newlineIndex < 0) return '';
-    return csv.slice(newlineIndex + 1);
-}
 
 /**
  * Count data rows in a CSV (header row excluded, blank trailing lines excluded)
@@ -156,157 +153,111 @@ function stripCsvHeader(csv: string): string {
 function countCsvRows(csv: string): number {
     if (!csv.trim()) return 0;
     const lines = csv.split('\n').filter(l => l.trim().length > 0);
-    // Subtract 1 for the header row
     return Math.max(0, lines.length - 1);
 }
 
 // ============================================================
-// Single-Job Lifecycle
+// V2 Lifecycle
 // ============================================================
 
-interface ProgressArgs {
-    stage: string;
-    message: string;
-}
-
 /**
- * Run the full lifecycle for a single CSV chunk:
- * create → upload → close → poll → fetch results
+ * Run the full v2 lifecycle: create → upload full CSV → close → poll → fetch results.
+ * V2 supports large uploads natively as a single job.
  */
-async function runSingleJob(
-    config: { object: string; operation: BulkIngestOperation; externalIdFieldName?: string },
-    csvChunk: string,
-    jobIndex: number,
-    totalJobs: number,
-    onProgress?: (args: ProgressArgs) => void,
+async function executeV2Ingest(
+    config: BulkIngestConfig,
+    csvData: string,
+    onProgress?: (stage: string, message: string) => void,
     cancelledRef?: { current: boolean },
     activeJobIdRef?: { current: string | null }
-): Promise<{ successCsv: string; failureCsv: string; unprocessedCsv: string; job: BulkIngestJob }> {
-    const jobLabel = totalJobs > 1 ? ` (job ${jobIndex + 1}/${totalJobs})` : '';
-
-    onProgress?.({ stage: 'creating', message: `Creating import job${jobLabel}...` });
-    const job = await createBulkIngestJob(config);
+): Promise<BulkIngestResults> {
+    onProgress?.('creating', 'Creating import job...');
+    const job = await createBulkIngestJob({
+        object: config.object,
+        operation: config.operation,
+        externalIdFieldName: config.externalIdFieldName,
+    });
     if (activeJobIdRef) activeJobIdRef.current = job.id;
 
-    onProgress?.({ stage: 'uploading', message: `Uploading CSV${jobLabel}...` });
+    onProgress?.('uploading', 'Uploading CSV...');
     if (!job.contentUrl) throw new Error(`Job ${job.id} has no contentUrl`);
-    await uploadBulkIngestData(job.contentUrl, csvChunk);
+    await uploadBulkIngestData(job.contentUrl, csvData);
 
-    onProgress?.({ stage: 'closing', message: `Processing${jobLabel}...` });
+    onProgress?.('closing', 'Processing...');
     await closeBulkIngestJob(job.id);
 
-    // Poll until terminal state
     const pollInterval = 2000;
     const maxAttempts = 150;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (cancelledRef?.current) throw new Error('Import cancelled by user');
+
         const status = await getBulkIngestJobStatus(job.id);
 
         if (status.numberRecordsProcessed !== undefined) {
-            onProgress?.({
-                stage: 'processing',
-                message: `Processing${jobLabel}: ${status.numberRecordsProcessed} records...`,
-            });
+            onProgress?.('processing', `Processing: ${status.numberRecordsProcessed} records...`);
         }
 
         if (status.state === 'JobComplete') {
-            onProgress?.({ stage: 'fetching-results', message: `Fetching results${jobLabel}...` });
-
+            onProgress?.('fetching-results', 'Fetching results...');
             const [successCsv, failureCsv, unprocessedCsv] = await Promise.all([
                 getBulkIngestSuccessResults(job.id),
                 getBulkIngestFailedResults(job.id),
                 getBulkIngestUnprocessedResults(job.id),
             ]);
-            return { successCsv, failureCsv, unprocessedCsv, job: status };
+            return {
+                successCsv,
+                failureCsv,
+                unprocessedCsv,
+                successCount: countCsvRows(successCsv),
+                failureCount: countCsvRows(failureCsv),
+                unprocessedCount: countCsvRows(unprocessedCsv),
+            };
         }
 
         if (status.state === 'Failed' || status.state === 'Aborted') {
             throw new Error(
-                `Bulk ingest ${status.state.toLowerCase()}${jobLabel}: ${status.errorMessage ?? 'Unknown error'}`
+                `Bulk ingest ${status.state.toLowerCase()}: ${status.errorMessage ?? 'Unknown error'}`
             );
         }
 
         await new Promise<void>(resolve => setTimeout(resolve, pollInterval));
     }
 
-    // Timed out — abort and throw
     await abortBulkIngestJob(job.id).catch(() => {
         /* ignore */
     });
-    throw new Error(`Bulk ingest timed out${jobLabel}`);
+    throw new Error('Bulk ingest timed out');
 }
 
 // ============================================================
-// Orchestrator
+// Unified Entry Points
 // ============================================================
 
 /**
- * Execute a full bulk ingest: splits CSV into chunks, runs each job sequentially,
- * aggregates results, and reports progress. Supports cancellation via cancelledRef.
+ * Execute a bulk ingest job. Dispatches to v1 or v2 based on config.apiVersion.
+ * V2: uploads the full CSV as a single job (no chunking).
+ * V1: splits CSV into batches of config.batchSize rows per batch.
  */
 export async function executeBulkIngest(
-    config: { object: string; operation: BulkIngestOperation; externalIdFieldName?: string },
-    csvChunks: string[],
+    config: BulkIngestConfig,
+    csvData: string,
     onProgress?: (stage: string, message: string) => void,
     cancelledRef?: { current: boolean },
     activeJobIdRef?: { current: string | null }
 ): Promise<BulkIngestResults> {
-    const progressCallback = onProgress
-        ? (args: ProgressArgs) => onProgress(args.stage, args.message)
-        : undefined;
+    if (cancelledRef?.current) throw new Error('Import cancelled by user');
 
-    const totalJobs = csvChunks.length;
-
-    const allSuccess: string[] = [];
-    const allFailure: string[] = [];
-    const allUnprocessed: string[] = [];
-    let totalSuccess = 0;
-    let totalFailure = 0;
-    let totalUnprocessed = 0;
-
-    for (let i = 0; i < csvChunks.length; i++) {
-        if (cancelledRef?.current) {
-            throw new Error('Import cancelled by user');
-        }
-
-        const { successCsv, failureCsv, unprocessedCsv } = await runSingleJob(
-            config,
-            csvChunks[i],
-            i,
-            totalJobs,
-            progressCallback,
-            cancelledRef,
-            activeJobIdRef
-        );
-
-        // First job keeps the header; subsequent jobs strip it
-        if (i === 0) {
-            allSuccess.push(successCsv);
-            allFailure.push(failureCsv);
-            allUnprocessed.push(unprocessedCsv);
-        } else {
-            allSuccess.push(stripCsvHeader(successCsv));
-            allFailure.push(stripCsvHeader(failureCsv));
-            allUnprocessed.push(stripCsvHeader(unprocessedCsv));
-        }
-
-        // Count rows from the original (with header) for accuracy
-        totalSuccess += countCsvRows(successCsv);
-        totalFailure += countCsvRows(failureCsv);
-        totalUnprocessed += countCsvRows(unprocessedCsv);
+    if (config.apiVersion === 'v1') {
+        return executeV1Ingest(config, csvData, onProgress, cancelledRef, activeJobIdRef);
     }
+    return executeV2Ingest(config, csvData, onProgress, cancelledRef, activeJobIdRef);
+}
 
-    onProgress?.(
-        'complete',
-        `Import complete: ${totalSuccess} succeeded, ${totalFailure} failed, ${totalUnprocessed} unprocessed`
-    );
-
-    return {
-        successCsv: allSuccess.join(''),
-        failureCsv: allFailure.join(''),
-        unprocessedCsv: allUnprocessed.join(''),
-        successCount: totalSuccess,
-        failureCount: totalFailure,
-        unprocessedCount: totalUnprocessed,
-    };
+/**
+ * Abort the active ingest job. Dispatches to the correct API version.
+ */
+export async function abortBulkIngest(apiVersion: BulkApiVersion, jobId: string): Promise<void> {
+    if (apiVersion === 'v1') return abortV1Job(jobId);
+    return abortBulkIngestJob(jobId);
 }

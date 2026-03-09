@@ -167,6 +167,43 @@ export interface BulkIngestResults {
     unprocessedCount: number;
 }
 
+export type BulkApiVersion = 'v2' | 'v1';
+export type BulkConcurrencyMode = 'Parallel' | 'Serial';
+
+export interface BulkIngestConfig {
+    object: string;
+    operation: BulkIngestOperation;
+    externalIdFieldName?: string;
+    apiVersion: BulkApiVersion;
+    batchSize: number;
+    concurrencyMode: BulkConcurrencyMode;
+}
+
+export interface BulkV1Job {
+    id: string;
+    operation: string;
+    object: string;
+    state: string;
+    concurrencyMode: string;
+    contentType: string;
+    numberBatchesQueued?: number;
+    numberBatchesInProgress?: number;
+    numberBatchesCompleted?: number;
+    numberBatchesFailed?: number;
+    numberBatchesTotal?: number;
+    numberRecordsProcessed?: number;
+    numberRecordsFailed?: number;
+}
+
+export interface BulkV1BatchInfo {
+    id: string;
+    jobId: string;
+    state: 'Queued' | 'InProgress' | 'Completed' | 'Failed' | 'NotProcessed';
+    stateMessage?: string;
+    numberRecordsProcessed?: number;
+    numberRecordsFailed?: number;
+}
+
 export interface ColumnMapping {
     csvHeader: string;
     csvIndex: number;

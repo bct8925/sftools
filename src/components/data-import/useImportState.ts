@@ -1,6 +1,12 @@
 // Data Import state management with useReducer
 import { useReducer, useCallback } from 'react';
-import type { BulkIngestOperation, BulkIngestResults, ColumnMapping } from '../../types/salesforce';
+import type {
+    BulkApiVersion,
+    BulkConcurrencyMode,
+    BulkIngestOperation,
+    BulkIngestResults,
+    ColumnMapping,
+} from '../../types/salesforce';
 
 // ============================================================
 // State & Actions
@@ -21,7 +27,9 @@ export interface ImportState {
     externalIdField: string | null;
     csv: ImportCsvMeta | null;
     mappings: ColumnMapping[];
+    apiVersion: BulkApiVersion;
     batchSize: number;
+    concurrencyMode: BulkConcurrencyMode;
     jobPhase: 'idle' | 'running' | 'complete' | 'failed';
     jobResult: BulkIngestResults | null;
     error: string | null;
@@ -36,7 +44,9 @@ export type ImportAction =
     | { type: 'SET_MAPPINGS'; mappings: ColumnMapping[] }
     | { type: 'TOGGLE_MAPPING'; csvIndex: number }
     | { type: 'SET_MAPPING_TARGET'; csvIndex: number; fieldApiName: string | null }
+    | { type: 'SET_API_VERSION'; apiVersion: BulkApiVersion }
     | { type: 'SET_BATCH_SIZE'; batchSize: number }
+    | { type: 'SET_CONCURRENCY_MODE'; concurrencyMode: BulkConcurrencyMode }
     | { type: 'SET_JOB_PHASE'; phase: ImportState['jobPhase'] }
     | { type: 'SET_JOB_RESULT'; result: BulkIngestResults }
     | { type: 'SET_ERROR'; error: string }
@@ -50,7 +60,9 @@ const initialState: ImportState = {
     externalIdField: null,
     csv: null,
     mappings: [],
+    apiVersion: 'v2',
     batchSize: DEFAULT_BATCH_SIZE,
+    concurrencyMode: 'Parallel',
     jobPhase: 'idle',
     jobResult: null,
     error: null,
@@ -122,8 +134,14 @@ function importReducer(state: ImportState, action: ImportAction): ImportState {
                 ),
             };
 
+        case 'SET_API_VERSION':
+            return { ...state, apiVersion: action.apiVersion };
+
         case 'SET_BATCH_SIZE':
             return { ...state, batchSize: action.batchSize };
+
+        case 'SET_CONCURRENCY_MODE':
+            return { ...state, concurrencyMode: action.concurrencyMode };
 
         case 'SET_JOB_PHASE':
             return { ...state, jobPhase: action.phase, error: null };
@@ -185,8 +203,19 @@ export function useImportState() {
         []
     );
 
+    const setApiVersion = useCallback(
+        (apiVersion: BulkApiVersion) => dispatch({ type: 'SET_API_VERSION', apiVersion }),
+        []
+    );
+
     const setBatchSize = useCallback(
         (batchSize: number) => dispatch({ type: 'SET_BATCH_SIZE', batchSize }),
+        []
+    );
+
+    const setConcurrencyMode = useCallback(
+        (concurrencyMode: BulkConcurrencyMode) =>
+            dispatch({ type: 'SET_CONCURRENCY_MODE', concurrencyMode }),
         []
     );
 
@@ -215,7 +244,9 @@ export function useImportState() {
         setMappings,
         toggleMapping,
         setMappingTarget,
+        setApiVersion,
         setBatchSize,
+        setConcurrencyMode,
         setJobPhase,
         setJobResult,
         setError,

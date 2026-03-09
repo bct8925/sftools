@@ -13,6 +13,11 @@ vi.mock('../../../src/auth/auth.js', () => ({
     getInstanceUrl: vi.fn().mockReturnValue('https://test.salesforce.com'),
 }));
 
+vi.mock('../../../src/api/bulk-ingest-v1.js', () => ({
+    executeV1Ingest: vi.fn(),
+    abortV1Job: vi.fn(),
+}));
+
 import {
     createBulkIngestJob,
     uploadBulkIngestData,
@@ -23,9 +28,19 @@ import {
     getBulkIngestUnprocessedResults,
     abortBulkIngestJob,
     executeBulkIngest,
+    abortBulkIngest,
 } from '../../../src/api/bulk-ingest.js';
 import { salesforceRequest } from '../../../src/api/salesforce-request.js';
 import { smartFetch } from '../../../src/api/fetch.js';
+import { executeV1Ingest, abortV1Job } from '../../../src/api/bulk-ingest-v1.js';
+
+const V2_CONFIG = {
+    object: 'Account',
+    operation: 'insert' as const,
+    apiVersion: 'v2' as const,
+    batchSize: 10_000,
+    concurrencyMode: 'Parallel' as const,
+};
 
 describe('createBulkIngestJob', () => {
     beforeEach(() => vi.clearAllMocks());
@@ -197,7 +212,7 @@ describe('abortBulkIngestJob', () => {
 describe('executeBulkIngest', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('runs single job for single chunk', async () => {
+    it('dispatches to v2 for apiVersion v2 — single job lifecycle', async () => {
         const mockJob = {
             id: 'job-001',
             operation: 'insert',
@@ -207,7 +222,6 @@ describe('executeBulkIngest', () => {
         };
         const mockJobComplete = { ...mockJob, state: 'JobComplete', numberRecordsProcessed: 2 };
 
-        // create job
         vi.mocked(salesforceRequest)
             .mockResolvedValueOnce({ json: mockJob }) // createBulkIngestJob
             .mockResolvedValueOnce({ json: { ...mockJob, state: 'UploadComplete' } }) // closeBulkIngestJob
@@ -215,85 +229,77 @@ describe('executeBulkIngest', () => {
 
         vi.mocked(smartFetch)
             .mockResolvedValueOnce({ success: true, status: 201 }) // uploadBulkIngestData
-            .mockResolvedValueOnce({ success: true, status: 200, data: 'Id,sf__Id\n001,001' }) // success results
-            .mockResolvedValueOnce({ success: true, status: 200, data: 'sf__Id,sf__Error\n' }) // failure results
+            .mockResolvedValueOnce({
+                success: true,
+                status: 200,
+                data: 'sf__Id,sf__Created\n001,true',
+            }) // success
+            .mockResolvedValueOnce({ success: true, status: 200, data: 'sf__Id,sf__Error\n' }) // failure
             .mockResolvedValueOnce({ success: true, status: 200, data: '' }); // unprocessed
 
-        const result = await executeBulkIngest({ object: 'Account', operation: 'insert' }, [
-            'Id,Name\n001,Test\n002,Test2',
-        ]);
+        const result = await executeBulkIngest(V2_CONFIG, 'Id,Name\n001,Test\n002,Test2');
 
         expect(result.successCount).toBe(1);
         expect(result.failureCount).toBe(0);
+        // v1 module should NOT have been called
+        expect(executeV1Ingest).not.toHaveBeenCalled();
     });
 
-    it('throws "Import cancelled" when cancelledRef is true before first job', async () => {
+    it('dispatches to v1 for apiVersion v1', async () => {
+        const mockResult = {
+            successCsv: 'sf__Id,sf__Created\n001,true\n',
+            failureCsv: 'sf__Id,sf__Error\n',
+            unprocessedCsv: '',
+            successCount: 1,
+            failureCount: 0,
+            unprocessedCount: 0,
+        };
+        vi.mocked(executeV1Ingest).mockResolvedValue(mockResult);
+
+        const v1Config = { ...V2_CONFIG, apiVersion: 'v1' as const };
+        const result = await executeBulkIngest(v1Config, 'Id,Name\n001,Test');
+
+        expect(result).toEqual(mockResult);
+        expect(executeV1Ingest).toHaveBeenCalledWith(
+            v1Config,
+            'Id,Name\n001,Test',
+            undefined,
+            undefined,
+            undefined
+        );
+        expect(salesforceRequest).not.toHaveBeenCalled();
+    });
+
+    it('throws "Import cancelled" when cancelledRef is true before job', async () => {
         const cancelledRef = { current: true };
 
         await expect(
-            executeBulkIngest(
-                { object: 'Account', operation: 'insert' },
-                ['Id,Name\n001,Test'],
-                undefined,
-                cancelledRef
-            )
+            executeBulkIngest(V2_CONFIG, 'Id,Name\n001,Test', undefined, cancelledRef)
         ).rejects.toThrow('cancelled');
     });
+});
 
-    it('aggregates results across multiple chunks', async () => {
-        const makeJobMock = (id: string) => ({
-            id,
-            operation: 'insert',
-            object: 'Account',
-            state: 'Open',
-            contentUrl: `services/data/v62.0/jobs/ingest/${id}/batches`,
-        });
-        const makeCompleteMock = (id: string) => ({
-            ...makeJobMock(id),
-            state: 'JobComplete',
-            numberRecordsProcessed: 2,
-        });
+describe('abortBulkIngest', () => {
+    beforeEach(() => vi.clearAllMocks());
 
-        // Two jobs
-        vi.mocked(salesforceRequest)
-            .mockResolvedValueOnce({ json: makeJobMock('j1') })
-            .mockResolvedValueOnce({ json: { ...makeJobMock('j1'), state: 'UploadComplete' } })
-            .mockResolvedValueOnce({ json: makeCompleteMock('j1') })
-            .mockResolvedValueOnce({ json: makeJobMock('j2') })
-            .mockResolvedValueOnce({ json: { ...makeJobMock('j2'), state: 'UploadComplete' } })
-            .mockResolvedValueOnce({ json: makeCompleteMock('j2') });
+    it('calls abortBulkIngestJob for v2', async () => {
+        vi.mocked(salesforceRequest).mockResolvedValue({ json: null });
 
-        vi.mocked(smartFetch)
-            // job 1 upload, success, failure, unprocessed
-            .mockResolvedValueOnce({ success: true, status: 201 })
-            .mockResolvedValueOnce({
-                success: true,
-                status: 200,
-                data: 'Id,sf__Id\n001,001\n002,002',
-            })
-            .mockResolvedValueOnce({
-                success: true,
-                status: 200,
-                data: 'sf__Id,sf__Error\n003,err',
-            })
-            .mockResolvedValueOnce({ success: true, status: 200, data: '' })
-            // job 2 upload, success, failure, unprocessed
-            .mockResolvedValueOnce({ success: true, status: 201 })
-            .mockResolvedValueOnce({ success: true, status: 200, data: 'Id,sf__Id\n004,004' })
-            .mockResolvedValueOnce({ success: true, status: 200, data: 'sf__Id,sf__Error\n' })
-            .mockResolvedValueOnce({ success: true, status: 200, data: '' });
+        await abortBulkIngest('v2', 'job-001');
 
-        const result = await executeBulkIngest({ object: 'Account', operation: 'insert' }, [
-            'Id,Name\n001,T\n002,T',
-            'Id,Name\n004,T',
-        ]);
+        expect(salesforceRequest).toHaveBeenCalledWith(
+            expect.stringContaining('job-001'),
+            expect.objectContaining({ body: expect.stringContaining('Aborted') })
+        );
+        expect(abortV1Job).not.toHaveBeenCalled();
+    });
 
-        expect(result.successCount).toBe(3); // 2 + 1
-        expect(result.failureCount).toBe(1); // 1 + 0
+    it('calls abortV1Job for v1', async () => {
+        vi.mocked(abortV1Job).mockResolvedValue(undefined);
 
-        // Second job's CSV should not repeat the header in the concatenated output
-        const successLines = result.successCsv.split('\n').filter(l => l.trim());
-        const headerCount = successLines.filter(l => l.startsWith('Id,')).length;
-        expect(headerCount).toBe(1); // only one header row
+        await abortBulkIngest('v1', 'job-001');
+
+        expect(abortV1Job).toHaveBeenCalledWith('job-001');
+        expect(salesforceRequest).not.toHaveBeenCalled();
     });
 });

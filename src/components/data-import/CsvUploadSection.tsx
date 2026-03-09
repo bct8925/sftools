@@ -4,8 +4,8 @@ import { parseCsvForPreview } from '../../lib/csv-parse';
 import type { ImportCsvMeta } from './useImportState';
 import styles from './DataImportTab.module.css';
 
-// Bulk API v2 limit per job: 150 MB
-const BULK_API_LIMIT_BYTES = 150 * 1024 * 1024;
+// Bulk API v2 limit per job: 100 MB (after base64)
+const BULK_API_LIMIT_BYTES = 100 * 1024 * 1024;
 
 interface CsvUploadSectionProps {
     csv: ImportCsvMeta | null;
@@ -36,11 +36,11 @@ export function CsvUploadSection({
             setSizeWarning(null);
             setParseError(null);
 
-            // Warn (don't block) if file exceeds 150MB
+            // Warn (don't block) if file exceeds 100MB
             if (file.size > BULK_API_LIMIT_BYTES) {
                 const sizeMb = (file.size / (1024 * 1024)).toFixed(0);
                 setSizeWarning(
-                    `File is ${sizeMb}MB. Salesforce Bulk API v2 supports up to 150MB per job. Reduce your batch size so each chunk stays under the limit.`
+                    `File is ${sizeMb}MB. Salesforce Bulk API v2 supports up to 150MB (100MB after base64 conversion) per job. Reduce your batch size so each chunk stays under the limit.`
                 );
             }
 

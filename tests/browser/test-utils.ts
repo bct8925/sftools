@@ -19,6 +19,7 @@ import { SettingsTabPage } from './pages/settings-tab.page';
 import { RestApiTabPage } from './pages/rest-api-tab.page';
 import { EventsTabPage } from './pages/events-tab.page';
 import { DebugLogsTabPage } from './pages/debug-logs-tab.page';
+import { DataImportTabPage } from './pages/data-import-tab.page';
 
 /**
  * Collection of all page objects for a test
@@ -33,6 +34,7 @@ export interface TestPageObjects {
     restApiTab: RestApiTabPage;
     eventsTab: EventsTabPage;
     debugLogsTab: DebugLogsTabPage;
+    dataImportTab: DataImportTabPage;
 }
 
 /**
@@ -68,6 +70,9 @@ export function createPageObjects(page: Page): TestPageObjects {
     const debugLogsTab = new DebugLogsTabPage(page);
     debugLogsTab.setConfig(config);
 
+    const dataImportTab = new DataImportTabPage(page);
+    dataImportTab.setConfig(config);
+
     return {
         queryTab,
         apexTab,
@@ -78,6 +83,7 @@ export function createPageObjects(page: Page): TestPageObjects {
         restApiTab,
         eventsTab,
         debugLogsTab,
+        dataImportTab,
     };
 }
 

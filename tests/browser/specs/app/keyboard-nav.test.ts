@@ -6,7 +6,7 @@
  * - KN-F-002: Alt+2 navigates to Apex tab from home screen
  * - KN-F-003: Alt+0 navigates to home from a feature tab
  * - KN-F-004: Alt+2 switches directly from Query tab to Apex tab
- * - KN-F-005: Alt+8 navigates to Settings tab
+ * - KN-F-005: Alt+9 navigates to Settings tab
  * - KN-F-006: Shortcut is suppressed when an input is focused
  */
 
@@ -97,12 +97,12 @@ describe('Global Keyboard Navigation', () => {
         expect(await page.locator('[data-testid="tab-content-query"]').isVisible()).toBe(false);
     });
 
-    it('KN-F-005: Alt+8 navigates to Settings tab', async () => {
+    it('KN-F-005: Alt+9 navigates to Settings tab', async () => {
         const { page } = getTestContext();
 
         await navigateToExtension();
 
-        await page.keyboard.press('Alt+8');
+        await page.keyboard.press('Alt+9');
 
         await page
             .locator('[data-testid="tab-content-settings"]')

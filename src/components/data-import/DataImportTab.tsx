@@ -2,6 +2,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useProxy } from '../../contexts/ProxyContext';
 import { getGlobalDescribe, getObjectDescribe } from '../../api/salesforce';
 import { executeBulkIngest, abortBulkIngest } from '../../api/bulk-ingest';
 import { reconstructCsv } from '../../lib/csv-parse';
@@ -19,6 +20,7 @@ import styles from './DataImportTab.module.css';
 export function DataImportTab() {
     const { activeConnection } = useConnection();
     const toast = useToast();
+    const { isConnected: isProxyConnected } = useProxy();
 
     const {
         state,
@@ -117,12 +119,15 @@ export function DataImportTab() {
             state.objectName !== null &&
             state.csv !== null &&
             state.jobPhase === 'idle' &&
+            !(state.apiVersion === 'v1' && !isProxyConnected) &&
             validateMappings(state.mappings, state.operation, state.externalIdField ?? undefined)
                 .valid,
         [
             state.objectName,
             state.csv,
             state.jobPhase,
+            state.apiVersion,
+            isProxyConnected,
             state.mappings,
             state.operation,
             state.externalIdField,
@@ -262,6 +267,7 @@ export function DataImportTab() {
                 batchSize={state.batchSize}
                 concurrencyMode={state.concurrencyMode}
                 disabled={state.jobPhase === 'running'}
+                isProxyConnected={isProxyConnected}
                 onApiVersionChange={setApiVersion}
                 onBatchSizeChange={setBatchSize}
                 onConcurrencyModeChange={setConcurrencyMode}

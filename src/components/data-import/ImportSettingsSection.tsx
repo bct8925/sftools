@@ -8,6 +8,7 @@ interface ImportSettingsSectionProps {
     batchSize: number;
     concurrencyMode: BulkConcurrencyMode;
     disabled: boolean;
+    isProxyConnected: boolean;
     onApiVersionChange: (v: BulkApiVersion) => void;
     onBatchSizeChange: (n: number) => void;
     onConcurrencyModeChange: (m: BulkConcurrencyMode) => void;
@@ -21,6 +22,7 @@ export function ImportSettingsSection({
     batchSize,
     concurrencyMode,
     disabled,
+    isProxyConnected,
     onApiVersionChange,
     onBatchSizeChange,
     onConcurrencyModeChange,
@@ -68,6 +70,14 @@ export function ImportSettingsSection({
                         <option value="v1">Bulk API v1</option>
                     </select>
                 </div>
+
+                {apiVersion === 'v1' && !isProxyConnected && (
+                    <div className={styles.warningBanner}>
+                        Bulk API v1 requires the proxy. Salesforce does not support CORS for{' '}
+                        <code>/services/async/</code> endpoints. Connect the proxy in Settings or
+                        switch to Bulk API v2.
+                    </div>
+                )}
 
                 {apiVersion === 'v1' && (
                     <>

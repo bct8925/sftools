@@ -184,6 +184,7 @@
 
 .warningBanner {
     margin-top: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
     padding: var(--spacing-sm);
     background: color-mix(in srgb, var(--icon-warning) 15%, transparent);
     border: 1px solid var(--icon-warning);

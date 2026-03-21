@@ -29,16 +29,17 @@ npm run logs          # Tail proxy logs
 
 ## Installation
 
-The installer creates:
+The installer automatically installs npm dependencies, then creates both files in Chrome's NativeMessagingHosts directory:
 
 1. **Shell wrapper** (`sftools-proxy.sh`) with correct Node.js path
-2. **Native host manifest** at:
-   - macOS: `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.sftools.proxy.json`
-   - Linux: `~/.config/google-chrome/NativeMessagingHosts/com.sftools.proxy.json`
+2. **Native host manifest** (`com.sftools.proxy.json`)
+
+Locations:
+- macOS: `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/`
+- Linux: `~/.config/google-chrome/NativeMessagingHosts/`
 
 ```bash
 cd sftools-proxy
-npm install
 node install.js
 ```
 
@@ -66,8 +67,7 @@ sftools-proxy/
 │       └── router.js         # Channel-to-protocol routing
 ├── proto/
 │   └── pubsub_api.proto      # Salesforce Pub/Sub API proto definition
-├── install.js                # Native host manifest installer
-└── sftools-proxy.sh          # Wrapper script (auto-generated)
+└── install.js                # Native host manifest installer
 ```
 
 ## Architecture

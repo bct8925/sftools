@@ -85,9 +85,8 @@ export function ProxySettings() {
                         Open a terminal in the <code>sftools-proxy</code> folder
                     </li>
                     <li>
-                        Run: <code>npm run install-host</code>
+                        Run: <code>node install.js</code> and follow any steps it outputs
                     </li>
-                    <li>Restart Chrome completely</li>
                     <li>Enable the toggle above</li>
                 </ol>
             </details>

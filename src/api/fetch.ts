@@ -32,6 +32,13 @@ export function setProxyConnected(connected: boolean): void {
     PROXY_CONNECTED = connected;
 }
 
+// --- Content Script State ---
+let CONTENT_SCRIPT_AVAILABLE = false;
+
+export function setContentScriptAvailable(available: boolean): void {
+    CONTENT_SCRIPT_AVAILABLE = available;
+}
+
 /**
  * Helper to handle auth expiration from background responses
  */
@@ -55,6 +62,26 @@ export async function extensionFetch(
         type: 'fetch',
         url,
         options,
+        connectionId: connId,
+    })) as FetchResponse;
+    return handleAuthExpired(response, connId);
+}
+
+/**
+ * Fetch via content script injected into Salesforce tab (same-origin, no CORS)
+ */
+export async function contentScriptFetch(
+    url: string,
+    options: FetchOptions = {},
+    connectionId: string | null = null
+): Promise<FetchResponse> {
+    const connId = connectionId || getActiveConnectionId();
+    const response = (await chrome.runtime.sendMessage({
+        type: 'contentScriptFetch',
+        url,
+        method: options.method,
+        headers: options.headers,
+        body: options.body,
         connectionId: connId,
     })) as FetchResponse;
     return handleAuthExpired(response, connId);
@@ -127,7 +154,7 @@ async function directFetch(url: string, options: FetchOptions = {}): Promise<Fet
 }
 
 /**
- * Smart fetch: uses proxy if available, falls back to extensionFetch
+ * Smart fetch: uses proxy if available, then content script, falls back to extensionFetch
  */
 export function smartFetch(url: string, options: FetchOptions = {}): Promise<FetchResponse> {
     // In headless test mode, use direct fetch
@@ -137,6 +164,9 @@ export function smartFetch(url: string, options: FetchOptions = {}): Promise<Fet
 
     if (PROXY_CONNECTED) {
         return proxyFetch(url, options);
+    }
+    if (CONTENT_SCRIPT_AVAILABLE) {
+        return contentScriptFetch(url, options);
     }
     return extensionFetch(url, options);
 }

@@ -14,6 +14,11 @@ import {
 } from './native-messaging';
 import { exchangeCodeForTokens, refreshAccessToken, updateConnectionToken } from './auth';
 import { debugInfo } from './debug';
+import {
+    getActiveSalesforceTabId,
+    injectContentScript,
+    sendFetchToContentScript,
+} from './content-script-manager';
 
 // ============================================================================
 // Message Types
@@ -93,6 +98,24 @@ interface GetSchemaRequest {
     tenantId: string;
 }
 
+interface ContentScriptFetchRequest {
+    type: 'contentScriptFetch';
+    url: string;
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    connectionId?: string;
+}
+
+interface InjectContentScriptRequest {
+    type: 'injectContentScript';
+    tabId: number;
+}
+
+interface GetContentScriptStatusRequest {
+    type: 'getContentScriptStatus';
+}
+
 type BackgroundRequest =
     | FetchRequest
     | ConnectProxyRequest
@@ -104,7 +127,10 @@ type BackgroundRequest =
     | SubscribeRequest
     | UnsubscribeRequest
     | GetTopicRequest
-    | GetSchemaRequest;
+    | GetSchemaRequest
+    | ContentScriptFetchRequest
+    | InjectContentScriptRequest
+    | GetContentScriptStatusRequest;
 
 interface FetchResponse {
     success: boolean;
@@ -144,6 +170,18 @@ interface ProxyResponse {
 chrome.action.onClicked.addListener(async (tab: chrome.tabs.Tab) => {
     if (tab.id !== undefined) {
         await chrome.sidePanel.open({ tabId: tab.id });
+
+        // Attempt content script injection while activeTab grant is fresh
+        const { contentScriptEnabled } = await chrome.storage.local.get(['contentScriptEnabled']);
+        if (contentScriptEnabled) {
+            const injected = await injectContentScript(tab.id);
+            await chrome.storage.local.set({
+                contentScriptInjected: injected,
+                contentScriptTabId: injected ? tab.id : null,
+                // Timestamp forces a storage change event even if the result is the same
+                contentScriptAttempt: Date.now(),
+            });
+        }
     }
 });
 
@@ -446,6 +484,40 @@ const handlers: Record<string, (request: BackgroundRequest) => Promise<ProxyResp
             tenantId: req.tenantId,
         });
     }),
+
+    contentScriptFetch: async (request: BackgroundRequest) => {
+        const req = request as ContentScriptFetchRequest;
+        const tabId = await getActiveSalesforceTabId();
+        if (!tabId) {
+            return { success: false, status: 0, error: 'No active Salesforce tab found' };
+        }
+        return fetchWithRetry(
+            async headers => {
+                const result = await sendFetchToContentScript(
+                    tabId,
+                    req.url,
+                    req.method,
+                    headers,
+                    req.body
+                );
+                return result as unknown as ProxyResponse;
+            },
+            response => Promise.resolve(response as unknown as FetchResponse),
+            req.headers,
+            req.connectionId
+        );
+    },
+
+    injectContentScript: async (request: BackgroundRequest) => {
+        const req = request as InjectContentScriptRequest;
+        const injected = await injectContentScript(req.tabId);
+        return { success: injected };
+    },
+
+    getContentScriptStatus: async () => {
+        const tabId = await getActiveSalesforceTabId();
+        return { success: true, tabId, hasTab: tabId !== null };
+    },
 };
 
 chrome.runtime.onMessage.addListener(

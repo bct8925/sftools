@@ -40,6 +40,7 @@ export function Toast({ id, message, type, autoClose, onDismiss }: ToastProps) {
         type === 'success' ? styles.toastSuccess : '',
         type === 'error' ? styles.toastError : '',
         type === 'loading' ? styles.toastLoading : '',
+        type === 'info' ? styles.toastInfo : '',
         isDismissing ? styles.toastDismissing : '',
     ]
         .filter(Boolean)
@@ -102,6 +103,16 @@ function renderIcon(type: StatusType) {
                     strokeWidth="1.5"
                     strokeLinecap="round"
                 />
+            </svg>
+        );
+    }
+
+    if (type === 'info') {
+        return (
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <circle cx="9" cy="9" r="9" fill="var(--primary-color)" opacity="0.15" />
+                <circle cx="9" cy="5.5" r="1" fill="var(--primary-color)" />
+                <rect x="8" y="8" width="2" height="5" rx="1" fill="var(--primary-color)" />
             </svg>
         );
     }

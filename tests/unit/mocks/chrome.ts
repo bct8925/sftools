@@ -175,6 +175,24 @@ export function createChromeMock(): ChromeMock {
             create: vi.fn().mockResolvedValue({ id: 1 }),
             query: vi.fn().mockResolvedValue([]),
             update: vi.fn().mockResolvedValue({}),
+            sendMessage: vi.fn().mockResolvedValue({}),
+            onRemoved: {
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+            },
+            onUpdated: {
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+            },
+        },
+
+        permissions: {
+            request: vi.fn().mockResolvedValue(true),
+            contains: vi.fn().mockResolvedValue(false),
+        },
+
+        scripting: {
+            executeScript: vi.fn().mockResolvedValue([]),
         },
 
         contextMenus: {

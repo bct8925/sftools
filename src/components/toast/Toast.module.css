@@ -45,6 +45,10 @@
     border-left-color: var(--primary-color);
 }
 
+.toastInfo {
+    border-left-color: var(--primary-color);
+}
+
 /* Icon */
 .icon {
     flex-shrink: 0;
@@ -112,6 +116,10 @@
 }
 
 .toastLoading .progress {
+    background: var(--primary-color);
+}
+
+.toastInfo .progress {
     background: var(--primary-color);
 }
 

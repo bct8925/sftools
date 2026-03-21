@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { ConnectionList } from './ConnectionList';
 import { ThemeSettings } from './ThemeSettings';
 import { ProxySettings } from './ProxySettings';
+import { ContentScriptSettings } from './ContentScriptSettings';
 import { CacheSettings } from './CacheSettings';
 import { DataManagement } from './DataManagement';
 import { EditConnectionModal } from './EditConnectionModal';
@@ -58,9 +59,25 @@ export function SettingsTab() {
 
             <div className="card">
                 <div className="card-header">
+                    <div className={`card-header-icon ${styles.headerIconContentScript}`}>S</div>
+                    <h2 className="card-collapse-title" onClick={() => toggleCard('contentScript')}>
+                        Content Script
+                    </h2>
+                    <CollapseChevron
+                        isOpen={!collapsed['contentScript']}
+                        onClick={() => toggleCard('contentScript')}
+                    />
+                </div>
+                <div className="card-body" hidden={collapsed['contentScript']}>
+                    <ContentScriptSettings />
+                </div>
+            </div>
+
+            <div className="card">
+                <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconProxy}`}>P</div>
                     <h2 className="card-collapse-title" onClick={() => toggleCard('proxy')}>
-                        Local Proxy
+                        Local Proxy (Advanced)
                     </h2>
                     <CollapseChevron
                         isOpen={!collapsed['proxy']}

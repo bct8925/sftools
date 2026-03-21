@@ -22,9 +22,9 @@
         "storage",
         "unlimitedStorage",
         "contextMenus",
-        "notifications",
-        "nativeMessaging"
+        "notifications"
     ],
+    "optional_permissions": ["scripting", "nativeMessaging"],
     "side_panel": {
         "default_path": "dist/pages/app/app.html"
     },
@@ -34,9 +34,7 @@
     },
     "web_accessible_resources": [
         {
-            "resources": [
-                "dist/*"
-            ],
+            "resources": ["dist/*"],
             "matches": [
                 "*://*.salesforce.com/*",
                 "*://*.force.com/*",

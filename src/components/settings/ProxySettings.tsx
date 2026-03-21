@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useProxy } from '../../contexts/ProxyContext';
+import { requestPermission } from '../../lib/permissions';
 import styles from './ProxySettings.module.css';
 
 export function ProxySettings() {
@@ -13,6 +14,11 @@ export function ProxySettings() {
     }, []);
 
     const handleToggle = async (enabled: boolean) => {
+        if (enabled) {
+            const granted = await requestPermission('nativeMessaging');
+            if (!granted) return;
+        }
+
         setProxyEnabled(enabled);
         await chrome.storage.local.set({ proxyEnabled: enabled });
 

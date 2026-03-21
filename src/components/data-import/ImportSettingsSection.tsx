@@ -73,9 +73,9 @@ export function ImportSettingsSection({
 
                 {apiVersion === 'v1' && !isProxyConnected && (
                     <div className={styles.warningBanner}>
-                        Bulk API v1 requires the proxy. Salesforce does not support CORS for{' '}
-                        <code>/services/async/</code> endpoints. Connect the proxy in Settings or
-                        switch to Bulk API v2.
+                        Bulk API v1 requires the content script or proxy. Salesforce does not
+                        support CORS for <code>/services/async/</code> endpoints. Enable the content
+                        script or proxy in Settings, or switch to Bulk API v2.
                     </div>
                 )}
 

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { ConnectionProvider } from '../contexts/ConnectionContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { ProxyProvider } from '../contexts/ProxyContext';
+import { ContentScriptProvider } from '../contexts/ContentScriptContext';
 import { ToastProvider } from '../contexts/ToastContext';
 
 interface AppProvidersProps {
@@ -17,7 +18,9 @@ export function AppProviders({ children }: AppProvidersProps) {
         <ConnectionProvider>
             <ThemeProvider>
                 <ProxyProvider>
-                    <ToastProvider>{children}</ToastProvider>
+                    <ToastProvider>
+                        <ContentScriptProvider>{children}</ContentScriptProvider>
+                    </ToastProvider>
                 </ProxyProvider>
             </ThemeProvider>
         </ConnectionProvider>

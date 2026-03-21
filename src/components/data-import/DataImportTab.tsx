@@ -3,6 +3,7 @@ import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useProxy } from '../../contexts/ProxyContext';
+import { useContentScript } from '../../contexts/ContentScriptContext';
 import { getGlobalDescribe, getObjectDescribe } from '../../api/salesforce';
 import { executeBulkIngest, abortBulkIngest } from '../../api/bulk-ingest';
 import { reconstructCsv } from '../../lib/csv-parse';
@@ -21,6 +22,8 @@ export function DataImportTab() {
     const { activeConnection } = useConnection();
     const toast = useToast();
     const { isConnected: isProxyConnected } = useProxy();
+    const { isActive: isContentScriptActive } = useContentScript();
+    const hasCorsWorkaround = isProxyConnected || isContentScriptActive;
 
     const {
         state,
@@ -119,7 +122,7 @@ export function DataImportTab() {
             state.objectName !== null &&
             state.csv !== null &&
             state.jobPhase === 'idle' &&
-            !(state.apiVersion === 'v1' && !isProxyConnected) &&
+            !(state.apiVersion === 'v1' && !hasCorsWorkaround) &&
             validateMappings(state.mappings, state.operation, state.externalIdField ?? undefined)
                 .valid,
         [
@@ -127,7 +130,7 @@ export function DataImportTab() {
             state.csv,
             state.jobPhase,
             state.apiVersion,
-            isProxyConnected,
+            hasCorsWorkaround,
             state.mappings,
             state.operation,
             state.externalIdField,
@@ -267,7 +270,7 @@ export function DataImportTab() {
                 batchSize={state.batchSize}
                 concurrencyMode={state.concurrencyMode}
                 disabled={state.jobPhase === 'running'}
-                isProxyConnected={isProxyConnected}
+                isProxyConnected={hasCorsWorkaround}
                 onApiVersionChange={setApiVersion}
                 onBatchSizeChange={setBatchSize}
                 onConcurrencyModeChange={setConcurrencyMode}

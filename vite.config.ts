@@ -30,12 +30,18 @@ export default defineConfig({
                 record: resolve(__dirname, 'src/pages/record/record.html'),
                 // Background service worker
                 background: resolve(__dirname, 'src/background/background.ts'),
+                // Content script (injected into Salesforce tabs for CORS bypass)
+                'content-fetch': resolve(__dirname, 'src/content-script/content-fetch.ts'),
             },
             output: {
                 entryFileNames: chunkInfo => {
                     // Keep background.js at root level for service worker
                     if (chunkInfo.name === 'background') {
                         return 'background.js';
+                    }
+                    // Keep content-fetch.js at root level for injection
+                    if (chunkInfo.name === 'content-fetch') {
+                        return 'content-fetch.js';
                     }
                     // Output JS files to pages/ to match HTML structure
                     return 'pages/[name]/[name].js';

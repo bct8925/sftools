@@ -21,6 +21,10 @@
     background-color: var(--icon-query);
 }
 
+.headerIconContentScript {
+    background-color: var(--icon-schema);
+}
+
 .headerIconCache {
     background-color: var(--icon-warning);
 }

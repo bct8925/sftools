@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Toast } from '../components/toast/Toast';
 import styles from '../components/toast/Toast.module.css';
 
-export type StatusType = 'loading' | 'success' | 'error';
+export type StatusType = 'loading' | 'success' | 'error' | 'info';
 
 interface ToastItem {
     id: string;

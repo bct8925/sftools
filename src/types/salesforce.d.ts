@@ -134,6 +134,47 @@ export interface RecordTypeInfo {
     master: boolean;
 }
 
+// Bulk Ingest API v2
+export type BulkIngestOperation = 'insert' | 'update' | 'upsert' | 'delete';
+
+export type BulkIngestJobState =
+    | 'Open'
+    | 'UploadComplete'
+    | 'InProgress'
+    | 'JobComplete'
+    | 'Failed'
+    | 'Aborted';
+
+export interface BulkIngestJob {
+    id: string;
+    operation: BulkIngestOperation;
+    object: string;
+    state: BulkIngestJobState;
+    contentUrl?: string;
+    externalIdFieldName?: string;
+    numberRecordsProcessed?: number;
+    numberRecordsFailed?: number;
+    errorMessage?: string;
+    totalProcessingTime?: number;
+}
+
+export interface BulkIngestResults {
+    successCsv: string;
+    failureCsv: string;
+    unprocessedCsv: string;
+    successCount: number;
+    failureCount: number;
+    unprocessedCount: number;
+}
+
+export interface ColumnMapping {
+    csvHeader: string;
+    csvIndex: number;
+    fieldApiName: string | null;
+    included: boolean;
+    mappingSource: 'api-name' | 'label' | 'manual' | 'none';
+}
+
 // Apex Execution
 export interface ApexExecutionResult {
     success: boolean;

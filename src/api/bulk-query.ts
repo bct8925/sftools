@@ -1,8 +1,6 @@
 // Bulk Query API v2 - Functions for large data exports
 
-import { getInstanceUrl, getAccessToken } from '../auth/auth';
 import { API_VERSION } from './constants';
-import { smartFetch } from './fetch';
 import { salesforceRequest } from './salesforce-request';
 
 export interface BulkQueryJob {
@@ -64,7 +62,6 @@ export async function getBulkQueryJobStatus(jobId: string): Promise<BulkQueryJob
  * locators in the JSON response body (works through CORS unlike Sforce-Locator header).
  */
 async function getAllResultPageUrls(jobId: string): Promise<string[]> {
-    const instanceUrl = getInstanceUrl();
     const urls: string[] = [];
     let nextUrl: string | undefined =
         `/services/data/v${API_VERSION}/jobs/query/${jobId}/resultPages`;
@@ -77,7 +74,7 @@ async function getAllResultPageUrls(jobId: string): Promise<string[]> {
         }
 
         for (const chunk of response.json.resultChunks) {
-            urls.push(`${instanceUrl}/services/data/v${API_VERSION}${chunk.resultLink}`);
+            urls.push(`/services/data/v${API_VERSION}${chunk.resultLink}`);
         }
 
         // nextRecordsUrl omits the /services/data/vXX.X prefix
@@ -104,20 +101,15 @@ export async function getBulkQueryResults(
         return '';
     }
 
-    const headers = {
-        Authorization: `Bearer ${getAccessToken()}`,
-        Accept: 'text/csv',
-    };
-
     // Fetch all CSV pages in parallel, reporting progress as each completes in order.
     // Each slot resolves independently; we await them in index order so progress
     // is reported incrementally as the next sequential chunk becomes available.
     const fetchPromises = resultUrls.map(async url => {
-        const response = await smartFetch(url, { headers });
-        if (!response.success) {
-            throw new Error(response.error ?? 'Failed to fetch results');
-        }
-        return response.data ?? '';
+        const response = await salesforceRequest(url, {
+            headers: { Accept: 'text/csv' },
+            responseType: 'text',
+        });
+        return response.text ?? '';
     });
 
     const chunks: string[] = [];

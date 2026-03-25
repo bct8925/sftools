@@ -14,18 +14,18 @@ export interface ShortcutBinding {
 /**
  * Global keyboard shortcut bindings.
  * Feature tabs are derived from FEATURES to stay in sync with TabNavigation.
- * Bindings: Alt+1–7 for features, Alt+8 for settings, Alt+0 for home, Alt+O to open org.
+ * Bindings: Alt+1–8 for features, Alt+9 for settings, Alt+0 for home, Alt+O to open org.
  */
 export const SHORTCUT_BINDINGS: ShortcutBinding[] = [
-    // Feature tabs: Alt+1 through Alt+7 (order matches FEATURES array)
+    // Feature tabs: Alt+1 through Alt+8 (order matches FEATURES array)
     ...FEATURES.map((feature, index) => ({
         code: `Digit${index + 1}`,
         target: feature.id as ShortcutTarget,
         requiresAuth: feature.requiresAuth,
         requiresProxy: feature.requiresProxy,
     })),
-    // Settings: Alt+8
-    { code: 'Digit8', target: 'settings', requiresAuth: false, requiresProxy: false },
+    // Settings: Alt+9
+    { code: 'Digit9', target: 'settings', requiresAuth: false, requiresProxy: false },
     // Home: Alt+0
     { code: 'Digit0', target: 'home', requiresAuth: false, requiresProxy: false },
     // Open Org: Alt+O

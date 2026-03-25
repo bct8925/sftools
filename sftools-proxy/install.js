@@ -62,11 +62,26 @@ function getHostsDirectory() {
 
     switch (platform) {
         case 'darwin':
-            return path.join(home, 'Library', 'Application Support', 'Google', 'Chrome', 'NativeMessagingHosts');
+            return path.join(
+                home,
+                'Library',
+                'Application Support',
+                'Google',
+                'Chrome',
+                'NativeMessagingHosts'
+            );
         case 'linux':
             return path.join(home, '.config', 'google-chrome', 'NativeMessagingHosts');
         case 'win32':
-            return path.join(home, 'AppData', 'Local', 'Google', 'Chrome', 'User Data', 'NativeMessagingHosts');
+            return path.join(
+                home,
+                'AppData',
+                'Local',
+                'Google',
+                'Chrome',
+                'User Data',
+                'NativeMessagingHosts'
+            );
         default:
             throw new Error(`Unsupported platform: ${platform}`);
     }
@@ -77,18 +92,16 @@ function getHostsDirectory() {
  */
 function createManifest(extensionId, wrapperPath) {
     // Use shell wrapper on Unix, direct node script on Windows
-    const scriptPath = os.platform() === 'win32'
-        ? path.resolve(__dirname, 'src', 'index.js')
-        : wrapperPath;
+    const scriptPath =
+        os.platform() === 'win32' ? path.resolve(__dirname, 'src', 'index.js') : wrapperPath;
 
     return {
         name: HOST_NAME,
-        description: 'sftools Local Proxy - enables gRPC and bypasses CORS for Salesforce API calls',
+        description:
+            'sftools Local Proxy - enables gRPC and bypasses CORS for Salesforce API calls',
         path: scriptPath,
         type: 'stdio',
-        allowed_origins: [
-            `chrome-extension://${extensionId}/`
-        ]
+        allowed_origins: [`chrome-extension://${extensionId}/`],
     };
 }
 
@@ -108,11 +121,7 @@ function findNodePath() {
     }
 
     // Common locations
-    const commonPaths = [
-        '/opt/homebrew/bin/node',
-        '/usr/local/bin/node',
-        '/usr/bin/node'
-    ];
+    const commonPaths = ['/opt/homebrew/bin/node', '/usr/local/bin/node', '/usr/bin/node'];
 
     for (const p of commonPaths) {
         if (fs.existsSync(p)) {
@@ -124,19 +133,13 @@ function findNodePath() {
 }
 
 /**
- * Create the shell wrapper script with correct node path
- * Uses ~/bin to avoid macOS security restrictions on scripts in Documents/Downloads
+ * Create the shell wrapper script with correct node path.
+ * Installed alongside the native host manifest in Chrome's NativeMessagingHosts
+ * directory so Chrome can always execute it without extra permissions.
  */
-function createWrapperScript(nodePath) {
-    const userBin = path.join(os.homedir(), 'bin');
-    const wrapperPath = path.join(userBin, 'sftools-proxy');
+function createWrapperScript(nodePath, hostsDir) {
+    const wrapperPath = path.join(hostsDir, 'sftools-proxy.sh');
     const scriptDir = path.resolve(__dirname);
-
-    // Create ~/bin if it doesn't exist
-    if (!fs.existsSync(userBin)) {
-        fs.mkdirSync(userBin, { recursive: true });
-        console.log(`Created directory: ${userBin}`);
-    }
 
     const content = `#!/bin/bash
 # Native messaging host wrapper for sftools-proxy
@@ -152,13 +155,6 @@ exec "$NODE_PATH" "$SCRIPT_DIR/src/index.js" 2>> /tmp/sftools-proxy.log
     fs.writeFileSync(wrapperPath, content);
     fs.chmodSync(wrapperPath, '755');
 
-    // Clear any quarantine attributes
-    try {
-        require('child_process').execSync(`xattr -c "${wrapperPath}"`, { stdio: 'ignore' });
-    } catch (err) {
-        // Ignore if xattr fails
-    }
-
     return wrapperPath;
 }
 
@@ -169,22 +165,22 @@ function installManifest(extensionId) {
     const hostsDir = getHostsDirectory();
     const manifestPath = path.join(hostsDir, `${HOST_NAME}.json`);
 
+    // Create hosts directory if it doesn't exist (needed before writing wrapper or manifest)
+    if (!fs.existsSync(hostsDir)) {
+        fs.mkdirSync(hostsDir, { recursive: true });
+        console.log(`Created directory: ${hostsDir}`);
+    }
+
     // On Unix, create wrapper script with detected node path
     let wrapperPath;
     if (os.platform() !== 'win32') {
         const nodePath = findNodePath();
         console.log(`Detected Node.js: ${nodePath}`);
-        wrapperPath = createWrapperScript(nodePath);
+        wrapperPath = createWrapperScript(nodePath, hostsDir);
         console.log(`Wrapper script: ${wrapperPath}`);
     }
 
     const manifest = createManifest(extensionId, wrapperPath);
-
-    // Create hosts directory if it doesn't exist
-    if (!fs.existsSync(hostsDir)) {
-        fs.mkdirSync(hostsDir, { recursive: true });
-        console.log(`Created directory: ${hostsDir}`);
-    }
 
     // Write manifest file
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
@@ -200,7 +196,9 @@ function installManifest(extensionId) {
     if (os.platform() === 'win32') {
         console.log('\n⚠️  Windows requires a registry entry for native messaging.');
         console.log('Run this command in an elevated PowerShell:');
-        console.log(`\n  reg add "HKCU\\Software\\Google\\Chrome\\NativeMessagingHosts\\${HOST_NAME}" /ve /t REG_SZ /d "${manifestPath}" /f\n`);
+        console.log(
+            `\n  reg add "HKCU\\Software\\Google\\Chrome\\NativeMessagingHosts\\${HOST_NAME}" /ve /t REG_SZ /d "${manifestPath}" /f\n`
+        );
     }
 
     return manifestPath;
@@ -212,17 +210,30 @@ function installManifest(extensionId) {
 function uninstallManifest() {
     const hostsDir = getHostsDirectory();
     const manifestPath = path.join(hostsDir, `${HOST_NAME}.json`);
+    const wrapperPath = path.join(hostsDir, 'sftools-proxy.sh');
+    const manifestExists = fs.existsSync(manifestPath);
+    const wrapperExists = fs.existsSync(wrapperPath);
 
-    if (fs.existsSync(manifestPath)) {
+    if (!manifestExists && !wrapperExists) {
+        console.log('Nothing to uninstall');
+        return;
+    }
+
+    if (manifestExists) {
         fs.unlinkSync(manifestPath);
         console.log(`Removed: ${manifestPath}`);
+    }
 
-        if (os.platform() === 'win32') {
-            console.log('\nTo complete uninstallation on Windows, run:');
-            console.log(`\n  reg delete "HKCU\\Software\\Google\\Chrome\\NativeMessagingHosts\\${HOST_NAME}" /f\n`);
-        }
-    } else {
-        console.log('Manifest not found - nothing to uninstall');
+    if (wrapperExists) {
+        fs.unlinkSync(wrapperPath);
+        console.log(`Removed: ${wrapperPath}`);
+    }
+
+    if (os.platform() === 'win32') {
+        console.log('\nTo complete uninstallation on Windows, run:');
+        console.log(
+            `\n  reg delete "HKCU\\Software\\Google\\Chrome\\NativeMessagingHosts\\${HOST_NAME}" /f\n`
+        );
     }
 }
 
@@ -232,15 +243,25 @@ function uninstallManifest() {
 function prompt(question) {
     const rl = readline.createInterface({
         input: process.stdin,
-        output: process.stdout
+        output: process.stdout,
     });
 
-    return new Promise((resolve) => {
-        rl.question(question, (answer) => {
+    return new Promise(resolve => {
+        rl.question(question, answer => {
             rl.close();
             resolve(answer.trim());
         });
     });
+}
+
+/**
+ * Install npm dependencies
+ */
+function installDependencies() {
+    const { execSync } = require('child_process');
+    console.log('Installing dependencies...');
+    execSync('npm install', { cwd: __dirname, stdio: 'inherit' });
+    console.log('Dependencies installed.\n');
 }
 
 /**
@@ -256,6 +277,9 @@ async function main() {
     }
 
     console.log('sftools Native Host Installer\n');
+
+    // Install dependencies first
+    installDependencies();
 
     // Try to get extension ID
     let extensionId = args[0];
@@ -301,7 +325,7 @@ async function main() {
     console.log('3. Click "Connect to Proxy" to verify the connection');
 }
 
-main().catch((err) => {
+main().catch(err => {
     console.error('Installation failed:', err.message);
     process.exit(1);
 });

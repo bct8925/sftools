@@ -4,15 +4,6 @@ vi.mock('../../../src/api/salesforce-request.js', () => ({
     salesforceRequest: vi.fn(),
 }));
 
-vi.mock('../../../src/api/fetch.js', () => ({
-    smartFetch: vi.fn(),
-}));
-
-vi.mock('../../../src/auth/auth.js', () => ({
-    getAccessToken: vi.fn().mockReturnValue('test-token'),
-    getInstanceUrl: vi.fn().mockReturnValue('https://test.salesforce.com'),
-}));
-
 import {
     createBulkQueryJob,
     getBulkQueryJobStatus,
@@ -21,7 +12,6 @@ import {
     executeBulkQueryExport,
 } from '../../../src/api/bulk-query.js';
 import { salesforceRequest } from '../../../src/api/salesforce-request.js';
-import { smartFetch } from '../../../src/api/fetch.js';
 
 describe('bulk-query', () => {
     beforeEach(() => {
@@ -110,26 +100,26 @@ describe('bulk-query', () => {
         }
 
         it('returns CSV for single page with single result URL', async () => {
-            vi.mocked(salesforceRequest).mockResolvedValueOnce(
-                mockResultPages(['/jobs/query/job-123/results?locator=abc'], true)
-            );
-
-            vi.mocked(smartFetch).mockResolvedValueOnce({
-                success: true,
-                status: 200,
-                data: 'Id,Name\n001abc,Test',
-            });
+            vi.mocked(salesforceRequest)
+                .mockResolvedValueOnce(
+                    mockResultPages(['/jobs/query/job-123/results?locator=abc'], true)
+                )
+                .mockResolvedValueOnce({ json: null, text: 'Id,Name\n001abc,Test' });
 
             const result = await getBulkQueryResults('job-123');
 
             expect(result).toBe('Id,Name\n001abc,Test');
-            expect(salesforceRequest).toHaveBeenCalledTimes(1);
-            expect(salesforceRequest).toHaveBeenCalledWith(expect.stringContaining('/resultPages'));
-            expect(smartFetch).toHaveBeenCalledTimes(1);
-            expect(smartFetch).toHaveBeenCalledWith(
+            expect(salesforceRequest).toHaveBeenCalledTimes(2);
+            expect(salesforceRequest).toHaveBeenNthCalledWith(
+                1,
+                expect.stringContaining('/resultPages')
+            );
+            expect(salesforceRequest).toHaveBeenNthCalledWith(
+                2,
                 expect.stringContaining('/results?locator=abc'),
                 expect.objectContaining({
                     headers: expect.objectContaining({ Accept: 'text/csv' }),
+                    responseType: 'text',
                 })
             );
         });
@@ -150,17 +140,16 @@ describe('bulk-query', () => {
                 // Second /resultPages call returns 1 chunk, done
                 .mockResolvedValueOnce(
                     mockResultPages(['/jobs/query/job-123/results?locator=ghi'], true)
-                );
-
-            vi.mocked(smartFetch)
-                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001a\n' })
-                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001b\n' })
-                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001c' });
+                )
+                // CSV fetches for all 3 result URLs
+                .mockResolvedValueOnce({ json: null, text: 'Id\n001a\n' })
+                .mockResolvedValueOnce({ json: null, text: 'Id\n001b\n' })
+                .mockResolvedValueOnce({ json: null, text: 'Id\n001c' });
 
             const result = await getBulkQueryResults('job-123');
 
             expect(result).toBe('Id\n001a\n001b\n001c');
-            expect(salesforceRequest).toHaveBeenCalledTimes(2);
+            expect(salesforceRequest).toHaveBeenCalledTimes(5);
             // nextRecordsUrl gets prefixed with /services/data/v62.0
             expect(salesforceRequest).toHaveBeenNthCalledWith(
                 2,
@@ -168,7 +157,6 @@ describe('bulk-query', () => {
                     '/services/data/v62.0/jobs/query/job-123/resultPages?locator=next1'
                 )
             );
-            expect(smartFetch).toHaveBeenCalledTimes(3);
         });
 
         it('returns empty string when resultChunks is empty', async () => {
@@ -177,7 +165,7 @@ describe('bulk-query', () => {
             const result = await getBulkQueryResults('job-123');
 
             expect(result).toBe('');
-            expect(smartFetch).not.toHaveBeenCalled();
+            expect(salesforceRequest).toHaveBeenCalledTimes(1);
         });
 
         it('throws when response has unexpected shape (e.g. 404)', async () => {
@@ -193,41 +181,35 @@ describe('bulk-query', () => {
         });
 
         it('throws when a CSV fetch fails', async () => {
-            vi.mocked(salesforceRequest).mockResolvedValueOnce(
-                mockResultPages(
-                    [
-                        '/jobs/query/job-123/results?locator=abc',
-                        '/jobs/query/job-123/results?locator=def',
-                    ],
-                    true
+            vi.mocked(salesforceRequest)
+                .mockResolvedValueOnce(
+                    mockResultPages(
+                        [
+                            '/jobs/query/job-123/results?locator=abc',
+                            '/jobs/query/job-123/results?locator=def',
+                        ],
+                        true
+                    )
                 )
-            );
-
-            vi.mocked(smartFetch)
-                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001a' })
-                .mockResolvedValueOnce({
-                    success: false,
-                    status: 500,
-                    error: 'Server error',
-                });
+                .mockResolvedValueOnce({ json: null, text: 'Id\n001a' })
+                .mockRejectedValueOnce(new Error('Server error'));
 
             await expect(getBulkQueryResults('job-123')).rejects.toThrow('Server error');
         });
 
         it('calls onChunkProgress with running row totals', async () => {
-            vi.mocked(salesforceRequest).mockResolvedValueOnce(
-                mockResultPages(
-                    [
-                        '/jobs/query/job-123/results?locator=abc',
-                        '/jobs/query/job-123/results?locator=def',
-                    ],
-                    true
+            vi.mocked(salesforceRequest)
+                .mockResolvedValueOnce(
+                    mockResultPages(
+                        [
+                            '/jobs/query/job-123/results?locator=abc',
+                            '/jobs/query/job-123/results?locator=def',
+                        ],
+                        true
+                    )
                 )
-            );
-
-            vi.mocked(smartFetch)
-                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001a' })
-                .mockResolvedValueOnce({ success: true, status: 200, data: 'Id\n001b' });
+                .mockResolvedValueOnce({ json: null, text: 'Id\n001a' })
+                .mockResolvedValueOnce({ json: null, text: 'Id\n001b' });
 
             const onChunkProgress = vi.fn();
             await getBulkQueryResults('job-123', onChunkProgress);
@@ -238,44 +220,34 @@ describe('bulk-query', () => {
         });
 
         it('preserves result order regardless of fetch completion order', async () => {
-            vi.mocked(salesforceRequest).mockResolvedValueOnce(
-                mockResultPages(
-                    [
-                        '/jobs/query/job-123/results?locator=first',
-                        '/jobs/query/job-123/results?locator=second',
-                        '/jobs/query/job-123/results?locator=third',
-                    ],
-                    true
+            vi.mocked(salesforceRequest)
+                .mockResolvedValueOnce(
+                    mockResultPages(
+                        [
+                            '/jobs/query/job-123/results?locator=first',
+                            '/jobs/query/job-123/results?locator=second',
+                            '/jobs/query/job-123/results?locator=third',
+                        ],
+                        true
+                    )
                 )
-            );
-
-            // Simulate out-of-order completion using delays
-            vi.mocked(smartFetch)
+                // Simulate out-of-order completion using delays
                 .mockImplementationOnce(
                     () =>
                         new Promise(resolve =>
-                            setTimeout(
-                                () => resolve({ success: true, status: 200, data: 'Id\n001a\n' }),
-                                30
-                            )
+                            setTimeout(() => resolve({ json: null, text: 'Id\n001a\n' }), 30)
                         )
                 )
                 .mockImplementationOnce(
                     () =>
                         new Promise(resolve =>
-                            setTimeout(
-                                () => resolve({ success: true, status: 200, data: 'Id\n001b\n' }),
-                                10
-                            )
+                            setTimeout(() => resolve({ json: null, text: 'Id\n001b\n' }), 10)
                         )
                 )
                 .mockImplementationOnce(
                     () =>
                         new Promise(resolve =>
-                            setTimeout(
-                                () => resolve({ success: true, status: 200, data: 'Id\n001c' }),
-                                20
-                            )
+                            setTimeout(() => resolve({ json: null, text: 'Id\n001c' }), 20)
                         )
                 );
 
@@ -311,13 +283,9 @@ describe('bulk-query', () => {
                         ],
                         done: true,
                     },
-                });
-
-            vi.mocked(smartFetch).mockResolvedValue({
-                success: true,
-                data: 'Id\n001xx',
-                status: 200,
-            });
+                })
+                // CSV fetch
+                .mockResolvedValueOnce({ json: null, text: 'Id\n001xx' });
 
             const promise = executeBulkQueryExport('SELECT Id FROM Account');
 
@@ -374,13 +342,9 @@ describe('bulk-query', () => {
                         ],
                         done: true,
                     },
-                });
-
-            vi.mocked(smartFetch).mockResolvedValue({
-                success: true,
-                data: 'csv',
-                status: 200,
-            });
+                })
+                // CSV fetch
+                .mockResolvedValueOnce({ json: null, text: 'csv' });
 
             const onProgress = vi.fn();
             const promise = executeBulkQueryExport('SELECT Id FROM Account', onProgress);

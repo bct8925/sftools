@@ -73,11 +73,11 @@ describe('useKeyboardShortcuts', () => {
             expect(navigateToFeature).toHaveBeenCalledWith('query');
         });
 
-        it('UKS-U-011: navigates to settings on Alt+Digit8', () => {
+        it('UKS-U-011: navigates to settings on Alt+Digit9', () => {
             renderShortcuts();
 
             act(() => {
-                fireKeyDown('Digit8', { altKey: true });
+                fireKeyDown('Digit9', { altKey: true });
             });
 
             expect(navigateToFeature).toHaveBeenCalledWith('settings');
@@ -150,9 +150,9 @@ describe('useKeyboardShortcuts', () => {
             mockIsProxyConnected = false;
             renderShortcuts();
 
-            // Events (Digit6) requires proxy
+            // Events (Digit7) requires proxy
             act(() => {
-                fireKeyDown('Digit6', { altKey: true });
+                fireKeyDown('Digit7', { altKey: true });
             });
 
             expect(navigateToFeature).not.toHaveBeenCalled();
@@ -163,7 +163,7 @@ describe('useKeyboardShortcuts', () => {
             renderShortcuts();
 
             act(() => {
-                fireKeyDown('Digit6', { altKey: true });
+                fireKeyDown('Digit7', { altKey: true });
             });
 
             expect(navigateToFeature).toHaveBeenCalledWith('events');

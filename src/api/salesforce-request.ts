@@ -16,10 +16,12 @@ interface SalesforceRequestOptions {
     headers?: Record<string, string>;
     body?: string;
     params?: Record<string, string>;
+    responseType?: 'json' | 'text';
 }
 
 export interface SalesforceResponse<T = unknown> extends FetchResponse {
     json: T | null;
+    text: string | null;
 }
 
 interface SalesforceErrorResponse {
@@ -84,8 +86,12 @@ export async function salesforceRequest<T = unknown>(
         throw new Error(errorMessage || 'Request failed');
     }
 
+    if (options.responseType === 'text') {
+        return { ...response, json: null, text: response.data ?? null };
+    }
     return {
         ...response,
         json: response.data ? (JSON.parse(response.data) as T) : null,
+        text: null,
     };
 }

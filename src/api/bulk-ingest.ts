@@ -1,9 +1,7 @@
 // Bulk Ingest API v2 — Functions for CSV data import operations
 
-import { getInstanceUrl, getAccessToken } from '../auth/auth';
 import type { BulkIngestJob, BulkIngestOperation, BulkIngestResults } from '../types/salesforce';
 import { API_VERSION } from './constants';
-import { smartFetch } from './fetch';
 import { salesforceRequest } from './salesforce-request';
 
 // ============================================================
@@ -43,22 +41,17 @@ export async function createBulkIngestJob(config: {
 
 /**
  * Upload CSV data to a Bulk API v2 ingest job.
- * Must use smartFetch directly — salesforceRequest forces JSON content-type.
  */
 export async function uploadBulkIngestData(contentUrl: string, csvData: string): Promise<void> {
-    const url = `${getInstanceUrl()}/${contentUrl}`;
-    const response = await smartFetch(url, {
+    await salesforceRequest(`/${contentUrl}`, {
         method: 'PUT',
         headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
             'Content-Type': 'text/csv',
             Accept: 'application/json',
         },
         body: csvData,
+        responseType: 'text',
     });
-    if (!response.success) {
-        throw new Error(response.error ?? 'Failed to upload CSV data');
-    }
 }
 
 /**
@@ -93,7 +86,6 @@ export async function getBulkIngestJobStatus(jobId: string): Promise<BulkIngestJ
 
 /**
  * Get the success result CSV for a completed Bulk API v2 ingest job.
- * Must use smartFetch directly — result is CSV, not JSON.
  */
 export async function getBulkIngestSuccessResults(jobId: string): Promise<string> {
     return fetchResultCsv(jobId, 'successfulResults');
@@ -114,17 +106,14 @@ export async function getBulkIngestUnprocessedResults(jobId: string): Promise<st
 }
 
 async function fetchResultCsv(jobId: string, endpoint: string): Promise<string> {
-    const url = `${getInstanceUrl()}/services/data/v${API_VERSION}/jobs/ingest/${jobId}/${endpoint}`;
-    const response = await smartFetch(url, {
-        headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-            Accept: 'text/csv',
-        },
-    });
-    if (!response.success) {
-        throw new Error(response.error ?? `Failed to fetch ${endpoint} for job ${jobId}`);
-    }
-    return response.data ?? '';
+    const response = await salesforceRequest(
+        `/services/data/v${API_VERSION}/jobs/ingest/${jobId}/${endpoint}`,
+        {
+            headers: { Accept: 'text/csv' },
+            responseType: 'text',
+        }
+    );
+    return response.text ?? '';
 }
 
 /**

@@ -1,5 +1,5 @@
 // Column mapping section — lists all CSV columns and their Salesforce field targets
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import { ColumnMappingRow } from './ColumnMappingRow';
 import type { ColumnMapping, FieldDescribe, BulkIngestOperation } from '../../types/salesforce';
 import styles from './DataImportTab.module.css';
@@ -30,14 +30,6 @@ export function ColumnMappingSection({
                     .map(m => m.fieldApiName!)
             ),
         [mappings]
-    );
-
-    // Stable callbacks — dispatch is stable from useReducer
-    const handleToggle = useCallback((csvIndex: number) => onToggle(csvIndex), [onToggle]);
-
-    const handleChangeTarget = useCallback(
-        (csvIndex: number, fieldApiName: string | null) => onChangeTarget(csvIndex, fieldApiName),
-        [onChangeTarget]
     );
 
     const mappedCount = mappings.filter(m => m.included && m.fieldApiName !== null).length;
@@ -77,9 +69,9 @@ export function ColumnMappingSection({
                                               mapping={m}
                                               eligibleFields={eligibleFields}
                                               assignedFieldNames={assignedFieldNames}
-                                              onToggle={!disabled ? handleToggle : undefined}
+                                              onToggle={!disabled ? onToggle : undefined}
                                               onChangeTarget={
-                                                  !disabled ? handleChangeTarget : undefined
+                                                  !disabled ? onChangeTarget : undefined
                                               }
                                           />
                                       ))
@@ -89,10 +81,8 @@ export function ColumnMappingSection({
                                           mapping={m}
                                           eligibleFields={eligibleFields}
                                           assignedFieldNames={assignedFieldNames}
-                                          onToggle={!disabled ? handleToggle : undefined}
-                                          onChangeTarget={
-                                              !disabled ? handleChangeTarget : undefined
-                                          }
+                                          onToggle={!disabled ? onToggle : undefined}
+                                          onChangeTarget={!disabled ? onChangeTarget : undefined}
                                       />
                                   ))}
                         </div>

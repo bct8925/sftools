@@ -3,7 +3,7 @@ import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getGlobalDescribe, getObjectDescribe } from '../../api/salesforce';
-import { executeBulkIngest, abortBulkIngestJob } from '../../api/bulk-ingest';
+import { executeBulkIngest, abortBulkIngestJob } from '../../api/salesforce';
 import { reconstructCsv, splitCsvIntoChunks } from '../../lib/csv-parse';
 import { getEligibleFields, autoMapColumns, validateMappings } from '../../lib/column-mapping';
 import { useImportState } from './useImportState';

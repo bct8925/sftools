@@ -4,15 +4,6 @@ vi.mock('../../../src/api/salesforce-request.js', () => ({
     salesforceRequest: vi.fn(),
 }));
 
-vi.mock('../../../src/api/fetch.js', () => ({
-    smartFetch: vi.fn(),
-}));
-
-vi.mock('../../../src/auth/auth.js', () => ({
-    getAccessToken: vi.fn().mockReturnValue('test-token'),
-    getInstanceUrl: vi.fn().mockReturnValue('https://test.salesforce.com'),
-}));
-
 import {
     createBulkIngestJob,
     uploadBulkIngestData,
@@ -25,7 +16,6 @@ import {
     executeBulkIngest,
 } from '../../../src/api/bulk-ingest.js';
 import { salesforceRequest } from '../../../src/api/salesforce-request.js';
-import { smartFetch } from '../../../src/api/fetch.js';
 
 describe('createBulkIngestJob', () => {
     beforeEach(() => vi.clearAllMocks());
@@ -74,28 +64,25 @@ describe('uploadBulkIngestData', () => {
     beforeEach(() => vi.clearAllMocks());
 
     it('PUTs CSV data with text/csv content type', async () => {
-        vi.mocked(smartFetch).mockResolvedValue({ success: true, status: 201 });
+        vi.mocked(salesforceRequest).mockResolvedValue({ json: null, text: null });
 
         await uploadBulkIngestData(
             'services/data/v62.0/jobs/ingest/job-001/batches',
             'Id,Name\n001,Test'
         );
 
-        expect(smartFetch).toHaveBeenCalledWith(
-            'https://test.salesforce.com/services/data/v62.0/jobs/ingest/job-001/batches',
+        expect(salesforceRequest).toHaveBeenCalledWith(
+            '/services/data/v62.0/jobs/ingest/job-001/batches',
             expect.objectContaining({
                 method: 'PUT',
                 headers: expect.objectContaining({ 'Content-Type': 'text/csv' }),
+                responseType: 'text',
             })
         );
     });
 
     it('throws when upload fails', async () => {
-        vi.mocked(smartFetch).mockResolvedValue({
-            success: false,
-            status: 400,
-            error: 'Upload failed',
-        });
+        vi.mocked(salesforceRequest).mockRejectedValue(new Error('Upload failed'));
         await expect(uploadBulkIngestData('content', 'data')).rejects.toThrow('Upload failed');
     });
 });
@@ -138,39 +125,34 @@ describe('result CSV fetchers', () => {
     beforeEach(() => vi.clearAllMocks());
 
     it('getBulkIngestSuccessResults fetches correct endpoint', async () => {
-        vi.mocked(smartFetch).mockResolvedValue({
-            success: true,
-            status: 200,
-            data: 'Id,Name\n001,T',
-        });
+        vi.mocked(salesforceRequest).mockResolvedValue({ json: null, text: 'Id,Name\n001,T' });
 
         const result = await getBulkIngestSuccessResults('job-001');
         expect(result).toBe('Id,Name\n001,T');
-        expect(smartFetch).toHaveBeenCalledWith(
+        expect(salesforceRequest).toHaveBeenCalledWith(
             expect.stringContaining('successfulResults'),
             expect.objectContaining({ headers: expect.objectContaining({ Accept: 'text/csv' }) })
         );
     });
 
     it('getBulkIngestFailedResults fetches correct endpoint', async () => {
-        vi.mocked(smartFetch).mockResolvedValue({
-            success: true,
-            status: 200,
-            data: 'sf__Id,sf__Error\n001,err',
+        vi.mocked(salesforceRequest).mockResolvedValue({
+            json: null,
+            text: 'sf__Id,sf__Error\n001,err',
         });
 
         await getBulkIngestFailedResults('job-001');
-        expect(smartFetch).toHaveBeenCalledWith(
+        expect(salesforceRequest).toHaveBeenCalledWith(
             expect.stringContaining('failedResults'),
             expect.any(Object)
         );
     });
 
     it('getBulkIngestUnprocessedResults fetches correct endpoint', async () => {
-        vi.mocked(smartFetch).mockResolvedValue({ success: true, status: 200, data: '' });
+        vi.mocked(salesforceRequest).mockResolvedValue({ json: null, text: '' });
 
         await getBulkIngestUnprocessedResults('job-001');
-        expect(smartFetch).toHaveBeenCalledWith(
+        expect(salesforceRequest).toHaveBeenCalledWith(
             expect.stringContaining('unprocessedrecords'),
             expect.any(Object)
         );
@@ -207,17 +189,14 @@ describe('executeBulkIngest', () => {
         };
         const mockJobComplete = { ...mockJob, state: 'JobComplete', numberRecordsProcessed: 2 };
 
-        // create job
         vi.mocked(salesforceRequest)
             .mockResolvedValueOnce({ json: mockJob }) // createBulkIngestJob
+            .mockResolvedValueOnce({ json: null, text: null }) // uploadBulkIngestData
             .mockResolvedValueOnce({ json: { ...mockJob, state: 'UploadComplete' } }) // closeBulkIngestJob
-            .mockResolvedValueOnce({ json: mockJobComplete }); // getBulkIngestJobStatus
-
-        vi.mocked(smartFetch)
-            .mockResolvedValueOnce({ success: true, status: 201 }) // uploadBulkIngestData
-            .mockResolvedValueOnce({ success: true, status: 200, data: 'Id,sf__Id\n001,001' }) // success results
-            .mockResolvedValueOnce({ success: true, status: 200, data: 'sf__Id,sf__Error\n' }) // failure results
-            .mockResolvedValueOnce({ success: true, status: 200, data: '' }); // unprocessed
+            .mockResolvedValueOnce({ json: mockJobComplete }) // getBulkIngestJobStatus
+            .mockResolvedValueOnce({ json: null, text: 'Id,sf__Id\n001,001' }) // success results
+            .mockResolvedValueOnce({ json: null, text: 'sf__Id,sf__Error\n' }) // failure results
+            .mockResolvedValueOnce({ json: null, text: '' }); // unprocessed
 
         const result = await executeBulkIngest({ object: 'Account', operation: 'insert' }, [
             'Id,Name\n001,Test\n002,Test2',
@@ -254,34 +233,23 @@ describe('executeBulkIngest', () => {
             numberRecordsProcessed: 2,
         });
 
-        // Two jobs
         vi.mocked(salesforceRequest)
+            // job 1: create, upload, close, status, success, failure, unprocessed
             .mockResolvedValueOnce({ json: makeJobMock('j1') })
+            .mockResolvedValueOnce({ json: null, text: null })
             .mockResolvedValueOnce({ json: { ...makeJobMock('j1'), state: 'UploadComplete' } })
             .mockResolvedValueOnce({ json: makeCompleteMock('j1') })
+            .mockResolvedValueOnce({ json: null, text: 'Id,sf__Id\n001,001\n002,002' })
+            .mockResolvedValueOnce({ json: null, text: 'sf__Id,sf__Error\n003,err' })
+            .mockResolvedValueOnce({ json: null, text: '' })
+            // job 2: create, upload, close, status, success, failure, unprocessed
             .mockResolvedValueOnce({ json: makeJobMock('j2') })
+            .mockResolvedValueOnce({ json: null, text: null })
             .mockResolvedValueOnce({ json: { ...makeJobMock('j2'), state: 'UploadComplete' } })
-            .mockResolvedValueOnce({ json: makeCompleteMock('j2') });
-
-        vi.mocked(smartFetch)
-            // job 1 upload, success, failure, unprocessed
-            .mockResolvedValueOnce({ success: true, status: 201 })
-            .mockResolvedValueOnce({
-                success: true,
-                status: 200,
-                data: 'Id,sf__Id\n001,001\n002,002',
-            })
-            .mockResolvedValueOnce({
-                success: true,
-                status: 200,
-                data: 'sf__Id,sf__Error\n003,err',
-            })
-            .mockResolvedValueOnce({ success: true, status: 200, data: '' })
-            // job 2 upload, success, failure, unprocessed
-            .mockResolvedValueOnce({ success: true, status: 201 })
-            .mockResolvedValueOnce({ success: true, status: 200, data: 'Id,sf__Id\n004,004' })
-            .mockResolvedValueOnce({ success: true, status: 200, data: 'sf__Id,sf__Error\n' })
-            .mockResolvedValueOnce({ success: true, status: 200, data: '' });
+            .mockResolvedValueOnce({ json: makeCompleteMock('j2') })
+            .mockResolvedValueOnce({ json: null, text: 'Id,sf__Id\n004,004' })
+            .mockResolvedValueOnce({ json: null, text: 'sf__Id,sf__Error\n' })
+            .mockResolvedValueOnce({ json: null, text: '' });
 
         const result = await executeBulkIngest({ object: 'Account', operation: 'insert' }, [
             'Id,Name\n001,T\n002,T',

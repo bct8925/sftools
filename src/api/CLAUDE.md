@@ -632,6 +632,8 @@ const response = await fetch(url, {
 });
 ```
 
+> **Note:** API sub-modules (`bulk-ingest.ts`, `bulk-query.ts`, `debug-logs.ts`, etc.) use `salesforceRequest` internally. Component code should import their public functions via `salesforce.ts` re-exports — this is compliant with the rule. Direct `smartFetch` calls in API modules should be migrated to use `salesforceRequest` with `responseType: 'text'` for non-JSON content types.
+
 ### Use smartFetch for Automatic Routing
 
 ```typescript

@@ -1,7 +1,7 @@
-// Import settings — batch size configuration
 import { useCallback } from 'react';
 import styles from './DataImportTab.module.css';
 
+// Import settings — batch size configuration
 interface ImportSettingsSectionProps {
     batchSize: number;
     disabled: boolean;
@@ -32,7 +32,7 @@ export function ImportSettingsSection({
             <div className="card-body">
                 <div className={styles.formRow}>
                     <label className={styles.formLabel} htmlFor="batch-size">
-                        Batch Size
+                        Job Size
                     </label>
                     <input
                         id="batch-size"

@@ -40,7 +40,7 @@ export function CsvUploadSection({
             if (file.size > BULK_API_LIMIT_BYTES) {
                 const sizeMb = (file.size / (1024 * 1024)).toFixed(0);
                 setSizeWarning(
-                    `File is ${sizeMb}MB. Salesforce Bulk API v2 supports up to 150MB (100MB after base64 conversion) per job. Reduce your batch size so each chunk stays under the limit.`
+                    `File is ${sizeMb}MB. Salesforce Bulk API v2 supports up to 150MB (100MB after base64 conversion) per job. Reduce your job size so each chunk stays under the limit.`
                 );
             }
 

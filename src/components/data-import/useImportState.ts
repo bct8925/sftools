@@ -74,7 +74,7 @@ function importReducer(state: ImportState, action: ImportAction): ImportState {
             return {
                 ...state,
                 operation: action.operation,
-                externalIdField: null,
+                externalIdField: action.operation === 'upsert' ? 'Id' : null,
                 mappings: [],
                 ...maybeResetJob(state),
             };
@@ -84,7 +84,7 @@ function importReducer(state: ImportState, action: ImportAction): ImportState {
             return {
                 ...state,
                 objectName: action.objectName,
-                externalIdField: null,
+                externalIdField: state.operation === 'upsert' ? 'Id' : null,
                 mappings: [],
                 ...maybeResetJob(state),
             };
@@ -137,7 +137,12 @@ function importReducer(state: ImportState, action: ImportAction): ImportState {
             return { ...state, batchSize: action.batchSize, ...maybeResetJob(state) };
 
         case 'SET_JOB_PHASE':
-            return { ...state, jobPhase: action.phase, error: null };
+            return {
+                ...state,
+                jobPhase: action.phase,
+                error: null,
+                ...(action.phase === 'running' ? { jobResult: null } : {}),
+            };
 
         case 'SET_JOB_RESULT':
             return { ...state, jobResult: action.result, jobPhase: 'complete' };

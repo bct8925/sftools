@@ -13,7 +13,6 @@ interface ExecuteSectionProps {
     objectName: string | null;
     onExecute: () => void;
     onCancel: () => void;
-    onReset: () => void;
 }
 
 export function ExecuteSection({
@@ -25,7 +24,6 @@ export function ExecuteSection({
     objectName,
     onExecute,
     onCancel,
-    onReset,
 }: ExecuteSectionProps) {
     const handleExecute = useCallback(() => {
         const label = objectName ?? 'records';
@@ -68,37 +66,35 @@ export function ExecuteSection({
                             type="button"
                             data-testid="data-import-execute-btn"
                         >
-                            Import {rowCount > 0 ? rowCount.toLocaleString() + ' ' : ''}Records
+                            Import
                         </button>
                     )}
                 </div>
 
                 {error && <div className={styles.errorBanner}>{error}</div>}
 
-                {(jobPhase === 'complete' || jobPhase === 'failed') && (
-                    <div className={styles.resetActions}>
-                        <button className="button-neutral" onClick={onReset} type="button">
-                            New Import
-                        </button>
-                    </div>
-                )}
-
                 {jobResult && (
                     <div className={styles.results}>
                         <div className={styles.resultSummary}>
-                            <span className={styles.resultSuccess}>
-                                ✓ {jobResult.successCount.toLocaleString()} succeeded
-                            </span>
-                            <span className={styles.resultFailure}>
-                                ✗ {jobResult.failureCount.toLocaleString()} failed
-                            </span>
-                            <span className={styles.resultUnprocessed}>
-                                ○ {jobResult.unprocessedCount.toLocaleString()} unprocessed
-                            </span>
+                            {jobResult.successCount > 0 && (
+                                <span className={styles.resultSuccess}>
+                                    ✓ {jobResult.successCount.toLocaleString()} succeeded
+                                </span>
+                            )}
+                            {jobResult.failureCount > 0 && (
+                                <span className={styles.resultFailure}>
+                                    ✗ {jobResult.failureCount.toLocaleString()} failed
+                                </span>
+                            )}
+                            {jobResult.unprocessedCount > 0 && (
+                                <span className={styles.resultUnprocessed}>
+                                    ○ {jobResult.unprocessedCount.toLocaleString()} unprocessed
+                                </span>
+                            )}
                         </div>
 
                         <div className={styles.downloadButtons}>
-                            {jobResult.successCsv && (
+                            {jobResult.successCount > 0 && jobResult.successCsv && (
                                 <button
                                     className="button-neutral"
                                     onClick={handleDownloadSuccess}
@@ -107,7 +103,7 @@ export function ExecuteSection({
                                     Download Success ({jobResult.successCount.toLocaleString()})
                                 </button>
                             )}
-                            {jobResult.failureCsv && (
+                            {jobResult.failureCount > 0 && jobResult.failureCsv && (
                                 <button
                                     className="button-neutral"
                                     onClick={handleDownloadFailure}
@@ -116,7 +112,7 @@ export function ExecuteSection({
                                     Download Failures ({jobResult.failureCount.toLocaleString()})
                                 </button>
                             )}
-                            {jobResult.unprocessedCsv && (
+                            {jobResult.unprocessedCount > 0 && jobResult.unprocessedCsv && (
                                 <button
                                     className="button-neutral"
                                     onClick={handleDownloadUnprocessed}

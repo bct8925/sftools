@@ -114,7 +114,7 @@ export function DataImportTab() {
         () =>
             state.objectName !== null &&
             state.csv !== null &&
-            state.jobPhase === 'idle' &&
+            state.jobPhase !== 'running' &&
             validateMappings(state.mappings, state.operation, state.externalIdField ?? undefined)
                 .valid,
         [
@@ -203,12 +203,6 @@ export function DataImportTab() {
         }
     }, []);
 
-    const handleReset = useCallback(() => {
-        reset();
-        rawCsvRef.current = null;
-        setFields([]);
-    }, [reset]);
-
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -266,7 +260,6 @@ export function DataImportTab() {
                 objectName={state.objectName}
                 onExecute={handleExecute}
                 onCancel={handleCancel}
-                onReset={handleReset}
             />
         </div>
     );

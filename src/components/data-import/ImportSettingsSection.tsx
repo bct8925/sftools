@@ -19,7 +19,7 @@ export function ImportSettingsSection({
     const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const value = parseInt(e.target.value, 10);
-            if (!isNaN(value)) onChange(value);
+            if (!isNaN(value)) onChange(Math.max(MIN_BATCH_SIZE, Math.min(MAX_BATCH_SIZE, value)));
         },
         [onChange]
     );

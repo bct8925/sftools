@@ -1,3 +1,7 @@
+.headerIcon {
+    background-color: var(--icon-data-import);
+}
+
 .container {
     display: flex;
     flex-direction: column;

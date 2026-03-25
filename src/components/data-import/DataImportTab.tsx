@@ -206,10 +206,7 @@ export function DataImportTab() {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <div
-                    className="card-header-icon"
-                    style={{ backgroundColor: 'var(--icon-data-import)' }}
-                >
+                <div className={`card-header-icon ${styles.headerIcon}`}>
                     <span aria-hidden="true">↑</span>
                 </div>
                 <h2>Data Import</h2>

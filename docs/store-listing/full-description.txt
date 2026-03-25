@@ -41,6 +41,18 @@ Schema Browser
 - Direct links to open objects and fields in Salesforce Setup
 - Edit formula fields directly
 
+Data Import
+- Import CSV data into Salesforce using Bulk API v2
+- Insert, update, upsert, and delete operations
+- Searchable object picker filtered by operation capability
+- Drag-and-drop CSV upload with file summary (row count, column count, file size)
+- Automatic column mapping from CSV headers to Salesforce field names and labels
+- Manual column mapping overrides with per-column include/exclude
+- External ID field selection for upsert operations
+- Configurable job size (200–100,000 records per job)
+- Multi-job execution with progress toasts and cancel support
+- Download success, failure, and unprocessed result CSVs
+
 Record Viewer
 - View and edit record field values
 - Supports text, checkbox, date, number, rich text, and lookup fields
@@ -80,6 +92,6 @@ INTERFACE
 - Opens in Chrome side panel or standalone tab
 - Monaco editor with syntax highlighting across all code panels
 - Ctrl/Cmd+Enter to execute across all tabs
-- Alt+1–7 keyboard shortcuts for quick tab navigation
+- Alt+1–8 keyboard shortcuts for quick tab navigation
 - Cmd/Ctrl+Click any feature tile to open it in a standalone browser tab
 - Open Org button to launch the current org in a new tab

@@ -1,1 +1,1 @@
-Salesforce developer tools: SOQL editor, Apex execution, REST API explorer, debug logs, schema browser, record viewer, and platform events.
+Salesforce developer tools: SOQL editor, Apex execution, REST API explorer, debug logs, schema browser, data import, record viewer, and platform events.

@@ -7,6 +7,7 @@ sftools provides developer tools for Salesforce. Users can:
 5. View and edit record field values
 6. View and stream debug logs in real time
 7. Manage trace flags and delete inactive flow versions
-8. Subscribe to and publish platform events (optional local proxy required)
+8. Import CSV data into Salesforce using Bulk API v2 (insert, update, upsert, delete)
+9. Subscribe to and publish platform events (optional local proxy required)
 
 The extension authenticates via OAuth 2.0 and communicates directly with Salesforce APIs. No data is sent to third-party services.

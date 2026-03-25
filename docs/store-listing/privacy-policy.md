@@ -48,6 +48,7 @@ sftools communicates only with Salesforce APIs:
 
 - **Salesforce REST API** - For queries, record operations, and metadata
 - **Salesforce Tooling API** - For Apex execution and debug logs
+- **Salesforce Bulk API v2** - For CSV data import operations
 - **Salesforce OAuth Endpoints** - For authentication
 
 No other third-party services receive any data from this extension.

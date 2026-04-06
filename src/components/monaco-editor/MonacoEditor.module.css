@@ -10,6 +10,13 @@
     overflow: hidden;
 }
 
+/* Mount target for the Monaco editor instance — fills the container so the
+   resize handle can sit on top as an absolutely positioned sibling. */
+.editorMount {
+    width: 100%;
+    height: 100%;
+}
+
 /* Resize handle at bottom of editor */
 .resizeHandle {
     position: absolute;

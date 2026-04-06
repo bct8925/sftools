@@ -1,12 +1,8 @@
-import { forwardRef, useImperativeHandle, useRef, useCallback, useMemo } from 'react';
-import Editor, { loader, type OnMount } from '@monaco-editor/react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 import type { editor } from 'monaco-editor';
 import { monaco } from '../../lib/monaco-custom';
 import { useMonacoTheme } from './useMonacoTheme';
 import styles from './MonacoEditor.module.css';
-
-// Configure @monaco-editor/react to use our custom Monaco instance
-loader.config({ monaco });
 
 export type MonacoLanguage = 'sql' | 'apex' | 'json' | 'xml' | 'javascript' | 'text';
 
@@ -52,8 +48,18 @@ interface MonacoEditorProps {
     'data-testid'?: string;
 }
 
+function mapLanguage(language: MonacoLanguage): string {
+    return language === 'text' ? 'plaintext' : language;
+}
+
 /**
- * React Monaco Editor using @monaco-editor/react with custom sftools setup.
+ * React Monaco Editor wrapper that drives the locally-bundled Monaco instance
+ * directly (no `@monaco-editor/react`/`@monaco-editor/loader` dependency).
+ *
+ * Avoiding the loader is required to keep the extension free of any reference
+ * to a remote CDN URL — otherwise the Chrome Web Store flags it as remotely
+ * hosted code under Manifest V3.
+ *
  * Supports theme synchronization, resize handle, and Ctrl+Enter execute.
  */
 export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
@@ -73,10 +79,14 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
         ref
     ) => {
         const containerRef = useRef<HTMLDivElement>(null);
+        const editorMountRef = useRef<HTMLDivElement>(null);
         const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+        const onChangeRef = useRef(onChange);
         const onExecuteRef = useRef(onExecute);
 
-        // Keep onExecute ref up to date for the keybinding
+        // Keep callback refs current so the change/execute listeners stay
+        // stable across renders without recreating the editor instance.
+        onChangeRef.current = onChange;
         onExecuteRef.current = onExecute;
 
         // Sync theme with document
@@ -118,17 +128,37 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
             getEditor: () => editorRef.current,
         }));
 
-        // Handle editor mount
-        const handleMount: OnMount = useCallback(editor => {
-            editorRef.current = editor;
+        // Create the editor on mount, dispose on unmount. Initial-only props
+        // (value, language, theme, options) are read once here. Subsequent
+        // prop changes are handled by the dedicated effects below.
+        useEffect(() => {
+            const mountTarget = editorMountRef.current;
+            if (!mountTarget) return;
+
+            const editorInstance = monaco.editor.create(mountTarget, {
+                value,
+                language: mapLanguage(language),
+                theme,
+                readOnly: readonly,
+                minimap: { enabled: false },
+                automaticLayout: true,
+                scrollBeyondLastLine: false,
+                lineNumbers,
+                lineNumbersMinChars: lineNumbers === 'on' ? 3 : 0,
+                lineDecorationsWidth: lineNumbers === 'on' ? undefined : 6,
+                wordWrap,
+                fontSize: 13,
+            });
+
+            editorRef.current = editorInstance;
 
             // Expose editor on container element for test helpers
             if (containerRef.current) {
-                (containerRef.current as any).editor = editor;
+                (containerRef.current as any).editor = editorInstance;
             }
 
             // Add Ctrl+Enter execute action
-            editor.addAction({
+            editorInstance.addAction({
                 id: 'execute',
                 label: 'Execute',
                 keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
@@ -136,15 +166,50 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
                     onExecuteRef.current?.();
                 },
             });
+
+            // Forward content changes via the ref so prop updates don't
+            // require recreating the editor.
+            const changeSubscription = editorInstance.onDidChangeModelContent(() => {
+                onChangeRef.current?.(editorInstance.getValue());
+            });
+
+            return () => {
+                changeSubscription.dispose();
+                editorInstance.dispose();
+                editorRef.current = null;
+                if (containerRef.current) {
+                    delete (containerRef.current as any).editor;
+                }
+            };
+            // Mount-only: subsequent prop changes flow through the effects below.
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []);
 
-        // Handle content changes
-        const handleChange = useCallback(
-            (val: string | undefined) => {
-                onChange?.(val ?? '');
-            },
-            [onChange]
-        );
+        // Update language when the prop changes
+        useEffect(() => {
+            const model = editorRef.current?.getModel();
+            if (model) {
+                monaco.editor.setModelLanguage(model, mapLanguage(language));
+            }
+        }, [language]);
+
+        // Update theme when the resolved theme changes
+        useEffect(() => {
+            if (editorRef.current) {
+                monaco.editor.setTheme(theme);
+            }
+        }, [theme]);
+
+        // Update reactive editor options when the relevant props change
+        useEffect(() => {
+            editorRef.current?.updateOptions({
+                readOnly: readonly,
+                lineNumbers,
+                lineNumbersMinChars: lineNumbers === 'on' ? 3 : 0,
+                lineDecorationsWidth: lineNumbers === 'on' ? undefined : 6,
+                wordWrap,
+            });
+        }, [readonly, lineNumbers, wordWrap]);
 
         // Resize handle logic
         const resizeStateRef = useRef({ isResizing: false, startY: 0, startHeight: 0 });
@@ -181,35 +246,13 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
             document.addEventListener('mouseup', handleMouseUp);
         }, []);
 
-        const editorOptions = useMemo(
-            () => ({
-                readOnly: readonly,
-                minimap: { enabled: false },
-                automaticLayout: true,
-                scrollBeyondLastLine: false,
-                lineNumbers,
-                lineNumbersMinChars: lineNumbers === 'on' ? 3 : 0,
-                lineDecorationsWidth: lineNumbers === 'on' ? undefined : 6,
-                wordWrap,
-                fontSize: 13,
-            }),
-            [readonly, lineNumbers, wordWrap]
-        );
-
         return (
             <div
                 ref={containerRef}
                 className={`${styles.container}${className ? ` ${className}` : ''}`}
                 data-testid={dataTestId}
             >
-                <Editor
-                    language={language === 'text' ? 'plaintext' : language}
-                    defaultValue={value}
-                    onChange={handleChange}
-                    onMount={handleMount}
-                    theme={theme}
-                    options={editorOptions}
-                />
+                <div ref={editorMountRef} className={styles.editorMount} />
                 {resizable && (
                     <div className={styles.resizeHandle} onMouseDown={handleResizeStart} />
                 )}

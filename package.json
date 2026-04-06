@@ -25,7 +25,6 @@
     },
     "dependencies": {
         "@jetstreamapp/soql-parser-js": "^6.3.1",
-        "@monaco-editor/react": "^4.7.0",
         "@salesforce-ux/icons": "^10.5.4",
         "dompurify": "^3.3.1",
         "monaco-editor": "^0.53.0",

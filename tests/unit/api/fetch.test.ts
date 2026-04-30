@@ -147,6 +147,68 @@ describe('fetch', () => {
                 expect.objectContaining({ type: 'proxyFetch' })
             );
         });
+
+        it('FE-U-026: falls back to extensionFetch on proxy connection error', async () => {
+            fetchModule.setProxyConnected(true);
+
+            // proxyFetch returns a proxy connectivity error
+            chrome.runtime.sendMessage.mockResolvedValueOnce({
+                success: false,
+                status: 0,
+                error: 'Proxy not connected',
+            });
+            // extensionFetch returns success
+            const extensionResponse = { ok: true, status: 200, data: {} };
+            chrome.runtime.sendMessage.mockResolvedValueOnce(extensionResponse);
+
+            const result = await fetchModule.smartFetch('https://api.salesforce.com/test');
+
+            const calls = chrome.runtime.sendMessage.mock.calls;
+            expect(calls[0][0]).toEqual(expect.objectContaining({ type: 'proxyFetch' }));
+            expect(calls[1][0]).toEqual(expect.objectContaining({ type: 'fetch' }));
+            expect(result).toEqual(extensionResponse);
+        });
+
+        it('FE-U-027: does not fall back for Salesforce API errors', async () => {
+            fetchModule.setProxyConnected(true);
+
+            const apiErrorResponse = { success: false, status: 400, error: 'MALFORMED_QUERY' };
+            chrome.runtime.sendMessage.mockResolvedValueOnce(apiErrorResponse);
+
+            const result = await fetchModule.smartFetch('https://api.salesforce.com/test');
+
+            // Only one sendMessage call - no fallback
+            expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(1);
+            expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+                expect.objectContaining({ type: 'proxyFetch' })
+            );
+            expect(result.status).toBe(400);
+        });
+
+        it('FE-U-028: sets PROXY_CONNECTED false after fallback', async () => {
+            fetchModule.setProxyConnected(true);
+
+            // First call: proxyFetch fails with connection error, falls back to extensionFetch
+            chrome.runtime.sendMessage.mockResolvedValueOnce({
+                success: false,
+                status: 0,
+                error: 'Native host disconnected',
+            });
+            chrome.runtime.sendMessage.mockResolvedValueOnce({ ok: true, data: {} });
+
+            await fetchModule.smartFetch('https://api.salesforce.com/test');
+
+            chrome.runtime.sendMessage.mockClear();
+
+            // Second call: should go directly to extensionFetch, not proxyFetch
+            chrome.runtime.sendMessage.mockResolvedValueOnce({ ok: true, data: {} });
+            await fetchModule.smartFetch('https://api.salesforce.com/test');
+
+            expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(1);
+            expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+                expect.objectContaining({ type: 'fetch' })
+            );
+        });
     });
 
     describe('auth expiration handling', () => {

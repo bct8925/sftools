@@ -4,6 +4,7 @@
 import { debugInfo } from './debug';
 
 const NATIVE_HOST_NAME = 'com.sftools.proxy';
+const MAX_NATIVE_MESSAGE_SIZE = 800 * 1024; // 800KB — matches proxy's payload-store threshold
 
 let nativePort: chrome.runtime.Port | null = null;
 const pendingRequests = new Map<
@@ -53,6 +54,7 @@ interface ProxyRequest {
     method?: string;
     headers?: Record<string, string>;
     body?: string;
+    largeBody?: string;
     subscriptionId?: string;
     accessToken?: string;
     instanceUrl?: string;
@@ -217,9 +219,44 @@ async function fetchLargePayload(payloadId: string): Promise<string> {
 }
 
 /**
+ * Upload a large body to the proxy HTTP server, returning a payload ID
+ */
+async function uploadLargeBody(body: string): Promise<string> {
+    if (!proxyHttpPort || !proxySecret) {
+        throw new Error('Proxy HTTP server not available');
+    }
+
+    const response = await fetch(`http://127.0.0.1:${proxyHttpPort}/payload`, {
+        method: 'POST',
+        headers: { 'X-Proxy-Secret': proxySecret },
+        body,
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to upload large body: ${response.status}`);
+    }
+
+    const result = (await response.json()) as { id: string };
+    return result.id;
+}
+
+/**
  * Send proxy request with automatic large payload handling
  */
 export async function sendProxyRequest(message: ProxyRequest): Promise<ProxyResponse> {
+    // Upload large request bodies via HTTP to avoid native messaging size limit
+    if (message.body && new Blob([message.body]).size >= MAX_NATIVE_MESSAGE_SIZE) {
+        const payloadId = await uploadLargeBody(message.body);
+        const { body: _body, ...rest } = message;
+        const response = await sendNativeMessage({ ...rest, largeBody: payloadId } as ProxyRequest);
+
+        if (response.largePayload) {
+            const payloadData = await fetchLargePayload(response.largePayload);
+            return JSON.parse(payloadData) as ProxyResponse;
+        }
+        return response as ProxyResponse;
+    }
+
     const response = await sendNativeMessage(message);
 
     if (response.largePayload) {

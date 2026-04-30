@@ -389,4 +389,90 @@ describe('native-messaging', () => {
             expect(info.hasSecret).toBe(false);
         });
     });
+
+    describe('large body upload', () => {
+        beforeEach(async () => {
+            await connectHelper();
+        });
+
+        it('sends small bodies via native messaging as-is', async () => {
+            const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+            const promise = mod.sendProxyRequest({
+                type: 'fetch',
+                url: 'https://example.com',
+                body: '{"small": true}',
+            });
+
+            await vi.waitFor(() => {
+                expect(mockPort.port.postMessage).toHaveBeenCalled();
+            });
+
+            const message = mockPort.port.postMessage.mock.calls[0][0];
+            expect(fetchSpy).not.toHaveBeenCalled();
+            expect(message).toHaveProperty('body', '{"small": true}');
+            expect(message).not.toHaveProperty('largeBody');
+
+            const reqId = message.id;
+            mockPort.simulateMessage({ id: reqId, success: true });
+
+            await promise;
+            fetchSpy.mockRestore();
+        });
+
+        it('uploads large bodies via HTTP and sends largeBody reference', async () => {
+            const largeBody = 'x'.repeat(800 * 1024 + 1);
+            const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+                ok: true,
+                json: async () => ({ id: 'uploaded-123' }),
+            } as Response);
+
+            const promise = mod.sendProxyRequest({
+                type: 'fetch',
+                url: 'https://example.com',
+                body: largeBody,
+            });
+
+            await vi.waitFor(() => {
+                expect(mockPort.port.postMessage).toHaveBeenCalled();
+            });
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                'http://127.0.0.1:8000/payload',
+                expect.objectContaining({
+                    method: 'POST',
+                    headers: { 'X-Proxy-Secret': 'sec' },
+                    body: largeBody,
+                })
+            );
+
+            const message = mockPort.port.postMessage.mock.calls[0][0];
+            expect(message).not.toHaveProperty('body');
+            expect(message).toHaveProperty('largeBody', 'uploaded-123');
+
+            const reqId = message.id;
+            mockPort.simulateMessage({ id: reqId, success: true });
+
+            await promise;
+            fetchSpy.mockRestore();
+        });
+
+        it('throws when large body upload fails', async () => {
+            const largeBody = 'x'.repeat(800 * 1024 + 1);
+            const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+                ok: false,
+                status: 500,
+            } as Response);
+
+            await expect(
+                mod.sendProxyRequest({
+                    type: 'fetch',
+                    url: 'https://example.com',
+                    body: largeBody,
+                })
+            ).rejects.toThrow('Failed to upload large body: 500');
+
+            fetchSpy.mockRestore();
+        });
+    });
 });

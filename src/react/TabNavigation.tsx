@@ -8,6 +8,7 @@ export type FeatureId =
     | 'events'
     | 'schema'
     | 'data-import'
+    | 'jobs'
     | 'utils';
 export type TabId = FeatureId | 'settings';
 
@@ -68,6 +69,14 @@ export const FEATURES: Feature[] = [
         requiresProxy: false,
         tileIcon: 'tileDataImport',
         tileColor: 'var(--icon-data-import)',
+    },
+    {
+        id: 'jobs',
+        label: 'Jobs',
+        requiresAuth: true,
+        requiresProxy: false,
+        tileIcon: 'tileJobs',
+        tileColor: 'var(--icon-jobs)',
     },
     {
         id: 'events',

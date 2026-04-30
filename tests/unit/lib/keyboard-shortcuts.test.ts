@@ -144,8 +144,8 @@ describe('keyboard-shortcuts', () => {
         });
 
         it('KS-U-012: events binding has requiresAuth=true, requiresProxy=true', () => {
-            // Events is Digit7 (7th feature, 0-indexed = 6, so index+1 = 7)
-            const e = makeKeyEvent({ altKey: true, code: 'Digit7' });
+            // Events is Digit8 (8th feature, 0-indexed = 7, so index+1 = 8)
+            const e = makeKeyEvent({ altKey: true, code: 'Digit8' });
             const binding = matchShortcut(e);
             expect(binding?.target).toBe('events');
             expect(binding?.requiresAuth).toBe(true);

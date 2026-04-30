@@ -18,7 +18,7 @@ export interface ShortcutBinding {
  */
 export const SHORTCUT_BINDINGS: ShortcutBinding[] = [
     // Feature tabs: Alt+1 through Alt+8 (order matches FEATURES array)
-    ...FEATURES.map((feature, index) => ({
+    ...FEATURES.slice(0, 8).map((feature, index) => ({
         code: `Digit${index + 1}`,
         target: feature.id as ShortcutTarget,
         requiresAuth: feature.requiresAuth,

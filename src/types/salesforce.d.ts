@@ -211,6 +211,41 @@ export interface FlowVersion {
     Status: string;
 }
 
+// Async Apex Job (AsyncApexJob sobject)
+export interface AsyncApexJob {
+    Id: string;
+    JobType: string;
+    Status: string;
+    NumberOfErrors: number;
+    TotalJobItems: number;
+    JobItemsProcessed: number;
+    CreatedDate: string;
+    CompletedDate: string | null;
+    CreatedBy: { Name: string };
+    ApexClass: { Name: string } | null;
+    MethodName: string | null;
+}
+
+// Bulk API v2 Job List
+export interface BulkJobListItem {
+    id: string;
+    operation: string;
+    object: string;
+    createdById: string;
+    createdDate: string;
+    systemModstamp: string;
+    state: string;
+    jobType: string;
+    concurrencyMode: string;
+    apiVersion: number;
+}
+
+export interface BulkJobListResponse {
+    done: boolean;
+    records: BulkJobListItem[];
+    nextRecordsUrl?: string;
+}
+
 // User Info
 export interface UserInfo {
     user_id: string;

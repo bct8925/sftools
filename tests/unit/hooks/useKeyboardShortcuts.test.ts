@@ -150,9 +150,9 @@ describe('useKeyboardShortcuts', () => {
             mockIsProxyConnected = false;
             renderShortcuts();
 
-            // Events (Digit7) requires proxy
+            // Events (Digit8) requires proxy
             act(() => {
-                fireKeyDown('Digit7', { altKey: true });
+                fireKeyDown('Digit8', { altKey: true });
             });
 
             expect(navigateToFeature).not.toHaveBeenCalled();
@@ -163,7 +163,7 @@ describe('useKeyboardShortcuts', () => {
             renderShortcuts();
 
             act(() => {
-                fireKeyDown('Digit7', { altKey: true });
+                fireKeyDown('Digit8', { altKey: true });
             });
 
             expect(navigateToFeature).toHaveBeenCalledWith('events');

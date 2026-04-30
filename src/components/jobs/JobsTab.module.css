@@ -1,0 +1,115 @@
+/* Jobs Tab Styles */
+
+/* ============================================================
+   Main Container
+   ============================================================ */
+
+.jobsTab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+}
+
+/* ============================================================
+   Header Icon
+   ============================================================ */
+
+.headerIcon {
+    background-color: var(--icon-jobs);
+}
+
+/* ============================================================
+   Sub-Tab Bar
+   ============================================================ */
+
+.subTabBar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.subTab {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition:
+        color 0.15s,
+        border-color 0.15s;
+}
+
+.subTab:hover {
+    color: var(--text-main);
+}
+
+.subTabActive {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+/* ============================================================
+   Panel Layout
+   ============================================================ */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+}
+
+/* ============================================================
+   Filter Row
+   ============================================================ */
+
+.filterRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.filterRow .input,
+.filterRow .select {
+    max-width: 200px;
+}
+
+/* ============================================================
+   Status Badges
+   ============================================================ */
+
+.statusSuccess {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.statusError {
+    color: var(--error-color);
+    font-weight: 600;
+}
+
+.statusActive {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* ============================================================
+   Utility
+   ============================================================ */
+
+.mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.errorText {
+    color: var(--error-color);
+    font-weight: 600;
+}

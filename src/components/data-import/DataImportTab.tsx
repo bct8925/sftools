@@ -160,7 +160,7 @@ export function DataImportTab() {
                     ? remapColumns(meta.headers, eligible, previous)
                     : autoMapColumns(meta.headers, eligible);
 
-            skipRemapRef.current = true;
+            if (fields.length > 0) skipRemapRef.current = true;
             setCsv(meta, mappings);
         },
         [fields, state.operation, state.externalIdField, setCsv]

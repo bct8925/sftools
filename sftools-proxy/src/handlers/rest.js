@@ -5,6 +5,8 @@
  * Supports all HTTP methods with headers and body.
  */
 
+const { getPayload, deletePayload } = require('../payload-store');
+
 /**
  * Handle a REST API request
  * @param {object} request - The request object
@@ -12,15 +14,29 @@
  * @param {string} [request.method] - HTTP method (default: GET)
  * @param {object} [request.headers] - Request headers
  * @param {string|object} [request.body] - Request body (string or object)
+ * @param {string} [request.largeBody] - Payload store ID for large request bodies
  * @returns {Promise<object>} - Response object
  */
 async function handleRest(request) {
-    const { url, method = 'GET', headers = {}, body } = request;
+    const { url, method = 'GET', headers = {}, largeBody } = request;
+    let { body } = request;
+
+    // Retrieve large body from payload store if referenced
+    if (largeBody) {
+        body = getPayload(largeBody);
+        deletePayload(largeBody);
+        if (body === null) {
+            return {
+                success: false,
+                error: 'Large body payload not found or expired',
+            };
+        }
+    }
 
     if (!url) {
         return {
             success: false,
-            error: 'URL is required'
+            error: 'URL is required',
         };
     }
 
@@ -28,7 +44,7 @@ async function handleRest(request) {
         // Prepare fetch options
         const fetchOptions = {
             method,
-            headers: { ...headers }
+            headers: { ...headers },
         };
 
         // Handle body - can be string or object
@@ -57,12 +73,12 @@ async function handleRest(request) {
             status: response.status,
             statusText: response.statusText,
             headers: responseHeaders,
-            data
+            data,
         };
     } catch (error) {
         return {
             success: false,
-            error: error.message
+            error: error.message,
         };
     }
 }

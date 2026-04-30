@@ -95,6 +95,78 @@ export function autoMapColumns(
 }
 
 // ============================================================
+// Re-Mapping (CSV replacement)
+// ============================================================
+
+/**
+ * Create mappings for new CSV headers, preserving previous mappings where
+ * the header name matches (case-insensitive) and the assigned field is
+ * still eligible. Unmatched headers fall back to auto-map logic.
+ */
+export function remapColumns(
+    newHeaders: string[],
+    eligibleFields: FieldDescribe[],
+    previousMappings: ColumnMapping[]
+): ColumnMapping[] {
+    // Lookup previous mappings by lowercase header
+    const previousByHeader = new Map(previousMappings.map(m => [m.csvHeader.toLowerCase(), m]));
+
+    // Eligible field names for fast membership check
+    const eligibleNames = new Set(eligibleFields.map(f => f.name));
+
+    // Auto-map indexes for fallback
+    const byApiName = new Map(eligibleFields.map(f => [f.name.toLowerCase(), f]));
+    const byLabel = new Map(eligibleFields.map(f => [f.label.toLowerCase(), f]));
+
+    return newHeaders.map((header, csvIndex) => {
+        const key = header.toLowerCase();
+        const prev = previousByHeader.get(key);
+
+        // Preserve previous mapping if the field is still eligible
+        if (prev?.fieldApiName && eligibleNames.has(prev.fieldApiName)) {
+            return {
+                csvHeader: header,
+                csvIndex,
+                fieldApiName: prev.fieldApiName,
+                included: prev.included,
+                mappingSource: prev.mappingSource,
+            };
+        }
+
+        // Fallback: auto-map by API name → label → none
+        const byName = byApiName.get(key);
+        if (byName) {
+            return {
+                csvHeader: header,
+                csvIndex,
+                fieldApiName: byName.name,
+                included: true,
+                mappingSource: 'api-name',
+            };
+        }
+
+        const byLbl = byLabel.get(key);
+        if (byLbl) {
+            return {
+                csvHeader: header,
+                csvIndex,
+                fieldApiName: byLbl.name,
+                included: true,
+                mappingSource: 'label',
+            };
+        }
+
+        return {
+            csvHeader: header,
+            csvIndex,
+            fieldApiName: null,
+            included: false,
+            mappingSource: 'none',
+        };
+    });
+}
+
+// ============================================================
 // Validation
 // ============================================================
 

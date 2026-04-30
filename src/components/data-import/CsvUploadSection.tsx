@@ -11,7 +11,6 @@ interface CsvUploadSectionProps {
     csv: ImportCsvMeta | null;
     disabled: boolean;
     onCsvLoaded: (meta: ImportCsvMeta, rawText: string) => void;
-    onCsvCleared: () => void;
 }
 
 function formatBytes(bytes: number): string {
@@ -20,12 +19,7 @@ function formatBytes(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function CsvUploadSection({
-    csv,
-    disabled,
-    onCsvLoaded,
-    onCsvCleared,
-}: CsvUploadSectionProps) {
+export function CsvUploadSection({ csv, disabled, onCsvLoaded }: CsvUploadSectionProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [dragOver, setDragOver] = useState(false);
     const [sizeWarning, setSizeWarning] = useState<string | null>(null);
@@ -106,6 +100,13 @@ export function CsvUploadSection({
                 <h3>2. CSV File</h3>
             </div>
             <div className="card-body">
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv"
+                    className={styles.hiddenInput}
+                    onChange={handleFileInput}
+                />
                 {csv ? (
                     <div className={styles.csvSummary}>
                         <div className={styles.csvSummaryInfo}>
@@ -116,8 +117,12 @@ export function CsvUploadSection({
                             </span>
                         </div>
                         {!disabled && (
-                            <button className="button-neutral" onClick={onCsvCleared} type="button">
-                                Remove
+                            <button
+                                className="button-neutral"
+                                onClick={handleBrowseClick}
+                                type="button"
+                            >
+                                Replace
                             </button>
                         )}
                     </div>
@@ -138,13 +143,6 @@ export function CsvUploadSection({
                         >
                             Browse Files
                         </button>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".csv"
-                            className={styles.hiddenInput}
-                            onChange={handleFileInput}
-                        />
                     </div>
                 )}
 

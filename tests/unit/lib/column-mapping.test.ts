@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     getEligibleFields,
     autoMapColumns,
+    remapColumns,
     validateMappings,
 } from '../../../src/lib/column-mapping.js';
 import type { FieldDescribe } from '../../../src/types/salesforce.js';
@@ -157,6 +158,114 @@ describe('autoMapColumns', () => {
         );
         const mappings = autoMapColumns(['Field_199__c'], fields);
         expect(mappings[0].fieldApiName).toBe('Field_199__c');
+    });
+});
+
+describe('remapColumns', () => {
+    const ELIGIBLE_FIELDS: FieldDescribe[] = [
+        makeField('Id', 'Record ID', { createable: false, updateable: true }),
+        makeField('Name', 'Account Name', { createable: true, updateable: true }),
+        makeField('Email__c', 'Email', { createable: true, updateable: true }),
+        makeField('Phone__c', 'Phone', { createable: true, updateable: true }),
+    ];
+
+    const makePrevMapping = (
+        csvHeader: string,
+        csvIndex: number,
+        fieldApiName: string | null,
+        opts: Partial<import('../../../src/types/salesforce.js').ColumnMapping> = {}
+    ): import('../../../src/types/salesforce.js').ColumnMapping => ({
+        csvHeader,
+        csvIndex,
+        fieldApiName,
+        included: fieldApiName !== null,
+        mappingSource: fieldApiName ? 'manual' : 'none',
+        ...opts,
+    });
+
+    it('preserves previous mapping when header name matches (case-insensitive)', () => {
+        const previous = [
+            makePrevMapping('name', 0, 'Name', { included: true, mappingSource: 'manual' }),
+            makePrevMapping('Email__c', 1, 'Email__c', {
+                included: false,
+                mappingSource: 'api-name',
+            }),
+        ];
+
+        // New CSV has headers with different casing
+        const result = remapColumns(['NAME', 'email__c'], ELIGIBLE_FIELDS, previous);
+
+        expect(result[0].fieldApiName).toBe('Name');
+        expect(result[0].mappingSource).toBe('manual');
+        expect(result[0].csvHeader).toBe('NAME');
+        expect(result[0].csvIndex).toBe(0);
+
+        expect(result[1].fieldApiName).toBe('Email__c');
+        expect(result[1].included).toBe(false); // preserved excluded state
+        expect(result[1].mappingSource).toBe('api-name');
+    });
+
+    it('falls back to auto-mapping for new headers not in previous mappings', () => {
+        const previous = [makePrevMapping('Name', 0, 'Name')];
+
+        const result = remapColumns(['Name', 'Phone__c', 'Unknown'], ELIGIBLE_FIELDS, previous);
+
+        // Name preserved from previous
+        expect(result[0].fieldApiName).toBe('Name');
+        // Phone__c auto-mapped by API name
+        expect(result[1].fieldApiName).toBe('Phone__c');
+        expect(result[1].mappingSource).toBe('api-name');
+        // Unknown gets no mapping
+        expect(result[2].fieldApiName).toBeNull();
+        expect(result[2].mappingSource).toBe('none');
+    });
+
+    it('drops previous mapping if the field is no longer eligible', () => {
+        const previous = [
+            makePrevMapping('Name', 0, 'Name'),
+            makePrevMapping('Removed__c', 1, 'Removed__c', { mappingSource: 'manual' }),
+        ];
+
+        // Removed__c is not in ELIGIBLE_FIELDS
+        const result = remapColumns(['Name', 'Removed__c'], ELIGIBLE_FIELDS, previous);
+
+        expect(result[0].fieldApiName).toBe('Name');
+        // Removed__c field not eligible — falls back to auto-map (no match)
+        expect(result[1].fieldApiName).toBeNull();
+        expect(result[1].mappingSource).toBe('none');
+    });
+
+    it('handles empty previous mappings (equivalent to autoMapColumns)', () => {
+        const result = remapColumns(['Name', 'Email__c', 'Unknown'], ELIGIBLE_FIELDS, []);
+        const autoResult = autoMapColumns(['Name', 'Email__c', 'Unknown'], ELIGIBLE_FIELDS);
+
+        expect(result).toEqual(autoResult);
+    });
+
+    it('assigns correct csvIndex based on new header positions', () => {
+        const previous = [
+            makePrevMapping('Email__c', 0, 'Email__c'),
+            makePrevMapping('Name', 1, 'Name'),
+        ];
+
+        // Reversed order in new CSV
+        const result = remapColumns(['Name', 'Email__c'], ELIGIBLE_FIELDS, previous);
+
+        expect(result[0].csvHeader).toBe('Name');
+        expect(result[0].csvIndex).toBe(0);
+        expect(result[1].csvHeader).toBe('Email__c');
+        expect(result[1].csvIndex).toBe(1);
+    });
+
+    it('auto-maps by label when header matches label but not API name', () => {
+        const previous = [makePrevMapping('Id', 0, 'Id')];
+
+        const result = remapColumns(['Id', 'Account Name'], ELIGIBLE_FIELDS, previous);
+
+        expect(result[0].fieldApiName).toBe('Id');
+        // "Account Name" matches label of Name field
+        expect(result[1].fieldApiName).toBe('Name');
+        expect(result[1].mappingSource).toBe('label');
     });
 });
 

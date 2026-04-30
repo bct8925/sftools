@@ -13,7 +13,7 @@
 
 const http = require('http');
 const crypto = require('crypto');
-const { getPayload, deletePayload } = require('./payload-store');
+const { getPayload, deletePayload, storePayload } = require('./payload-store');
 
 const EXTENSION_ORIGIN = 'chrome-extension://lhkfhpookakmejcjfanegicfcdcmmoca';
 
@@ -47,7 +47,7 @@ function startServer() {
             // CORS headers - restricted to the sftools extension origin only
             res.setHeader('Access-Control-Allow-Origin', EXTENSION_ORIGIN);
             res.setHeader('Access-Control-Allow-Headers', 'X-Proxy-Secret');
-            res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
             // Handle preflight
             if (req.method === 'OPTIONS') {
@@ -56,8 +56,8 @@ function startServer() {
                 return;
             }
 
-            // Only accept GET requests
-            if (req.method !== 'GET') {
+            // Only accept GET and POST requests
+            if (req.method !== 'GET' && req.method !== 'POST') {
                 res.writeHead(405, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Method not allowed' }));
                 return;
@@ -72,6 +72,19 @@ function startServer() {
             ) {
                 res.writeHead(401, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Invalid or missing secret' }));
+                return;
+            }
+
+            // POST /payload — store a large request body, return its ID
+            if (req.method === 'POST' && req.url === '/payload') {
+                const chunks = [];
+                req.on('data', chunk => chunks.push(chunk));
+                req.on('end', () => {
+                    const body = Buffer.concat(chunks).toString('utf8');
+                    const id = storePayload(body);
+                    res.writeHead(201, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ id }));
+                });
                 return;
             }
 

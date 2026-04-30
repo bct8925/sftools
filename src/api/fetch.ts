@@ -127,16 +127,44 @@ async function directFetch(url: string, options: FetchOptions = {}): Promise<Fet
 }
 
 /**
- * Smart fetch: uses proxy if available, falls back to extensionFetch
+ * Detect proxy connectivity errors (not Salesforce API errors).
+ * These indicate the proxy itself is unavailable, not that the API request failed.
  */
-export function smartFetch(url: string, options: FetchOptions = {}): Promise<FetchResponse> {
+function isProxyConnectionError(response: FetchResponse): boolean {
+    // No HTTP status or status 0 with an error message indicates transport failure
+    if (response.status === 0 && response.error) return true;
+
+    // Known proxy disconnect error messages
+    const proxyErrors = ['Proxy not connected', 'Native host disconnected', 'Request timeout'];
+    if (response.error && proxyErrors.some(msg => response.error!.includes(msg))) return true;
+
+    return false;
+}
+
+/**
+ * Smart fetch: uses proxy if available, falls back to extensionFetch.
+ * If the proxy returns a connectivity error, disables proxy and retries via extension.
+ */
+export async function smartFetch(url: string, options: FetchOptions = {}): Promise<FetchResponse> {
     // In headless test mode, use direct fetch
     if (!isExtensionContext()) {
         return directFetch(url, options);
     }
 
     if (PROXY_CONNECTED) {
-        return proxyFetch(url, options);
+        try {
+            const response = await proxyFetch(url, options);
+            if (isProxyConnectionError(response)) {
+                debugInfo('[smartFetch] Proxy connection error, falling back to extension fetch');
+                PROXY_CONNECTED = false;
+                return extensionFetch(url, options);
+            }
+            return response;
+        } catch {
+            debugInfo('[smartFetch] Proxy fetch threw, falling back to extension fetch');
+            PROXY_CONNECTED = false;
+            return extensionFetch(url, options);
+        }
     }
     return extensionFetch(url, options);
 }

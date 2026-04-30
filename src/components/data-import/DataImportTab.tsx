@@ -5,7 +5,12 @@ import { useToast } from '../../contexts/ToastContext';
 import { getGlobalDescribe, getObjectDescribe } from '../../api/salesforce';
 import { executeBulkIngest, abortBulkIngestJob } from '../../api/salesforce';
 import { reconstructCsv, splitCsvIntoChunks } from '../../lib/csv-parse';
-import { getEligibleFields, autoMapColumns, validateMappings } from '../../lib/column-mapping';
+import {
+    getEligibleFields,
+    autoMapColumns,
+    remapColumns,
+    validateMappings,
+} from '../../lib/column-mapping';
 import { useImportState } from './useImportState';
 import { OperationSection } from './OperationSection';
 import { CsvUploadSection } from './CsvUploadSection';
@@ -26,7 +31,6 @@ export function DataImportTab() {
         setObject,
         setExternalIdField,
         setCsv,
-        clearCsv,
         setMappings,
         toggleMapping,
         setMappingTarget,
@@ -43,6 +47,13 @@ export function DataImportTab() {
     // For cancellation and active job tracking
     const cancelledRef = useRef(false);
     const activeJobIdRef = useRef<string | null>(null);
+
+    // Skip the re-mapping useEffect after handleCsvLoaded already computed mappings
+    const skipRemapRef = useRef(false);
+
+    // Read current mappings inside handleCsvLoaded without adding to its deps
+    const mappingsRef = useRef(state.mappings);
+    mappingsRef.current = state.mappings;
 
     // Stale describe request guard
     const describeRequestIdRef = useRef(0);
@@ -95,6 +106,13 @@ export function DataImportTab() {
     // Re-compute mappings when fields change and CSV is loaded
     useEffect(() => {
         if (!state.csv || fields.length === 0) return;
+
+        // handleCsvLoaded already computed mappings — skip one cycle
+        if (skipRemapRef.current) {
+            skipRemapRef.current = false;
+            return;
+        }
+
         const eligible = getEligibleFields(
             fields,
             state.operation,
@@ -135,16 +153,18 @@ export function DataImportTab() {
                 state.operation,
                 state.externalIdField ?? undefined
             );
-            const mappings = autoMapColumns(meta.headers, eligible);
+
+            const previous = mappingsRef.current;
+            const mappings =
+                previous.length > 0
+                    ? remapColumns(meta.headers, eligible, previous)
+                    : autoMapColumns(meta.headers, eligible);
+
+            skipRemapRef.current = true;
             setCsv(meta, mappings);
         },
         [fields, state.operation, state.externalIdField, setCsv]
     );
-
-    const handleCsvCleared = useCallback(() => {
-        rawCsvRef.current = null;
-        clearCsv();
-    }, [clearCsv]);
 
     const handleExecute = useCallback(async () => {
         if (!rawCsvRef.current || !state.objectName) return;
@@ -228,7 +248,6 @@ export function DataImportTab() {
                 csv={state.csv}
                 disabled={state.jobPhase === 'running'}
                 onCsvLoaded={handleCsvLoaded}
-                onCsvCleared={handleCsvCleared}
             />
 
             {state.csv && (

@@ -4,6 +4,7 @@ import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEdito
 import {
     registerSOQLCompletionProvider,
     activateSOQLAutocomplete,
+    deactivateSOQLAutocomplete,
     clearState as clearAutocompleteState,
 } from '../../api/soql-autocomplete';
 
@@ -24,6 +25,8 @@ interface QueryEditorProps {
     lineNumbers?: 'on' | 'off';
     /** Enable word wrap */
     wordWrap?: 'on' | 'off';
+    /** Enable SOQL autocomplete suggestions */
+    autocomplete?: 'on' | 'off';
     /** Additional CSS class */
     className?: string;
 }
@@ -36,25 +39,25 @@ let autocompleteRegistered = false;
  * Wraps MonacoEditor with SOQL-specific autocomplete configuration.
  */
 export const QueryEditor = forwardRef<QueryEditorRef, QueryEditorProps>(
-    ({ value, onChange, onExecute, lineNumbers, wordWrap, className }, ref) => {
+    (
+        { value, onChange, onExecute, lineNumbers, wordWrap, autocomplete = 'on', className },
+        ref
+    ) => {
         const editorRef = useRef<MonacoEditorRef>(null);
 
-        // Initialize SOQL autocomplete on mount
+        // Initialize SOQL autocomplete on mount and react to setting changes
         useEffect(() => {
             // Register provider once globally
             if (!autocompleteRegistered) {
                 registerSOQLCompletionProvider();
                 autocompleteRegistered = true;
             }
-            // Activate for this component
-            activateSOQLAutocomplete();
-
-            // Cleanup - don't deactivate as query-tab is persistent
-            return () => {
-                // Note: Don't deactivate autocomplete here - the component might remount
-                // and autocomplete stays active for the query tab lifetime
-            };
-        }, []);
+            if (autocomplete === 'on') {
+                activateSOQLAutocomplete();
+            } else {
+                deactivateSOQLAutocomplete();
+            }
+        }, [autocomplete]);
 
         // Expose imperative methods
         useImperativeHandle(ref, () => ({

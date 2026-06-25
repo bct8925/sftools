@@ -69,6 +69,7 @@ export function QueryTab() {
     // Editor display settings
     const [lineNumbers, setLineNumbers] = useState<'on' | 'off'>('on');
     const [wordWrap, setWordWrap] = useState<'on' | 'off'>('on');
+    const [autocomplete, setAutocomplete] = useState<'on' | 'off'>('on');
     const editorSettingsLoadedRef = useRef(false);
     const handleToggleQuery = useCallback(() => setIsQueryCollapsed(prev => !prev), []);
     const handleToggleResults = useCallback(() => setIsResultsCollapsed(prev => !prev), []);
@@ -120,10 +121,15 @@ export function QueryTab() {
     useEffect(() => {
         chrome.storage.local.get('queryEditorSettings').then(data => {
             const settings = data.queryEditorSettings as
-                | { lineNumbers?: 'on' | 'off'; wordWrap?: 'on' | 'off' }
+                | {
+                      lineNumbers?: 'on' | 'off';
+                      wordWrap?: 'on' | 'off';
+                      autocomplete?: 'on' | 'off';
+                  }
                 | undefined;
             if (settings?.lineNumbers) setLineNumbers(settings.lineNumbers);
             if (settings?.wordWrap) setWordWrap(settings.wordWrap);
+            if (settings?.autocomplete) setAutocomplete(settings.autocomplete);
             editorSettingsLoadedRef.current = true;
         });
     }, []);
@@ -131,8 +137,10 @@ export function QueryTab() {
     // Persist editor settings when they change
     useEffect(() => {
         if (!editorSettingsLoadedRef.current) return;
-        chrome.storage.local.set({ queryEditorSettings: { lineNumbers, wordWrap } });
-    }, [lineNumbers, wordWrap]);
+        chrome.storage.local.set({
+            queryEditorSettings: { lineNumbers, wordWrap, autocomplete },
+        });
+    }, [lineNumbers, wordWrap, autocomplete]);
 
     // History ref
     const historyRef = useRef<ScriptHistoryRef>(null);
@@ -410,6 +418,10 @@ export function QueryTab() {
         setWordWrap(checked ? 'on' : 'off');
     }, []);
 
+    const handleAutocompleteChange = useCallback((checked: boolean) => {
+        setAutocomplete(checked ? 'on' : 'off');
+    }, []);
+
     // Handle query selection from history
     const handleSelectQuery = useCallback((query: string) => {
         editorRef.current?.setValue(query);
@@ -490,6 +502,13 @@ export function QueryTab() {
                         >
                             Word Wrap
                         </ButtonIconCheckbox>
+                        <ButtonIconCheckbox
+                            checked={autocomplete === 'on'}
+                            onChange={handleAutocompleteChange}
+                            data-testid="query-autocomplete-checkbox"
+                        >
+                            Autocomplete
+                        </ButtonIconCheckbox>
                     </ButtonIcon>
                 </div>
                 <div className={`card-body ${styles.editorCardBody}`} hidden={isQueryCollapsed}>
@@ -499,6 +518,7 @@ export function QueryTab() {
                         onExecute={executeQuery}
                         lineNumbers={lineNumbers}
                         wordWrap={wordWrap}
+                        autocomplete={autocomplete}
                         className={styles.editor}
                     />
                     <div className={styles.footer}>

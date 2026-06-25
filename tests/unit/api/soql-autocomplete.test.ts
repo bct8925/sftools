@@ -62,6 +62,7 @@ vi.mock('@jetstreamapp/soql-parser-js', () => ({
 
 import {
     activateSOQLAutocomplete,
+    deactivateSOQLAutocomplete,
     clearState,
     registerSOQLCompletionProvider,
 } from '../../../src/api/soql-autocomplete.js';
@@ -80,6 +81,34 @@ describe('soql-autocomplete', () => {
             activateSOQLAutocomplete();
             // Can't directly check state, but the function should not throw
             expect(true).toBe(true);
+        });
+    });
+
+    describe('deactivateSOQLAutocomplete', () => {
+        it('deactivateSOQLAutocomplete returns no suggestions', async () => {
+            registerSOQLCompletionProvider();
+            const calls = vi.mocked(monaco.languages.registerCompletionItemProvider).mock.calls;
+            const provider = calls[calls.length - 1]?.[1] as
+                | {
+                      provideCompletionItems: (
+                          model: unknown,
+                          position: unknown
+                      ) => Promise<{ suggestions: unknown[] }>;
+                  }
+                | undefined;
+            expect(provider).toBeDefined();
+
+            activateSOQLAutocomplete();
+            deactivateSOQLAutocomplete();
+
+            const model = {
+                getValue: () => 'SELECT Id FROM Account',
+                getOffsetAt: () => 10,
+                getWordUntilPosition: () => ({ startColumn: 1, endColumn: 3 }),
+            };
+            const position = { lineNumber: 1, column: 3 };
+            const result = await provider!.provideCompletionItems(model, position);
+            expect(result.suggestions).toEqual([]);
         });
     });
 

@@ -24,7 +24,7 @@
         "vitest": "^4.0.18"
     },
     "dependencies": {
-        "@jetstreamapp/soql-parser-js": "^6.3.1",
+        "@jetstreamapp/soql-parser-js": "^7.2.2",
         "@salesforce-ux/icons": "^10.5.4",
         "dompurify": "^3.3.1",
         "monaco-editor": "^0.53.0",

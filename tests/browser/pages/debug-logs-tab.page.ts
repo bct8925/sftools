@@ -5,6 +5,7 @@ export class DebugLogsTabPage extends BasePage {
     // Main elements
     readonly watchBtn: Locator;
     readonly refreshBtn: Locator;
+    readonly clearBtn: Locator;
     readonly settingsBtn: Locator;
     readonly filterInput: Locator;
     readonly editor: Locator;
@@ -23,6 +24,7 @@ export class DebugLogsTabPage extends BasePage {
         // Main elements - watchBtn is now a unified play/stop toggle
         this.watchBtn = page.locator('[data-testid="debug-logs-watch-btn"]');
         this.refreshBtn = page.locator('[data-testid="debug-logs-refresh-btn"]');
+        this.clearBtn = page.locator('[data-testid="debug-logs-clear-btn"]');
         this.settingsBtn = page.locator('[data-testid="debug-logs-settings-btn"]');
         this.filterInput = page.locator('[data-testid="debug-logs-filter-input"]');
         this.editor = page.locator('[data-testid="debug-logs-editor"]');
@@ -93,6 +95,20 @@ export class DebugLogsTabPage extends BasePage {
         await this.slowClick(this.refreshBtn);
         // Wait for loading to complete
         await this.page.waitForTimeout(500);
+    }
+
+    /**
+     * Clear the logs table
+     */
+    async clearLogs(): Promise<void> {
+        await this.slowClick(this.clearBtn);
+    }
+
+    /**
+     * Check if the clear button is disabled
+     */
+    async isClearDisabled(): Promise<boolean> {
+        return this.clearBtn.isDisabled();
     }
 
     /**

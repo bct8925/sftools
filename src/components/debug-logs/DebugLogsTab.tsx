@@ -160,6 +160,18 @@ export function DebugLogsTab() {
         }
     }, [watchingSince, isAuthenticated, isAutoRefreshEnabled, toast]);
 
+    // Handle Clear button - empties the results table and viewer
+    const handleClear = useCallback(() => {
+        setLogs([]);
+        setSelectedLogBody('');
+        setOpenedLogIds(new Set());
+        editorRef.current?.setValue(
+            watchingSince
+                ? '// Watching for new debug logs...\n// Click Refresh to fetch logs or wait for auto-refresh (if proxy connected)'
+                : '// Click ▶ to start monitoring debug logs'
+        );
+    }, [watchingSince]);
+
     // Handle Open Log button
     const handleOpenLog = useCallback(
         async (logId: string) => {
@@ -275,6 +287,13 @@ export function DebugLogsTab() {
                                 onClick={handleRefresh}
                                 disabled={isLoading || !watchingSince}
                                 data-testid="debug-logs-refresh-btn"
+                            />
+                            <ButtonIcon
+                                icon="trash"
+                                title="Clear logs"
+                                onClick={handleClear}
+                                disabled={logs.length === 0}
+                                data-testid="debug-logs-clear-btn"
                             />
                             <ButtonIcon
                                 icon="settings"

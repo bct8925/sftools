@@ -16,6 +16,7 @@ import {
  * - U-DL-F-003: Enable trace flag for selected user
  * - U-DL-F-004: Delete all trace flags
  * - U-DL-F-005: Delete all debug logs
+ * - U-DL-F-006: Clear button empties the results table
  */
 describe('Debug Logs Viewer (U-DL-F-002, U-DL-F-003, U-DL-F-004, U-DL-F-005)', () => {
     beforeEach(async () => {
@@ -97,5 +98,27 @@ describe('Debug Logs Viewer (U-DL-F-002, U-DL-F-003, U-DL-F-004, U-DL-F-005)', (
         const enableBtnVisible = await debugLogsTab.enableForMeBtn.isVisible();
         expect(enableBtnVisible).toBe(true);
         await debugLogsTab.closeSettings();
+    });
+
+    it('U-DL-F-006: Clear button empties the results table', async () => {
+        const { page } = getTestContext();
+        const { debugLogsTab } = createPageObjects(page);
+
+        await navigateToExtension();
+        await debugLogsTab.navigateTo();
+
+        // Nothing to clear before any logs are fetched
+        expect(await debugLogsTab.isClearDisabled()).toBe(true);
+
+        // Fetch logs into the table
+        await debugLogsTab.startWatching();
+        await debugLogsTab.refreshLogs();
+        expect(await debugLogsTab.getLogCount()).toBe(2);
+
+        // Clear empties the table and disables the button again
+        expect(await debugLogsTab.isClearDisabled()).toBe(false);
+        await debugLogsTab.clearLogs();
+        expect(await debugLogsTab.getLogCount()).toBe(0);
+        expect(await debugLogsTab.isClearDisabled()).toBe(true);
     });
 });

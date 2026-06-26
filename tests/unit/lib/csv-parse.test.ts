@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
+    countCsvDataRows,
     parseCsvForPreview,
     reconstructCsv,
     splitCsvIntoChunks,
+    stripCsvHeader,
 } from '../../../src/lib/csv-parse.js';
 import type { ColumnMapping } from '../../../src/types/salesforce.js';
 
@@ -47,6 +49,68 @@ describe('parseCsvForPreview', () => {
 
         expect(result.headers).toEqual(['Name', 'Description']);
         expect(result.rowCount).toBe(1);
+    });
+});
+
+describe('countCsvDataRows', () => {
+    it('counts data rows excluding the header', () => {
+        const csv = 'Name,Email\nAlice,a@test.com\nBob,b@test.com';
+        expect(countCsvDataRows(csv)).toBe(2);
+    });
+
+    it('does not count newlines inside quoted fields as extra rows', () => {
+        const csv = 'Id,Description\n1,"line one\nline two\nline three"\n2,"another\nmultiline"';
+        expect(countCsvDataRows(csv)).toBe(2);
+    });
+
+    it('counts all rows when hasHeader is false', () => {
+        const csv = '1,"multi\nline"\n2,single';
+        expect(countCsvDataRows(csv, false)).toBe(2);
+    });
+
+    it('ignores blank trailing lines', () => {
+        const csv = 'Id\n1\n2\n\n';
+        expect(countCsvDataRows(csv)).toBe(2);
+    });
+
+    it('returns 0 for empty or whitespace-only input', () => {
+        expect(countCsvDataRows('')).toBe(0);
+        expect(countCsvDataRows('   \n  ')).toBe(0);
+    });
+
+    it('returns 0 for a header-only CSV', () => {
+        expect(countCsvDataRows('Id,Name\n')).toBe(0);
+    });
+});
+
+describe('stripCsvHeader', () => {
+    it('removes the header row, keeping data rows', () => {
+        const csv = 'Name,Email\nAlice,a@test.com\nBob,b@test.com';
+        expect(stripCsvHeader(csv)).toBe('Alice,a@test.com\nBob,b@test.com');
+    });
+
+    it('keeps newlines embedded in quoted data fields intact', () => {
+        const csv = 'Id,Description\n1,"line one\nline two"';
+        expect(stripCsvHeader(csv)).toBe('1,"line one\nline two"');
+    });
+
+    it('does not split on a newline embedded in a quoted header field', () => {
+        const csv = '"Multi\nLine Header",Value\n1,a';
+        expect(stripCsvHeader(csv)).toBe('1,a');
+    });
+
+    it('handles escaped quotes within a quoted header field', () => {
+        const csv = '"He said ""hi""\nstill header",Value\n1,a';
+        expect(stripCsvHeader(csv)).toBe('1,a');
+    });
+
+    it('returns empty string for a header-only CSV', () => {
+        expect(stripCsvHeader('Id,Name')).toBe('');
+        expect(stripCsvHeader('Id,Name\n')).toBe('');
+    });
+
+    it('returns empty string for empty input', () => {
+        expect(stripCsvHeader('')).toBe('');
     });
 });
 

@@ -46,6 +46,68 @@ export function parseCsvForPreview(
     };
 }
 
+/**
+ * Count the data rows in a CSV string using a proper CSV parser.
+ *
+ * Unlike splitting on newlines, this correctly ignores newlines embedded in
+ * double-quoted fields, so multi-line values count as a single record.
+ *
+ * @param csvText - CSV text to count
+ * @param hasHeader - whether the first row is a header to exclude (default true)
+ * @returns number of data rows
+ */
+export function countCsvDataRows(csvText: string, hasHeader = true): number {
+    if (!csvText.trim()) return 0;
+
+    const parsed = Papa.parse<string[]>(csvText, {
+        skipEmptyLines: true,
+    });
+
+    const total = parsed.data.length;
+    return hasHeader ? Math.max(0, total - 1) : total;
+}
+
+/**
+ * Find the index in the CSV at which data begins, i.e. just past the newline
+ * that terminates the first (header) record. Newlines inside double-quoted
+ * fields are ignored. Returns -1 if no record terminator is found.
+ */
+function findDataStart(csvText: string): number {
+    let inQuotes = false;
+
+    for (let i = 0; i < csvText.length; i++) {
+        const char = csvText[i];
+
+        if (char === '"') {
+            // A doubled quote ("") is an escaped quote within a quoted field
+            if (inQuotes && csvText[i + 1] === '"') {
+                i++;
+                continue;
+            }
+            inQuotes = !inQuotes;
+        } else if (char === '\n' && !inQuotes) {
+            return i + 1;
+        }
+    }
+
+    return -1;
+}
+
+/**
+ * Strip the header row from a CSV string, returning the data rows only.
+ *
+ * Unlike splitting on the first newline, this respects newlines embedded in a
+ * quoted header field. Returns an empty string when the CSV has no data rows.
+ *
+ * @param csvText - CSV text including a header row
+ * @returns the CSV data rows with the header removed
+ */
+export function stripCsvHeader(csvText: string): string {
+    const dataStart = findDataStart(csvText);
+    if (dataStart < 0) return '';
+    return csvText.slice(dataStart);
+}
+
 // ============================================================
 // CSV Reconstruction
 // ============================================================

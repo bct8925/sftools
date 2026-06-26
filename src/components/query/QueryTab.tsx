@@ -19,6 +19,7 @@ import {
     getExportFilename,
     downloadCsv,
 } from '../../lib/csv-utils';
+import { countCsvDataRows } from '../../lib/csv-parse';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import styles from './QueryTab.module.css';
 
@@ -300,7 +301,7 @@ export function QueryTab() {
             const filename = getExportFilename(objectName);
 
             downloadCsv(csv, filename);
-            const rowCount = csv.split('\n').filter(l => l.length > 0).length - 1;
+            const rowCount = countCsvDataRows(csv);
             toast.update(id, `Exported ${rowCount.toLocaleString()} records`, 'success');
         } catch (error) {
             toast.update(id, 'Export failed', 'error');

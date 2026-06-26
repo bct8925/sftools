@@ -1,6 +1,7 @@
 // Bulk Ingest API v2 — Functions for CSV data import operations
 
 import type { BulkIngestJob, BulkIngestOperation, BulkIngestResults } from '../types/salesforce';
+import { countCsvDataRows, stripCsvHeader } from '../lib/csv-parse';
 import { API_VERSION } from './constants';
 import { salesforceRequest } from './salesforce-request';
 
@@ -124,29 +125,6 @@ export async function abortBulkIngestJob(jobId: string): Promise<void> {
         method: 'PATCH',
         body: JSON.stringify({ state: 'Aborted' }),
     });
-}
-
-// ============================================================
-// Result CSV Aggregation
-// ============================================================
-
-/**
- * Strip the header row from a CSV (jobs 2+ in multi-job aggregation)
- */
-function stripCsvHeader(csv: string): string {
-    const newlineIndex = csv.indexOf('\n');
-    if (newlineIndex < 0) return '';
-    return csv.slice(newlineIndex + 1);
-}
-
-/**
- * Count data rows in a CSV (header row excluded, blank trailing lines excluded)
- */
-function countCsvRows(csv: string): number {
-    if (!csv.trim()) return 0;
-    const lines = csv.split('\n').filter(l => l.trim().length > 0);
-    // Subtract 1 for the header row
-    return Math.max(0, lines.length - 1);
 }
 
 // ============================================================
@@ -280,9 +258,9 @@ export async function executeBulkIngest(
         }
 
         // Count rows from the original (with header) for accuracy
-        totalSuccess += countCsvRows(successCsv);
-        totalFailure += countCsvRows(failureCsv);
-        totalUnprocessed += countCsvRows(unprocessedCsv);
+        totalSuccess += countCsvDataRows(successCsv);
+        totalFailure += countCsvDataRows(failureCsv);
+        totalUnprocessed += countCsvDataRows(unprocessedCsv);
     }
 
     onProgress?.(

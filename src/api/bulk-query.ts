@@ -1,5 +1,6 @@
 // Bulk Query API v2 - Functions for large data exports
 
+import { countCsvDataRows, stripCsvHeader } from '../lib/csv-parse';
 import { API_VERSION } from './constants';
 import { salesforceRequest } from './salesforce-request';
 
@@ -120,13 +121,11 @@ export async function getBulkQueryResults(
 
         if (i === 0) {
             chunks.push(chunk);
-            const lines = chunk.split('\n').filter(l => l.length > 0).length;
-            totalRows += Math.max(0, lines - 1);
+            totalRows += countCsvDataRows(chunk);
         } else {
-            const newlineIndex = chunk.indexOf('\n');
-            const strippedChunk = newlineIndex >= 0 ? chunk.slice(newlineIndex + 1) : chunk;
+            const strippedChunk = stripCsvHeader(chunk);
             chunks.push(strippedChunk);
-            totalRows += strippedChunk.split('\n').filter(l => l.length > 0).length;
+            totalRows += countCsvDataRows(strippedChunk, false);
         }
 
         onChunkProgress?.(totalRows);

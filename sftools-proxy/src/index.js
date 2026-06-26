@@ -39,7 +39,7 @@ const handlers = {
             success: true,
             version: VERSION,
             httpPort,
-            secret: httpSecret
+            secret: httpSecret,
         };
     },
 
@@ -48,7 +48,7 @@ const handlers = {
      */
     ping: () => ({
         success: true,
-        version: VERSION
+        version: VERSION,
     }),
 
     /**
@@ -66,7 +66,7 @@ const handlers = {
      * gRPC-specific metadata handlers (for Platform Events)
      */
     getTopic: handleGetTopic,
-    getSchema: handleGetSchema
+    getSchema: handleGetSchema,
 };
 
 /**
@@ -83,7 +83,7 @@ function sendResponse(id, response) {
         sendMessage({
             id,
             success: true,
-            largePayload: payloadId
+            largePayload: payloadId,
         });
     } else {
         // Send directly via Native Messaging
@@ -119,17 +119,32 @@ async function processMessage(message) {
 }
 
 /**
- * Main message loop
+ * Main message loop.
+ *
+ * Reads are sequential because the Native Messaging stream is length-prefixed
+ * and must be framed in order. Processing is fire-and-forget so a slow request
+ * (e.g. an anonymous Apex execution) doesn't block subsequent requests (e.g. a
+ * query) on the single channel. Responses are correlated by `id` on the
+ * extension side, so they may safely complete out of order.
+ *
+ * @param {() => Promise<object>} read - Reads the next message (defaults to stdin)
+ * @param {(message: object) => Promise<void>} handleMessage - Processes a message
  */
+async function runMessageLoop(read = readMessage, handleMessage = processMessage) {
+    while (true) {
+        const message = await read();
+        handleMessage(message).catch(err => {
+            console.error('Error processing message:', err.message);
+        });
+    }
+}
+
 async function main() {
     // Log to stderr (stdout is reserved for Native Messaging)
     console.error(`sftools-proxy v${VERSION} starting...`);
 
     try {
-        while (true) {
-            const message = await readMessage();
-            await processMessage(message);
-        }
+        await runMessageLoop();
     } catch (err) {
         // stdin closed or fatal error
         console.error('Proxy shutting down:', err.message);
@@ -137,16 +152,20 @@ async function main() {
     }
 }
 
-// Handle uncaught errors
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught exception:', err);
-    process.exit(1);
-});
+// Only wire up process-level handlers and start the loop when run directly,
+// so the module can be imported in tests without side effects.
+if (require.main === module) {
+    process.on('uncaughtException', err => {
+        console.error('Uncaught exception:', err);
+        process.exit(1);
+    });
 
-process.on('unhandledRejection', (err) => {
-    console.error('Unhandled rejection:', err);
-    process.exit(1);
-});
+    process.on('unhandledRejection', err => {
+        console.error('Unhandled rejection:', err);
+        process.exit(1);
+    });
 
-// Start the proxy
-main();
+    main();
+}
+
+module.exports = { runMessageLoop, processMessage, handlers };

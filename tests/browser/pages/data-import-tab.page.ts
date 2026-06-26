@@ -47,6 +47,20 @@ export class DataImportTabPage extends BasePage {
     }
 
     /**
+     * Select an operation from the operation dropdown
+     */
+    async selectOperation(operation: string): Promise<void> {
+        await this.operationSelect.selectOption(operation);
+    }
+
+    /**
+     * Get the visible text of the execute button
+     */
+    async getExecuteButtonText(): Promise<string> {
+        return (await this.executeBtn.textContent())?.trim() ?? '';
+    }
+
+    /**
      * Check if the execute button is disabled
      */
     async isExecuteButtonDisabled(): Promise<boolean> {

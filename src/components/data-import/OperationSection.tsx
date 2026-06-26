@@ -1,6 +1,7 @@
 // Operation and Object selection section
 import { useCallback } from 'react';
 import { ObjectSearchSelect } from './ObjectSearchSelect';
+import { OPERATIONS, OPERATION_LABELS } from './operations';
 import type { BulkIngestOperation, FieldDescribe, SObjectDescribe } from '../../types/salesforce';
 import styles from './DataImportTab.module.css';
 
@@ -15,13 +16,6 @@ interface OperationSectionProps {
     onObjectChange: (name: string | null) => void;
     onExternalIdFieldChange: (field: string | null) => void;
 }
-
-const OPERATIONS: { value: BulkIngestOperation; label: string }[] = [
-    { value: 'insert', label: 'Insert' },
-    { value: 'update', label: 'Update' },
-    { value: 'upsert', label: 'Upsert' },
-    { value: 'delete', label: 'Delete' },
-];
 
 function filterObjectsByOperation(
     objects: SObjectDescribe[],
@@ -83,8 +77,8 @@ export function OperationSection({
                         data-testid="data-import-operation-select"
                     >
                         {OPERATIONS.map(op => (
-                            <option key={op.value} value={op.value}>
-                                {op.label}
+                            <option key={op} value={op}>
+                                {OPERATION_LABELS[op]}
                             </option>
                         ))}
                     </select>

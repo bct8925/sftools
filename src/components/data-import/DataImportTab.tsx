@@ -268,6 +268,7 @@ export function DataImportTab() {
             />
 
             <ExecuteSection
+                operation={state.operation}
                 rowCount={state.csv?.rowCount ?? 0}
                 isReadyToExecute={isReadyToExecute}
                 jobPhase={state.jobPhase}

@@ -7,6 +7,7 @@
  * - DI-F-003: Operation & Object section is visible with operation selector defaulting to insert
  * - DI-F-004: CSV upload section is visible with browse button
  * - DI-F-005: Import button is disabled before object and CSV selection
+ * - DI-F-006: Execute button label reflects the selected operation
  */
 
 import { describe, it, beforeEach, expect } from 'vitest';
@@ -96,5 +97,22 @@ describe('Data Import Tab', () => {
         await dataImportTab.navigateTo();
 
         expect(await dataImportTab.isExecuteButtonDisabled()).toBe(true);
+    });
+
+    it('DI-F-006: Execute button label reflects the selected operation', async () => {
+        const { page } = getTestContext();
+        const { dataImportTab } = createPageObjects(page);
+
+        await navigateToExtension();
+        await dataImportTab.navigateTo();
+
+        // Defaults to insert
+        expect(await dataImportTab.getExecuteButtonText()).toBe('Insert');
+
+        await dataImportTab.selectOperation('delete');
+        expect(await dataImportTab.getExecuteButtonText()).toBe('Delete');
+
+        await dataImportTab.selectOperation('upsert');
+        expect(await dataImportTab.getExecuteButtonText()).toBe('Upsert');
     });
 });

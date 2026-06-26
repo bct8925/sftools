@@ -1,10 +1,12 @@
 // Execute section — import button, results, and downloads
 import { useCallback } from 'react';
 import { downloadCsv } from '../../lib/csv-utils';
-import type { BulkIngestResults } from '../../types/salesforce';
+import { OPERATION_LABELS } from './operations';
+import type { BulkIngestOperation, BulkIngestResults } from '../../types/salesforce';
 import styles from './DataImportTab.module.css';
 
 interface ExecuteSectionProps {
+    operation: BulkIngestOperation;
     rowCount: number;
     isReadyToExecute: boolean;
     jobPhase: 'idle' | 'running' | 'complete' | 'failed';
@@ -16,6 +18,7 @@ interface ExecuteSectionProps {
 }
 
 export function ExecuteSection({
+    operation,
     rowCount,
     isReadyToExecute,
     jobPhase,
@@ -25,15 +28,19 @@ export function ExecuteSection({
     onExecute,
     onCancel,
 }: ExecuteSectionProps) {
+    const operationLabel = OPERATION_LABELS[operation];
+
     const handleExecute = useCallback(() => {
         const label = objectName ?? 'records';
         if (
-            !confirm(`Import ${rowCount.toLocaleString()} ${label} records? This cannot be undone.`)
+            !confirm(
+                `${operationLabel} ${rowCount.toLocaleString()} ${label} records? This cannot be undone.`
+            )
         ) {
             return;
         }
         onExecute();
-    }, [onExecute, rowCount, objectName]);
+    }, [onExecute, rowCount, objectName, operationLabel]);
 
     const handleDownloadSuccess = useCallback(() => {
         downloadCsv(jobResult!.successCsv, `${objectName ?? 'import'}_success.csv`);
@@ -56,7 +63,7 @@ export function ExecuteSection({
                 <div className={styles.executeActions}>
                     {jobPhase === 'running' ? (
                         <button className="button-neutral" onClick={onCancel} type="button">
-                            Cancel Import
+                            Cancel {operationLabel}
                         </button>
                     ) : (
                         <button
@@ -66,7 +73,7 @@ export function ExecuteSection({
                             type="button"
                             data-testid="data-import-execute-btn"
                         >
-                            Import
+                            {operationLabel}
                         </button>
                     )}
                 </div>

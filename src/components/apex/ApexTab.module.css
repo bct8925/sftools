@@ -85,6 +85,10 @@
 
 .editor {
     height: 200px;
+    /* Cap manual resize so a stretched editor always leaves the debug log panel
+       enough room for its header and a usable amount of log output.
+       Never cap below the default height so short windows still render normally. */
+    max-height: max(200px, calc(100vh - 380px));
 }
 
 /* When the debug log is collapsed, the editor card grows to fill the space */
@@ -106,6 +110,8 @@
     flex: 1;
     height: auto;
     min-height: 0;
+    /* Filling the card here, so the resize cap doesn't apply */
+    max-height: none;
 }
 
 .footer {

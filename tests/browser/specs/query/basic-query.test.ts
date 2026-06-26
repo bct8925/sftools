@@ -1,11 +1,12 @@
 /**
  * Basic Query Test
  *
- * Test IDs: Q-F-001, Q-F-033, Q-F-034, Q-F-035
+ * Test IDs: Q-F-001, Q-F-033, Q-F-034, Q-F-035, Q-F-036
  * - Q-F-001: Execute simple SOQL query - Results display in table with correct columns
  * - Q-F-033: Verify success status
  * - Q-F-034: Verify record count
  * - Q-F-035: Verify column headers
+ * - Q-F-036: Results panel is collapsed by default and auto-expands on execution
  */
 
 import { describe, it, beforeEach, expect } from 'vitest';
@@ -60,5 +61,20 @@ describe('Q-F-001: Basic Query Execution', () => {
         const headers = await queryTab.getResultsHeaders();
         expect(headers).toContain('Id');
         expect(headers).toContain('Name');
+    });
+
+    it('Q-F-036: results panel is collapsed by default and auto-expands on execution', async () => {
+        const { page } = getTestContext();
+        const { queryTab } = createPageObjects(page);
+
+        await navigateToExtension();
+        await queryTab.navigateTo();
+
+        // Collapsed on first load for a clean view
+        expect(await queryTab.isResultsCollapsed()).toBe(true);
+
+        // Running a query reveals the results panel
+        await queryTab.executeQuery('SELECT Id, Name FROM Account LIMIT 10');
+        expect(await queryTab.isResultsCollapsed()).toBe(false);
     });
 });

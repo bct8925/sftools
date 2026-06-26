@@ -11,6 +11,7 @@ export class ApexTabPage extends BasePage {
     readonly historyBtn: Locator;
     readonly statusBadge: Locator;
     readonly searchInput: Locator;
+    readonly outputEditorContainer: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -21,6 +22,14 @@ export class ApexTabPage extends BasePage {
         this.historyBtn = page.locator('[data-testid="apex-history-btn"]');
         this.statusBadge = page.locator('[role="alert"]').first();
         this.searchInput = page.locator('[data-testid="apex-search-input"]');
+        this.outputEditorContainer = page.locator('[data-testid="apex-output-editor"]');
+    }
+
+    /**
+     * Whether the debug log panel is collapsed (body hidden)
+     */
+    async isOutputCollapsed(): Promise<boolean> {
+        return !(await this.outputEditorContainer.isVisible());
     }
 
     /**

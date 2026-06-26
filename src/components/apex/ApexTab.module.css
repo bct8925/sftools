@@ -83,6 +83,31 @@
     padding: 0;
 }
 
+.editor {
+    height: 200px;
+}
+
+/* When the debug log is collapsed, the editor card grows to fill the space */
+.editorCardExpanded {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.editorCardExpanded .editorCardBody {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.editorCardExpanded .editor {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+}
+
 .footer {
     padding: 10px var(--spacing-md);
 }

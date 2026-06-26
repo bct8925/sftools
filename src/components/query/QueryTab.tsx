@@ -65,7 +65,9 @@ export function QueryTab() {
     const [editingEnabled, setEditingEnabled] = useState(false);
     const [bulkExportInProgress, setBulkExportInProgress] = useState(false);
     const [isQueryCollapsed, setIsQueryCollapsed] = useState(false);
-    const [isResultsCollapsed, setIsResultsCollapsed] = useState(false);
+    // Results start collapsed for a cleaner initial view; they auto-expand when
+    // a query is run or a result tab is refreshed.
+    const [isResultsCollapsed, setIsResultsCollapsed] = useState(true);
 
     // Editor display settings
     const [lineNumbers, setLineNumbers] = useState<'on' | 'off'>('on');
@@ -172,11 +174,18 @@ export function QueryTab() {
         clearQueryAutocompleteState();
     }, [activeConnection?.id]);
 
+    // Run the current query and reveal the results panel
+    const runQuery = useCallback(() => {
+        setIsResultsCollapsed(false);
+        executeQuery();
+    }, [executeQuery]);
+
     // Handle tab refresh
     const handleTabRefresh = useCallback(
         async (tabId: string) => {
             const tab = state.tabs.find(t => t.id === tabId);
             if (tab) {
+                setIsResultsCollapsed(false);
                 await fetchQueryData(tabId, tab.query);
             }
         },
@@ -459,8 +468,10 @@ export function QueryTab() {
 
     return (
         <div className={styles.queryTab} data-testid="query-tab">
-            {/* Query Editor Card */}
-            <div className="card">
+            {/* Query Editor Card - grows to fill when results are collapsed */}
+            <div
+                className={`card ${isResultsCollapsed && !isQueryCollapsed ? styles.editorCardExpanded : ''}`}
+            >
                 <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIconQuery}`}>S</div>
                     <h2 className="card-collapse-title" onClick={handleToggleQuery}>
@@ -516,7 +527,7 @@ export function QueryTab() {
                     <QueryEditor
                         ref={editorRef}
                         value={initialQuery}
-                        onExecute={executeQuery}
+                        onExecute={runQuery}
                         lineNumbers={lineNumbers}
                         wordWrap={wordWrap}
                         autocomplete={autocomplete}
@@ -525,7 +536,7 @@ export function QueryTab() {
                     <div className={styles.footer}>
                         <ButtonDropdown
                             label="Query"
-                            onClickMain={executeQuery}
+                            onClickMain={runQuery}
                             options={[
                                 {
                                     label: 'Bulk Export',

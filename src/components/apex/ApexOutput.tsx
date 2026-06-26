@@ -7,16 +7,18 @@ import styles from './ApexTab.module.css';
 interface ApexOutputProps {
     output: string;
     className?: string;
+    /** Whether the debug log panel is collapsed (controlled by parent) */
+    isCollapsed: boolean;
+    /** Called to toggle the collapsed state */
+    onToggleCollapse: () => void;
 }
 
 /**
  * Debug Log output with search/filter functionality
  * Displays execution results and debug logs with line filtering
  */
-export function ApexOutput({ output, className }: ApexOutputProps) {
+export function ApexOutput({ output, className, isCollapsed, onToggleCollapse }: ApexOutputProps) {
     const [searchText, setSearchText] = useState('');
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const handleToggle = useCallback(() => setIsCollapsed(prev => !prev), []);
     const editorRef = useRef<MonacoEditorRef>(null);
     const filterTimeoutRef = useRef<number | null>(null);
 
@@ -57,10 +59,10 @@ export function ApexOutput({ output, className }: ApexOutputProps) {
         >
             <div className="card-header">
                 <div className={`card-header-icon ${styles.outputHeaderIcon}`}>L</div>
-                <h2 className="card-collapse-title" onClick={handleToggle}>
+                <h2 className="card-collapse-title" onClick={onToggleCollapse}>
                     Debug Log
                 </h2>
-                <CollapseChevron isOpen={!isCollapsed} onClick={handleToggle} />
+                <CollapseChevron isOpen={!isCollapsed} onClick={onToggleCollapse} />
                 <div className={styles.outputSearch}>
                     <input
                         type="text"

@@ -33,6 +33,9 @@ export function ApexTab() {
     const [initialCode, setInitialCode] = useState<string | null>(null);
     const [isApexCollapsed, setIsApexCollapsed] = useState(false);
     const handleToggleApex = useCallback(() => setIsApexCollapsed(prev => !prev), []);
+    // Debug log starts collapsed for a cleaner view; it auto-expands on execution.
+    const [isOutputCollapsed, setIsOutputCollapsed] = useState(true);
+    const handleToggleOutput = useCallback(() => setIsOutputCollapsed(prev => !prev), []);
     const toast = useToast();
     const toastIdRef = useRef<string | null>(null);
 
@@ -152,6 +155,8 @@ export function ApexTab() {
         }
 
         setIsExecuting(true);
+        // Reveal the debug log so output/progress is visible while executing
+        setIsOutputCollapsed(false);
 
         // Dismiss any previous toast before starting
         if (toastIdRef.current) {
@@ -234,7 +239,10 @@ export function ApexTab() {
 
     return (
         <div className={styles.apexTab} data-testid="apex-tab">
-            <div className="card">
+            {/* Editor card grows to fill when the debug log is collapsed */}
+            <div
+                className={`card ${isOutputCollapsed && !isApexCollapsed ? styles.editorCardExpanded : ''}`}
+            >
                 <div className="card-header">
                     <div className={`card-header-icon ${styles.headerIcon}`}>A</div>
                     <h2 className="card-collapse-title" onClick={handleToggleApex}>
@@ -279,6 +287,7 @@ export function ApexTab() {
                         onExecute={handleExecute}
                         lineNumbers={lineNumbers}
                         wordWrap={wordWrap}
+                        className={styles.editor}
                         data-testid="apex-editor"
                     />
                     <div className={styles.footer}>
@@ -294,7 +303,12 @@ export function ApexTab() {
                 </div>
             </div>
 
-            <ApexOutput output={output} className={styles.outputCard} />
+            <ApexOutput
+                output={output}
+                className={styles.outputCard}
+                isCollapsed={isOutputCollapsed}
+                onToggleCollapse={handleToggleOutput}
+            />
         </div>
     );
 }

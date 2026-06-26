@@ -123,6 +123,13 @@ export class QueryTabPage extends BasePage {
     }
 
     /**
+     * Whether the results panel is collapsed (body hidden)
+     */
+    async isResultsCollapsed(): Promise<boolean> {
+        return !(await this.resultsContainer.isVisible());
+    }
+
+    /**
      * Get the number of records returned
      */
     async getResultsCount(): Promise<number> {

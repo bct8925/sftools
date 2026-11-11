@@ -41,7 +41,10 @@ describe('Events Viewer (E-F-002 to E-F-007)', () => {
 
         // Verify the table section exists by checking for empty state message
         // (which is in the viewerTable section)
-        const emptyStateText = page.locator('text=Subscribe to a channel to see events');
+        // Exact match: the Monaco placeholder comment contains the same words
+        const emptyStateText = page.getByText('Subscribe to a channel to see events', {
+            exact: true,
+        });
         await emptyStateText.waitFor({ state: 'visible', timeout: 5000 });
         const isEmptyStateVisible = await emptyStateText.isVisible();
         expect(isEmptyStateVisible).toBe(true);

@@ -267,6 +267,10 @@ The service worker automatically handles 401 responses:
 5. Retries original request with new token
 6. If refresh fails, returns `{ authExpired: true, connectionId: '...' }`
 
+### Expired sessions that look like CORS errors
+
+Salesforce sends 401 responses without CORS headers, so in the `fetch` handler an expired token fails as a network error (`Failed to fetch`, status 0), the same as a missing CORS entry. When an authenticated `fetch` request fails that way, `fetchWithRetry` probes the org's unauthenticated `/services/data/` endpoint (`isOriginAllowed`). If the probe gets any response, CORS is configured, so the failure is treated as a 401 and goes through `handle401WithRefresh`. If the probe also fails, the status 0 error is returned and the CORS modal shows as before. Proxy requests skip the probe.
+
 ```typescript
 // Automatic 401 handling in fetchWithRetry
 async function fetchWithRetry(

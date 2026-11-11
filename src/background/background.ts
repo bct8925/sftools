@@ -245,36 +245,71 @@ function proxyRequired<T extends BackgroundRequest>(
 }
 
 /**
+ * Probe the org's unauthenticated REST versions endpoint.
+ * Salesforce sends 401 responses without CORS headers, so in extension fetch an
+ * expired session fails exactly like a missing CORS entry ("Failed to fetch").
+ * If this unauthenticated request gets any response, the origin is allowed and
+ * the earlier failure came from the session, not from CORS.
+ */
+async function isOriginAllowed(url: string): Promise<boolean> {
+    try {
+        await fetch(`${new URL(url).origin}/services/data/`, {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+        });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Generic fetch wrapper with 401 retry logic
+ * @param probeUrl - when set, a network failure on an authenticated request probes this
+ *   URL's origin to tell an expired session apart from a CORS error
  */
 async function fetchWithRetry(
     fetchFn: (headers: Record<string, string>) => Promise<Response | ProxyResponse>,
     convertFn: (response: Response | ProxyResponse) => Promise<FetchResponse>,
     headers: Record<string, string> | undefined,
-    connectionId: string | undefined
+    connectionId: string | undefined,
+    probeUrl?: string
 ): Promise<FetchResponse> {
     const hasAuth = !!headers?.Authorization;
+    const retryWithToken = async (newAccessToken: string): Promise<FetchResponse> => {
+        const retryResponse = await fetchFn({
+            ...headers,
+            Authorization: `Bearer ${newAccessToken}`,
+        });
+        return convertFn(retryResponse);
+    };
 
     try {
         const response = await fetchFn(headers || {});
         const converted = await convertFn(response);
-
-        return await handle401WithRefresh(
-            converted,
-            connectionId,
-            hasAuth,
-            async (newAccessToken: string) => {
-                const retryResponse = await fetchFn({
-                    ...headers,
-                    Authorization: `Bearer ${newAccessToken}`,
-                });
-                return convertFn(retryResponse);
-            }
-        );
+        return await handle401WithRefresh(converted, connectionId, hasAuth, retryWithToken);
     } catch (error) {
         // CORS errors manifest as network failures with status 0
         // Include status: 0 so CORS detection logic can identify these errors
-        return { success: false, status: 0, error: (error as Error).message };
+        const networkError: FetchResponse = {
+            success: false,
+            status: 0,
+            error: (error as Error).message,
+        };
+        if (!hasAuth || !probeUrl || !(await isOriginAllowed(probeUrl))) {
+            return networkError;
+        }
+        debugInfo('Authenticated request failed but origin is allowed; treating as 401');
+        try {
+            return await handle401WithRefresh(
+                { success: false, status: 401, statusText: 'Unauthorized' },
+                connectionId,
+                hasAuth,
+                retryWithToken
+            );
+        } catch {
+            return networkError;
+        }
     }
 }
 
@@ -362,7 +397,8 @@ const handlers: Record<string, (request: BackgroundRequest) => Promise<ProxyResp
                 return response as unknown as FetchResponse;
             },
             req.options.headers,
-            req.connectionId
+            req.connectionId,
+            req.url
         );
     },
 

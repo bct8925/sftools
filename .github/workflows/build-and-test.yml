@@ -28,6 +28,9 @@ jobs:
       - name: Install proxy dependencies
         run: npm ci --prefix sftools-proxy
 
+      - name: Install Playwright browser
+        run: npx playwright install chromium
+
       - name: Run unit tests
         id: unit-tests
         run: npm run test:unit -- --reporter=github-actions --reporter=json --outputFile=test-results.json

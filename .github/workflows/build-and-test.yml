@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install proxy dependencies
+        run: npm ci --prefix sftools-proxy
+
       - name: Run unit tests
         id: unit-tests
         run: npm run test:unit -- --reporter=github-actions --reporter=json --outputFile=test-results.json

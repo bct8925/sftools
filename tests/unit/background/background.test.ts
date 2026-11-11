@@ -266,6 +266,101 @@ describe('background service worker', () => {
         });
     });
 
+    describe('expired session masked as CORS error', () => {
+        it('reports authExpired when the origin answers an unauthenticated probe', async () => {
+            const conn = createMockConnection({ id: 'c1', refreshToken: null });
+            chromeMock._setStorageData({ connections: [conn] });
+            vi.mocked(globalThis.fetch)
+                .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+                .mockResolvedValueOnce(mockResponse(200, '[]'));
+
+            const res = await sendMessage({
+                type: 'fetch',
+                url: 'https://org.sf.com/services/data/v62.0/query?q=x',
+                options: { method: 'GET', headers: { Authorization: 'Bearer expired' } },
+                connectionId: 'c1',
+            });
+
+            expect(res).toMatchObject({
+                success: false,
+                status: 401,
+                authExpired: true,
+                connectionId: 'c1',
+                error: 'Session expired',
+            });
+            expect(globalThis.fetch).toHaveBeenLastCalledWith('https://org.sf.com/services/data/', {
+                method: 'GET',
+                headers: { Accept: 'application/json' },
+            });
+        });
+
+        it('refreshes the token and retries when the probe succeeds', async () => {
+            const conn = createMockConnection({ id: 'c1', refreshToken: 'rt' });
+            chromeMock._setStorageData({ connections: [conn] });
+            vi.mocked(isProxyConnected).mockReturnValue(true);
+            vi.mocked(refreshAccessToken).mockResolvedValue({
+                success: true,
+                accessToken: 'new-tok',
+            });
+            vi.mocked(globalThis.fetch)
+                .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+                .mockResolvedValueOnce(mockResponse(200, '[]'))
+                .mockResolvedValueOnce(mockResponse(200, '{"ok":true}'));
+
+            const res = await sendMessage({
+                type: 'fetch',
+                url: 'https://org.sf.com/api',
+                options: { method: 'GET', headers: { Authorization: 'Bearer expired' } },
+                connectionId: 'c1',
+            });
+
+            expect(res).toMatchObject({ success: true, status: 200 });
+            expect(updateConnectionToken).toHaveBeenCalledWith('c1', 'new-tok');
+        });
+
+        it('keeps the CORS network error when the probe also fails', async () => {
+            vi.mocked(globalThis.fetch).mockRejectedValue(new TypeError('Failed to fetch'));
+
+            const res = await sendMessage({
+                type: 'fetch',
+                url: 'https://org.sf.com/api',
+                options: { method: 'GET', headers: { Authorization: 'Bearer tok' } },
+                connectionId: 'c1',
+            });
+
+            expect(res).toMatchObject({ success: false, status: 0, error: 'Failed to fetch' });
+            expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+        });
+
+        it('does not probe unauthenticated requests', async () => {
+            vi.mocked(globalThis.fetch).mockRejectedValue(new TypeError('Failed to fetch'));
+
+            const res = await sendMessage({
+                type: 'fetch',
+                url: 'https://org.sf.com/api',
+                options: { method: 'GET', headers: {} },
+            });
+
+            expect(res).toMatchObject({ success: false, status: 0 });
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not probe proxy requests', async () => {
+            vi.mocked(isProxyConnected).mockReturnValue(true);
+            vi.mocked(sendProxyRequest).mockRejectedValue(new Error('Native host disconnected'));
+
+            const res = await sendMessage({
+                type: 'proxyFetch',
+                url: 'https://org.sf.com/api',
+                headers: { Authorization: 'Bearer tok' },
+                connectionId: 'c1',
+            });
+
+            expect(res).toMatchObject({ success: false, status: 0 });
+            expect(globalThis.fetch).not.toHaveBeenCalled();
+        });
+    });
+
     describe('401 handling', () => {
         it('retries after successful token refresh', async () => {
             const conn = createMockConnection({ id: 'c1', refreshToken: 'rt' });

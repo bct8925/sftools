@@ -3,6 +3,7 @@ import { getInstanceUrl, getAccessToken } from '../../auth/auth';
 import { formatEventEntry } from '../../lib/events-utils';
 import type { MonacoEditorRef } from '../monaco-editor/MonacoEditor';
 import { useToast } from '../../contexts/ToastContext';
+import { getPlatform, type SubscribeResponse } from '../../platform';
 
 interface StreamMessage {
     subscriptionId: string;
@@ -169,8 +170,7 @@ export function useStreamSubscription({
             }
         };
 
-        chrome.runtime.onMessage.addListener(handler);
-        return () => chrome.runtime.onMessage.removeListener(handler);
+        return getPlatform().onMessage(handler);
     }, [handleStreamMessage]);
 
     // Subscribe to channel
@@ -198,7 +198,7 @@ export function useStreamSubscription({
         }
 
         try {
-            const response = await chrome.runtime.sendMessage({
+            const response = await getPlatform().sendMessage<SubscribeResponse>({
                 type: 'subscribe',
                 instanceUrl: getInstanceUrl(),
                 accessToken: getAccessToken(),
@@ -208,7 +208,7 @@ export function useStreamSubscription({
             });
 
             if (response.success) {
-                setCurrentSubscriptionId(response.subscriptionId);
+                setCurrentSubscriptionId(response.subscriptionId ?? null);
                 setIsSubscribed(true);
                 const msg = `Subscribed to ${selectedChannel} (replay: ${replayPreset})`;
                 if (onEventReceived) {
@@ -247,7 +247,7 @@ export function useStreamSubscription({
         if (!currentSubscriptionId) return;
 
         try {
-            await chrome.runtime.sendMessage({
+            await getPlatform().sendMessage({
                 type: 'unsubscribe',
                 subscriptionId: currentSubscriptionId,
             });
@@ -280,7 +280,7 @@ export function useStreamSubscription({
         const { isSubscribed: wasSubscribed, subscriptionId } = subscriptionRef.current;
         if (wasSubscribed && subscriptionId) {
             try {
-                await chrome.runtime.sendMessage({
+                await getPlatform().sendMessage({
                     type: 'unsubscribe',
                     subscriptionId,
                 });

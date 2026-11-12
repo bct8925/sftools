@@ -8,6 +8,7 @@ import type { RestApiResponse } from '../../types/salesforce';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import { useToast } from '../../contexts/ToastContext';
 import styles from './RestApiTab.module.css';
+import { storage } from '../../platform';
 
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
@@ -33,7 +34,7 @@ export function RestApiTab() {
 
     // Restore most recently used request from history on mount
     useEffect(() => {
-        chrome.storage.local.get(['restApiHistory', 'restApiFavorites']).then(data => {
+        storage.get(['restApiHistory', 'restApiFavorites']).then(data => {
             const history = data.restApiHistory as
                 | Array<{ request: string; timestamp: number }>
                 | undefined;

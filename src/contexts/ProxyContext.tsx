@@ -8,6 +8,7 @@ import {
     type ReactNode,
 } from 'react';
 import { setProxyConnected } from '../api/fetch';
+import { getPlatform } from '../platform';
 
 interface ProxyContextType {
     isConnected: boolean;
@@ -74,18 +75,40 @@ const initialState: ProxyState = {
     error: null,
 };
 
+/** True when the page can reach a host that answers proxy messages */
+function hasHostRuntime(): boolean {
+    if (getPlatform().kind === 'vscode') return true;
+    return typeof chrome !== 'undefined' && !!chrome.runtime;
+}
+
+/**
+ * In VS Code, streaming runs in the extension host itself, so the "proxy"
+ * features (Platform Events) are always available.
+ */
+function getInitialState(): ProxyState {
+    if (getPlatform().capabilities.builtInStreaming) {
+        return { ...initialState, status: 'connected' };
+    }
+    return initialState;
+}
+
 export function ProxyProvider({ children }: ProxyProviderProps) {
-    const [state, dispatch] = useReducer(proxyReducer, initialState);
+    const [state, dispatch] = useReducer(proxyReducer, undefined, getInitialState);
 
     const checkStatus = useCallback(async () => {
-        if (typeof chrome === 'undefined' || !chrome.runtime) {
+        if (!hasHostRuntime()) {
             return;
         }
 
         try {
-            const response = (await chrome.runtime.sendMessage({
+            const response = await getPlatform().sendMessage<{
+                success: boolean;
+                connected: boolean;
+                httpPort?: number;
+                version?: string;
+            }>({
                 type: 'getProxyInfo',
-            })) as { success: boolean; connected: boolean; httpPort?: number; version?: string };
+            });
 
             if (response.connected) {
                 dispatch({
@@ -113,16 +136,16 @@ export function ProxyProvider({ children }: ProxyProviderProps) {
     }, [state.status]);
 
     const connect = useCallback(async () => {
-        if (typeof chrome === 'undefined' || !chrome.runtime) {
+        if (!hasHostRuntime()) {
             dispatch({ type: 'ERROR', payload: 'Chrome runtime not available' });
             return;
         }
 
         dispatch({ type: 'CONNECTING' });
         try {
-            const response = (await chrome.runtime.sendMessage({
+            const response = await getPlatform().sendMessage<ProxyConnectResponse>({
                 type: 'connectProxy',
-            })) as ProxyConnectResponse;
+            });
             if (response.success) {
                 dispatch({
                     type: 'CONNECTED',
@@ -143,13 +166,13 @@ export function ProxyProvider({ children }: ProxyProviderProps) {
     }, []);
 
     const disconnect = useCallback(async () => {
-        if (typeof chrome === 'undefined' || !chrome.runtime) {
+        if (!hasHostRuntime()) {
             dispatch({ type: 'ERROR', payload: 'Chrome runtime not available' });
             return;
         }
 
         try {
-            await chrome.runtime.sendMessage({ type: 'disconnectProxy' });
+            await getPlatform().sendMessage({ type: 'disconnectProxy' });
             dispatch({ type: 'DISCONNECTED' });
         } catch (err) {
             dispatch({

@@ -3,6 +3,7 @@ import { useConnection } from '../contexts/ConnectionContext';
 import { onAuthExpired, loadConnections } from '../auth/auth';
 import { startAuthorization } from '../auth/start-authorization';
 import { Modal } from '../components/modal/Modal';
+import { getPlatform } from '../platform';
 import type { SalesforceConnection } from '../types/salesforce';
 import styles from './AuthExpirationHandler.module.css';
 
@@ -63,6 +64,8 @@ export function AuthExpirationHandler() {
     }, []);
 
     const connectionLabel = expiredConnection?.label || 'Unknown';
+    // VS Code connections belong to the sf CLI; sftools can't delete them
+    const canDelete = getPlatform().capabilities.manageConnections;
 
     return (
         <Modal isOpen={isOpen} onClose={handleDismiss}>
@@ -75,9 +78,11 @@ export function AuthExpirationHandler() {
                     <button className="button-brand" onClick={handleReauthorize}>
                         Re-authorize
                     </button>
-                    <button className="button-neutral" onClick={handleDelete}>
-                        Delete
-                    </button>
+                    {canDelete && (
+                        <button className="button-neutral" onClick={handleDelete}>
+                            Delete
+                        </button>
+                    )}
                     <button className="button-neutral" onClick={handleDismiss}>
                         Dismiss
                     </button>

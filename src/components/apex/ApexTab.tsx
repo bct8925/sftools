@@ -10,6 +10,7 @@ import { executeAnonymousApex } from '../../api/salesforce';
 import { formatOutput } from '../../lib/apex-utils';
 import type { ApexExecutionResult } from '../../types/salesforce';
 import styles from './ApexTab.module.css';
+import { storage } from '../../platform';
 
 const DEFAULT_CODE = `// Enter your Apex code here
 System.debug('Hello from Anonymous Apex!');
@@ -47,7 +48,7 @@ export function ApexTab() {
 
     // Load last Apex code from history or favorites on mount (whichever is more recent)
     useEffect(() => {
-        chrome.storage.local.get(['apexHistory', 'apexFavorites']).then(data => {
+        storage.get(['apexHistory', 'apexFavorites']).then(data => {
             const history = data.apexHistory as
                 | Array<{ code: string; timestamp: number }>
                 | undefined;
@@ -81,7 +82,7 @@ export function ApexTab() {
 
     // Load editor settings on mount
     useEffect(() => {
-        chrome.storage.local.get('apexEditorSettings').then(data => {
+        storage.get('apexEditorSettings').then(data => {
             const settings = data.apexEditorSettings as
                 | { lineNumbers?: 'on' | 'off'; wordWrap?: 'on' | 'off'; debug?: boolean }
                 | undefined;
@@ -95,7 +96,7 @@ export function ApexTab() {
     // Persist editor settings when they change
     useEffect(() => {
         if (!editorSettingsLoadedRef.current) return;
-        chrome.storage.local.set({ apexEditorSettings: { lineNumbers, wordWrap, debug } });
+        storage.set({ apexEditorSettings: { lineNumbers, wordWrap, debug } });
     }, [lineNumbers, wordWrap, debug]);
 
     // Set editor markers for compile/runtime errors

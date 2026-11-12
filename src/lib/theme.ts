@@ -1,4 +1,5 @@
 // Theme management utility
+import { storage } from '../platform';
 // Applies theme on page load and listens for changes
 
 export type Theme = 'light' | 'dark' | 'system';
@@ -9,7 +10,25 @@ const THEME_KEY = 'theme';
 // In-memory cache of current theme
 let currentTheme: Theme = 'system';
 
+/**
+ * Theme of the VS Code window, read from the classes VS Code puts on a webview's body.
+ * Returns null outside VS Code.
+ */
+export function getVsCodeTheme(): EffectiveTheme | null {
+    const classes = document.body?.classList;
+    if (!classes) return null;
+    if (classes.contains('vscode-light') || classes.contains('vscode-high-contrast-light')) {
+        return 'light';
+    }
+    if (classes.contains('vscode-dark') || classes.contains('vscode-high-contrast')) {
+        return 'dark';
+    }
+    return null;
+}
+
 export function getSystemTheme(): EffectiveTheme {
+    const vscodeTheme = getVsCodeTheme();
+    if (vscodeTheme) return vscodeTheme;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -35,28 +54,35 @@ export function getTheme(): Theme {
  * Set and persist the theme
  */
 export async function setTheme(theme: Theme): Promise<void> {
-    await chrome.storage.local.set({ [THEME_KEY]: theme });
+    await storage.set({ [THEME_KEY]: theme });
     applyTheme(theme);
 }
 
 export async function initTheme(): Promise<void> {
     // Apply theme immediately from storage
-    const result = await chrome.storage.local.get([THEME_KEY]);
+    const result = await storage.get([THEME_KEY]);
     const theme = (result[THEME_KEY] as Theme) || 'system';
     applyTheme(theme);
 
     // Listen for system theme changes when in system mode
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     mediaQuery.addEventListener('change', async () => {
-        const current = await chrome.storage.local.get([THEME_KEY]);
+        const current = await storage.get([THEME_KEY]);
         if (((current[THEME_KEY] as Theme) || 'system') === 'system') {
             applyTheme('system');
         }
     });
 
+    // In VS Code, "system" follows the editor theme, which VS Code reports via body classes
+    if (document.body && typeof MutationObserver !== 'undefined') {
+        new MutationObserver(() => {
+            if (currentTheme === 'system') applyTheme('system');
+        }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
+
     // Listen for storage changes (theme changed in another tab/page)
-    chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === 'local' && changes[THEME_KEY]) {
+    storage.onChanged(changes => {
+        if (changes[THEME_KEY]) {
             applyTheme((changes[THEME_KEY].newValue as Theme) || 'system');
         }
     });

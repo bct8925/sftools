@@ -1,4 +1,5 @@
 // Data export/import for migrating between extension IDs or backing up data
+import { storage, getPlatform } from '../platform';
 
 const EXPORT_FILENAME = 'sftools-data.json';
 const EXPORT_VERSION = 1;
@@ -10,11 +11,11 @@ interface ExportData {
 }
 
 /**
- * Export extension storage data as a JSON file download.
+ * Export extension storage data as a JSON file (download in Chrome, save dialog in VS Code).
  * Excludes describe cache (large, rebuilt automatically).
  */
 export async function exportData(): Promise<void> {
-    const allData = await chrome.storage.local.get(null);
+    const allData = await storage.get(null);
 
     const data: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(allData)) {
@@ -29,17 +30,11 @@ export async function exportData(): Promise<void> {
         data,
     };
 
-    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = EXPORT_FILENAME;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    await getPlatform().saveFile(
+        EXPORT_FILENAME,
+        JSON.stringify(exportPayload, null, 2),
+        'application/json'
+    );
 }
 
 /**
@@ -74,6 +69,6 @@ export async function importData(file: File): Promise<number> {
         throw new Error('Export file contains no data');
     }
 
-    await chrome.storage.local.set(data);
+    await storage.set(data);
     return keys.length;
 }

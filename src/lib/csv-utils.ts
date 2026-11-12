@@ -1,6 +1,7 @@
 // CSV Utilities - Shared functions for CSV export and value formatting
 
 import type { SObject } from '../types/salesforce';
+import { getPlatform } from '../platform';
 
 /**
  * Column definition for formatting cell values.
@@ -95,24 +96,15 @@ export function getExportFilename(objectName: string | null): string {
 }
 
 /**
- * Trigger a CSV file download in the browser.
+ * Save CSV content: a browser download in Chrome, a save dialog in VS Code.
  *
  * @param content - CSV content as string
  * @param filename - Filename for the download
  */
 export function downloadCsv(content: string, filename: string): void {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    getPlatform()
+        .saveFile(filename, content, 'text/csv;charset=utf-8;')
+        .catch(error => console.error('Failed to save CSV:', error));
 }
 
 /**

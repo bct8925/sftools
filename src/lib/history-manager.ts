@@ -1,4 +1,5 @@
 // History & Favorites Manager for component tabs
+import { storage } from '../platform';
 // Handles storage and data management for history/favorites lists
 
 export interface HistoryEntry<_T extends string = 'content'> {
@@ -42,7 +43,7 @@ export class HistoryManager {
      * Load history and favorites from storage
      */
     async load(): Promise<void> {
-        const data = await chrome.storage.local.get([this.historyKey, this.favoritesKey]);
+        const data = await storage.get([this.historyKey, this.favoritesKey]);
         this.history = (data[this.historyKey] as HistoryEntry[]) || [];
         this.favorites = (data[this.favoritesKey] as FavoriteEntry[]) || [];
         this.loaded = true;
@@ -175,10 +176,10 @@ export class HistoryManager {
 
     // Private storage methods
     private async saveHistory(): Promise<void> {
-        await chrome.storage.local.set({ [this.historyKey]: this.history });
+        await storage.set({ [this.historyKey]: this.history });
     }
 
     private async saveFavorites(): Promise<void> {
-        await chrome.storage.local.set({ [this.favoritesKey]: this.favorites });
+        await storage.set({ [this.favoritesKey]: this.favorites });
     }
 }

@@ -11,6 +11,7 @@ import { getInstanceUrl, getAccessToken } from '../../auth/auth';
 import { filterLines } from '../../lib/apex-utils';
 import { getNowISO } from '../../lib/date-utils';
 import styles from './DebugLogsTab.module.css';
+import { getPlatform, type SubscribeResponse } from '../../platform';
 
 const LOGGING_CHANNEL = '/systemTopic/Logging';
 
@@ -129,7 +130,7 @@ export function DebugLogsTab() {
         // Unsubscribe from CometD if subscribed
         if (subscriptionId) {
             try {
-                await chrome.runtime.sendMessage({
+                await getPlatform().sendMessage({
                     type: 'unsubscribe',
                     subscriptionId,
                 });
@@ -203,7 +204,7 @@ export function DebugLogsTab() {
 
         const subscribe = async () => {
             try {
-                const response = await chrome.runtime.sendMessage({
+                const response = await getPlatform().sendMessage<SubscribeResponse>({
                     type: 'subscribe',
                     instanceUrl: getInstanceUrl(),
                     accessToken: getAccessToken(),
@@ -212,8 +213,8 @@ export function DebugLogsTab() {
                 });
 
                 if (response.success) {
-                    currentSubId = response.subscriptionId;
-                    setSubscriptionId(response.subscriptionId);
+                    currentSubId = response.subscriptionId ?? null;
+                    setSubscriptionId(response.subscriptionId ?? null);
                     setIsAutoRefreshEnabled(true);
                 }
             } catch {
@@ -225,7 +226,7 @@ export function DebugLogsTab() {
 
         return () => {
             if (currentSubId) {
-                chrome.runtime
+                getPlatform()
                     .sendMessage({
                         type: 'unsubscribe',
                         subscriptionId: currentSubId,
@@ -249,8 +250,7 @@ export function DebugLogsTab() {
             }
         };
 
-        chrome.runtime.onMessage.addListener(handler);
-        return () => chrome.runtime.onMessage.removeListener(handler);
+        return getPlatform().onMessage(handler);
     }, [subscriptionId, handleRefresh]);
 
     return (

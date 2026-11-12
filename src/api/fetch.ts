@@ -2,6 +2,7 @@
 
 import { getActiveConnectionId, triggerAuthExpired } from '../auth/auth';
 import { debugInfo } from '../lib/debug';
+import { getPlatform } from '../platform';
 
 // Test extension ID used by headless test mode
 const TEST_EXTENSION_ID = 'test-extension-id';
@@ -43,7 +44,8 @@ function handleAuthExpired(response: FetchResponse, connectionId: string | null)
 }
 
 /**
- * Background fetch proxy (uses Chrome extension fetch to bypass CORS)
+ * Host fetch (Chrome background service worker, or the VS Code extension host).
+ * Requests made by the host are not subject to page CORS rules.
  */
 export async function extensionFetch(
     url: string,
@@ -51,12 +53,12 @@ export async function extensionFetch(
     connectionId: string | null = null
 ): Promise<FetchResponse> {
     const connId = connectionId || getActiveConnectionId();
-    const response = (await chrome.runtime.sendMessage({
+    const response = await getPlatform().sendMessage<FetchResponse>({
         type: 'fetch',
         url,
         options,
         connectionId: connId,
-    })) as FetchResponse;
+    });
     return handleAuthExpired(response, connId);
 }
 
@@ -83,10 +85,11 @@ export async function proxyFetch(url: string, options: FetchOptions = {}): Promi
 }
 
 /**
- * Detect if we're running in a real Chrome extension context.
+ * Detect if we're running in a real extension context (Chrome or VS Code).
  * Returns false in headless test mode where chrome.runtime.id is mocked.
  */
 function isExtensionContext(): boolean {
+    if (getPlatform().kind === 'vscode') return true;
     if (typeof chrome === 'undefined' || !chrome.runtime) {
         return false;
     }
@@ -144,11 +147,16 @@ function isProxyConnectionError(response: FetchResponse): boolean {
 /**
  * Smart fetch: uses proxy if available, falls back to extensionFetch.
  * If the proxy returns a connectivity error, disables proxy and retries via extension.
+ * In VS Code there is no proxy: the extension host makes every request directly.
  */
 export async function smartFetch(url: string, options: FetchOptions = {}): Promise<FetchResponse> {
     // In headless test mode, use direct fetch
     if (!isExtensionContext()) {
         return directFetch(url, options);
+    }
+
+    if (getPlatform().kind === 'vscode') {
+        return extensionFetch(url, options);
     }
 
     if (PROXY_CONNECTED) {

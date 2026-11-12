@@ -6,7 +6,9 @@ import { describe, it, expect, vi } from 'vitest';
 import {
     SfCli,
     SfCliError,
+    createSfExec,
     parseOrgList,
+    windowsCommandLine,
     parseSfJson,
     type ExecResult,
     type SfExec,
@@ -249,5 +251,67 @@ describe('SfCli', () => {
         await expect(new SfCli(exec).setDefaultOrg('x@x.com', { global: true })).rejects.toThrow(
             'No such org'
         );
+    });
+
+    it('adds the path as retURL itself, so the path never reaches the command line', async () => {
+        const exec = vi
+            .fn<SfExec>()
+            .mockResolvedValue(
+                ok({ url: 'https://acme.my.salesforce.com/secur/frontdoor.jsp?otp=abc' })
+            );
+        const url = await new SfCli(exec).getOrgOpenUrl('a@x.com', '/001/o?a=1&calc.exe|x');
+        expect(exec).toHaveBeenCalledWith([
+            'org',
+            'open',
+            '--target-org',
+            'a@x.com',
+            '--url-only',
+            '--json',
+        ]);
+        const parsed = new URL(url);
+        expect(parsed.pathname).toBe('/secur/frontdoor.jsp');
+        expect(parsed.searchParams.get('otp')).toBe('abc');
+        expect(parsed.searchParams.get('retURL')).toBe('/001/o?a=1&calc.exe|x');
+    });
+
+    it('returns the frontdoor URL as is without a path', async () => {
+        const exec = vi
+            .fn<SfExec>()
+            .mockResolvedValue(
+                ok({ url: 'https://acme.my.salesforce.com/secur/frontdoor.jsp?otp=abc' })
+            );
+        expect(await new SfCli(exec).getOrgOpenUrl('a@x.com')).toBe(
+            'https://acme.my.salesforce.com/secur/frontdoor.jsp?otp=abc'
+        );
+    });
+});
+
+describe('windowsCommandLine', () => {
+    it('quotes every part so cmd.exe keeps shell characters literal', () => {
+        expect(
+            windowsCommandLine('C:\\Program Files\\sf\\bin\\sf.cmd', [
+                'config',
+                'set',
+                'target-org=a&calc.exe|b<c>d^e',
+            ])
+        ).toBe(
+            '"C:\\Program Files\\sf\\bin\\sf.cmd" "config" "set" "target-org=a&calc.exe|b<c>d^e"'
+        );
+    });
+
+    it.each(['a"&calc.exe', '%PATH%', 'a!b!', 'a\nb', 'a\rb'])(
+        'refuses %j, which quoting cannot make safe',
+        arg => {
+            expect(() => windowsCommandLine('sf', ['org', arg])).toThrow(SfCliError);
+        }
+    );
+});
+
+describe('createSfExec', () => {
+    it('refuses an unsafe argument on Windows without starting a process', async () => {
+        const exec = createSfExec(() => 'sf', 'win32');
+        const result = await exec(['--alias', 'x"&calc.exe']);
+        expect(result.code).toBe(-1);
+        expect(result.stderr).toContain("Windows can't pass safely");
     });
 });

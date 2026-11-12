@@ -44,13 +44,23 @@ export class SfCliError extends Error {
  * Create an exec function that runs the sf binary.
  * @param getSfPath - returns the configured sf path (setting sftools.sfPath)
  */
-export function createSfExec(getSfPath: () => string): SfExec {
+export function createSfExec(getSfPath: () => string, platform = process.platform): SfExec {
     return (args, options = {}) =>
         new Promise(resolve => {
-            const child = spawn(getSfPath(), args, {
+            const windows = platform === 'win32';
+            let commandLine: string;
+            try {
+                commandLine = windows ? windowsCommandLine(getSfPath(), args) : getSfPath();
+            } catch (error) {
+                resolve({ code: -1, stdout: '', stderr: (error as Error).message });
+                return;
+            }
+            // sf is a .cmd shim on Windows, which needs cmd.exe to run. The whole
+            // command line is built (and quoted) by windowsCommandLine, so Node
+            // passes nothing else to the shell.
+            const child = spawn(commandLine, windows ? [] : args, {
                 cwd: options.cwd,
-                // sf is a .cmd shim on Windows, which needs a shell to run
-                shell: process.platform === 'win32',
+                shell: windows,
                 env: {
                     ...process.env,
                     SF_AUTOUPDATE_DISABLE: 'true',
@@ -77,6 +87,29 @@ export function createSfExec(getSfPath: () => string): SfExec {
             });
             child.on('close', code => resolve({ code: code ?? -1, stdout, stderr }));
         });
+}
+
+// Characters cmd.exe acts on even inside double quotes: " ends the quoting,
+// % and ! expand variables, and a line break ends the command.
+const UNSAFE_WINDOWS_ARG = /["%!\r\n]/;
+
+/**
+ * Build the cmd.exe command line for sf on Windows. Every part is wrapped in
+ * double quotes, which keeps & | < > ^ and spaces literal (also when the .cmd
+ * shim passes them on with %*). Characters that quoting can't make safe are
+ * refused rather than escaped.
+ */
+export function windowsCommandLine(command: string, args: string[]): string {
+    return [command, ...args]
+        .map(part => {
+            if (UNSAFE_WINDOWS_ARG.test(part)) {
+                throw new SfCliError(
+                    `Refusing to pass ${JSON.stringify(part)} to the sf CLI: it contains a character Windows can't pass safely`
+                );
+            }
+            return `"${part}"`;
+        })
+        .join(' ');
 }
 
 interface SfJson<T> {
@@ -254,13 +287,19 @@ export class SfCli {
             throw new SfCliError(failure.message || 'The sf CLI could not set the default org');
     }
 
-    /** URL that signs in to the org (frontdoor) and goes to `path` */
+    /**
+     * URL that signs in to the org (frontdoor) and goes to `path`. The path is
+     * added here as retURL (what `sf org open --path` does) so that it never
+     * reaches the command line.
+     */
     async getOrgOpenUrl(username: string, path?: string): Promise<string> {
         const args = ['org', 'open', '--target-org', username, '--url-only', '--json'];
-        if (path) args.push('--path', path);
         const result = parseSfJson<{ url?: string }>(await this.exec(args));
         if (!result.url) throw new SfCliError('The sf CLI did not return a URL');
-        return result.url;
+        if (!path) return result.url;
+        const url = new URL(result.url);
+        url.searchParams.set('retURL', path);
+        return url.toString();
     }
 }
 

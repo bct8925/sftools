@@ -79,6 +79,7 @@ describe('createVsCodePlatform', () => {
         platform.openFeature('apex');
         platform.openRecord({ objectType: 'Account', recordId: '001', connectionId: 'a@x.com' });
         platform.openExternal('https://a.lightning.force.com');
+        platform.openExternal('https://a.lightning.force.com/001', { systemBrowser: true });
         expect(posted.map(p => p.message)).toEqual([
             { type: 'host:openFeature', featureId: 'apex' },
             {
@@ -87,7 +88,16 @@ describe('createVsCodePlatform', () => {
                 recordId: '001',
                 connectionId: 'a@x.com',
             },
-            { type: 'host:openExternal', url: 'https://a.lightning.force.com' },
+            {
+                type: 'host:openExternal',
+                url: 'https://a.lightning.force.com',
+                systemBrowser: false,
+            },
+            {
+                type: 'host:openExternal',
+                url: 'https://a.lightning.force.com/001',
+                systemBrowser: true,
+            },
         ]);
     });
 });

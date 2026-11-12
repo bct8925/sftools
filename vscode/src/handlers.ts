@@ -28,7 +28,8 @@ import type { StreamingService } from './streaming';
 
 /** Actions that need the VS Code UI */
 export interface HostUi {
-    openExternal(url: string): Promise<void>;
+    /** systemBrowser: skip VS Code's integrated browser */
+    openExternal(url: string, systemBrowser: boolean): Promise<void>;
     openFeature(featureId: string): void;
     openRecord(params: { objectType: string; recordId: string; connectionId: string }): void;
     saveFile(filename: string, content: string, mimeType: string): Promise<void>;
@@ -112,7 +113,7 @@ export function createRequestHandler(deps: HandlerDeps): RequestHandler {
                 return streaming.getSchema(message);
 
             case OPEN_EXTERNAL:
-                await ui.openExternal(message.url as string);
+                await ui.openExternal(message.url as string, message.systemBrowser === true);
                 return undefined;
             case OPEN_FEATURE:
                 ui.openFeature(message.featureId as string);

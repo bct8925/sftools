@@ -28,8 +28,9 @@ export class SalesforceBrowser<U> {
         return commands.includes(INTEGRATED_BROWSER_COMMAND) ? 'integrated' : 'external';
     }
 
-    async open(url: string): Promise<BrowserTarget> {
-        if ((await this.target()) === 'integrated') {
+    /** @param systemBrowser - skip the integrated browser even when it's available */
+    async open(url: string, systemBrowser = false): Promise<BrowserTarget> {
+        if (!systemBrowser && (await this.target()) === 'integrated') {
             try {
                 await this.deps.executeCommand(INTEGRATED_BROWSER_COMMAND, url);
                 return 'integrated';

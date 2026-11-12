@@ -12,23 +12,27 @@ function webLink(target: EventTarget | null): HTMLAnchorElement | null {
 }
 
 /**
- * - Web links open through the host, so org pages land in VS Code's integrated
- *   browser signed in, rather than in the system browser VS Code picks for webviews.
- *   This runs in the capture phase because some links stop propagation (and relative
- *   links, like record pages, are left to their own handlers).
+ * - Web links open through the host. A plain click opens VS Code's integrated browser
+ *   (signed in to the org); Cmd/Ctrl-click or a middle click opens the system browser.
+ *   VS Code's webview also handles link clicks itself, on the same window, and doesn't
+ *   check defaultPrevented, so this runs in the capture phase and stops propagation;
+ *   otherwise both browsers open. Relative links, like record pages, are left to their
+ *   own handlers.
  * - Right-clicking a link or table cell with nothing selected selects its text, so the
  *   context menu's Copy copies it.
  */
 export function installWebviewBehaviors(
     win: Pick<Window, 'addEventListener' | 'getSelection'>,
-    openExternal: (url: string) => void
+    openExternal: (url: string, options: { systemBrowser: boolean }) => void
 ): void {
     const openLink = (event: MouseEvent) => {
         if (event.button > 1) return;
         const link = webLink(event.target);
         if (!link) return;
         event.preventDefault();
-        openExternal(link.href);
+        event.stopImmediatePropagation();
+        const systemBrowser = event.metaKey || event.ctrlKey || event.button === 1;
+        openExternal(link.href, { systemBrowser });
     };
     win.addEventListener('click', openLink, true);
     win.addEventListener('auxclick', openLink, true);

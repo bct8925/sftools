@@ -99,14 +99,14 @@ export function activate(context: vscode.ExtensionContext): void {
     };
 
     const ui: HostUi = {
-        async openExternal(url) {
+        async openExternal(url, systemBrowser) {
             const org = await orgs.findOrgForBrowserUrl(url);
             if (org) {
                 try {
                     const parsed = new URL(url);
                     const path = `${parsed.pathname}${parsed.search}${parsed.hash}`;
                     const signedIn = await cli.getOrgOpenUrl(org.username, path);
-                    await browser.open(signedIn);
+                    await browser.open(signedIn, systemBrowser);
                     return;
                 } catch {
                     // Fall back to the plain URL; the browser may ask to log in

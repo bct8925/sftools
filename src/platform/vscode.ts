@@ -16,7 +16,7 @@ import {
     type VsCodeBootstrap,
     type WebviewRequestEnvelope,
 } from './protocol';
-import type { Platform, RecordLaunchParams, StorageItems } from './types';
+import type { OpenExternalOptions, Platform, RecordLaunchParams, StorageItems } from './types';
 
 /** Minimal shape of the API returned by acquireVsCodeApi() */
 export interface VsCodeApi {
@@ -120,8 +120,12 @@ export function createVsCodePlatform(
             messageListeners.add(listener);
             return () => messageListeners.delete(listener);
         },
-        openExternal(url: string): void {
-            fireAndForget({ type: OPEN_EXTERNAL, url });
+        openExternal(url: string, options?: OpenExternalOptions): void {
+            fireAndForget({
+                type: OPEN_EXTERNAL,
+                url,
+                systemBrowser: options?.systemBrowser === true,
+            });
         },
         openFeature(featureId: string): void {
             fireAndForget({ type: OPEN_FEATURE, featureId });

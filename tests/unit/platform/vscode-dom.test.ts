@@ -43,13 +43,31 @@ describe('installWebviewBehaviors', () => {
         const event = fire('click', document.getElementById('inner')!);
         expect(event.defaultPrevented).toBe(true);
         expect(openExternal).toHaveBeenCalledWith(
-            'https://acme.my.salesforce.com/001000000000001AAA'
+            'https://acme.my.salesforce.com/001000000000001AAA',
+            { systemBrowser: false }
         );
     });
 
-    it('opens web links on middle click too', () => {
+    it("stops VS Code's own link handler from opening a second browser", () => {
+        const vscodeHandler = vi.fn();
+        // VS Code listens for link clicks on the same window, in the bubble phase
+        target.addEventListener('click', vscodeHandler);
+        fire('click', document.getElementById('web')!);
+        expect(vscodeHandler).not.toHaveBeenCalled();
+    });
+
+    it('opens the system browser on Cmd or Ctrl-click', () => {
+        fire('click', document.getElementById('web')!, { metaKey: true });
+        fire('click', document.getElementById('web')!, { ctrlKey: true });
+        expect(openExternal.mock.calls.map(call => call[1])).toEqual([
+            { systemBrowser: true },
+            { systemBrowser: true },
+        ]);
+    });
+
+    it('opens the system browser on middle click', () => {
         fire('auxclick', document.getElementById('web')!, { button: 1 });
-        expect(openExternal).toHaveBeenCalledTimes(1);
+        expect(openExternal).toHaveBeenCalledWith(expect.any(String), { systemBrowser: true });
     });
 
     it('leaves relative links and other clicks alone', () => {

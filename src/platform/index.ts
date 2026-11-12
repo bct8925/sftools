@@ -10,6 +10,7 @@ export type {
     PlatformKind,
     PlatformStorage,
     PlatformCapabilities,
+    OpenExternalOptions,
     RecordLaunchParams,
     StorageItems,
 } from './types';
@@ -31,7 +32,7 @@ export function getPlatform(): Platform {
             window.__SFTOOLS_VSCODE__
         );
         const platform = vscodePlatform;
-        installWebviewBehaviors(window, url => platform.openExternal(url));
+        installWebviewBehaviors(window, (url, options) => platform.openExternal(url, options));
         return vscodePlatform;
     }
     return chromePlatform;

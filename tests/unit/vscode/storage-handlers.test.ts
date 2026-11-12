@@ -169,6 +169,24 @@ describe('createRequestHandler', () => {
         });
     });
 
+    it('opens links in the system browser only when asked', async () => {
+        const d = deps();
+        const handle = createRequestHandler(d);
+        await handle({ type: 'host:openExternal', url: 'https://a.my.salesforce.com/001' }, 'p1');
+        await handle(
+            {
+                type: 'host:openExternal',
+                url: 'https://a.my.salesforce.com/001',
+                systemBrowser: true,
+            },
+            'p1'
+        );
+        expect(d.ui.openExternal.mock.calls).toEqual([
+            ['https://a.my.salesforce.com/001', false],
+            ['https://a.my.salesforce.com/001', true],
+        ]);
+    });
+
     it('rejects unknown requests', async () => {
         await expect(createRequestHandler(deps())({ type: 'nope' }, 'p1')).rejects.toThrow(
             'Unknown request'

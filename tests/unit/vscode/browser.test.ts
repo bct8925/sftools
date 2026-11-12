@@ -60,4 +60,13 @@ describe('SalesforceBrowser', () => {
         await expect(browser.open(URL)).resolves.toBe('external');
         expect(openExternal).toHaveBeenCalledWith(`uri:${URL}`);
     });
+
+    it('uses the system browser when asked, even with the integrated one available', async () => {
+        const { browser, executeCommand, openExternal } = setup({
+            commands: [INTEGRATED_BROWSER_COMMAND],
+        });
+        await expect(browser.open(URL, true)).resolves.toBe('external');
+        expect(executeCommand).not.toHaveBeenCalled();
+        expect(openExternal).toHaveBeenCalledWith(`uri:${URL}`);
+    });
 });

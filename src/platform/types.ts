@@ -16,6 +16,10 @@ export interface PlatformStorage {
     onChanged(listener: (changes: StorageChanges) => void): () => void;
 }
 
+export interface OpenExternalOptions {
+    systemBrowser?: boolean;
+}
+
 export interface RecordLaunchParams {
     objectType: string;
     recordId: string;
@@ -42,7 +46,8 @@ export interface Platform {
     /** Listen for unsolicited host messages. Returns an unsubscribe function. */
     onMessage(listener: (message: HostMessage) => void): () => void;
     /** Open a URL (e.g. a Salesforce org) in the user's browser. */
-    openExternal(url: string): void;
+    /** systemBrowser: VS Code only, skip the integrated browser (e.g. on Cmd/Ctrl-click) */
+    openExternal(url: string, options?: OpenExternalOptions): void;
     /** Open an sftools feature (or settings) in a new tab / panel. */
     openFeature(featureId: string): void;
     /** Open the Record Viewer for a record. */

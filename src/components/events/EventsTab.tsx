@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
+import { CodeEditor, type CodeEditorRef } from '../code-editor/CodeEditor';
 import { ChannelSelector } from './ChannelSelector';
 import { EventPublisher } from './EventPublisher';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
@@ -89,7 +89,7 @@ export function EventsTab() {
     const { isAuthenticated, activeConnection } = useConnection();
     const { isConnected: isProxyConnected } = useProxy();
 
-    const streamEditorRef = useRef<MonacoEditorRef>(null);
+    const streamEditorRef = useRef<CodeEditorRef>(null);
 
     // Event table state
     const [events, setEvents] = useState<StreamEvent[]>([]);
@@ -309,7 +309,7 @@ export function EventsTab() {
                     {/* Viewer Layout */}
                     <div className={styles.viewer}>
                         {/* Monaco Editor */}
-                        <MonacoEditor
+                        <CodeEditor
                             ref={streamEditorRef}
                             language="json"
                             value="// Subscribe to and open an event"

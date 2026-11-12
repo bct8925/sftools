@@ -1,51 +1,50 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import type { editor } from 'monaco-editor';
 import { monaco } from '../../lib/monaco-custom';
-import { useMonacoTheme } from './useMonacoTheme';
+import { mergeCompletionSources } from '../../lib/completion';
+import { registerMonacoCompletionSource } from './completion-provider';
+import {
+    hostCompletionSource,
+    hostEditorOptions,
+    prepareEditorLanguage,
+    useEditorTheme,
+} from './editor-host';
+import type {
+    CodeEditorLanguage,
+    CodeEditorMarker,
+    CodeEditorProps,
+    CodeEditorRef,
+} from '../code-editor/types';
 import styles from './MonacoEditor.module.css';
 
-export type MonacoLanguage = 'sql' | 'apex' | 'json' | 'xml' | 'javascript' | 'text';
+export type MonacoLanguage = CodeEditorLanguage;
 
-export interface MonacoEditorRef {
-    /** Get the current editor content */
-    getValue: () => string;
-    /** Set the editor content */
-    setValue: (value: string) => void;
-    /** Append text to the end (useful for streaming output) */
-    appendValue: (text: string) => void;
-    /** Clear all editor content */
-    clear: () => void;
-    /** Set error markers on the editor */
-    setMarkers: (markers: editor.IMarkerData[]) => void;
-    /** Clear all markers */
-    clearMarkers: () => void;
-    /** Focus the editor */
-    focus: () => void;
-    /** Get the underlying Monaco editor instance */
-    getEditor: () => editor.IStandaloneCodeEditor | null;
+export type MonacoEditorRef = CodeEditorRef;
+
+type MonacoEditorProps = CodeEditorProps;
+
+function toMarkerSeverity(severity: CodeEditorMarker['severity']): monaco.MarkerSeverity {
+    switch (severity) {
+        case 'warning':
+            return monaco.MarkerSeverity.Warning;
+        case 'info':
+            return monaco.MarkerSeverity.Info;
+        default:
+            return monaco.MarkerSeverity.Error;
+    }
 }
 
-interface MonacoEditorProps {
-    /** Editor language mode */
-    language?: MonacoLanguage;
-    /** Initial/controlled value */
-    value?: string;
-    /** Called when content changes */
-    onChange?: (value: string) => void;
-    /** Called on Ctrl/Cmd+Enter */
-    onExecute?: () => void;
-    /** Make editor read-only */
-    readonly?: boolean;
-    /** Enable vertical resize handle */
-    resizable?: boolean;
-    /** Show/hide line numbers */
-    lineNumbers?: 'on' | 'off';
-    /** Enable word wrap */
-    wordWrap?: 'on' | 'off';
-    /** Additional CSS class */
-    className?: string;
-    /** Test ID for the container element */
-    'data-testid'?: string;
+function toMarkerData(model: editor.ITextModel, marker: CodeEditorMarker): editor.IMarkerData {
+    const lineCount = model.getLineCount();
+    const line = Math.min(Math.max(1, marker.line), lineCount);
+    return {
+        severity: toMarkerSeverity(marker.severity),
+        message: marker.message,
+        startLineNumber: line,
+        startColumn: marker.startColumn ?? 1,
+        endLineNumber: line,
+        endColumn: marker.endColumn ?? model.getLineMaxColumn(line),
+    };
 }
 
 function mapLanguage(language: MonacoLanguage): string {
@@ -75,6 +74,7 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
             wordWrap = 'off',
             className,
             'data-testid': dataTestId,
+            completionSource,
         },
         ref
     ) => {
@@ -89,8 +89,9 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
         onChangeRef.current = onChange;
         onExecuteRef.current = onExecute;
 
-        // Sync theme with document
-        const theme = useMonacoTheme();
+        // Sync theme with the host (sftools' theme in Chrome, the color theme in VS Code)
+        const theme = useEditorTheme();
+        prepareEditorLanguage(language);
 
         // Expose imperative methods
         useImperativeHandle(ref, () => ({
@@ -112,10 +113,14 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
                 ed.revealLine(model.getLineCount());
             },
             clear: () => editorRef.current?.setValue(''),
-            setMarkers: (markers: editor.IMarkerData[]) => {
+            setMarkers: (markers: CodeEditorMarker[]) => {
                 const model = editorRef.current?.getModel();
                 if (model) {
-                    monaco.editor.setModelMarkers(model, 'sftools', markers);
+                    monaco.editor.setModelMarkers(
+                        model,
+                        'sftools',
+                        markers.map(m => toMarkerData(model, m))
+                    );
                 }
             },
             clearMarkers: () => {
@@ -125,7 +130,6 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
                 }
             },
             focus: () => editorRef.current?.focus(),
-            getEditor: () => editorRef.current,
         }));
 
         // Create the editor on mount, dispose on unmount. Initial-only props
@@ -147,7 +151,7 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
                 lineNumbersMinChars: lineNumbers === 'on' ? 3 : 0,
                 lineDecorationsWidth: lineNumbers === 'on' ? undefined : 6,
                 wordWrap,
-                fontSize: 13,
+                ...hostEditorOptions(),
             });
 
             editorRef.current = editorInstance;
@@ -184,6 +188,28 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
             // Mount-only: subsequent prop changes flow through the effects below.
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []);
+
+        // The editor's own suggestions first, then the host's (VS Code's providers)
+        const mergedCompletionSource = useMemo(
+            () =>
+                mergeCompletionSources(
+                    completionSource,
+                    readonly ? undefined : hostCompletionSource(language)
+                ),
+            [completionSource, language, readonly]
+        );
+
+        // Register completions that apply to this editor's model only
+        useEffect(() => {
+            const editorInstance = editorRef.current;
+            if (!mergedCompletionSource || !editorInstance) return;
+            const disposable = registerMonacoCompletionSource(
+                mapLanguage(language),
+                mergedCompletionSource,
+                model => model === editorInstance.getModel()
+            );
+            return () => disposable.dispose();
+        }, [mergedCompletionSource, language]);
 
         // Update language when the prop changes
         useEffect(() => {

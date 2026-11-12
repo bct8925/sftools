@@ -6,7 +6,7 @@
  */
 
 const { subscribe, unsubscribe } = require('../cometd/cometd-client');
-const { sendMessage } = require('../native-messaging');
+const { emitEvent } = require('../event-sink');
 
 /**
  * Handle CometD subscribe request
@@ -51,7 +51,7 @@ async function handleCometdSubscribe(request) {
             apiVersion,
 
             onEvent: ({ subscriptionId: subId, event }) => {
-                sendMessage({
+                emitEvent({
                     type: 'streamEvent',
                     subscriptionId: subId,
                     event
@@ -60,7 +60,7 @@ async function handleCometdSubscribe(request) {
 
             onError: ({ subscriptionId: subId, error, code }) => {
                 console.error(`[CometD] Stream error: ${error}`);
-                sendMessage({
+                emitEvent({
                     type: 'streamError',
                     subscriptionId: subId,
                     error,
@@ -70,7 +70,7 @@ async function handleCometdSubscribe(request) {
 
             onEnd: ({ subscriptionId: subId }) => {
                 console.error(`[CometD] Stream ended`);
-                sendMessage({
+                emitEvent({
                     type: 'streamEnd',
                     subscriptionId: subId
                 });

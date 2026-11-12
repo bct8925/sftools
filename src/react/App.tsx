@@ -9,6 +9,7 @@ import { type TabId, type FeatureId } from './TabNavigation';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 import styles from './App.module.css';
+import { getPlatform } from '../platform';
 
 // Lazy load tab components
 const QueryTab = lazy(() =>
@@ -80,7 +81,7 @@ const TAB_PRELOADS: Record<TabId, () => void> = {
 type ViewState = { view: 'home' } | { view: 'feature'; featureId: TabId };
 
 function getInitialViewState(): ViewState {
-    const param = new URLSearchParams(window.location.search).get('feature');
+    const param = getPlatform().getLaunchParams().get('feature');
     if (param && TAB_IDS.includes(param as TabId)) {
         return { view: 'feature', featureId: param as TabId };
     }

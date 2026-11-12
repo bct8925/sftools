@@ -9,6 +9,10 @@ export interface SalesforceConnection {
     clientId: string | null;
     createdAt: number;
     lastUsedAt: number;
+    /** VS Code only: this is the sf CLI default org (target-org) for the workspace */
+    isDefault?: boolean;
+    /** VS Code only: sf CLI username the connection was read from */
+    username?: string;
 }
 
 // Query Results

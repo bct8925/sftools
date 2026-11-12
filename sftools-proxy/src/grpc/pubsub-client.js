@@ -10,7 +10,16 @@ const protoLoader = require('@grpc/proto-loader');
 const path = require('path');
 const subscriptionManager = require('../subscription-manager');
 
-const PROTO_PATH = path.join(__dirname, '../../proto/pubsub_api.proto');
+let protoPath = path.join(__dirname, '../../proto/pubsub_api.proto');
+
+/**
+ * Override where pubsub_api.proto is loaded from (used when this module is bundled)
+ * @param {string} newPath - absolute path to pubsub_api.proto
+ */
+function setProtoPath(newPath) {
+    protoPath = newPath;
+    protoDefinition = null;
+}
 
 // Salesforce Pub/Sub API endpoint (port 443 works on networks that block 7443)
 const PUBSUB_ENDPOINT = 'api.pubsub.salesforce.com:443';
@@ -27,7 +36,7 @@ async function loadProto() {
         return protoDefinition;
     }
 
-    const packageDefinition = await protoLoader.load(PROTO_PATH, {
+    const packageDefinition = await protoLoader.load(protoPath, {
         keepCase: true,
         longs: String,
         enums: String,
@@ -354,4 +363,5 @@ module.exports = {
     unsubscribe,
     publish,
     extractOrgIdFromToken,
+    setProtoPath,
 };

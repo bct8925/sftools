@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
+import { CodeEditor, type CodeEditorRef } from '../code-editor/CodeEditor';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import { filterLines } from '../../lib/apex-utils';
 import styles from './ApexTab.module.css';
@@ -19,7 +19,7 @@ interface ApexOutputProps {
  */
 export function ApexOutput({ output, className, isCollapsed, onToggleCollapse }: ApexOutputProps) {
     const [searchText, setSearchText] = useState('');
-    const editorRef = useRef<MonacoEditorRef>(null);
+    const editorRef = useRef<CodeEditorRef>(null);
     const filterTimeoutRef = useRef<number | null>(null);
 
     // Apply filter with debouncing for performance on large logs
@@ -75,7 +75,7 @@ export function ApexOutput({ output, className, isCollapsed, onToggleCollapse }:
                 </div>
             </div>
             <div className={`card-body ${styles.outputCardBody}`} hidden={isCollapsed}>
-                <MonacoEditor
+                <CodeEditor
                     ref={editorRef}
                     language="apex"
                     readonly

@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useProxy } from '../../contexts/ProxyContext';
 import styles from './ProxySettings.module.css';
+import { storage } from '../../platform';
 
 export function ProxySettings() {
     const { isConnected, isConnecting, httpPort, version, error, connect, disconnect } = useProxy();
     const [proxyEnabled, setProxyEnabled] = useState(false);
 
     useEffect(() => {
-        chrome.storage.local.get(['proxyEnabled']).then(data => {
+        storage.get(['proxyEnabled']).then(data => {
             setProxyEnabled(Boolean(data.proxyEnabled));
         });
     }, []);
 
     const handleToggle = async (enabled: boolean) => {
         setProxyEnabled(enabled);
-        await chrome.storage.local.set({ proxyEnabled: enabled });
+        await storage.set({ proxyEnabled: enabled });
 
         if (enabled) {
             await connect();

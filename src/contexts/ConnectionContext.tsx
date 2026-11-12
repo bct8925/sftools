@@ -20,6 +20,7 @@ import {
     isAuthenticated as checkAuth,
     type ConnectionData,
 } from '../auth/auth';
+import { storage } from '../platform';
 
 interface ConnectionContextType {
     connections: SalesforceConnection[];
@@ -34,6 +35,19 @@ interface ConnectionContextType {
 }
 
 const ConnectionContext = createContext<ConnectionContextType | null>(null);
+
+/**
+ * Choose the connection a new sftools page starts on:
+ * the sf CLI default org when there is one (VS Code), otherwise the most recently used.
+ */
+export function pickInitialConnection(
+    connections: SalesforceConnection[]
+): SalesforceConnection | null {
+    if (connections.length === 0) return null;
+    const defaultConnection = connections.find(c => c.isDefault);
+    if (defaultConnection) return defaultConnection;
+    return [...connections].sort((a, b) => (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0))[0];
+}
 
 interface ConnectionProviderProps {
     children: ReactNode;
@@ -55,14 +69,9 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
         const activeId = getActiveConnectionId();
         let active = conns.find(c => c.id === activeId) || null;
 
-        // Auto-select most recently used connection if none is active
+        // Auto-select the default org (sf CLI) or the most recently used connection
         if (!active && conns.length > 0) {
-            const sorted = [...conns].sort((a, b) => {
-                const aTime = a.lastUsedAt ?? 0;
-                const bTime = b.lastUsedAt ?? 0;
-                return bTime - aTime;
-            });
-            active = sorted[0];
+            active = pickInitialConnection(conns);
             setActiveConn(active);
         }
 
@@ -80,20 +89,12 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
             }
         });
 
-        // Listen for storage changes from other tabs
-        const handleStorageChange = (
-            changes: { [key: string]: chrome.storage.StorageChange },
-            area: string
-        ) => {
-            if (area === 'local' && changes.connections) {
+        // Listen for storage changes from other tabs (or the sf CLI org list in VS Code)
+        return storage.onChanged(changes => {
+            if (changes.connections) {
                 refreshConnections();
             }
-        };
-
-        if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
-            chrome.storage.onChanged.addListener(handleStorageChange);
-            return () => chrome.storage.onChanged.removeListener(handleStorageChange);
-        }
+        });
     }, [refreshConnections]);
 
     const setActiveConnection = useCallback(async (conn: SalesforceConnection | null) => {

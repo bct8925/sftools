@@ -7,6 +7,7 @@ import { FieldRow } from './FieldRow';
 import { RichTextModal } from './RichTextModal';
 import { useToast } from '../../contexts/ToastContext';
 import styles from './RecordPage.module.css';
+import { getPlatform, storage } from '../../platform';
 
 // State interface
 interface RecordPageState {
@@ -176,7 +177,7 @@ export function RecordPage() {
 
     // Initialize from URL params and load connection
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
+        const params = getPlatform().getLaunchParams();
         const objType = params.get('objectType');
         const recId = params.get('recordId');
         const connId = params.get('connectionId');
@@ -195,7 +196,7 @@ export function RecordPage() {
 
         // Load connection and set as active
         const loadConnection = async () => {
-            const { connections } = await chrome.storage.local.get(['connections']);
+            const { connections } = await storage.get(['connections']);
             const connection = (connections as SalesforceConnection[] | undefined)?.find(
                 c => c.id === connId
             );
@@ -350,7 +351,7 @@ export function RecordPage() {
     const handleOpenInOrg = useCallback(() => {
         if (state.instanceUrl && state.objectType && state.recordId) {
             const url = `${state.instanceUrl}/lightning/r/${state.objectType}/${state.recordId}/view`;
-            window.open(url, '_blank');
+            getPlatform().openExternal(url);
         }
     }, [state.instanceUrl, state.objectType, state.recordId]);
 

@@ -3,6 +3,7 @@ import { useConnection } from '../contexts/ConnectionContext';
 import { useProxy } from '../contexts/ProxyContext';
 import { matchShortcut, isEditableTarget } from '../lib/keyboard-shortcuts';
 import type { FeatureId } from '../react/TabNavigation';
+import { getPlatform } from '../platform';
 
 interface UseKeyboardShortcutsOptions {
     navigateToFeature: (featureId: FeatureId | 'settings') => void;
@@ -38,7 +39,7 @@ export function useKeyboardShortcuts({
                 navigateHome();
             } else if (binding.target === 'open-org') {
                 if (!activeConnection?.instanceUrl) return;
-                chrome.tabs.create({ url: activeConnection.instanceUrl });
+                getPlatform().openExternal(activeConnection.instanceUrl);
             } else {
                 navigateToFeature(binding.target);
             }

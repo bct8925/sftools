@@ -22,3 +22,6 @@ coverage/
 # Obsidian workspace (user-specific)
 vault/.obsidian/workspace.json
 vault/.obsidian/workspace-mobile.json
+
+# VS Code extension package
+*.vsix

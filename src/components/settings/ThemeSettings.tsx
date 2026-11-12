@@ -1,8 +1,11 @@
 import { useTheme } from '../../contexts/ThemeContext';
+import { isVsCode } from '../../platform';
 import styles from './ThemeSettings.module.css';
 
 export function ThemeSettings() {
     const { theme, setTheme } = useTheme();
+    // In VS Code, System takes on the VS Code theme; Light and Dark are sftools' own
+    const vscode = isVsCode();
 
     return (
         <div className={styles.themeSection}>
@@ -19,7 +22,9 @@ export function ThemeSettings() {
                         data-testid="settings-theme-radio-system"
                     />
                     <span className={styles.themeOptionLabel}>System</span>
-                    <span className={styles.themeOptionDesc}>Follow system preference</span>
+                    <span className={styles.themeOptionDesc}>
+                        {vscode ? 'Match the VS Code theme' : 'Follow system preference'}
+                    </span>
                 </label>
                 <label className={styles.themeOption}>
                     <input
@@ -32,7 +37,9 @@ export function ThemeSettings() {
                         data-testid="settings-theme-radio-light"
                     />
                     <span className={styles.themeOptionLabel}>Light</span>
-                    <span className={styles.themeOptionDesc}>Always use light mode</span>
+                    <span className={styles.themeOptionDesc}>
+                        {vscode ? 'sftools light colors' : 'Always use light mode'}
+                    </span>
                 </label>
                 <label className={styles.themeOption}>
                     <input
@@ -45,7 +52,9 @@ export function ThemeSettings() {
                         data-testid="settings-theme-radio-dark"
                     />
                     <span className={styles.themeOptionLabel}>Dark</span>
-                    <span className={styles.themeOptionDesc}>Always use dark mode</span>
+                    <span className={styles.themeOptionDesc}>
+                        {vscode ? 'sftools dark colors' : 'Always use dark mode'}
+                    </span>
                 </label>
             </div>
         </div>

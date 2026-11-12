@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
+import { CodeEditor, type CodeEditorRef } from '../code-editor/CodeEditor';
 import { RestApiHistory, type RestApiHistoryRef, type RestApiRequest } from './RestApiHistory';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { executeRestRequest } from '../../api/salesforce';
@@ -8,6 +8,7 @@ import type { RestApiResponse } from '../../types/salesforce';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import { useToast } from '../../contexts/ToastContext';
 import styles from './RestApiTab.module.css';
+import { storage } from '../../platform';
 
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
@@ -25,15 +26,15 @@ export function RestApiTab() {
     const handleToggleRequest = useCallback(() => setIsRequestCollapsed(prev => !prev), []);
     const handleToggleResponse = useCallback(() => setIsResponseCollapsed(prev => !prev), []);
 
-    const requestEditorRef = useRef<MonacoEditorRef>(null);
-    const responseEditorRef = useRef<MonacoEditorRef>(null);
+    const requestEditorRef = useRef<CodeEditorRef>(null);
+    const responseEditorRef = useRef<CodeEditorRef>(null);
     const historyRef = useRef<RestApiHistoryRef>(null);
 
     const showBodyInput = shouldShowBody(method);
 
     // Restore most recently used request from history on mount
     useEffect(() => {
-        chrome.storage.local.get(['restApiHistory', 'restApiFavorites']).then(data => {
+        storage.get(['restApiHistory', 'restApiFavorites']).then(data => {
             const history = data.restApiHistory as
                 | Array<{ request: string; timestamp: number }>
                 | undefined;
@@ -186,7 +187,7 @@ export function RestApiTab() {
                     {showBodyInput && (
                         <div className="form-element" data-testid="rest-body-container">
                             <label>Body (JSON)</label>
-                            <MonacoEditor
+                            <CodeEditor
                                 ref={requestEditorRef}
                                 language="json"
                                 value={initialBody}
@@ -224,7 +225,7 @@ export function RestApiTab() {
                     className={`card-body ${styles.responseCardBody}`}
                     hidden={isResponseCollapsed}
                 >
-                    <MonacoEditor
+                    <CodeEditor
                         ref={responseEditorRef}
                         language="json"
                         value="// Response will appear here"

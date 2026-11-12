@@ -14,6 +14,7 @@ import type {
     FlowVersion,
 } from '../types/salesforce';
 import { getAccessToken, getInstanceUrl, getActiveConnectionId } from '../auth/auth';
+import { storage } from '../platform';
 import { API_VERSION } from './constants';
 import { smartFetch } from './fetch';
 import { salesforceRequest } from './salesforce-request';
@@ -90,7 +91,7 @@ async function getDescribeCache(): Promise<DescribeCache> {
     if (!connectionId) return { global: null, objects: {} };
 
     const key = getDescribeCacheKey(connectionId);
-    const data = await chrome.storage.local.get([key]);
+    const data = await storage.get([key]);
     return (data[key] as DescribeCache) || { global: null, objects: {} };
 }
 
@@ -105,7 +106,7 @@ async function setDescribeCache(
     if (!connectionId) return;
 
     const key = getDescribeCacheKey(connectionId);
-    const stored = await chrome.storage.local.get([key]);
+    const stored = await storage.get([key]);
     const cache: DescribeCache = (stored[key] as DescribeCache) || { global: null, objects: {} };
 
     if (type === 'global') {
@@ -114,7 +115,7 @@ async function setDescribeCache(
         cache.objects[type] = data as ObjectDescribeResult;
     }
 
-    await chrome.storage.local.set({ [key]: cache });
+    await storage.set({ [key]: cache });
 }
 
 /**
@@ -124,7 +125,7 @@ export async function clearDescribeCache(): Promise<void> {
     const connectionId = getActiveConnectionId();
     if (!connectionId) return;
 
-    await chrome.storage.local.remove(getDescribeCacheKey(connectionId));
+    await storage.remove(getDescribeCacheKey(connectionId));
 }
 
 /**
@@ -133,7 +134,7 @@ export async function clearDescribeCache(): Promise<void> {
  */
 export async function migrateDescribeCache(): Promise<boolean> {
     const OLD_KEY = 'describeCache';
-    const data = await chrome.storage.local.get([OLD_KEY]);
+    const data = await storage.get([OLD_KEY]);
     const oldCache = data[OLD_KEY];
 
     if (!oldCache || typeof oldCache !== 'object') return false;
@@ -146,9 +147,9 @@ export async function migrateDescribeCache(): Promise<boolean> {
 
     // Write new keys and remove old
     if (Object.keys(updates).length > 0) {
-        await chrome.storage.local.set(updates);
+        await storage.set(updates);
     }
-    await chrome.storage.local.remove(OLD_KEY);
+    await storage.remove(OLD_KEY);
 
     return true;
 }

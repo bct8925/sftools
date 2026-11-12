@@ -6,11 +6,14 @@ import { CacheSettings } from './CacheSettings';
 import { DataManagement } from './DataManagement';
 import { EditConnectionModal } from './EditConnectionModal';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
+import { getPlatform } from '../../platform';
+import { SfCliOrgList } from './SfCliOrgList';
 import styles from './SettingsTab.module.css';
 
 export function SettingsTab() {
     const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+    const { manageConnections, nativeProxy } = getPlatform().capabilities;
 
     const toggleCard = useCallback(
         (key: string) => setCollapsed(prev => ({ ...prev, [key]: !prev[key] })),
@@ -31,11 +34,23 @@ export function SettingsTab() {
                     />
                 </div>
                 <div className="card-body" hidden={collapsed['connections']}>
-                    <p className={styles.description}>
-                        Manage your Salesforce org connections. Each connection can use its own
-                        Connected App.
-                    </p>
-                    <ConnectionList onEditConnection={setEditingConnectionId} />
+                    {manageConnections ? (
+                        <>
+                            <p className={styles.description}>
+                                Manage your Salesforce org connections. Each connection can use its
+                                own Connected App.
+                            </p>
+                            <ConnectionList onEditConnection={setEditingConnectionId} />
+                        </>
+                    ) : (
+                        <>
+                            <p className={styles.description}>
+                                Orgs come from the Salesforce CLI (sf). New panels start on this
+                                workspace&apos;s default org.
+                            </p>
+                            <SfCliOrgList />
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -56,21 +71,23 @@ export function SettingsTab() {
                 </div>
             </div>
 
-            <div className="card">
-                <div className="card-header">
-                    <div className={`card-header-icon ${styles.headerIconProxy}`}>P</div>
-                    <h2 className="card-collapse-title" onClick={() => toggleCard('proxy')}>
-                        Local Proxy
-                    </h2>
-                    <CollapseChevron
-                        isOpen={!collapsed['proxy']}
-                        onClick={() => toggleCard('proxy')}
-                    />
+            {nativeProxy && (
+                <div className="card">
+                    <div className="card-header">
+                        <div className={`card-header-icon ${styles.headerIconProxy}`}>P</div>
+                        <h2 className="card-collapse-title" onClick={() => toggleCard('proxy')}>
+                            Local Proxy
+                        </h2>
+                        <CollapseChevron
+                            isOpen={!collapsed['proxy']}
+                            onClick={() => toggleCard('proxy')}
+                        />
+                    </div>
+                    <div className="card-body" hidden={collapsed['proxy']}>
+                        <ProxySettings />
+                    </div>
                 </div>
-                <div className="card-body" hidden={collapsed['proxy']}>
-                    <ProxySettings />
-                </div>
-            </div>
+            )}
 
             <div className="card">
                 <div className="card-header">
@@ -89,10 +106,12 @@ export function SettingsTab() {
                 </div>
             </div>
 
-            <EditConnectionModal
-                connectionId={editingConnectionId}
-                onClose={() => setEditingConnectionId(null)}
-            />
+            {manageConnections && (
+                <EditConnectionModal
+                    connectionId={editingConnectionId}
+                    onClose={() => setEditingConnectionId(null)}
+                />
+            )}
         </div>
     );
 }

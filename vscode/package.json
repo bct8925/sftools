@@ -1,0 +1,174 @@
+{
+    "name": "sftools-vscode",
+    "displayName": "sftools",
+    "description": "Salesforce developer tools (Query, Apex, REST, Events, Debug Logs, Schema, Data Import) using your sf CLI orgs.",
+    "version": "0.1.0",
+    "publisher": "sftools",
+    "private": true,
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.95.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "keywords": [
+        "salesforce",
+        "soql",
+        "apex",
+        "sf cli"
+    ],
+    "icon": "media/icon.png",
+    "main": "./dist/extension.js",
+    "activationEvents": [],
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "sftools",
+                    "title": "sftools",
+                    "icon": "media/sidebar.svg"
+                }
+            ]
+        },
+        "views": {
+            "sftools": [
+                {
+                    "type": "webview",
+                    "id": "sftools.sidebar",
+                    "name": "sftools"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "sftools.open",
+                "title": "Open sftools",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openQuery",
+                "title": "Query (SOQL)",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openApex",
+                "title": "Anonymous Apex",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openRestApi",
+                "title": "REST API",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openEvents",
+                "title": "Events",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openDebugLogs",
+                "title": "Debug Logs",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openSchema",
+                "title": "Schema Browser",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openDataImport",
+                "title": "Data Import",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openUtils",
+                "title": "Utils",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openSettings",
+                "title": "Settings",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openRecord",
+                "title": "View/Edit Record by Id",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.refreshOrgs",
+                "title": "Refresh Orgs from sf CLI",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.loginOrg",
+                "title": "Log In to an Org",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.openOrg",
+                "title": "Open Org",
+                "category": "sftools"
+            },
+            {
+                "command": "sftools.copyRecordId",
+                "title": "Copy Record ID",
+                "category": "sftools"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "sftools.copyRecordId",
+                    "when": "false"
+                }
+            ],
+            "webview/context": [
+                {
+                    "command": "sftools.copyRecordId",
+                    "when": "webviewSection == 'recordId'",
+                    "group": "9_cutcopypaste@0"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "sftools",
+            "properties": {
+                "sftools.sfPath": {
+                    "type": "string",
+                    "default": "sf",
+                    "description": "Path to the Salesforce CLI (sf). Leave as \"sf\" to use the one on your PATH."
+                },
+                "sftools.openOrgIn": {
+                    "type": "string",
+                    "enum": [
+                        "integratedBrowser",
+                        "externalBrowser"
+                    ],
+                    "default": "integratedBrowser",
+                    "enumDescriptions": [
+                        "Open Salesforce pages in VS Code's integrated browser (VS Code 1.109 or later), signed in through the sf CLI. Falls back to your system browser when it isn't available.",
+                        "Always open Salesforce pages in your system browser."
+                    ],
+                    "description": "Where sftools opens Salesforce pages, such as Open Org and links to records in Setup."
+                }
+            }
+        }
+    },
+    "scripts": {
+        "build": "npm run build:webview && npm run build:host",
+        "build:webview": "cd .. && npx vite build --config vite.config.vscode.ts",
+        "build:host": "node esbuild.mjs",
+        "package": "npm run build && vsce package --no-dependencies --allow-missing-repository -o sftools.vsix",
+        "typecheck": "tsc --noEmit -p ."
+    },
+    "devDependencies": {
+        "@types/node": "^22.10.0",
+        "@types/vscode": "1.95.0",
+        "@vscode/vsce": "^3.2.0",
+        "esbuild": "^0.25.0",
+        "jsonc-parser": "^3.3.1",
+        "typescript": "^5.9.3"
+    }
+}

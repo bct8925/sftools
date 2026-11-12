@@ -4,6 +4,7 @@
 import type { SalesforceConnection } from '../types/salesforce';
 import { debugInfo } from '../lib/debug';
 import { isExpired } from '../lib/date-utils';
+import { getPlatform, storage } from '../platform';
 
 // --- Types ---
 
@@ -93,27 +94,16 @@ export function triggerAuthExpired(connectionId?: string, error?: string): void 
  * Load auth tokens from storage into module state (legacy - for backward compatibility)
  * @deprecated Use loadConnections() and setActiveConnection() instead
  */
-export function loadAuthTokens(): Promise<boolean> {
-    return new Promise(resolve => {
-        if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.get(
-                [STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.INSTANCE_URL],
-                data => {
-                    if (data[STORAGE_KEYS.ACCESS_TOKEN] && data[STORAGE_KEYS.INSTANCE_URL]) {
-                        ACCESS_TOKEN = data[STORAGE_KEYS.ACCESS_TOKEN] as string;
-                        INSTANCE_URL = data[STORAGE_KEYS.INSTANCE_URL] as string;
-                        debugInfo('Loaded auth for instance:', INSTANCE_URL);
-                        resolve(true);
-                    } else {
-                        debugInfo('No auth tokens found');
-                        resolve(false);
-                    }
-                }
-            );
-        } else {
-            resolve(false);
-        }
-    });
+export async function loadAuthTokens(): Promise<boolean> {
+    const data = await storage.get([STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.INSTANCE_URL]);
+    if (data[STORAGE_KEYS.ACCESS_TOKEN] && data[STORAGE_KEYS.INSTANCE_URL]) {
+        ACCESS_TOKEN = data[STORAGE_KEYS.ACCESS_TOKEN] as string;
+        INSTANCE_URL = data[STORAGE_KEYS.INSTANCE_URL] as string;
+        debugInfo('Loaded auth for instance:', INSTANCE_URL);
+        return true;
+    }
+    debugInfo('No auth tokens found');
+    return false;
 }
 
 // --- Multi-Connection Storage Functions ---
@@ -144,25 +134,16 @@ export function setActiveConnection(connection: SalesforceConnection | null): vo
 /**
  * Load all saved connections from storage
  */
-export function loadConnections(): Promise<SalesforceConnection[]> {
-    return new Promise(resolve => {
-        if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.get(['connections'], data => {
-                resolve((data.connections as SalesforceConnection[]) || []);
-            });
-        } else {
-            resolve([]);
-        }
-    });
+export async function loadConnections(): Promise<SalesforceConnection[]> {
+    const data = await storage.get(['connections']);
+    return (data.connections as SalesforceConnection[]) || [];
 }
 
 /**
  * Save connections array to storage
  */
 export async function saveConnections(connections: SalesforceConnection[]): Promise<void> {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-        await chrome.storage.local.set({ connections });
-    }
+    await storage.set({ connections });
 }
 
 /**
@@ -220,7 +201,7 @@ export async function removeConnection(connectionId: string): Promise<void> {
     await saveConnections(filtered);
 
     // Clean up the connection's describe cache
-    await chrome.storage.local.remove(`describeCache_${connectionId}`);
+    await storage.remove(`describeCache_${connectionId}`);
 }
 
 /**
@@ -237,64 +218,54 @@ export async function findConnectionByInstance(
  * Migrate from single-connection storage to multi-connection format
  * Should be called once on app initialization
  */
-export function migrateFromSingleConnection(): Promise<boolean> {
-    return new Promise(resolve => {
-        if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.get(
-                [
-                    'connections',
-                    STORAGE_KEYS.ACCESS_TOKEN,
-                    STORAGE_KEYS.INSTANCE_URL,
-                    STORAGE_KEYS.REFRESH_TOKEN,
-                    STORAGE_KEYS.LOGIN_DOMAIN,
-                ],
-                async data => {
-                    // Already migrated or fresh install
-                    if (data.connections !== undefined) {
-                        resolve(false);
-                        return;
-                    }
+export async function migrateFromSingleConnection(): Promise<boolean> {
+    // Connections in VS Code come from the sf CLI; there is nothing to migrate
+    if (!getPlatform().capabilities.manageConnections) return false;
 
-                    // No existing auth to migrate
-                    if (!data[STORAGE_KEYS.ACCESS_TOKEN] || !data[STORAGE_KEYS.INSTANCE_URL]) {
-                        await chrome.storage.local.set({ connections: [] });
-                        resolve(false);
-                        return;
-                    }
+    const data = await storage.get([
+        'connections',
+        STORAGE_KEYS.ACCESS_TOKEN,
+        STORAGE_KEYS.INSTANCE_URL,
+        STORAGE_KEYS.REFRESH_TOKEN,
+        STORAGE_KEYS.LOGIN_DOMAIN,
+    ]);
 
-                    // Migrate single connection to array
-                    const connection: SalesforceConnection = {
-                        id: crypto.randomUUID(),
-                        label: new URL(data[STORAGE_KEYS.INSTANCE_URL] as string).hostname,
-                        instanceUrl: data[STORAGE_KEYS.INSTANCE_URL] as string,
-                        loginDomain:
-                            (data[STORAGE_KEYS.LOGIN_DOMAIN] as string) ||
-                            'https://login.salesforce.com',
-                        accessToken: data[STORAGE_KEYS.ACCESS_TOKEN] as string,
-                        refreshToken: (data[STORAGE_KEYS.REFRESH_TOKEN] as string) || null,
-                        clientId: null,
-                        createdAt: Date.now(),
-                        lastUsedAt: Date.now(),
-                    };
+    // Already migrated or fresh install
+    if (data.connections !== undefined) {
+        return false;
+    }
 
-                    await chrome.storage.local.set({ connections: [connection] });
+    // No existing auth to migrate
+    if (!data[STORAGE_KEYS.ACCESS_TOKEN] || !data[STORAGE_KEYS.INSTANCE_URL]) {
+        await storage.set({ connections: [] });
+        return false;
+    }
 
-                    // Clean up old keys
-                    await chrome.storage.local.remove([
-                        STORAGE_KEYS.ACCESS_TOKEN,
-                        STORAGE_KEYS.REFRESH_TOKEN,
-                        STORAGE_KEYS.INSTANCE_URL,
-                        STORAGE_KEYS.LOGIN_DOMAIN,
-                    ]);
+    // Migrate single connection to array
+    const connection: SalesforceConnection = {
+        id: crypto.randomUUID(),
+        label: new URL(data[STORAGE_KEYS.INSTANCE_URL] as string).hostname,
+        instanceUrl: data[STORAGE_KEYS.INSTANCE_URL] as string,
+        loginDomain: (data[STORAGE_KEYS.LOGIN_DOMAIN] as string) || 'https://login.salesforce.com',
+        accessToken: data[STORAGE_KEYS.ACCESS_TOKEN] as string,
+        refreshToken: (data[STORAGE_KEYS.REFRESH_TOKEN] as string) || null,
+        clientId: null,
+        createdAt: Date.now(),
+        lastUsedAt: Date.now(),
+    };
 
-                    debugInfo('Migrated single connection to multi-connection format');
-                    resolve(true);
-                }
-            );
-        } else {
-            resolve(false);
-        }
-    });
+    await storage.set({ connections: [connection] });
+
+    // Clean up old keys
+    await storage.remove([
+        STORAGE_KEYS.ACCESS_TOKEN,
+        STORAGE_KEYS.REFRESH_TOKEN,
+        STORAGE_KEYS.INSTANCE_URL,
+        STORAGE_KEYS.LOGIN_DOMAIN,
+    ]);
+
+    debugInfo('Migrated single connection to multi-connection format');
+    return true;
 }
 
 // --- Pending Auth State (with CSRF protection) ---
@@ -311,7 +282,7 @@ export function generateOAuthState(): string {
  */
 export async function setPendingAuth(params: Omit<PendingAuth, 'createdAt'>): Promise<void> {
     // Add timestamp for expiration checking
-    await chrome.storage.local.set({
+    await storage.set({
         pendingAuth: { ...params, createdAt: Date.now() },
     });
 }
@@ -321,10 +292,10 @@ export async function setPendingAuth(params: Omit<PendingAuth, 'createdAt'>): Pr
  * Checks expiration (5 minute timeout) to prevent stale state attacks
  */
 export async function consumePendingAuth(): Promise<PendingAuth | null> {
-    const { pendingAuth } = (await chrome.storage.local.get(['pendingAuth'])) as {
+    const { pendingAuth } = (await storage.get(['pendingAuth'])) as {
         pendingAuth?: PendingAuth;
     };
-    await chrome.storage.local.remove(['pendingAuth']);
+    await storage.remove(['pendingAuth']);
 
     if (!pendingAuth) return null;
 
@@ -341,7 +312,7 @@ export async function consumePendingAuth(): Promise<PendingAuth | null> {
  * Validate OAuth state parameter matches the pending auth state
  */
 export async function validateOAuthState(receivedState: string): Promise<OAuthValidationResult> {
-    const { pendingAuth } = (await chrome.storage.local.get(['pendingAuth'])) as {
+    const { pendingAuth } = (await storage.get(['pendingAuth'])) as {
         pendingAuth?: PendingAuth;
     };
 
@@ -351,7 +322,7 @@ export async function validateOAuthState(receivedState: string): Promise<OAuthVa
 
     // Check expiration
     if (pendingAuth.createdAt && isExpired(pendingAuth.createdAt, 5)) {
-        await chrome.storage.local.remove(['pendingAuth']);
+        await storage.remove(['pendingAuth']);
         return { valid: false, pendingAuth: null };
     }
 
@@ -360,7 +331,7 @@ export async function validateOAuthState(receivedState: string): Promise<OAuthVa
     }
 
     // State is valid - clear it and return pending auth
-    await chrome.storage.local.remove(['pendingAuth']);
+    await storage.remove(['pendingAuth']);
     return { valid: true, pendingAuth };
 }
 
@@ -374,7 +345,7 @@ export { getOAuthCredentials } from './oauth-credentials';
  * @deprecated Use per-connection clientId instead
  */
 export async function loadCustomConnectedApp(): Promise<CustomConnectedApp | null> {
-    const { customConnectedApp } = (await chrome.storage.local.get(['customConnectedApp'])) as {
+    const { customConnectedApp } = (await storage.get(['customConnectedApp'])) as {
         customConnectedApp?: CustomConnectedApp;
     };
     return customConnectedApp || null;
@@ -385,7 +356,7 @@ export async function loadCustomConnectedApp(): Promise<CustomConnectedApp | nul
  * @deprecated Use per-connection clientId instead
  */
 export async function saveCustomConnectedApp(config: CustomConnectedApp): Promise<void> {
-    await chrome.storage.local.set({ customConnectedApp: config });
+    await storage.set({ customConnectedApp: config });
 }
 
 /**
@@ -393,92 +364,78 @@ export async function saveCustomConnectedApp(config: CustomConnectedApp): Promis
  * @deprecated Use per-connection clientId instead
  */
 export async function clearCustomConnectedApp(): Promise<void> {
-    await chrome.storage.local.remove(['customConnectedApp']);
+    await storage.remove(['customConnectedApp']);
 }
 
 /**
  * Migrate from global customConnectedApp to per-connection clientId
  * Should be called once during app initialization (after migrateFromSingleConnection)
  */
-export function migrateCustomConnectedApp(): Promise<boolean> {
-    return new Promise(resolve => {
-        if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.get(
-                ['customConnectedApp', 'connections', 'customAppMigrated'],
-                async data => {
-                    // Already migrated or no custom app to migrate
-                    const customApp = data.customConnectedApp as CustomConnectedApp | undefined;
-                    if (data.customAppMigrated || !customApp?.enabled) {
-                        resolve(false);
-                        return;
-                    }
+export async function migrateCustomConnectedApp(): Promise<boolean> {
+    if (!getPlatform().capabilities.manageConnections) return false;
 
-                    const customClientId = customApp.clientId;
-                    const connections = (data.connections as SalesforceConnection[]) || [];
+    const data = await storage.get(['customConnectedApp', 'connections', 'customAppMigrated']);
 
-                    if (connections.length > 0 && customClientId) {
-                        // Apply custom clientId to all existing connections that don't have one
-                        const updatedConnections = connections.map(conn => ({
-                            ...conn,
-                            clientId: conn.clientId || customClientId,
-                        }));
+    // Already migrated or no custom app to migrate
+    const customApp = data.customConnectedApp as CustomConnectedApp | undefined;
+    if (data.customAppMigrated || !customApp?.enabled) {
+        return false;
+    }
 
-                        await chrome.storage.local.set({
-                            connections: updatedConnections,
-                            customAppMigrated: true,
-                        });
+    const customClientId = customApp.clientId;
+    const connections = (data.connections as SalesforceConnection[]) || [];
 
-                        debugInfo('Migrated global customConnectedApp to per-connection clientIds');
-                    }
+    if (connections.length > 0 && customClientId) {
+        // Apply custom clientId to all existing connections that don't have one
+        const updatedConnections = connections.map(conn => ({
+            ...conn,
+            clientId: conn.clientId || customClientId,
+        }));
 
-                    // Remove deprecated customConnectedApp
-                    await chrome.storage.local.remove(['customConnectedApp']);
+        await storage.set({
+            connections: updatedConnections,
+            customAppMigrated: true,
+        });
 
-                    resolve(true);
-                }
-            );
-        } else {
-            resolve(false);
-        }
-    });
+        debugInfo('Migrated global customConnectedApp to per-connection clientIds');
+    }
+
+    // Remove deprecated customConnectedApp
+    await storage.remove(['customConnectedApp']);
+
+    return true;
 }
 
-// Listen for auth expiration broadcasts from background
-if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
-    chrome.runtime.onMessage.addListener((message: { type: string }) => {
-        if (message.type === 'authExpired') {
+// Listen for auth expiration broadcasts from the host (background / extension host)
+getPlatform().onMessage(message => {
+    if (message.type === 'authExpired') {
+        triggerAuthExpired();
+    }
+});
+
+// Listen for storage changes (e.g., token refresh from the host)
+getPlatform().storage.onChanged(changes => {
+    // Handle multi-connection format
+    if (changes.connections?.newValue && ACTIVE_CONNECTION_ID) {
+        const updatedConnections = changes.connections.newValue as SalesforceConnection[];
+        const activeConn = updatedConnections.find(c => c.id === ACTIVE_CONNECTION_ID);
+        if (activeConn) {
+            // Update in-memory tokens if active connection was refreshed
+            ACCESS_TOKEN = activeConn.accessToken;
+            INSTANCE_URL = activeConn.instanceUrl;
+        } else {
+            // Active connection was removed
             triggerAuthExpired();
         }
-    });
-}
+    }
 
-// Listen for storage changes (e.g., token refresh from background)
-if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
-    chrome.storage.onChanged.addListener((changes, area) => {
-        if (area !== 'local') return;
+    // Legacy single-connection format (for backward compatibility during migration)
+    if (changes[STORAGE_KEYS.ACCESS_TOKEN]?.newValue) {
+        ACCESS_TOKEN = changes[STORAGE_KEYS.ACCESS_TOKEN].newValue as string;
+        debugInfo('Access token updated from storage (legacy)');
+    }
 
-        // Handle multi-connection format
-        if (changes.connections?.newValue && ACTIVE_CONNECTION_ID) {
-            const updatedConnections = changes.connections.newValue as SalesforceConnection[];
-            const activeConn = updatedConnections.find(c => c.id === ACTIVE_CONNECTION_ID);
-            if (activeConn) {
-                // Update in-memory tokens if active connection was refreshed
-                ACCESS_TOKEN = activeConn.accessToken;
-                INSTANCE_URL = activeConn.instanceUrl;
-            } else {
-                // Active connection was removed
-                triggerAuthExpired();
-            }
-        }
-
-        // Legacy single-connection format (for backward compatibility during migration)
-        if (changes[STORAGE_KEYS.ACCESS_TOKEN]?.newValue) {
-            ACCESS_TOKEN = changes[STORAGE_KEYS.ACCESS_TOKEN].newValue as string;
-            debugInfo('Access token updated from storage (legacy)');
-        }
-
-        if (changes[STORAGE_KEYS.INSTANCE_URL]?.newValue) {
-            INSTANCE_URL = changes[STORAGE_KEYS.INSTANCE_URL].newValue as string;
-        }
-    });
-}
+    if (changes[STORAGE_KEYS.INSTANCE_URL]?.newValue) {
+        INSTANCE_URL = changes[STORAGE_KEYS.INSTANCE_URL].newValue as string;
+    }
+});

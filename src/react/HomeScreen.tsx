@@ -4,6 +4,7 @@ import { useProxy } from '../contexts/ProxyContext';
 import { SfIcon } from '../components/sf-icon/SfIcon';
 import { FEATURES, type FeatureId, type TabId, type Feature } from './TabNavigation';
 import styles from './HomeScreen.module.css';
+import { getPlatform } from '../platform';
 
 interface HomeScreenProps {
     onFeatureSelect: (featureId: FeatureId) => void;
@@ -25,8 +26,7 @@ export function HomeScreen({ onFeatureSelect, onSettingsClick, onFeatureHover }:
     );
 
     const openInNewTab = useCallback((featureId: FeatureId | 'settings') => {
-        const url = chrome.runtime.getURL(`dist/pages/app/app.html?feature=${featureId}`);
-        chrome.tabs.create({ url });
+        getPlatform().openFeature(featureId);
     }, []);
 
     const handleTileClick = useCallback(
@@ -54,7 +54,7 @@ export function HomeScreen({ onFeatureSelect, onSettingsClick, onFeatureHover }:
 
     const handleOpenOrg = useCallback(() => {
         if (activeConnection?.instanceUrl) {
-            chrome.tabs.create({ url: activeConnection.instanceUrl });
+            getPlatform().openExternal(activeConnection.instanceUrl);
         }
     }, [activeConnection?.instanceUrl]);
 

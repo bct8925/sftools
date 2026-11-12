@@ -1,0 +1,60 @@
+{
+    "scopeName": "source.sftools.apex",
+    "name": "Apex (sftools)",
+    "patterns": [
+        {
+            "name": "comment.block.apex",
+            "begin": "/\\*",
+            "end": "\\*/"
+        },
+        {
+            "name": "comment.line.double-slash.apex",
+            "match": "//.*$"
+        },
+        {
+            "name": "string.quoted.single.apex",
+            "begin": "'",
+            "end": "'",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.apex",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        {
+            "name": "meta.soql.inline.apex",
+            "begin": "\\[",
+            "end": "\\]",
+            "patterns": [
+                {
+                    "include": "source.sftools.soql"
+                }
+            ]
+        },
+        {
+            "name": "storage.type.annotation.apex",
+            "match": "@\\w+"
+        },
+        {
+            "name": "keyword.control.apex",
+            "match": "(?i)\\b(abstract|after|before|break|catch|class|continue|delete|do|else|enum|extends|final|finally|for|global|if|implements|insert|instanceof|interface|merge|new|on|override|private|protected|public|return|static|super|switch|this|throw|transient|trigger|try|undelete|update|upsert|virtual|void|when|while|with|without|sharing|inherited|webservice|testmethod|get|set)\\b"
+        },
+        {
+            "name": "constant.language.apex",
+            "match": "(?i)\\b(true|false|null)\\b"
+        },
+        {
+            "name": "storage.type.primitive.apex",
+            "match": "(?i)\\b(Blob|Boolean|Date|Datetime|Decimal|Double|Id|Integer|Long|Object|String|Time|List|Set|Map|SObject)\\b"
+        },
+        {
+            "name": "support.class.apex",
+            "match": "\\b(System|Database|Schema|Test|Limits|JSON|Http|HttpRequest|HttpResponse|UserInfo|Math|Trigger)\\b"
+        },
+        {
+            "name": "constant.numeric.apex",
+            "match": "\\b\\d+(\\.\\d+)?[lLdD]?\\b"
+        }
+    ]
+}

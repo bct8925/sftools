@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getInstanceUrl, getAccessToken } from '../../auth/auth';
+import { getInstanceUrl, getAccessToken, getActiveConnectionId } from '../../auth/auth';
 import { formatEventEntry } from '../../lib/events-utils';
-import type { MonacoEditorRef } from '../monaco-editor/MonacoEditor';
+import type { CodeEditorRef } from '../code-editor/CodeEditor';
 import { useToast } from '../../contexts/ToastContext';
+import { getPlatform, type SubscribeResponse } from '../../platform';
 
 interface StreamMessage {
     subscriptionId: string;
@@ -33,7 +34,7 @@ interface UseStreamSubscriptionOptions {
     isProxyConnected: boolean;
     appendSystemMessage?: (msg: string) => void;
     onEventReceived?: (eventData: EventData, isSystemMessage: boolean) => void;
-    streamEditorRef?: React.RefObject<MonacoEditorRef | null>;
+    streamEditorRef?: React.RefObject<CodeEditorRef | null>;
     scrollStreamToBottom?: () => void;
 }
 
@@ -169,8 +170,7 @@ export function useStreamSubscription({
             }
         };
 
-        chrome.runtime.onMessage.addListener(handler);
-        return () => chrome.runtime.onMessage.removeListener(handler);
+        return getPlatform().onMessage(handler);
     }, [handleStreamMessage]);
 
     // Subscribe to channel
@@ -198,17 +198,18 @@ export function useStreamSubscription({
         }
 
         try {
-            const response = await chrome.runtime.sendMessage({
+            const response = await getPlatform().sendMessage<SubscribeResponse>({
                 type: 'subscribe',
                 instanceUrl: getInstanceUrl(),
                 accessToken: getAccessToken(),
+                connectionId: getActiveConnectionId(),
                 channel: selectedChannel,
                 replayPreset,
                 replayId: replayPreset === 'CUSTOM' ? replayId : undefined,
             });
 
             if (response.success) {
-                setCurrentSubscriptionId(response.subscriptionId);
+                setCurrentSubscriptionId(response.subscriptionId ?? null);
                 setIsSubscribed(true);
                 const msg = `Subscribed to ${selectedChannel} (replay: ${replayPreset})`;
                 if (onEventReceived) {
@@ -247,7 +248,7 @@ export function useStreamSubscription({
         if (!currentSubscriptionId) return;
 
         try {
-            await chrome.runtime.sendMessage({
+            await getPlatform().sendMessage({
                 type: 'unsubscribe',
                 subscriptionId: currentSubscriptionId,
             });
@@ -280,7 +281,7 @@ export function useStreamSubscription({
         const { isSubscribed: wasSubscribed, subscriptionId } = subscriptionRef.current;
         if (wasSubscribed && subscriptionId) {
             try {
-                await chrome.runtime.sendMessage({
+                await getPlatform().sendMessage({
                     type: 'unsubscribe',
                     subscriptionId,
                 });

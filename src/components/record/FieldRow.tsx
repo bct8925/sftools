@@ -1,7 +1,8 @@
-import { useCallback, memo, type ChangeEvent } from 'react';
+import { useCallback, memo, type ChangeEvent, type MouseEvent } from 'react';
 import type { FieldDescribe, SObject } from '../../types/salesforce';
 import { formatValue, parseValue, formatPreviewHtml } from '../../lib/record-utils';
 import styles from './RecordPage.module.css';
+import { getPlatform } from '../../platform';
 
 interface FieldRowProps {
     field: FieldDescribe;
@@ -151,8 +152,19 @@ function renderPreview(
         const connId = parts[6];
         const url = `record.html?objectType=${encodeURIComponent(relatedType)}&recordId=${encodeURIComponent(recordId)}&connectionId=${encodeURIComponent(connId)}`;
 
+        const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
+            // VS Code webviews can't open relative links; ask the host for a new panel
+            if (getPlatform().kind !== 'vscode') return;
+            e.preventDefault();
+            getPlatform().openRecord({
+                objectType: relatedType,
+                recordId,
+                connectionId: connId,
+            });
+        };
+
         return (
-            <a href={url} target="_blank" rel="noopener noreferrer">
+            <a href={url} target="_blank" rel="noopener noreferrer" onClick={handleClick}>
                 {relatedName} ({displayType})
             </a>
         );

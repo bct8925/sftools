@@ -15,7 +15,7 @@
  * - SA-U-011: buildAggregateSuggestions() - Returns COUNT, SUM, etc.
  * - SA-U-012: buildDateLiteralSuggestions() - Returns TODAY, LAST_WEEK, etc. (internal function)
  * - SA-U-019: Freeze regressions - no lookup-target fan-out, describe reuse, half-typed FROM
- *   names, later-hop resolution, linear dot-chain scan on long lines, cancellation
+ *   names, later-hop resolution, linear dot-chain scan on long lines
  *
  * Note: Tests focus on exported functions and observable behavior since many functions are internal.
  */
@@ -66,8 +66,10 @@ import {
     activateSOQLAutocomplete,
     deactivateSOQLAutocomplete,
     clearState,
-    registerSOQLCompletionProvider,
+    getSoqlCompletions,
+    soqlCompletionSource,
 } from '../../../src/api/soql-autocomplete.js';
+import { registerMonacoCompletionSource } from '../../../src/components/monaco-editor/completion-provider';
 import { getGlobalDescribe, getObjectDescribe } from '../../../src/api/salesforce.js';
 import { monaco } from '../../../src/components/monaco-editor/MonacoEditor';
 
@@ -88,7 +90,7 @@ describe('soql-autocomplete', () => {
 
     describe('deactivateSOQLAutocomplete', () => {
         it('deactivateSOQLAutocomplete returns no suggestions', async () => {
-            registerSOQLCompletionProvider();
+            registerMonacoCompletionSource('sql', soqlCompletionSource);
             const calls = vi.mocked(monaco.languages.registerCompletionItemProvider).mock.calls;
             const provider = calls[calls.length - 1]?.[1] as
                 | {
@@ -131,22 +133,24 @@ describe('soql-autocomplete', () => {
         });
     });
 
-    describe('registerSOQLCompletionProvider', () => {
-        it('can be called without throwing', () => {
-            // The provider registration is idempotent due to internal guard
-            // Module state persists across tests, so we just verify it doesn't throw
-            expect(() => registerSOQLCompletionProvider()).not.toThrow();
+    describe('getSoqlCompletions', () => {
+        it('returns no suggestions while inactive', async () => {
+            deactivateSOQLAutocomplete();
+            await expect(getSoqlCompletions('SELECT ', 7)).resolves.toEqual([]);
         });
 
-        it('subsequent calls are no-ops due to guard', () => {
-            // The module has a guard: if (state.providerRegistered) return;
-            // Multiple calls should not throw and should not cause issues
-            registerSOQLCompletionProvider();
-            registerSOQLCompletionProvider();
-            registerSOQLCompletionProvider();
+        it('returns editor-neutral keyword suggestions when active', async () => {
+            activateSOQLAutocomplete();
+            const suggestions = await getSoqlCompletions('SELECT ', 7);
+            const from = suggestions.find(s => s.label === 'FROM');
+            expect(from).toMatchObject({ kind: 'keyword', insertText: 'FROM' });
+            expect(from).not.toHaveProperty('range');
+            const count = suggestions.find(s => s.label === 'COUNT');
+            expect(count).toMatchObject({ kind: 'function', snippet: true });
+        });
 
-            // If we got here without error, the guard is working
-            expect(true).toBe(true);
+        it('exposes trigger characters on the completion source', () => {
+            expect(soqlCompletionSource.triggerCharacters).toEqual(['.', ' ']);
         });
     });
 
@@ -242,9 +246,12 @@ describe('soql-autocomplete', () => {
             const autocomplete = await import('../../../src/api/soql-autocomplete.js');
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -372,9 +379,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -557,9 +567,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -627,9 +640,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -712,9 +728,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -837,9 +856,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -981,9 +1003,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -1093,17 +1118,11 @@ describe('soql-autocomplete', () => {
         });
     });
     describe('SA-U-019: Freeze regressions', () => {
-        type Provide = (
-            model: unknown,
-            position: unknown,
-            context?: unknown,
-            token?: { isCancellationRequested: boolean }
-        ) => Promise<{ suggestions: { label: string }[] }>;
+        type Complete = (text: string, offset?: number) => Promise<{ label: string }[]>;
 
         interface Setup {
-            provide: Provide;
+            complete: Complete;
             getObjectDescribe: ReturnType<typeof vi.fn>;
-            getGlobalDescribe: ReturnType<typeof vi.fn>;
         }
 
         async function setup(
@@ -1111,56 +1130,20 @@ describe('soql-autocomplete', () => {
             globalDescribe: unknown = undefined
         ): Promise<Setup> {
             vi.resetModules();
-            vi.doMock('../../../src/components/monaco-editor/MonacoEditor', () => ({
-                monaco: {
-                    languages: {
-                        CompletionItemKind: {
-                            Field: 1,
-                            Class: 2,
-                            Module: 3,
-                            Function: 4,
-                            Keyword: 5,
-                        },
-                        CompletionItemInsertTextRule: { InsertAsSnippet: 1 },
-                        registerCompletionItemProvider: vi.fn(),
-                    },
-                },
-            }));
             const getObjectDescribe = vi.fn((name: string) =>
                 Promise.resolve(describes[name] ?? null)
             );
-            const getGlobalDescribe = vi.fn(() => Promise.resolve(globalDescribe));
             vi.doMock('../../../src/api/salesforce.js', () => ({
-                getGlobalDescribe,
+                getGlobalDescribe: vi.fn(() => Promise.resolve(globalDescribe)),
                 getObjectDescribe,
             }));
 
             const autocomplete = await import('../../../src/api/soql-autocomplete.js');
-            const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
-            const calls = vi.mocked(monacoMock.monaco.languages.registerCompletionItemProvider).mock
-                .calls;
-            const provider = calls[0][1] as unknown as { provideCompletionItems: Provide };
-            return {
-                provide: provider.provideCompletionItems,
-                getObjectDescribe,
-                getGlobalDescribe,
-            };
-        }
-
-        // Build a model whose cursor sits at the end of `text`
-        function modelAtEnd(text: string) {
-            const lines = text.split('\n');
-            const column = lines[lines.length - 1].length + 1;
-            return {
-                model: {
-                    getValue: () => text,
-                    getOffsetAt: () => text.length,
-                    getWordUntilPosition: () => ({ startColumn: column, endColumn: column }),
-                },
-                position: { lineNumber: lines.length, column },
-            };
+            // Cursor at the end of the text unless an offset is given
+            const complete: Complete = (text, offset = text.length) =>
+                autocomplete.getSoqlCompletions(text, offset);
+            return { complete, getObjectDescribe };
         }
 
         function lookup(name: string, target: string) {
@@ -1173,75 +1156,66 @@ describe('soql-autocomplete', () => {
             };
         }
 
+        const labelsOf = (suggestions: { label: string }[]) => suggestions.map(s => s.label);
+
         it('describes only the FROM object, not every lookup target', async () => {
             const lookups = Array.from({ length: 50 }, (_, i) =>
                 lookup(`Rel${i}`, `Target${i}__c`)
             );
-            const { provide, getObjectDescribe } = await setup({
+            const { complete, getObjectDescribe } = await setup({
                 Account: { name: 'Account', fields: [{ name: 'Id', type: 'id' }, ...lookups] },
             });
 
-            const { model, position } = modelAtEnd('SELECT Id FROM Account WHERE ');
-            const result = await provide(model, position);
+            const labels = labelsOf(await complete('SELECT Id FROM Account WHERE '));
 
             expect(getObjectDescribe).toHaveBeenCalledTimes(1);
             expect(getObjectDescribe).toHaveBeenCalledWith('Account');
-            const labels = result.suggestions.map(s => s.label);
             expect(labels).toContain('Rel0');
             expect(labels).toContain('Rel49');
         });
 
         it('reuses describes across keystrokes in a dot chain', async () => {
-            const { provide, getObjectDescribe } = await setup({
+            const { complete, getObjectDescribe } = await setup({
                 Account: { name: 'Account', fields: [lookup('Owner', 'User')] },
                 User: { name: 'User', fields: [{ name: 'Username', type: 'string' }] },
             });
 
-            for (const text of ['SELECT Owner.', 'SELECT Owner.U', 'SELECT Owner.Us']) {
-                const { model, position } = modelAtEnd(`${text} FROM Account`);
-                // Cursor right after the typed text, before " FROM Account"
-                await provide(
-                    { ...model, getOffsetAt: () => text.length },
-                    { ...position, column: text.length + 1 }
-                );
+            for (const typed of ['SELECT Owner.', 'SELECT Owner.U', 'SELECT Owner.Us']) {
+                await complete(`${typed} FROM Account`, typed.length);
             }
-            const { model, position } = modelAtEnd('SELECT Id FROM Account WHERE Owner.');
-            const result = await provide(model, position);
+            const labels = labelsOf(await complete('SELECT Id FROM Account WHERE Owner.'));
 
-            expect(result.suggestions.map(s => s.label)).toContain('Username');
-            const userCalls = getObjectDescribe.mock.calls.filter(([n]) => n === 'User');
-            const accountCalls = getObjectDescribe.mock.calls.filter(([n]) => n === 'Account');
-            expect(accountCalls).toHaveLength(1);
-            expect(userCalls).toHaveLength(1);
+            expect(labels).toContain('Username');
+            const callsFor = (name: string) =>
+                getObjectDescribe.mock.calls.filter(([n]) => n === name);
+            expect(callsFor('Account')).toHaveLength(1);
+            expect(callsFor('User')).toHaveLength(1);
         });
 
         it('does not describe partial FROM names the org does not have', async () => {
-            const { provide, getObjectDescribe } = await setup(
+            const { complete, getObjectDescribe } = await setup(
                 { Account: { name: 'Account', fields: [{ name: 'Name', type: 'string' }] } },
                 { sobjects: [{ name: 'Account', label: 'Account', queryable: true }] }
             );
 
             // Typing in FROM loads the global describe
             for (const text of ['SELECT Id FROM ', 'SELECT Id FROM A', 'SELECT Id FROM Ac']) {
-                const { model, position } = modelAtEnd(text);
-                await provide(model, position);
+                await complete(text);
             }
             expect(getObjectDescribe).not.toHaveBeenCalled();
 
-            const { model, position } = modelAtEnd('SELECT Id FROM account WHERE ');
-            const result = await provide(model, position);
+            const labels = labelsOf(await complete('SELECT Id FROM account WHERE '));
             expect(getObjectDescribe).toHaveBeenCalledTimes(1);
             expect(getObjectDescribe).toHaveBeenCalledWith('Account');
-            expect(result.suggestions.map(s => s.label)).toContain('Name');
+            expect(labels).toContain('Name');
 
             // A name the cached global describe doesn't know (e.g. a new object) still loads
-            const newObject = modelAtEnd('SELECT Id FROM Brand_New__c WHERE ');
-            await provide(newObject.model, newObject.position);
+            await complete('SELECT Id FROM Brand_New__c WHERE ');
             expect(getObjectDescribe).toHaveBeenCalledWith('Brand_New__c');
         });
 
         it('resolves later hops from the related object, not the FROM object', async () => {
-            const { provide } = await setup({
+            const { complete } = await setup({
                 Case: {
                     name: 'Case',
                     fields: [lookup('Account', 'Account'), lookup('Owner', 'Group')],
@@ -1251,50 +1225,35 @@ describe('soql-autocomplete', () => {
                 Group: { name: 'Group', fields: [{ name: 'DeveloperName', type: 'string' }] },
             });
 
-            const { model, position } = modelAtEnd('SELECT Id FROM Case WHERE Account.Owner.');
-            const result = await provide(model, position);
+            const labels = labelsOf(await complete('SELECT Id FROM Case WHERE Account.Owner.'));
 
-            const labels = result.suggestions.map(s => s.label);
             expect(labels).toContain('Username');
             expect(labels).not.toContain('DeveloperName');
         });
 
         it('stays fast on a very long single line', async () => {
-            const { provide } = await setup({
+            const { complete } = await setup({
                 Account: { name: 'Account', fields: [{ name: 'Name', type: 'string' }] },
             });
             const longLine = `SELECT Id FROM Account WHERE Name = ${'a'.repeat(100_000)} `;
-            const { model, position } = modelAtEnd(longLine);
 
             const start = performance.now();
-            await provide(model, position);
+            await complete(longLine);
             expect(performance.now() - start).toBeLessThan(500);
         });
 
         it('still detects dot chains with trailing spaces and stray dots', async () => {
-            const { provide } = await setup({
+            const { complete } = await setup({
                 Account: { name: 'Account', fields: [lookup('Owner', 'User')] },
                 User: { name: 'User', fields: [{ name: 'Username', type: 'string' }] },
             });
 
-            const spaced = modelAtEnd('SELECT Id FROM Account WHERE x..Owner.  ');
-            const spacedResult = await provide(spaced.model, spaced.position);
-            expect(spacedResult.suggestions.map(s => s.label)).toContain('Username');
+            const spaced = await complete('SELECT Id FROM Account WHERE x..Owner.  ');
+            expect(labelsOf(spaced)).toContain('Username');
 
-            const doubleDot = modelAtEnd('SELECT Id FROM Account WHERE Owner..');
-            const doubleDotResult = await provide(doubleDot.model, doubleDot.position);
             // Not a chain, so falls through to normal WHERE suggestions
-            expect(doubleDotResult.suggestions.map(s => s.label)).toContain('AND');
-        });
-
-        it('returns nothing once Monaco cancels the request', async () => {
-            const { provide } = await setup({
-                Account: { name: 'Account', fields: [{ name: 'Name', type: 'string' }] },
-            });
-            const { model, position } = modelAtEnd('SELECT Id FROM Account WHERE ');
-
-            const result = await provide(model, position, {}, { isCancellationRequested: true });
-            expect(result.suggestions).toEqual([]);
+            const doubleDot = await complete('SELECT Id FROM Account WHERE Owner..');
+            expect(labelsOf(doubleDot)).toContain('AND');
         });
     });
 });

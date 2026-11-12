@@ -22,6 +22,7 @@ import {
 import { countCsvDataRows } from '../../lib/csv-parse';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
 import styles from './QueryTab.module.css';
+import { storage } from '../../platform';
 
 const DEFAULT_QUERY = `SELECT
     Id,
@@ -88,7 +89,7 @@ export function QueryTab() {
 
     // Load last query from history or favorites on mount (whichever is more recent)
     useEffect(() => {
-        chrome.storage.local.get(['queryHistory', 'queryFavorites']).then(data => {
+        storage.get(['queryHistory', 'queryFavorites']).then(data => {
             const history = data.queryHistory as
                 | Array<{ query: string; timestamp: number }>
                 | undefined;
@@ -122,7 +123,7 @@ export function QueryTab() {
 
     // Load editor settings on mount
     useEffect(() => {
-        chrome.storage.local.get('queryEditorSettings').then(data => {
+        storage.get('queryEditorSettings').then(data => {
             const settings = data.queryEditorSettings as
                 | {
                       lineNumbers?: 'on' | 'off';
@@ -140,7 +141,7 @@ export function QueryTab() {
     // Persist editor settings when they change
     useEffect(() => {
         if (!editorSettingsLoadedRef.current) return;
-        chrome.storage.local.set({
+        storage.set({
             queryEditorSettings: { lineNumbers, wordWrap, autocomplete },
         });
     }, [lineNumbers, wordWrap, autocomplete]);

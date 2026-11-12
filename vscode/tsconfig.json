@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "target": "ES2022",
+        "lib": ["ES2022", "DOM"],
+        "types": ["node", "vscode"],
+        "esModuleInterop": true,
+        "allowJs": true,
+        "checkJs": false,
+        "skipLibCheck": true,
+        "noEmit": true,
+        "isolatedModules": true,
+        "resolveJsonModule": true
+    },
+    "include": ["src/**/*.ts", "../src/platform/protocol.ts", "../src/lib/completion.ts"]
+}

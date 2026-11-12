@@ -443,8 +443,8 @@
     background: var(--bg-primary);
     border-radius: var(--radius-lg);
     box-shadow: 0 4px 16px var(--shadow-lg);
-    max-width: 800px;
-    width: 90%;
+    /* vw, not %: the Modal wrapper shrinks to fit, so % has nothing to size against */
+    width: min(800px, 85vw);
     height: 70vh;
     min-height: 400px;
     display: flex;

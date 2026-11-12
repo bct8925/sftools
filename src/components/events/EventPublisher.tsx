@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from 'react';
-import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
+import { CodeEditor, type CodeEditorRef } from '../code-editor/CodeEditor';
 import { ChannelSelector } from './ChannelSelector';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
@@ -20,7 +20,7 @@ interface EventPublisherProps {
  * Event publisher card for publishing Platform Events.
  */
 export function EventPublisher({ platformEvents, onPublishSuccess, onError }: EventPublisherProps) {
-    const editorRef = useRef<MonacoEditorRef>(null);
+    const editorRef = useRef<CodeEditorRef>(null);
     const [selectedChannel, setSelectedChannel] = useState('');
     const [isPublishing, setIsPublishing] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(true);
@@ -106,7 +106,7 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                 </div>
                 <div className="form-element">
                     <label>JSON Payload (Ctrl/Cmd+Enter to publish)</label>
-                    <MonacoEditor
+                    <CodeEditor
                         ref={editorRef}
                         language="json"
                         value={'{\n  \n}'}

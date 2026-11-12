@@ -183,6 +183,72 @@
     --font-mono: 'SF Mono', Monaco, Consolas, monospace;
 }
 
+/* --- VS Code, theme "System": sftools' colors follow the VS Code theme ---
+   Set by lib/theme.ts only inside VS Code. More specific than :root and
+   [data-theme='dark'], so it wins over both. */
+:root[data-vscode-theme] {
+    --primary-color: var(--vscode-button-background);
+    --primary-hover: var(--vscode-button-hoverBackground);
+    --bg-color: var(--vscode-editor-background);
+    --card-bg: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+    --text-main: var(--vscode-foreground);
+    --text-muted: var(--vscode-descriptionForeground);
+    --border-color: var(
+        --vscode-widget-border,
+        var(--vscode-panel-border, rgba(128, 128, 128, 0.35))
+    );
+    --nav-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
+
+    --bg-primary: var(--vscode-editor-background);
+    --bg-secondary: var(--vscode-sideBar-background, var(--vscode-editor-background));
+    --bg-hover: var(--vscode-list-hoverBackground);
+    --bg-selected: var(--vscode-list-inactiveSelectionBackground);
+    --brand-color: var(--vscode-textLink-foreground);
+    --text-primary: var(--vscode-foreground);
+    --text-secondary: var(--vscode-descriptionForeground);
+    --error-color: var(--vscode-errorForeground);
+    --success-color: var(--vscode-testing-iconPassed, #4bca81);
+
+    --status-success-bg: color-mix(in srgb, var(--success-color) 18%, transparent);
+    --status-success-text: var(--success-color);
+    --status-error-bg: color-mix(in srgb, var(--error-color) 18%, transparent);
+    --status-error-text: var(--error-color);
+    --status-loading-bg: color-mix(in srgb, var(--vscode-textLink-foreground) 18%, transparent);
+    --status-loading-text: var(--vscode-textLink-foreground);
+
+    --indicator-success: var(--success-color);
+    --indicator-error: var(--error-color);
+    --indicator-loading: var(--vscode-editorWarning-foreground, #f4b400);
+
+    --text-inverse: var(--vscode-button-foreground);
+    --card-header-bg: var(
+        --vscode-sideBarSectionHeader-background,
+        var(--vscode-sideBar-background, var(--vscode-editor-background))
+    );
+    --input-bg: var(--vscode-input-background);
+
+    --shadow-sm: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.2));
+    --shadow-md: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.3));
+    --shadow-lg: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.4));
+
+    --font-mono: var(--vscode-editor-font-family, 'SF Mono', Monaco, Consolas, monospace);
+
+    /* Buttons take VS Code's own button colors, which every theme keeps readable.
+       VS Code's secondary button is filled rather than outlined. */
+    --button-brand-text: var(--vscode-button-foreground);
+    --button-brand-border: var(--vscode-button-border, transparent);
+    --button-neutral-bg: var(--vscode-button-secondaryBackground);
+    --button-neutral-text: var(--vscode-button-secondaryForeground);
+    --button-neutral-border: var(--vscode-button-border, transparent);
+    --button-neutral-hover-bg: var(--vscode-button-secondaryHoverBackground);
+    --button-neutral-hover-text: var(--vscode-button-secondaryForeground);
+    --button-neutral-hover-border: var(--vscode-button-border, transparent);
+}
+
+:root[data-vscode-theme] body {
+    font-family: var(--vscode-font-family);
+}
+
 html {
     overscroll-behavior: none;
 }
@@ -470,8 +536,8 @@ code,
 
 .button-brand {
     background-color: var(--primary-color);
-    color: #fff;
-    border: 1px solid var(--primary-color);
+    color: var(--button-brand-text, #fff);
+    border: 1px solid var(--button-brand-border, var(--primary-color));
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
@@ -482,7 +548,7 @@ code,
 
 .button-brand:hover {
     background-color: var(--primary-hover);
-    border-color: var(--primary-hover);
+    border-color: var(--button-brand-border, var(--primary-hover));
 }
 
 .button-brand:disabled {
@@ -491,9 +557,9 @@ code,
 }
 
 .button-neutral {
-    background-color: var(--card-bg);
-    color: var(--text-main);
-    border: 1px solid var(--border-color);
+    background-color: var(--button-neutral-bg, var(--card-bg));
+    color: var(--button-neutral-text, var(--text-main));
+    border: 1px solid var(--button-neutral-border, var(--border-color));
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
@@ -503,9 +569,9 @@ code,
 }
 
 .button-neutral:hover {
-    background-color: var(--bg-hover);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    background-color: var(--button-neutral-hover-bg, var(--bg-hover));
+    border-color: var(--button-neutral-hover-border, var(--primary-color));
+    color: var(--button-neutral-hover-text, var(--primary-color));
 }
 
 .m-top_small {

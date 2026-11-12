@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/MonacoEditor';
+import { CodeEditor, type CodeEditorRef, type CodeEditorMarker } from '../code-editor/CodeEditor';
 import { ApexHistory, type ApexHistoryRef } from './ApexHistory';
 import { ApexOutput } from './ApexOutput';
 import { CollapseChevron } from '../collapse-chevron/CollapseChevron';
@@ -10,6 +10,7 @@ import { executeAnonymousApex } from '../../api/salesforce';
 import { formatOutput } from '../../lib/apex-utils';
 import type { ApexExecutionResult } from '../../types/salesforce';
 import styles from './ApexTab.module.css';
+import { storage } from '../../platform';
 
 const DEFAULT_CODE = `// Enter your Apex code here
 System.debug('Hello from Anonymous Apex!');
@@ -25,7 +26,7 @@ for (Account acc : accounts) {
  */
 export function ApexTab() {
     const { isAuthenticated } = useConnection();
-    const codeEditorRef = useRef<MonacoEditorRef>(null);
+    const codeEditorRef = useRef<CodeEditorRef>(null);
     const historyRef = useRef<ApexHistoryRef>(null);
 
     const [isExecuting, setIsExecuting] = useState(false);
@@ -47,7 +48,7 @@ export function ApexTab() {
 
     // Load last Apex code from history or favorites on mount (whichever is more recent)
     useEffect(() => {
-        chrome.storage.local.get(['apexHistory', 'apexFavorites']).then(data => {
+        storage.get(['apexHistory', 'apexFavorites']).then(data => {
             const history = data.apexHistory as
                 | Array<{ code: string; timestamp: number }>
                 | undefined;
@@ -81,7 +82,7 @@ export function ApexTab() {
 
     // Load editor settings on mount
     useEffect(() => {
-        chrome.storage.local.get('apexEditorSettings').then(data => {
+        storage.get('apexEditorSettings').then(data => {
             const settings = data.apexEditorSettings as
                 | { lineNumbers?: 'on' | 'off'; wordWrap?: 'on' | 'off'; debug?: boolean }
                 | undefined;
@@ -95,42 +96,33 @@ export function ApexTab() {
     // Persist editor settings when they change
     useEffect(() => {
         if (!editorSettingsLoadedRef.current) return;
-        chrome.storage.local.set({ apexEditorSettings: { lineNumbers, wordWrap, debug } });
+        storage.set({ apexEditorSettings: { lineNumbers, wordWrap, debug } });
     }, [lineNumbers, wordWrap, debug]);
 
     // Set editor markers for compile/runtime errors
     const setEditorMarkers = useCallback((result: ApexExecutionResult) => {
-        const editor = codeEditorRef.current?.getEditor();
-        const model = editor?.getModel();
-        if (!model) return;
+        const editor = codeEditorRef.current;
+        if (!editor) return;
 
-        monaco.editor.setModelMarkers(model, 'apex', []);
-
-        const markers = [];
+        const markers: CodeEditorMarker[] = [];
 
         if (!result.compiled && result.compileProblem && result.line) {
             markers.push({
-                severity: monaco.MarkerSeverity.Error,
+                severity: 'error',
                 message: result.compileProblem,
-                startLineNumber: result.line,
+                line: result.line,
                 startColumn: result.column || 1,
-                endLineNumber: result.line,
-                endColumn: result.column ? result.column + 10 : model.getLineMaxColumn(result.line),
+                endColumn: result.column ? result.column + 10 : undefined,
             });
         } else if (!result.success && result.exceptionMessage && result.line) {
             markers.push({
-                severity: monaco.MarkerSeverity.Error,
+                severity: 'error',
                 message: result.exceptionMessage,
-                startLineNumber: result.line,
-                startColumn: 1,
-                endLineNumber: result.line,
-                endColumn: model.getLineMaxColumn(result.line),
+                line: result.line,
             });
         }
 
-        if (markers.length > 0) {
-            monaco.editor.setModelMarkers(model, 'apex', markers);
-        }
+        editor.setMarkers(markers);
     }, []);
 
     // Execute Apex code
@@ -148,11 +140,7 @@ export function ApexTab() {
         }
 
         // Clear previous markers
-        const editor = codeEditorRef.current?.getEditor();
-        const model = editor?.getModel();
-        if (model) {
-            monaco.editor.setModelMarkers(model, 'apex', []);
-        }
+        codeEditorRef.current?.clearMarkers();
 
         setIsExecuting(true);
         // Reveal the debug log so output/progress is visible while executing
@@ -280,7 +268,7 @@ export function ApexTab() {
                     </ButtonIcon>
                 </div>
                 <div className={`card-body ${styles.editorCardBody}`} hidden={isApexCollapsed}>
-                    <MonacoEditor
+                    <CodeEditor
                         ref={codeEditorRef}
                         language="apex"
                         value={initialCode}

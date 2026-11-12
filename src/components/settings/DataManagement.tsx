@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { exportData, importData } from '../../lib/extension-migration';
+import { getPlatform } from '../../platform';
 import styles from './DataManagement.module.css';
 
 export function DataManagement() {
@@ -50,7 +51,7 @@ export function DataManagement() {
                 const keyCount = await importData(file);
                 showStatus(`Imported ${keyCount} keys. Reloading...`, 'success');
                 // Reload after a brief delay so the user sees the success message
-                setTimeout(() => window.location.reload(), 1000);
+                setTimeout(() => getPlatform().reload(), 1000);
             } catch (err) {
                 showStatus(`Import failed: ${(err as Error).message}`, 'error');
             } finally {

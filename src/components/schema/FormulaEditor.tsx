@@ -1,14 +1,18 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { FieldDescribe } from '../../types/salesforce';
 import { Modal } from '../modal/Modal';
-import { MonacoEditor, type MonacoEditorRef, monaco } from '../monaco-editor/MonacoEditor';
+import { CodeEditor, type CodeEditorRef } from '../code-editor/CodeEditor';
 import { SfIcon } from '../sf-icon/SfIcon';
 import {
     getFormulaFieldMetadata,
     updateFormulaField,
     getObjectDescribe,
 } from '../../api/salesforce';
-import type { languages } from 'monaco-editor';
+import {
+    textBeforeCursorOnLine,
+    type CompletionSource,
+    type CompletionSuggestion,
+} from '../../lib/completion';
 import styles from './SchemaPage.module.css';
 
 // Formula functions for autocomplete - comprehensive list
@@ -367,8 +371,122 @@ interface FormulaEditorProps {
     onSaveSuccess: () => void;
 }
 
+/** Load fields of related objects so relationship traversal (Owner.Name) can be completed */
+async function loadRelationshipFields(fields: FieldDescribe[]): Promise<RelationshipField[]> {
+    const referenceFields = fields.filter(
+        f => f.type === 'reference' && f.relationshipName && f.referenceTo?.length > 0
+    );
+
+    const relationshipFields: RelationshipField[] = [];
+    const relatedObjectNames = [...new Set(referenceFields.flatMap(f => f.referenceTo || []))];
+
+    const describes = await Promise.all(
+        relatedObjectNames.map(name => getObjectDescribe(name).catch(() => null))
+    );
+
+    const fieldsByObject = new Map<string, FieldDescribe[]>();
+    relatedObjectNames.forEach((name, idx) => {
+        if (describes[idx]) {
+            fieldsByObject.set(name, describes[idx]!.fields || []);
+        }
+    });
+
+    for (const refField of referenceFields) {
+        const relName = refField.relationshipName!;
+        for (const targetObject of refField.referenceTo || []) {
+            const targetFields = fieldsByObject.get(targetObject) || [];
+            for (const targetField of targetFields) {
+                relationshipFields.push({
+                    relationshipName: relName,
+                    fieldName: targetField.name,
+                    field: targetField,
+                    targetObject,
+                });
+            }
+        }
+    }
+
+    return relationshipFields;
+}
+
+/** Formula suggestions for the text before the cursor on the current line */
+function getFormulaSuggestions(
+    textBeforeCursor: string,
+    fields: FieldDescribe[],
+    relationshipFields: RelationshipField[]
+): CompletionSuggestion[] {
+    const suggestions: CompletionSuggestion[] = [];
+    const dotMatch = textBeforeCursor.match(/(\w+)\.$/);
+
+    if (dotMatch) {
+        // Show fields for the relationship
+        const relName = dotMatch[1].toLowerCase();
+        for (const rf of relationshipFields) {
+            if (rf.relationshipName.toLowerCase() !== relName) continue;
+            suggestions.push({
+                label: rf.fieldName,
+                kind: 'field',
+                detail: `${rf.relationshipName}.${rf.fieldName} (${rf.field.type})`,
+                documentation: rf.field.label,
+                insertText: rf.fieldName,
+            });
+        }
+        return suggestions;
+    }
+
+    // Direct fields
+    for (const f of fields) {
+        suggestions.push({
+            label: f.name,
+            kind: f.calculated ? 'constant' : 'field',
+            detail: f.type + (f.calculated ? ' (formula)' : ''),
+            documentation: f.label,
+            insertText: f.name,
+            sortText: `1_${f.name}`,
+        });
+    }
+
+    // Relationship names
+    for (const relName of new Set(relationshipFields.map(rf => rf.relationshipName))) {
+        suggestions.push({
+            label: relName,
+            kind: 'module',
+            detail: 'Relationship',
+            documentation: `Access fields from related ${relName} record`,
+            insertText: relName,
+            sortText: `2_${relName}`,
+        });
+    }
+
+    // Formula functions
+    for (const fn of FORMULA_FUNCTIONS) {
+        suggestions.push({
+            label: fn.name,
+            kind: 'function',
+            detail: fn.signature,
+            documentation: fn.description,
+            insertText: `${fn.name}($0)`,
+            snippet: true,
+            sortText: `3_${fn.name}`,
+        });
+    }
+
+    return suggestions;
+}
+
+function createFormulaCompletionSource(
+    fields: FieldDescribe[],
+    relationshipFields: RelationshipField[]
+): CompletionSource {
+    return {
+        triggerCharacters: ['.'],
+        provide: async (text, offset) =>
+            getFormulaSuggestions(textBeforeCursorOnLine(text, offset), fields, relationshipFields),
+    };
+}
+
 /**
- * Monaco editor modal for editing formula fields with autocomplete.
+ * Formula editor modal with autocomplete.
  */
 export function FormulaEditor({
     isOpen,
@@ -379,7 +497,7 @@ export function FormulaEditor({
     allFields,
     onSaveSuccess,
 }: FormulaEditorProps) {
-    const editorRef = useRef<MonacoEditorRef>(null);
+    const editorRef = useRef<CodeEditorRef>(null);
     const [status, setStatus] = useState<{ text: string; type: '' | 'success' | 'error' }>({
         text: '',
         type: '',
@@ -391,8 +509,8 @@ export function FormulaEditor({
         metadata: Record<string, unknown>;
     } | null>(null);
 
-    // Store completion provider disposable for cleanup
-    const completionDisposableRef = useRef<{ dispose: () => void } | null>(null);
+    // Formula autocomplete for this field's object
+    const [completionSource, setCompletionSource] = useState<CompletionSource | undefined>();
 
     // Load formula metadata when modal opens
     useEffect(() => {
@@ -417,149 +535,19 @@ export function FormulaEditor({
 
         loadFormula();
 
-        // Register completion provider
-        registerCompletionProvider(allFields);
+        // Build completion source
+        let cancelled = false;
+        loadRelationshipFields(allFields).then(relationshipFields => {
+            if (!cancelled) {
+                setCompletionSource(createFormulaCompletionSource(allFields, relationshipFields));
+            }
+        });
 
         return () => {
-            // Cleanup completion provider
-            if (completionDisposableRef.current) {
-                completionDisposableRef.current.dispose();
-                completionDisposableRef.current = null;
-            }
+            cancelled = true;
+            setCompletionSource(undefined);
         };
     }, [isOpen, field, objectName, allFields]);
-
-    // Register Monaco completion provider for formula fields
-    const registerCompletionProvider = useCallback(async (fields: FieldDescribe[]) => {
-        // Clean up existing provider
-        if (completionDisposableRef.current) {
-            completionDisposableRef.current.dispose();
-        }
-
-        // Build relationship fields
-        const referenceFields = fields.filter(
-            f => f.type === 'reference' && f.relationshipName && f.referenceTo?.length > 0
-        );
-
-        const relationshipFields: RelationshipField[] = [];
-        const relatedObjectNames = [...new Set(referenceFields.flatMap(f => f.referenceTo || []))];
-
-        // Load related object fields
-        const describes = await Promise.all(
-            relatedObjectNames.map(name => getObjectDescribe(name).catch(() => null))
-        );
-
-        const fieldsByObject = new Map<string, FieldDescribe[]>();
-        relatedObjectNames.forEach((name, idx) => {
-            if (describes[idx]) {
-                fieldsByObject.set(name, describes[idx]!.fields || []);
-            }
-        });
-
-        // Build relationship field suggestions
-        for (const refField of referenceFields) {
-            const relName = refField.relationshipName!;
-            for (const targetObject of refField.referenceTo || []) {
-                const targetFields = fieldsByObject.get(targetObject) || [];
-                for (const targetField of targetFields) {
-                    relationshipFields.push({
-                        relationshipName: relName,
-                        fieldName: targetField.name,
-                        field: targetField,
-                        targetObject,
-                    });
-                }
-            }
-        }
-
-        // Register completion provider
-        completionDisposableRef.current = monaco.languages.registerCompletionItemProvider('apex', {
-            triggerCharacters: ['.'],
-            provideCompletionItems: (model, position) => {
-                const word = model.getWordUntilPosition(position);
-                const range = {
-                    startLineNumber: position.lineNumber,
-                    endLineNumber: position.lineNumber,
-                    startColumn: word.startColumn,
-                    endColumn: word.endColumn,
-                };
-
-                // Check for relationship traversal (after dot)
-                const lineContent = model.getLineContent(position.lineNumber);
-                const textBeforeCursor = lineContent.substring(0, position.column - 1);
-                const dotMatch = textBeforeCursor.match(/(\w+)\.$/);
-
-                const suggestions: languages.CompletionItem[] = [];
-
-                if (dotMatch) {
-                    // Show fields for the relationship
-                    const relName = dotMatch[1].toLowerCase();
-                    const relatedFields = relationshipFields.filter(
-                        rf => rf.relationshipName.toLowerCase() === relName
-                    );
-
-                    for (const rf of relatedFields) {
-                        suggestions.push({
-                            label: rf.fieldName,
-                            kind: monaco.languages.CompletionItemKind.Field,
-                            detail: `${rf.relationshipName}.${rf.fieldName} (${rf.field.type})`,
-                            documentation: rf.field.label,
-                            insertText: rf.fieldName,
-                            range,
-                        });
-                    }
-                } else {
-                    // Show direct fields
-                    for (const f of fields) {
-                        suggestions.push({
-                            label: f.name,
-                            kind: f.calculated
-                                ? monaco.languages.CompletionItemKind.Constant
-                                : monaco.languages.CompletionItemKind.Field,
-                            detail: f.type + (f.calculated ? ' (formula)' : ''),
-                            documentation: f.label,
-                            insertText: f.name,
-                            range,
-                            sortText: `1_${f.name}`,
-                        });
-                    }
-
-                    // Show relationship names
-                    const relNames = [
-                        ...new Set(relationshipFields.map(rf => rf.relationshipName)),
-                    ];
-                    for (const relName of relNames) {
-                        suggestions.push({
-                            label: relName,
-                            kind: monaco.languages.CompletionItemKind.Module,
-                            detail: 'Relationship',
-                            documentation: `Access fields from related ${relName} record`,
-                            insertText: relName,
-                            range,
-                            sortText: `2_${relName}`,
-                        });
-                    }
-
-                    // Show formula functions
-                    for (const fn of FORMULA_FUNCTIONS) {
-                        suggestions.push({
-                            label: fn.name,
-                            kind: monaco.languages.CompletionItemKind.Function,
-                            detail: fn.signature,
-                            documentation: fn.description,
-                            insertText: `${fn.name}($0)`,
-                            insertTextRules:
-                                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                            range,
-                            sortText: `3_${fn.name}`,
-                        });
-                    }
-                }
-
-                return { suggestions };
-            },
-        });
-    }, []);
 
     const handleSave = async () => {
         if (!fieldMetadata || isSaving) return;
@@ -609,9 +597,10 @@ export function FormulaEditor({
                 </div>
                 <div className={styles.modalBody}>
                     <div className={styles.modalEditorContainer}>
-                        <MonacoEditor
+                        <CodeEditor
                             ref={editorRef}
                             language="apex"
+                            completionSource={completionSource}
                             value=""
                             readonly={isLoading}
                             resizable={false}

@@ -6,7 +6,7 @@
  * - UT-U-004: setTheme() - Updates storage and DOM (via applyTheme)
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { afterEach, describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock matchMedia before importing theme module
 const mockMatchMedia = vi.fn();
@@ -104,6 +104,35 @@ describe('theme', () => {
             applyTheme('system');
 
             expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+        });
+    });
+
+    describe('in VS Code', () => {
+        afterEach(() => {
+            document.body.classList.remove('vscode-dark', 'vscode-light');
+            document.documentElement.removeAttribute('data-vscode-theme');
+        });
+
+        it('System matches VS Code: its light or dark, plus VS Code colors', () => {
+            document.body.classList.add('vscode-dark');
+            applyTheme('system');
+            expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+            expect(document.documentElement.hasAttribute('data-vscode-theme')).toBe(true);
+        });
+
+        it("Light and Dark use sftools' own colors", () => {
+            document.body.classList.add('vscode-dark');
+            applyTheme('light');
+            expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+            expect(document.documentElement.hasAttribute('data-vscode-theme')).toBe(false);
+            applyTheme('dark');
+            expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+            expect(document.documentElement.hasAttribute('data-vscode-theme')).toBe(false);
+        });
+
+        it('never sets VS Code colors outside VS Code', () => {
+            applyTheme('system');
+            expect(document.documentElement.hasAttribute('data-vscode-theme')).toBe(false);
         });
     });
 

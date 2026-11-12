@@ -4,6 +4,8 @@
  */
 
 import { detectLoginDomain, buildOAuthUrl } from '../lib/app-utils';
+import { getPlatform } from '../platform';
+import { LOGIN_ORG } from '../platform/protocol';
 import { setPendingAuth, generateOAuthState, getOAuthCredentials, CALLBACK_URL } from './auth';
 
 /**
@@ -17,6 +19,16 @@ export async function startAuthorization(
     overrideClientId: string | null,
     connectionId: string | null
 ): Promise<void> {
+    // VS Code: authorization belongs to the sf CLI (`sf org login web` in the extension host)
+    if (!getPlatform().capabilities.oauth) {
+        await getPlatform().sendMessage({
+            type: LOGIN_ORG,
+            loginUrl: overrideLoginDomain,
+            connectionId,
+        });
+        return;
+    }
+
     // Use provided domain or detect from current tab
     let loginDomain = overrideLoginDomain;
     if (!loginDomain) {

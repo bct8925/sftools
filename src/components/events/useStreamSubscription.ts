@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getInstanceUrl, getAccessToken } from '../../auth/auth';
+import { getInstanceUrl, getAccessToken, getActiveConnectionId } from '../../auth/auth';
 import { formatEventEntry } from '../../lib/events-utils';
 import type { CodeEditorRef } from '../code-editor/CodeEditor';
 import { useToast } from '../../contexts/ToastContext';
@@ -202,6 +202,7 @@ export function useStreamSubscription({
                 type: 'subscribe',
                 instanceUrl: getInstanceUrl(),
                 accessToken: getAccessToken(),
+                connectionId: getActiveConnectionId(),
                 channel: selectedChannel,
                 replayPreset,
                 replayId: replayPreset === 'CUSTOM' ? replayId : undefined,

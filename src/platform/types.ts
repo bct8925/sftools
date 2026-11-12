@@ -41,6 +41,14 @@ export interface Platform {
     sendMessage<T = unknown>(message: HostMessage): Promise<T>;
     /** Listen for unsolicited host messages. Returns an unsubscribe function. */
     onMessage(listener: (message: HostMessage) => void): () => void;
+    /**
+     * Answer requests the host makes of this page (VS Code only; a no-op in Chrome).
+     * Only one handler per message type; returns an unregister function.
+     */
+    onRequest(
+        type: string,
+        handler: (message: HostMessage) => unknown | Promise<unknown>
+    ): () => void;
     /** Open a URL (e.g. a Salesforce org) in the user's browser. */
     openExternal(url: string): void;
     /** Open an sftools feature (or settings) in a new tab / panel. */

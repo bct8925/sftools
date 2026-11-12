@@ -1,0 +1,49 @@
+{
+    "scopeName": "source.sftools.soql",
+    "name": "SOQL (sftools)",
+    "patterns": [
+        {
+            "name": "comment.line.double-dash.soql",
+            "match": "--.*$"
+        },
+        {
+            "name": "string.quoted.single.soql",
+            "begin": "'",
+            "end": "'",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.soql",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        {
+            "name": "keyword.other.soql",
+            "match": "(?i)\\b(SELECT|FROM|WHERE|AND|OR|NOT|IN|INCLUDES|EXCLUDES|LIKE|ORDER|BY|GROUP|ROLLUP|CUBE|HAVING|LIMIT|OFFSET|ASC|DESC|NULLS|FIRST|LAST|WITH|SECURITY_ENFORCED|USER_MODE|SYSTEM_MODE|DATA|CATEGORY|AT|ABOVE|BELOW|ABOVE_OR_BELOW|TYPEOF|WHEN|THEN|ELSE|END|USING|SCOPE|FOR|VIEW|REFERENCE|UPDATE|TRACKING|VIEWSTAT|ALL|ROWS|FIELDS|STANDARD|CUSTOM)\\b"
+        },
+        {
+            "name": "constant.language.soql",
+            "match": "(?i)\\b(true|false|null)\\b"
+        },
+        {
+            "name": "constant.other.date-literal.soql",
+            "match": "(?i)\\b(YESTERDAY|TODAY|TOMORROW|(LAST|THIS|NEXT)_(WEEK|MONTH|QUARTER|YEAR|FISCAL_QUARTER|FISCAL_YEAR|90_DAYS)|(LAST|NEXT)_N_[A-Z_]+|N_[A-Z_]+_AGO)\\b"
+        },
+        {
+            "name": "support.function.soql",
+            "match": "(?i)\\b(COUNT|COUNT_DISTINCT|SUM|AVG|MIN|MAX|FORMAT|toLabel|convertCurrency|convertTimezone|CALENDAR_MONTH|CALENDAR_QUARTER|CALENDAR_YEAR|DAY_IN_MONTH|DAY_IN_WEEK|DAY_IN_YEAR|DAY_ONLY|FISCAL_MONTH|FISCAL_QUARTER|FISCAL_YEAR|HOUR_IN_DAY|WEEK_IN_MONTH|WEEK_IN_YEAR|GROUPING|DISTANCE|GEOLOCATION)(?=\\s*\\()"
+        },
+        {
+            "name": "constant.numeric.soql",
+            "match": "\\b\\d+(\\.\\d+)?\\b"
+        },
+        {
+            "name": "variable.other.bind.soql",
+            "match": ":\\w+"
+        },
+        {
+            "name": "keyword.operator.soql",
+            "match": "!=|<>|<=|>=|=|<|>"
+        }
+    ]
+}

@@ -7,7 +7,7 @@
 
 const { subscribe, unsubscribe, getTopic, getSchema } = require('../grpc/pubsub-client');
 const { decodeConsumerEvent } = require('../grpc/schema-cache');
-const { sendMessage } = require('../native-messaging');
+const { emitEvent } = require('../event-sink');
 
 /**
  * Handle subscribe request
@@ -63,7 +63,7 @@ async function handleGrpcSubscribe(request) {
                         tenantId
                     );
 
-                    sendMessage({
+                    emitEvent({
                         type: 'streamEvent',
                         subscriptionId: subId,
                         event: {
@@ -74,7 +74,7 @@ async function handleGrpcSubscribe(request) {
                     });
                 } catch (error) {
                     console.error(`[gRPC] Decode error: ${error.message}`);
-                    sendMessage({
+                    emitEvent({
                         type: 'streamEvent',
                         subscriptionId: subId,
                         event: {
@@ -88,7 +88,7 @@ async function handleGrpcSubscribe(request) {
 
             onError: ({ subscriptionId: subId, error, code }) => {
                 console.error(`[gRPC] Stream error: ${error} (code: ${code})`);
-                sendMessage({
+                emitEvent({
                     type: 'streamError',
                     subscriptionId: subId,
                     error,
@@ -98,7 +98,7 @@ async function handleGrpcSubscribe(request) {
 
             onEnd: ({ subscriptionId: subId }) => {
                 console.error(`[gRPC] Stream ended`);
-                sendMessage({
+                emitEvent({
                     type: 'streamEnd',
                     subscriptionId: subId
                 });

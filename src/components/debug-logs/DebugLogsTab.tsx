@@ -7,7 +7,7 @@ import { Modal } from '../modal/Modal';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { DebugLogsSettingsModal } from './DebugLogsSettingsModal';
 import { getDebugLogsSince, getLogBody, type DebugLogEntry } from '../../api/debug-logs';
-import { getInstanceUrl, getAccessToken } from '../../auth/auth';
+import { getInstanceUrl, getAccessToken, getActiveConnectionId } from '../../auth/auth';
 import { filterLines } from '../../lib/apex-utils';
 import { getNowISO } from '../../lib/date-utils';
 import styles from './DebugLogsTab.module.css';
@@ -208,6 +208,7 @@ export function DebugLogsTab() {
                     type: 'subscribe',
                     instanceUrl: getInstanceUrl(),
                     accessToken: getAccessToken(),
+                    connectionId: getActiveConnectionId(),
                     channel: LOGGING_CHANNEL,
                     replayPreset: 'LATEST',
                 });

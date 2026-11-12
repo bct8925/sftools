@@ -38,6 +38,9 @@
         "package": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json sftools-proxy -x 'sftools-proxy/node_modules/*'",
         "package-prod": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json",
         "package-store": "SFTOOLS_PRODUCTION=true vite build && rm -f sftools.zip && zip -r sftools.zip dist manifest.json rules.json src",
+        "build:vscode": "npm --prefix vscode run build",
+        "package:vscode": "npm --prefix vscode run package",
+        "typecheck:vscode": "tsc --noEmit -p vscode",
         "typecheck": "tsc --noEmit",
         "typecheck:watch": "tsc --noEmit --watch",
         "test:unit": "vitest run",
@@ -51,10 +54,10 @@
         "test:refresh-token": "node scripts/refresh-test-token.js",
         "lint": "eslint src tests scripts",
         "lint:fix": "eslint src tests scripts --fix",
-        "format": "prettier --write \"src/**/*.{js,ts,tsx,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.{js,ts}\"",
-        "format:check": "prettier --check \"src/**/*.{js,ts,tsx,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.{js,ts}\"",
+        "format": "prettier --write \"src/**/*.{js,ts,tsx,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.{js,ts}\" \"vscode/src/**/*.ts\"",
+        "format:check": "prettier --check \"src/**/*.{js,ts,tsx,css,html}\" \"tests/**/*.{js,ts}\" \"scripts/**/*.{js,ts}\" \"vscode/src/**/*.ts\"",
         "fix": "npm run lint:fix && npm run format",
-        "check": "npm run typecheck && npm run lint && npm run format:check",
+        "check": "npm run typecheck && npm run typecheck:vscode && npm run lint && npm run format:check",
         "validate": "npm run lint:fix && npm run format && npm run typecheck && npm run lint && npm run format:check",
         "screenshots": "npx tsx scripts/take-screenshots.ts"
     }

@@ -52,7 +52,7 @@ export function activate(context: vscode.ExtensionContext): void {
         getSetting: () =>
             vscode.workspace.getConfiguration('sftools').get<OpenOrgSetting>('openOrgIn'),
         getCommands: () => vscode.commands.getCommands(true),
-        executeCommand: (command, uri) => vscode.commands.executeCommand(command, uri),
+        executeCommand: (command, url) => vscode.commands.executeCommand(command, url),
         openExternal: uri => vscode.env.openExternal(uri),
         parse: url => vscode.Uri.parse(url, true),
     });

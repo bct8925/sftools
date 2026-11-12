@@ -29,7 +29,8 @@ describe('SalesforceBrowser', () => {
             commands: ['other', INTEGRATED_BROWSER_COMMAND],
         });
         await expect(browser.open(URL)).resolves.toBe('integrated');
-        expect(executeCommand).toHaveBeenCalledWith(INTEGRATED_BROWSER_COMMAND, `uri:${URL}`);
+        // The command reads a non-string argument as options and opens a blank tab
+        expect(executeCommand).toHaveBeenCalledWith(INTEGRATED_BROWSER_COMMAND, URL);
         expect(openExternal).not.toHaveBeenCalled();
     });
 

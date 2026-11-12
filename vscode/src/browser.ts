@@ -1,7 +1,10 @@
 // Opens Salesforce pages in VS Code's integrated browser when it exists,
 // otherwise in the system browser.
 
-/** VS Code's integrated browser (1.109+, desktop). Takes the URL as a Uri. */
+/**
+ * VS Code's integrated browser (1.109+, desktop). Its argument is the URL as a
+ * string (or an options object); a Uri is read as options and opens a blank tab.
+ */
 export const INTEGRATED_BROWSER_COMMAND = 'workbench.action.browser.open';
 
 export type BrowserTarget = 'integrated' | 'external';
@@ -10,7 +13,7 @@ export type OpenOrgSetting = 'integratedBrowser' | 'externalBrowser';
 export interface BrowserDeps<U> {
     getSetting(): OpenOrgSetting | undefined;
     getCommands(): Thenable<string[]>;
-    executeCommand(command: string, uri: U): Thenable<unknown>;
+    executeCommand(command: string, url: string): Thenable<unknown>;
     openExternal(uri: U): Thenable<boolean>;
     parse(url: string): U;
 }
@@ -26,16 +29,15 @@ export class SalesforceBrowser<U> {
     }
 
     async open(url: string): Promise<BrowserTarget> {
-        const uri = this.deps.parse(url);
         if ((await this.target()) === 'integrated') {
             try {
-                await this.deps.executeCommand(INTEGRATED_BROWSER_COMMAND, uri);
+                await this.deps.executeCommand(INTEGRATED_BROWSER_COMMAND, url);
                 return 'integrated';
             } catch {
                 // An older or web build without the browser; use the system one
             }
         }
-        await this.deps.openExternal(uri);
+        await this.deps.openExternal(this.deps.parse(url));
         return 'external';
     }
 }

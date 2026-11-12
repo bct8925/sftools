@@ -4,6 +4,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { HostStorage, type MementoLike } from '../../../vscode/src/storage';
+import type { FileStoreLike } from '../../../vscode/src/file-store';
 import { createRequestHandler, type HandlerDeps } from '../../../vscode/src/handlers';
 import { buildWebviewHtml } from '../../../vscode/src/webview-html';
 import type { OrgService } from '../../../vscode/src/orgs';
@@ -20,6 +21,24 @@ function memento(initial: Record<string, unknown> = {}): MementoLike {
     };
 }
 
+function fileStore(initial: Record<string, unknown> = {}): FileStoreLike & {
+    data: Map<string, unknown>;
+} {
+    const data = new Map(Object.entries(initial));
+    return {
+        data,
+        keys: async () => [...data.keys()],
+        get: async (key: string) => data.get(key),
+        set: async (key: string, value: unknown) => {
+            if (value === undefined) data.delete(key);
+            else data.set(key, value);
+        },
+        delete: async (key: string) => {
+            data.delete(key);
+        },
+    };
+}
+
 const connections = [{ id: 'a@x.com', label: 'dev' }];
 const orgs = {
     getConnections: vi.fn(async () => connections),
@@ -29,7 +48,7 @@ const orgs = {
 
 describe('HostStorage', () => {
     it('serves connections from the sf CLI and other keys from globalState', async () => {
-        const storage = new HostStorage(memento({ theme: 'dark' }), orgs);
+        const storage = new HostStorage(memento({ theme: 'dark' }), orgs, fileStore());
         expect(await storage.get(['connections', 'theme', 'missing'])).toEqual({
             connections,
             theme: 'dark',
@@ -39,7 +58,7 @@ describe('HostStorage', () => {
 
     it('ignores writes to connections and reports other changes', async () => {
         const store = memento({ theme: 'dark' });
-        const storage = new HostStorage(store, orgs);
+        const storage = new HostStorage(store, orgs, fileStore());
         const listener = vi.fn();
         storage.onChanged(listener);
 
@@ -51,8 +70,46 @@ describe('HostStorage', () => {
         expect(listener).toHaveBeenLastCalledWith({ theme: { oldValue: 'light' } });
     });
 
+    it('keeps the describe cache in files, not globalState', async () => {
+        const store = memento({ theme: 'dark' });
+        const files = fileStore();
+        const storage = new HostStorage(store, orgs, files);
+        const listener = vi.fn();
+        storage.onChanged(listener);
+        const cache = { global: { sobjects: [] }, objects: {} };
+
+        await storage.set({ 'describeCache_a@x.com': cache, theme: 'light' });
+        expect(files.data.get('describeCache_a@x.com')).toEqual(cache);
+        expect(store.get('describeCache_a@x.com')).toBeUndefined();
+        expect(store.get('theme')).toBe('light');
+        expect(await storage.get(['describeCache_a@x.com'])).toEqual({
+            'describeCache_a@x.com': cache,
+        });
+        expect(Object.keys(await storage.get(null)).sort()).toEqual([
+            'connections',
+            'describeCache_a@x.com',
+            'theme',
+        ]);
+
+        await storage.remove(['describeCache_a@x.com']);
+        expect(files.data.has('describeCache_a@x.com')).toBe(false);
+        expect(listener).toHaveBeenLastCalledWith({ 'describeCache_a@x.com': { oldValue: cache } });
+    });
+
+    it('moves a describe cache from globalState into files', async () => {
+        const cache = { global: null, objects: { Account: { name: 'Account' } } };
+        const store = memento({ 'describeCache_a@x.com': cache, theme: 'dark' });
+        const files = fileStore();
+        const storage = new HostStorage(store, orgs, files);
+        expect(await storage.get(['describeCache_a@x.com'])).toEqual({
+            'describeCache_a@x.com': cache,
+        });
+        expect(store.keys()).toEqual(['theme']);
+        expect(files.data.get('describeCache_a@x.com')).toEqual(cache);
+    });
+
     it('does not emit for no-op changes', async () => {
-        const storage = new HostStorage(memento(), orgs);
+        const storage = new HostStorage(memento(), orgs, fileStore());
         const listener = vi.fn();
         storage.onChanged(listener);
         await storage.set({ connections: [] });
@@ -63,7 +120,7 @@ describe('HostStorage', () => {
 
 function deps(): HandlerDeps & { [K in keyof HandlerDeps]: any } {
     return {
-        storage: new HostStorage(memento(), orgs),
+        storage: new HostStorage(memento(), orgs, fileStore()),
         http: { fetch: vi.fn(async () => ({ success: true, status: 200 })) },
         orgs,
         streaming: {

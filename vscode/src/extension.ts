@@ -12,6 +12,7 @@ import { HostHttp } from './http';
 import { OrgService } from './orgs';
 import { PanelManager } from './panel';
 import { createSfExec, SfCli, type SfOrg } from './sf-cli';
+import { FileStore } from './file-store';
 import { HostStorage } from './storage';
 import { StreamingService } from './streaming';
 
@@ -40,7 +41,11 @@ export function activate(context: vscode.ExtensionContext): void {
         createSfExec(() => vscode.workspace.getConfiguration('sftools').get('sfPath', 'sf') || 'sf')
     );
     const orgs = new OrgService(cli, workspaceCwd);
-    const storage = new HostStorage(context.globalState, orgs);
+    const storage = new HostStorage(
+        context.globalState,
+        orgs,
+        new FileStore(path.join(context.globalStorageUri.fsPath, 'storage'))
+    );
     const http = new HostHttp(orgs);
     const panels = new PanelManager(context.extensionUri);
     const editors = new EditorServices(context.extensionPath, context.globalStorageUri, () =>

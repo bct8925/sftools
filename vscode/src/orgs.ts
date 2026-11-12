@@ -112,7 +112,13 @@ export class OrgService {
         if (forceRefresh) this.tokens.delete(username);
         let token = this.tokens.get(username);
         if (!token) {
-            token = this.cli.getAccessToken(username);
+            // show-access-token gives only the token; the org list has the instance URL
+            token = this.getOrgs().then(orgs =>
+                this.cli.getAccessToken(
+                    username,
+                    orgs.find(o => o.username === username)?.instanceUrl
+                )
+            );
             this.tokens.set(username, token);
             // Don't cache failures
             token.catch(() => {

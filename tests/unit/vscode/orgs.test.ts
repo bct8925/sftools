@@ -117,6 +117,13 @@ describe('OrgService', () => {
         expect(cli.getAccessToken).toHaveBeenCalledTimes(2);
     });
 
+    it('passes the org list instance URL when fetching a token', async () => {
+        const cli = fakeCli(orgs);
+        const service = new OrgService(cli, () => undefined);
+        await service.getToken('a@x.com');
+        expect(cli.getAccessToken).toHaveBeenCalledWith('a@x.com', orgs[0].instanceUrl);
+    });
+
     it('does not cache a failed token lookup', async () => {
         const cli = fakeCli(orgs);
         cli.getAccessToken.mockRejectedValueOnce(new Error('expired'));

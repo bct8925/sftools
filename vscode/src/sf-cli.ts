@@ -186,7 +186,12 @@ export class SfCli {
      * Newer CLIs redact tokens in `org display`, so `org auth show-access-token` is tried
      * first and `org display` is the fallback for older CLIs.
      */
-    async getAccessToken(username: string): Promise<SfToken> {
+    /**
+     * The org's current access token, refreshed by the CLI first.
+     * `org auth show-access-token` returns only the token, so the instance URL
+     * comes from the caller (the org list) when the CLI doesn't give one.
+     */
+    async getAccessToken(username: string, instanceUrl?: string): Promise<SfToken> {
         const shown = await this.exec([
             'org',
             'auth',
@@ -201,7 +206,7 @@ export class SfCli {
                 instanceUrl?: string;
                 username?: string;
             }>(shown);
-            const token = extractToken(result, username);
+            const token = extractToken(result, username, instanceUrl);
             if (token) return token;
         } catch (error) {
             // Older CLIs don't have this command; anything else is a real failure
@@ -214,7 +219,7 @@ export class SfCli {
             instanceUrl?: string;
             username?: string;
         }>(display);
-        const token = extractToken(result, username);
+        const token = extractToken(result, username, instanceUrl);
         if (!token) {
             throw new SfCliError(
                 `The sf CLI did not return an access token for ${username}. Update the CLI with "sf update".`
@@ -243,13 +248,15 @@ export class SfCli {
 
 function extractToken(
     result: { accessToken?: string; instanceUrl?: string; username?: string },
-    username: string
+    username: string,
+    fallbackInstanceUrl?: string
 ): SfToken | null {
     const accessToken = result.accessToken;
-    if (!accessToken || accessToken.includes('REDACTED') || !result.instanceUrl) return null;
+    const instanceUrl = result.instanceUrl || fallbackInstanceUrl;
+    if (!accessToken || accessToken.includes('REDACTED') || !instanceUrl) return null;
     return {
         accessToken,
-        instanceUrl: result.instanceUrl.replace(/\/+$/, ''),
+        instanceUrl: instanceUrl.replace(/\/+$/, ''),
         username: result.username || username,
     };
 }

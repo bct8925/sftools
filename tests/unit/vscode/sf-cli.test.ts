@@ -132,6 +132,21 @@ describe('SfCli', () => {
         ]);
     });
 
+    it('uses the org list instance URL with the token-only show-access-token output', async () => {
+        // plugin-org 7.x: `org auth show-access-token --json` returns { accessToken } only
+        const exec = vi.fn<SfExec>().mockResolvedValue(ok({ accessToken: '00D!abc' }));
+        const token = await new SfCli(exec).getAccessToken(
+            'a@x.com',
+            'https://a.my.salesforce.com/'
+        );
+        expect(token).toEqual({
+            accessToken: '00D!abc',
+            instanceUrl: 'https://a.my.salesforce.com',
+            username: 'a@x.com',
+        });
+        expect(exec).toHaveBeenCalledTimes(1);
+    });
+
     it('falls back to org display on CLIs without show-access-token', async () => {
         const exec = vi
             .fn<SfExec>()

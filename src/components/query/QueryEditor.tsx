@@ -1,8 +1,8 @@
-// Query Editor - Monaco editor with SOQL autocomplete
+// Query Editor - code editor with SOQL autocomplete
 import { useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
+import { CodeEditor, type CodeEditorRef } from '../code-editor/CodeEditor';
 import {
-    registerSOQLCompletionProvider,
+    soqlCompletionSource,
     activateSOQLAutocomplete,
     deactivateSOQLAutocomplete,
     clearState as clearAutocompleteState,
@@ -31,27 +31,19 @@ interface QueryEditorProps {
     className?: string;
 }
 
-// Track if autocomplete provider is registered (global singleton)
-let autocompleteRegistered = false;
-
 /**
- * SOQL Query Editor with Monaco and autocomplete support.
- * Wraps MonacoEditor with SOQL-specific autocomplete configuration.
+ * SOQL Query Editor with autocomplete support.
+ * Wraps CodeEditor with SOQL-specific autocomplete configuration.
  */
 export const QueryEditor = forwardRef<QueryEditorRef, QueryEditorProps>(
     (
         { value, onChange, onExecute, lineNumbers, wordWrap, autocomplete = 'on', className },
         ref
     ) => {
-        const editorRef = useRef<MonacoEditorRef>(null);
+        const editorRef = useRef<CodeEditorRef>(null);
 
         // Initialize SOQL autocomplete on mount and react to setting changes
         useEffect(() => {
-            // Register provider once globally
-            if (!autocompleteRegistered) {
-                registerSOQLCompletionProvider();
-                autocompleteRegistered = true;
-            }
             if (autocomplete === 'on') {
                 activateSOQLAutocomplete();
             } else {
@@ -78,9 +70,12 @@ export const QueryEditor = forwardRef<QueryEditorRef, QueryEditorProps>(
         }, [onExecute]);
 
         return (
-            <MonacoEditor
+            <CodeEditor
                 ref={editorRef}
                 language="sql"
+                completionSource={soqlCompletionSource}
+                documentName="Query"
+                openNativeEditor={true}
                 value={value}
                 onChange={handleChange}
                 onExecute={handleExecute}

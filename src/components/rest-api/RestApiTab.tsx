@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
+import { CodeEditor, type CodeEditorRef } from '../code-editor/CodeEditor';
 import { RestApiHistory, type RestApiHistoryRef, type RestApiRequest } from './RestApiHistory';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { executeRestRequest } from '../../api/salesforce';
@@ -26,8 +26,8 @@ export function RestApiTab() {
     const handleToggleRequest = useCallback(() => setIsRequestCollapsed(prev => !prev), []);
     const handleToggleResponse = useCallback(() => setIsResponseCollapsed(prev => !prev), []);
 
-    const requestEditorRef = useRef<MonacoEditorRef>(null);
-    const responseEditorRef = useRef<MonacoEditorRef>(null);
+    const requestEditorRef = useRef<CodeEditorRef>(null);
+    const responseEditorRef = useRef<CodeEditorRef>(null);
     const historyRef = useRef<RestApiHistoryRef>(null);
 
     const showBodyInput = shouldShowBody(method);
@@ -187,8 +187,10 @@ export function RestApiTab() {
                     {showBodyInput && (
                         <div className="form-element" data-testid="rest-body-container">
                             <label>Body (JSON)</label>
-                            <MonacoEditor
+                            <CodeEditor
                                 ref={requestEditorRef}
+                                documentName="Request Body"
+                                openNativeEditor={true}
                                 language="json"
                                 value={initialBody}
                                 onExecute={executeRequest}
@@ -225,8 +227,9 @@ export function RestApiTab() {
                     className={`card-body ${styles.responseCardBody}`}
                     hidden={isResponseCollapsed}
                 >
-                    <MonacoEditor
+                    <CodeEditor
                         ref={responseEditorRef}
+                        documentName="Response"
                         language="json"
                         value="// Response will appear here"
                         readonly

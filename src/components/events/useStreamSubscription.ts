@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getInstanceUrl, getAccessToken } from '../../auth/auth';
 import { formatEventEntry } from '../../lib/events-utils';
-import type { MonacoEditorRef } from '../monaco-editor/MonacoEditor';
+import type { CodeEditorRef } from '../code-editor/CodeEditor';
 import { useToast } from '../../contexts/ToastContext';
 import { getPlatform, type SubscribeResponse } from '../../platform';
 
@@ -34,7 +34,7 @@ interface UseStreamSubscriptionOptions {
     isProxyConnected: boolean;
     appendSystemMessage?: (msg: string) => void;
     onEventReceived?: (eventData: EventData, isSystemMessage: boolean) => void;
-    streamEditorRef?: React.RefObject<MonacoEditorRef | null>;
+    streamEditorRef?: React.RefObject<CodeEditorRef | null>;
     scrollStreamToBottom?: () => void;
 }
 

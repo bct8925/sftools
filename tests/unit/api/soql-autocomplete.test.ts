@@ -64,8 +64,10 @@ import {
     activateSOQLAutocomplete,
     deactivateSOQLAutocomplete,
     clearState,
-    registerSOQLCompletionProvider,
+    getSoqlCompletions,
+    soqlCompletionSource,
 } from '../../../src/api/soql-autocomplete.js';
+import { registerMonacoCompletionSource } from '../../../src/components/monaco-editor/completion-provider';
 import { getGlobalDescribe, getObjectDescribe } from '../../../src/api/salesforce.js';
 import { monaco } from '../../../src/components/monaco-editor/MonacoEditor';
 
@@ -86,7 +88,7 @@ describe('soql-autocomplete', () => {
 
     describe('deactivateSOQLAutocomplete', () => {
         it('deactivateSOQLAutocomplete returns no suggestions', async () => {
-            registerSOQLCompletionProvider();
+            registerMonacoCompletionSource('sql', soqlCompletionSource);
             const calls = vi.mocked(monaco.languages.registerCompletionItemProvider).mock.calls;
             const provider = calls[calls.length - 1]?.[1] as
                 | {
@@ -129,22 +131,24 @@ describe('soql-autocomplete', () => {
         });
     });
 
-    describe('registerSOQLCompletionProvider', () => {
-        it('can be called without throwing', () => {
-            // The provider registration is idempotent due to internal guard
-            // Module state persists across tests, so we just verify it doesn't throw
-            expect(() => registerSOQLCompletionProvider()).not.toThrow();
+    describe('getSoqlCompletions', () => {
+        it('returns no suggestions while inactive', async () => {
+            deactivateSOQLAutocomplete();
+            await expect(getSoqlCompletions('SELECT ', 7)).resolves.toEqual([]);
         });
 
-        it('subsequent calls are no-ops due to guard', () => {
-            // The module has a guard: if (state.providerRegistered) return;
-            // Multiple calls should not throw and should not cause issues
-            registerSOQLCompletionProvider();
-            registerSOQLCompletionProvider();
-            registerSOQLCompletionProvider();
+        it('returns editor-neutral keyword suggestions when active', async () => {
+            activateSOQLAutocomplete();
+            const suggestions = await getSoqlCompletions('SELECT ', 7);
+            const from = suggestions.find(s => s.label === 'FROM');
+            expect(from).toMatchObject({ kind: 'keyword', insertText: 'FROM' });
+            expect(from).not.toHaveProperty('range');
+            const count = suggestions.find(s => s.label === 'COUNT');
+            expect(count).toMatchObject({ kind: 'function', snippet: true });
+        });
 
-            // If we got here without error, the guard is working
-            expect(true).toBe(true);
+        it('exposes trigger characters on the completion source', () => {
+            expect(soqlCompletionSource.triggerCharacters).toEqual(['.', ' ']);
         });
     });
 
@@ -240,9 +244,12 @@ describe('soql-autocomplete', () => {
             const autocomplete = await import('../../../src/api/soql-autocomplete.js');
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -370,9 +377,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -555,9 +565,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -625,9 +638,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -710,9 +726,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -835,9 +854,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }
@@ -979,9 +1001,12 @@ describe('soql-autocomplete', () => {
             const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
 
             autocomplete.activateSOQLAutocomplete();
-            autocomplete.registerSOQLCompletionProvider();
+            const { registerMonacoCompletionSource } =
+                await import('../../../src/components/monaco-editor/completion-provider');
+            registerMonacoCompletionSource('sql', autocomplete.soqlCompletionSource);
 
             const calls = monacoMock.monaco.languages.registerCompletionItemProvider.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
             if (calls.length > 0) {
                 provideCompletionItems = calls[0][1].provideCompletionItems;
             }

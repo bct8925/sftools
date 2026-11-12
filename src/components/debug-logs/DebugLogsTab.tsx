@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { useProxy } from '../../contexts/ProxyContext';
 import { useToast } from '../../contexts/ToastContext';
-import { MonacoEditor, type MonacoEditorRef } from '../monaco-editor/MonacoEditor';
+import { CodeEditor, type CodeEditorRef } from '../code-editor/CodeEditor';
 import { Modal } from '../modal/Modal';
 import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { DebugLogsSettingsModal } from './DebugLogsSettingsModal';
@@ -59,7 +59,7 @@ export function DebugLogsTab() {
     const toast = useToast();
 
     // Editor ref
-    const editorRef = useRef<MonacoEditorRef>(null);
+    const editorRef = useRef<CodeEditorRef>(null);
     const filterTimeoutRef = useRef<number | null>(null);
 
     // Track watching state in ref for message handler
@@ -309,8 +309,9 @@ export function DebugLogsTab() {
                     <div className={styles.viewer}>
                         {/* Monaco Editor (2/3) */}
                         <div className={styles.viewerEditor}>
-                            <MonacoEditor
+                            <CodeEditor
                                 ref={editorRef}
+                                documentName="Debug Log"
                                 language="apex"
                                 value="// Click ▶ to start monitoring debug logs"
                                 readonly

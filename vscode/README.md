@@ -12,7 +12,11 @@ The sftools developer tools (Query, Apex, REST API, Events, Debug Logs, Schema, 
 
 ## Commands
 
-Open the command palette and type **sftools**: open the home screen or a specific tool, view/edit a record by Id, refresh orgs, log in to an org, or open an org in the browser.
+Open the command palette and type **sftools**: open the home screen or a specific tool, view/edit a record by Id, refresh orgs, log in to an org, or open an org.
+
+## Side bar and integrated browser
+
+The sftools icon in the activity bar opens sftools in the side bar, like the Chrome side panel. **sftools: Open Org** and links to Salesforce pages open in VS Code's integrated browser (VS Code 1.109 or later, desktop), already signed in through the sf CLI. Set `sftools.openOrgIn` to `externalBrowser` to use your system browser instead; older VS Code versions always use it.
 
 ## Building
 

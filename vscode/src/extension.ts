@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import { API_VERSION } from '../../src/api/constants';
 import { SF_CLI_ACCESS_TOKEN } from '../../src/platform/protocol';
+import { SalesforceBrowser, type OpenOrgSetting } from './browser';
 import { NativeEditorManager } from './editors';
 import { createRequestHandler, type HostUi } from './handlers';
 import { HostHttp } from './http';
@@ -45,6 +46,15 @@ export function activate(context: vscode.ExtensionContext): void {
         resolveAuth: request => http.resolveStreamingAuth(request),
         deliver: (panelId, message) => panels.postEvent(panelId, message),
         protoPath: context.asAbsolutePath('dist/proto/pubsub_api.proto'),
+    });
+
+    const browser = new SalesforceBrowser<vscode.Uri>({
+        getSetting: () =>
+            vscode.workspace.getConfiguration('sftools').get<OpenOrgSetting>('openOrgIn'),
+        getCommands: () => vscode.commands.getCommands(true),
+        executeCommand: (command, uri) => vscode.commands.executeCommand(command, uri),
+        openExternal: uri => vscode.env.openExternal(uri),
+        parse: url => vscode.Uri.parse(url, true),
     });
 
     storage.onChanged(changes => panels.broadcastStorage(changes));
@@ -94,7 +104,7 @@ export function activate(context: vscode.ExtensionContext): void {
                     const parsed = new URL(url);
                     const path = `${parsed.pathname}${parsed.search}${parsed.hash}`;
                     const signedIn = await cli.getOrgOpenUrl(org.username, path);
-                    await vscode.env.openExternal(vscode.Uri.parse(signedIn, true));
+                    await browser.open(signedIn);
                     return;
                 } catch {
                     // Fall back to the plain URL; the browser may ask to log in
@@ -158,6 +168,15 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(
         panels,
+        vscode.window.registerWebviewViewProvider(
+            'sftools.sidebar',
+            {
+                resolveWebviewView(view) {
+                    panels.attachView(view, { page: 'app', launchParams: '' });
+                },
+            },
+            { webviewOptions: { retainContextWhenHidden: true } }
+        ),
         editors,
         { dispose: () => streaming.dispose() },
         vscode.commands.registerCommand('sftools.open', () => openApp()),
@@ -211,11 +230,11 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
         vscode.commands.registerCommand('sftools.openOrg', async () => {
-            const org = await pickOrg('Open which org in the browser?');
+            const org = await pickOrg('Open which org?');
             if (!org) return;
             try {
                 const url = await cli.getOrgOpenUrl(org.username);
-                await vscode.env.openExternal(vscode.Uri.parse(url, true));
+                await browser.open(url);
             } catch (error) {
                 const message = error instanceof Error ? error.message : String(error);
                 void vscode.window.showErrorMessage(`sftools: ${message}`);

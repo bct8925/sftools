@@ -17,7 +17,10 @@ interface PanelEntry {
     id: string;
     page: PageName;
     launchParams: string;
-    panel: vscode.WebviewPanel;
+    webview: vscode.Webview;
+    /** Editor column of a panel; undefined for the side bar view */
+    viewColumn(): vscode.ViewColumn | undefined;
+    dispose(): void;
     pendingHostRequests: Map<number, (envelope: { result?: unknown; error?: string }) => void>;
 }
 
@@ -46,31 +49,60 @@ export class PanelManager implements vscode.Disposable {
     }
 
     open(options: OpenPanelOptions): string {
-        const id = `panel-${this.nextPanel++}`;
-        const webviewRoot = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webview');
         const panel = vscode.window.createWebviewPanel(
             'sftools',
             options.title,
             options.viewColumn ?? vscode.ViewColumn.Active,
-            {
-                enableScripts: true,
-                retainContextWhenHidden: true,
-                localResourceRoots: [webviewRoot],
-            }
+            { ...this.webviewOptions(), retainContextWhenHidden: true }
         );
         panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'media', 'icon.png');
+        return this.attach(options, panel.webview, {
+            viewColumn: () => panel.viewColumn,
+            dispose: () => panel.dispose(),
+            onDidDispose: listener => panel.onDidDispose(listener),
+        });
+    }
 
+    /** Host sftools in the side bar view, like the Chrome side panel */
+    attachView(view: vscode.WebviewView, options: Omit<OpenPanelOptions, 'title'>): string {
+        view.webview.options = this.webviewOptions();
+        return this.attach(options, view.webview, {
+            viewColumn: () => undefined,
+            dispose: () => undefined,
+            onDidDispose: listener => view.onDidDispose(listener),
+        });
+    }
+
+    private webviewOptions(): vscode.WebviewOptions {
+        return {
+            enableScripts: true,
+            localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, 'dist', 'webview')],
+        };
+    }
+
+    private attach(
+        options: Pick<OpenPanelOptions, 'page' | 'launchParams'>,
+        webview: vscode.Webview,
+        host: {
+            viewColumn(): vscode.ViewColumn | undefined;
+            dispose(): void;
+            onDidDispose(listener: () => void): vscode.Disposable;
+        }
+    ): string {
+        const id = `panel-${this.nextPanel++}`;
         const entry: PanelEntry = {
             id,
             page: options.page,
             launchParams: options.launchParams,
-            panel,
+            webview,
+            viewColumn: host.viewColumn,
+            dispose: host.dispose,
             pendingHostRequests: new Map(),
         };
         this.panels.set(id, entry);
 
-        panel.webview.onDidReceiveMessage(data => this.onMessage(entry, data));
-        panel.onDidDispose(() => {
+        webview.onDidReceiveMessage(data => this.onMessage(entry, data));
+        host.onDidDispose(() => {
             this.panels.delete(id);
             for (const pending of entry.pendingHostRequests.values()) {
                 pending({ error: 'Panel closed' });
@@ -89,7 +121,7 @@ export class PanelManager implements vscode.Disposable {
 
     /** Reveal the panel's column so native editors can open beside it */
     getViewColumn(panelId: string): vscode.ViewColumn | undefined {
-        return this.panels.get(panelId)?.panel.viewColumn;
+        return this.panels.get(panelId)?.viewColumn();
     }
 
     postEvent(panelId: string, message: HostMessage): void {
@@ -127,11 +159,11 @@ export class PanelManager implements vscode.Disposable {
     }
 
     dispose(): void {
-        for (const entry of [...this.panels.values()]) entry.panel.dispose();
+        for (const entry of [...this.panels.values()]) entry.dispose();
     }
 
     private post(panelId: string, envelope: HostToWebviewEnvelope): void {
-        void this.panels.get(panelId)?.panel.webview.postMessage(envelope);
+        void this.panels.get(panelId)?.webview.postMessage(envelope);
     }
 
     private async onMessage(entry: PanelEntry, data: unknown): Promise<void> {
@@ -167,7 +199,7 @@ export class PanelManager implements vscode.Disposable {
         const htmlBytes = await vscode.workspace.fs.readFile(
             vscode.Uri.joinPath(pageDir, `${entry.page}.html`)
         );
-        const webview = entry.panel.webview;
+        const webview = entry.webview;
         webview.html = buildWebviewHtml({
             html: Buffer.from(htmlBytes).toString('utf8'),
             baseUri: `${webview.asWebviewUri(pageDir).toString()}/`,

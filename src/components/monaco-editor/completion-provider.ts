@@ -1,34 +1,12 @@
-// Adapts editor-agnostic CompletionSources to Monaco completion providers (Chrome only).
+// Adapts editor-agnostic CompletionSources to Monaco completion providers.
 import type { CompletionKind, CompletionSource, CompletionSuggestion } from '../../lib/completion';
 import { monaco } from './MonacoEditor';
 
 function toMonacoKind(kind: CompletionKind): monaco.languages.CompletionItemKind {
-    const kinds = monaco.languages.CompletionItemKind;
-    switch (kind) {
-        case 'constant':
-            return kinds.Constant;
-        case 'reference':
-            return kinds.Reference;
-        case 'value':
-            return kinds.Value;
-        case 'enum':
-            return kinds.Enum;
-        case 'keyword':
-            return kinds.Keyword;
-        case 'unit':
-            return kinds.Unit;
-        case 'event':
-            return kinds.Event;
-        case 'module':
-            return kinds.Module;
-        case 'class':
-            return kinds.Class;
-        case 'function':
-            return kinds.Function;
-        case 'field':
-        default:
-            return kinds.Field;
-    }
+    // CompletionKind names match Monaco's enum names, lower-camel-cased
+    const name = (kind.charAt(0).toUpperCase() +
+        kind.slice(1)) as keyof typeof monaco.languages.CompletionItemKind;
+    return monaco.languages.CompletionItemKind[name] ?? monaco.languages.CompletionItemKind.Field;
 }
 
 export function toMonacoCompletionItem(
@@ -44,10 +22,25 @@ export function toMonacoCompletionItem(
     if (suggestion.detail !== undefined) item.detail = suggestion.detail;
     if (suggestion.documentation !== undefined) item.documentation = suggestion.documentation;
     if (suggestion.sortText !== undefined) item.sortText = suggestion.sortText;
+    if (suggestion.filterText !== undefined) item.filterText = suggestion.filterText;
     if (suggestion.snippet) {
         item.insertTextRules = monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
     }
     return item;
+}
+
+function rangeFromOffsets(
+    model: monaco.editor.ITextModel,
+    range: { start: number; end: number }
+): monaco.IRange {
+    const start = model.getPositionAt(range.start);
+    const end = model.getPositionAt(range.end);
+    return {
+        startLineNumber: start.lineNumber,
+        startColumn: start.column,
+        endLineNumber: end.lineNumber,
+        endColumn: end.column,
+    };
 }
 
 /**
@@ -61,7 +54,7 @@ export function createMonacoCompletionProvider(
 ): monaco.languages.CompletionItemProvider {
     return {
         triggerCharacters: source.triggerCharacters,
-        provideCompletionItems: async (model, position) => {
+        provideCompletionItems: async (model, position, context) => {
             if (appliesTo && !appliesTo(model)) {
                 return { suggestions: [] };
             }
@@ -74,8 +67,14 @@ export function createMonacoCompletionProvider(
                 startColumn: word.startColumn,
                 endColumn: word.endColumn,
             };
-            const suggestions = await source.provide(text, offset);
-            return { suggestions: suggestions.map(s => toMonacoCompletionItem(s, range)) };
+            const suggestions = await source.provide(text, offset, {
+                triggerCharacter: context?.triggerCharacter,
+            });
+            return {
+                suggestions: suggestions.map(s =>
+                    toMonacoCompletionItem(s, s.range ? rangeFromOffsets(model, s.range) : range)
+                ),
+            };
         },
     };
 }

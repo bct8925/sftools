@@ -77,7 +77,6 @@ export function ApexOutput({ output, className, isCollapsed, onToggleCollapse }:
             <div className={`card-body ${styles.outputCardBody}`} hidden={isCollapsed}>
                 <CodeEditor
                     ref={editorRef}
-                    documentName="Apex Log"
                     language="apex"
                     readonly
                     resizable={false}

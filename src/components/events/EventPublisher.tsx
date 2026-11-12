@@ -108,7 +108,6 @@ export function EventPublisher({ platformEvents, onPublishSuccess, onError }: Ev
                     <label>JSON Payload (Ctrl/Cmd+Enter to publish)</label>
                     <CodeEditor
                         ref={editorRef}
-                        documentName="Event Payload"
                         language="json"
                         value={'{\n  \n}'}
                         onExecute={handlePublish}

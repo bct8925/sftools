@@ -311,7 +311,6 @@ export function EventsTab() {
                         {/* Monaco Editor */}
                         <CodeEditor
                             ref={streamEditorRef}
-                            documentName="Event"
                             language="json"
                             value="// Subscribe to and open an event"
                             readonly

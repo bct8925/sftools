@@ -1,6 +1,6 @@
 /**
  * Tests for the Monaco adapter that turns editor-neutral completion sources
- * into Monaco completion providers (Chrome only).
+ * into Monaco completion providers.
  */
 import { describe, it, expect, vi } from 'vitest';
 
@@ -19,6 +19,7 @@ vi.mock('../../../src/components/monaco-editor/MonacoEditor', () => ({
                 Enum: 9,
                 Unit: 10,
                 Event: 11,
+                Method: 12,
             },
             CompletionItemInsertTextRule: { InsertAsSnippet: 4 },
             registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
@@ -56,6 +57,15 @@ const source: CompletionSource = {
     ]),
 };
 
+function provideFrom(src: CompletionSource, model: object, triggerCharacter?: string) {
+    return createMonacoCompletionProvider(src).provideCompletionItems(
+        model as never,
+        { lineNumber: 1, column: 8 } as never,
+        { triggerCharacter } as never,
+        {} as never
+    );
+}
+
 describe('createMonacoCompletionProvider', () => {
     it('maps neutral suggestions to Monaco items with the word range', async () => {
         const provider = createMonacoCompletionProvider(source);
@@ -68,7 +78,9 @@ describe('createMonacoCompletionProvider', () => {
             {} as never
         );
 
-        expect(source.provide).toHaveBeenCalledWith('SELECT Na', 9);
+        expect(source.provide).toHaveBeenCalledWith('SELECT Na', 9, {
+            triggerCharacter: undefined,
+        });
         const range = { startLineNumber: 2, endLineNumber: 2, startColumn: 3, endColumn: 5 };
         expect(result!.suggestions).toEqual([
             { label: 'Name', kind: 1, insertText: 'Name', range, sortText: '1_Name' },
@@ -81,6 +93,35 @@ describe('createMonacoCompletionProvider', () => {
                 insertTextRules: 4,
             },
         ]);
+    });
+
+    it('uses a suggestion range and passes the trigger character', async () => {
+        const ranged: CompletionSource = {
+            triggerCharacters: ['.'],
+            provide: vi.fn(async () => [
+                {
+                    label: 'size',
+                    kind: 'method' as const,
+                    insertText: 'size()',
+                    filterText: 'size',
+                    range: { start: 5, end: 7 },
+                },
+                { label: 'odd', kind: 'typeParameter' as const, insertText: 'odd' },
+            ]),
+        };
+        const model = {
+            ...fakeModel('list.si'),
+            getPositionAt: (offset: number) => ({ lineNumber: 1, column: offset + 1 }),
+        };
+        const result = await provideFrom(ranged, model, '.');
+        expect(ranged.provide).toHaveBeenCalledWith('list.si', 7, { triggerCharacter: '.' });
+        expect(result!.suggestions[0]).toMatchObject({
+            kind: 12,
+            filterText: 'size',
+            range: { startLineNumber: 1, startColumn: 6, endLineNumber: 1, endColumn: 8 },
+        });
+        // A kind Monaco's mock doesn't know falls back to Field
+        expect(result!.suggestions[1].kind).toBe(1);
     });
 
     it('answers only for the models it applies to', async () => {

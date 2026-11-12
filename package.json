@@ -30,7 +30,9 @@
         "monaco-editor": "^0.53.0",
         "papaparse": "^5.5.3",
         "react": "^19.2.3",
-        "react-dom": "^19.2.3"
+        "react-dom": "^19.2.3",
+        "vscode-oniguruma": "^2.0.1",
+        "vscode-textmate": "^9.3.2"
     },
     "scripts": {
         "build": "SFTOOLS_PRODUCTION=false vite build",

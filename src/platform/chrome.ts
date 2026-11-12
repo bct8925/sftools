@@ -70,11 +70,6 @@ export const chromePlatform: Platform = {
         return () => chrome.runtime.onMessage.removeListener(handler);
     },
 
-    onRequest(): () => void {
-        // The Chrome background never makes requests of pages
-        return () => {};
-    },
-
     openExternal(url: string): void {
         chrome.tabs.create({ url });
     },

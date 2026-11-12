@@ -189,8 +189,6 @@ export function RestApiTab() {
                             <label>Body (JSON)</label>
                             <CodeEditor
                                 ref={requestEditorRef}
-                                documentName="Request Body"
-                                openNativeEditor={true}
                                 language="json"
                                 value={initialBody}
                                 onExecute={executeRequest}
@@ -229,7 +227,6 @@ export function RestApiTab() {
                 >
                     <CodeEditor
                         ref={responseEditorRef}
-                        documentName="Response"
                         language="json"
                         value="// Response will appear here"
                         readonly

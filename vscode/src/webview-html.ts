@@ -13,7 +13,8 @@ export function buildWebviewHtml(options: {
     const { baseUri, cspSource, nonce, bootstrap } = options;
     const csp = [
         "default-src 'none'",
-        `script-src ${cspSource} 'nonce-${nonce}'`,
+        // wasm-unsafe-eval: the TextMate tokenizer (vscode-oniguruma) is WebAssembly
+        `script-src ${cspSource} 'nonce-${nonce}' 'wasm-unsafe-eval'`,
         `style-src ${cspSource} 'unsafe-inline'`,
         `img-src ${cspSource} https: data:`,
         `font-src ${cspSource} data:`,

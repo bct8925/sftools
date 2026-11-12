@@ -600,7 +600,6 @@ export function FormulaEditor({
                         <CodeEditor
                             ref={editorRef}
                             language="apex"
-                            documentName="Formula"
                             completionSource={completionSource}
                             value=""
                             readonly={isLoading}

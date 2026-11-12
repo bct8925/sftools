@@ -16,6 +16,9 @@ await build({
     format: 'cjs',
     target: 'node20',
     external: ['vscode'],
+    // ESM builds first: jsonc-parser's UMD main loads its parts with require() calls
+    // esbuild can't follow, which fails at activation
+    mainFields: ['module', 'main'],
     // Resolve the proxy's packages from its own node_modules
     nodePaths: [resolve(here, '../sftools-proxy/node_modules'), resolve(here, 'node_modules')],
     sourcemap: !production,

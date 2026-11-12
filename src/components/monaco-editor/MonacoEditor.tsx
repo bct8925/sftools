@@ -1,8 +1,14 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import type { editor } from 'monaco-editor';
 import { monaco } from '../../lib/monaco-custom';
-import { useMonacoTheme } from './useMonacoTheme';
+import { mergeCompletionSources } from '../../lib/completion';
 import { registerMonacoCompletionSource } from './completion-provider';
+import {
+    hostCompletionSource,
+    hostEditorOptions,
+    prepareEditorLanguage,
+    useEditorTheme,
+} from './editor-host';
 import type {
     CodeEditorLanguage,
     CodeEditorMarker,
@@ -83,8 +89,9 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
         onChangeRef.current = onChange;
         onExecuteRef.current = onExecute;
 
-        // Sync theme with document
-        const theme = useMonacoTheme();
+        // Sync theme with the host (sftools' theme in Chrome, the color theme in VS Code)
+        const theme = useEditorTheme();
+        prepareEditorLanguage(language);
 
         // Expose imperative methods
         useImperativeHandle(ref, () => ({
@@ -144,7 +151,7 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
                 lineNumbersMinChars: lineNumbers === 'on' ? 3 : 0,
                 lineDecorationsWidth: lineNumbers === 'on' ? undefined : 6,
                 wordWrap,
-                fontSize: 13,
+                ...hostEditorOptions(),
             });
 
             editorRef.current = editorInstance;
@@ -182,17 +189,27 @@ export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []);
 
+        // The editor's own suggestions first, then the host's (VS Code's providers)
+        const mergedCompletionSource = useMemo(
+            () =>
+                mergeCompletionSources(
+                    completionSource,
+                    readonly ? undefined : hostCompletionSource(language)
+                ),
+            [completionSource, language, readonly]
+        );
+
         // Register completions that apply to this editor's model only
         useEffect(() => {
             const editorInstance = editorRef.current;
-            if (!completionSource || !editorInstance) return;
+            if (!mergedCompletionSource || !editorInstance) return;
             const disposable = registerMonacoCompletionSource(
                 mapLanguage(language),
-                completionSource,
+                mergedCompletionSource,
                 model => model === editorInstance.getModel()
             );
             return () => disposable.dispose();
-        }, [completionSource, language]);
+        }, [mergedCompletionSource, language]);
 
         // Update language when the prop changes
         useEffect(() => {

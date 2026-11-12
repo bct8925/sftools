@@ -2,9 +2,9 @@
 
 import * as vscode from 'vscode';
 import { API_VERSION } from '../../src/api/constants';
-import { SF_CLI_ACCESS_TOKEN } from '../../src/platform/protocol';
+import { EDITOR_THEME_CHANGED, SF_CLI_ACCESS_TOKEN } from '../../src/platform/protocol';
 import { SalesforceBrowser, type OpenOrgSetting } from './browser';
-import { NativeEditorManager } from './editors';
+import { EditorServices } from './editor-services';
 import { createRequestHandler, type HostUi } from './handlers';
 import { HostHttp } from './http';
 import { OrgService } from './orgs';
@@ -41,7 +41,9 @@ export function activate(context: vscode.ExtensionContext): void {
     const storage = new HostStorage(context.globalState, orgs);
     const http = new HostHttp(orgs);
     const panels = new PanelManager(context.extensionUri);
-    const editors = new NativeEditorManager(panels);
+    const editors = new EditorServices(context.extensionPath, context.globalStorageUri, () =>
+        panels.broadcastEvent({ type: EDITOR_THEME_CHANGED })
+    );
     const streaming = new StreamingService({
         resolveAuth: request => http.resolveStreamingAuth(request),
         deliver: (panelId, message) => panels.postEvent(panelId, message),

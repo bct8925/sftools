@@ -1,10 +1,9 @@
 // Routes webview requests to the host services. No vscode imports (unit tested).
 
 import {
-    EDITOR_DISPOSE,
-    EDITOR_MARKERS,
-    EDITOR_OPEN,
-    EDITOR_UPDATE,
+    EDITOR_COMPLETE,
+    EDITOR_GRAMMAR,
+    EDITOR_THEME,
     LOGIN_ORG,
     OPEN_EXTERNAL,
     OPEN_FEATURE,
@@ -15,21 +14,17 @@ import {
     STORAGE_GET,
     STORAGE_REMOVE,
     STORAGE_SET,
-    type EditorDocumentInfo,
+    type EditorCompleteRequest,
+    type EditorGrammarInfo,
+    type EditorGrammarRequest,
+    type EditorThemeInfo,
     type HostMessage,
 } from '../../src/platform/protocol';
+import type { CompletionSuggestion } from '../../src/lib/completion';
 import type { HostHttp } from './http';
 import type { OrgService } from './orgs';
 import type { HostStorage } from './storage';
 import type { StreamingService } from './streaming';
-
-export interface EditorMarker {
-    message: string;
-    line: number;
-    startColumn?: number;
-    endColumn?: number;
-    severity?: 'error' | 'warning' | 'info';
-}
 
 /** Actions that need the VS Code UI */
 export interface HostUi {
@@ -41,12 +36,14 @@ export interface HostUi {
     reload(panelId: string): void;
 }
 
-/** Native editor documents, per panel */
+/** What the webview's Monaco editors borrow from VS Code */
 export interface HostEditors {
-    open(panelId: string, info: EditorDocumentInfo): Promise<void>;
-    update(panelId: string, docId: string, value: string): Promise<void>;
-    close(panelId: string, docId: string): void;
-    setMarkers(panelId: string, docId: string, markers: EditorMarker[]): void;
+    getTheme(): Promise<EditorThemeInfo>;
+    getGrammar(request: {
+        language?: string;
+        scopeName?: string;
+    }): Promise<EditorGrammarInfo | null>;
+    complete(request: EditorCompleteRequest): Promise<CompletionSuggestion[]>;
 }
 
 export interface HandlerDeps {
@@ -154,22 +151,14 @@ export function createRequestHandler(deps: HandlerDeps): RequestHandler {
                 };
             }
 
-            case EDITOR_OPEN:
-                await editors.open(panelId, message as unknown as EditorDocumentInfo);
-                return undefined;
-            case EDITOR_UPDATE:
-                await editors.update(panelId, message.docId as string, message.value as string);
-                return undefined;
-            case EDITOR_DISPOSE:
-                editors.close(panelId, message.docId as string);
-                return undefined;
-            case EDITOR_MARKERS:
-                editors.setMarkers(
-                    panelId,
-                    message.docId as string,
-                    (message.markers as EditorMarker[]) ?? []
-                );
-                return undefined;
+            case EDITOR_THEME:
+                return editors.getTheme();
+            case EDITOR_GRAMMAR: {
+                const { language, scopeName } = message as unknown as EditorGrammarRequest;
+                return editors.getGrammar({ language, scopeName });
+            }
+            case EDITOR_COMPLETE:
+                return editors.complete(message as unknown as EditorCompleteRequest);
 
             default:
                 throw new Error(`Unknown request: ${message.type}`);

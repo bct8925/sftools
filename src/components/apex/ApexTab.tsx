@@ -270,8 +270,6 @@ export function ApexTab() {
                 <div className={`card-body ${styles.editorCardBody}`} hidden={isApexCollapsed}>
                     <CodeEditor
                         ref={codeEditorRef}
-                        documentName="Apex"
-                        openNativeEditor={true}
                         language="apex"
                         value={initialCode}
                         onExecute={handleExecute}

@@ -41,28 +41,12 @@ export interface HostStorageChangedEnvelope {
     changes: StorageChanges;
 }
 
-/** Host -> webview: a request the webview answers (e.g. completions for a native editor). */
-export interface HostRequestEnvelope {
-    kind: 'hostRequest';
-    id: number;
-    message: HostMessage;
-}
-
-/** Webview -> host: the answer to a HostRequestEnvelope. */
-export interface WebviewResponseEnvelope {
-    kind: 'hostResponse';
-    id: number;
-    result?: unknown;
-    error?: string;
-}
-
 export type HostToWebviewEnvelope =
     | HostResponseEnvelope
     | HostEventEnvelope
-    | HostStorageChangedEnvelope
-    | HostRequestEnvelope;
+    | HostStorageChangedEnvelope;
 
-export type WebviewToHostEnvelope = WebviewRequestEnvelope | WebviewResponseEnvelope;
+export type WebviewToHostEnvelope = WebviewRequestEnvelope;
 
 /** Response to a `subscribe` message (streaming). */
 export interface SubscribeResponse {
@@ -86,34 +70,54 @@ export const REFRESH_ORGS = 'host:refreshOrgs';
 export const RELOAD = 'host:reload';
 
 /**
- * Native editors (VS Code only). Each in-panel CodeEditor has a docId that is unique
- * within its panel; the host maps it to a VS Code document.
+ * Monaco editors in the VS Code webview take their look and suggestions from VS Code.
+ * All three are webview -> host requests.
  */
-/** Webview -> host: open (or reveal) the native document. */
-export const EDITOR_OPEN = 'editor:open';
-/** Webview -> host: the panel changed the content (setValue/appendValue/typing). */
-export const EDITOR_UPDATE = 'editor:update';
-/** Webview -> host: the in-panel editor unmounted. */
-export const EDITOR_DISPOSE = 'editor:dispose';
-/** Webview -> host: diagnostics for the document. */
-export const EDITOR_MARKERS = 'editor:markers';
-/** Host -> webview event: the native document was edited. */
-export const EDITOR_CHANGED = 'editor:changed';
-/** Host -> webview event: Run was pressed in the native document. */
-export const EDITOR_EXECUTE = 'editor:execute';
-/** Host -> webview request: completion suggestions for the native document. */
+/** The active color theme's token colors. Answers EditorThemeInfo. */
+export const EDITOR_THEME = 'editor:theme';
+/** A TextMate grammar, for an editor language or by scope name. Answers EditorGrammarInfo | null. */
+export const EDITOR_GRAMMAR = 'editor:grammar';
+/** Suggestions from VS Code's completion providers. Answers CompletionSuggestion[]. */
 export const EDITOR_COMPLETE = 'editor:complete';
+/** Host -> webview event: the color theme changed; ask for EDITOR_THEME again. */
+export const EDITOR_THEME_CHANGED = 'editor:themeChanged';
 
-export interface EditorDocumentInfo {
-    docId: string;
-    /** Display name without extension, e.g. "Query" */
-    name: string;
-    /** File extension without dot, e.g. "soql" */
-    extension: string;
-    value: string;
-    readonly: boolean;
-    /** Reveal the editor beside the panel (true) or just register it (false) */
-    reveal: boolean;
+/** One TextMate theme rule, as in a VS Code theme's tokenColors. */
+export interface TokenColorRule {
+    name?: string;
+    scope?: string | string[];
+    settings: { foreground?: string; background?: string; fontStyle?: string };
+}
+
+export interface EditorThemeInfo {
+    /** Theme name as VS Code shows it, if found */
+    name?: string;
+    tokenColors: TokenColorRule[];
+}
+
+export interface EditorGrammarInfo {
+    scopeName: string;
+    /** File name of the grammar; its extension tells JSON from plist */
+    fileName: string;
+    content: string;
+    /** Scopes of grammars that inject into this one */
+    injections: string[];
+}
+
+export interface EditorGrammarRequest {
+    type: typeof EDITOR_GRAMMAR;
+    /** sftools editor language (CodeEditorLanguage, e.g. "sql" for SOQL); the host picks the VS Code language */
+    language?: string;
+    scopeName?: string;
+}
+
+export interface EditorCompleteRequest {
+    type: typeof EDITOR_COMPLETE;
+    /** sftools editor language (CodeEditorLanguage); the host picks the VS Code language */
+    language: string;
+    text: string;
+    offset: number;
+    triggerCharacter?: string;
 }
 
 /**
@@ -132,10 +136,5 @@ export interface VsCodeBootstrap {
 export function isHostToWebviewEnvelope(data: unknown): data is HostToWebviewEnvelope {
     if (!data || typeof data !== 'object') return false;
     const kind = (data as { kind?: unknown }).kind;
-    return (
-        kind === 'response' ||
-        kind === 'event' ||
-        kind === 'storageChanged' ||
-        kind === 'hostRequest'
-    );
+    return kind === 'response' || kind === 'event' || kind === 'storageChanged';
 }

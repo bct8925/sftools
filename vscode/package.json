@@ -20,9 +20,7 @@
     ],
     "icon": "media/icon.png",
     "main": "./dist/extension.js",
-    "activationEvents": [
-        "onFileSystem:sftools"
-    ],
+    "activationEvents": [],
     "contributes": {
         "viewsContainers": {
             "activitybar": [
@@ -112,35 +110,6 @@
                 "command": "sftools.openOrg",
                 "title": "Open Org",
                 "category": "sftools"
-            },
-            {
-                "command": "sftools.runEditor",
-                "title": "Run",
-                "category": "sftools",
-                "icon": "$(play)"
-            }
-        ],
-        "menus": {
-            "commandPalette": [
-                {
-                    "command": "sftools.runEditor",
-                    "when": "resourceScheme == sftools"
-                }
-            ],
-            "editor/title": [
-                {
-                    "command": "sftools.runEditor",
-                    "when": "resourceScheme == sftools && sftools.runnableEditor",
-                    "group": "navigation"
-                }
-            ]
-        },
-        "keybindings": [
-            {
-                "command": "sftools.runEditor",
-                "key": "ctrl+enter",
-                "mac": "cmd+enter",
-                "when": "editorTextFocus && resourceScheme == sftools"
             }
         ],
         "configuration": {
@@ -165,35 +134,7 @@
                     "description": "Where sftools opens Salesforce pages, such as Open Org and links to records in Setup."
                 }
             }
-        },
-        "languages": [
-            {
-                "id": "sftools-soql",
-                "aliases": [
-                    "SOQL (sftools)"
-                ],
-                "configuration": "./syntaxes/soql.language-configuration.json"
-            },
-            {
-                "id": "sftools-apex",
-                "aliases": [
-                    "Apex (sftools)"
-                ],
-                "configuration": "./syntaxes/apex.language-configuration.json"
-            }
-        ],
-        "grammars": [
-            {
-                "language": "sftools-soql",
-                "scopeName": "source.sftools.soql",
-                "path": "./syntaxes/soql.tmLanguage.json"
-            },
-            {
-                "language": "sftools-apex",
-                "scopeName": "source.sftools.apex",
-                "path": "./syntaxes/apex.tmLanguage.json"
-            }
-        ]
+        }
     },
     "scripts": {
         "build": "npm run build:webview && npm run build:host",
@@ -207,6 +148,7 @@
         "@types/vscode": "1.95.0",
         "@vscode/vsce": "^3.2.0",
         "esbuild": "^0.25.0",
+        "jsonc-parser": "^3.3.1",
         "typescript": "^5.9.3"
     }
 }

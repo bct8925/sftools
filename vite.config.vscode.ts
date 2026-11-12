@@ -1,45 +1,29 @@
 // Webview build for the VS Code extension (vscode/).
 // Builds the same React pages as the Chrome extension, with two differences:
-// - CodeEditor resolves to NativeCodeEditor, so editing happens in native VS Code
-//   documents and Monaco is not bundled.
+// - A module `foo.ts` is replaced by `foo.vscode.ts` when that file exists. This is how
+//   Monaco takes its theme, syntax highlighting and completions from VS Code
+//   (components/monaco-editor/editor-host.vscode.ts).
 // - Only the pages a webview shows (app, record) are built; there is no background
 //   worker or OAuth callback, because the extension host and the sf CLI handle those.
+import { existsSync } from 'fs';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 const isProduction = process.env.SFTOOLS_PRODUCTION === 'true';
 
-function nativeCodeEditor(): Plugin {
+function vscodeVariants(): Plugin {
     return {
-        name: 'sftools-native-code-editor',
+        name: 'sftools-vscode-variants',
         enforce: 'pre',
         async resolveId(source, importer, options) {
-            if (!source.includes('CodeEditor') || source.includes('NativeCodeEditor')) {
+            if (!importer || source.includes('.vscode') || source.includes('node_modules')) {
                 return null;
             }
             const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
-            if (resolved && /[\\/]code-editor[\\/]CodeEditor\.tsx$/.test(resolved.id)) {
-                return resolved.id.replace(/CodeEditor\.tsx$/, 'NativeCodeEditor.tsx');
-            }
-            return null;
-        },
-    };
-}
-
-function assertNoMonaco(): Plugin {
-    return {
-        name: 'sftools-assert-no-monaco',
-        generateBundle(_options, bundle) {
-            for (const chunk of Object.values(bundle)) {
-                if (chunk.type !== 'chunk') continue;
-                const monacoModule = Object.keys(chunk.modules).find(
-                    id => id.includes('node_modules/monaco-editor') || id.includes('monaco-custom')
-                );
-                if (monacoModule) {
-                    this.error(`Monaco must not be bundled for VS Code (found ${monacoModule})`);
-                }
-            }
+            if (!resolved || resolved.id.includes('node_modules')) return null;
+            const variant = resolved.id.replace(/\.(tsx?)$/, '.vscode.$1');
+            return variant !== resolved.id && existsSync(variant) ? variant : null;
         },
     };
 }
@@ -47,7 +31,7 @@ function assertNoMonaco(): Plugin {
 export default defineConfig({
     root: 'src',
     base: './',
-    plugins: [nativeCodeEditor(), react(), assertNoMonaco()],
+    plugins: [vscodeVariants(), react()],
     define: {
         __SFTOOLS_DEBUG__: !isProduction,
     },

@@ -81,10 +81,9 @@ function deps(): HandlerDeps & { [K in keyof HandlerDeps]: any } {
             reload: vi.fn(),
         },
         editors: {
-            open: vi.fn(async () => {}),
-            update: vi.fn(async () => {}),
-            close: vi.fn(),
-            setMarkers: vi.fn(),
+            getTheme: vi.fn(async () => ({ name: 'Dark+', tokenColors: [] })),
+            getGrammar: vi.fn(async () => null),
+            complete: vi.fn(async () => [{ label: 'Name', kind: 'field', insertText: 'Name' }]),
         },
     } as any;
 }
@@ -133,13 +132,23 @@ describe('createRequestHandler', () => {
         );
     });
 
-    it('routes native editor messages with the panel', async () => {
+    it('routes editor theme, grammar and completion requests', async () => {
         const d = deps();
         const handle = createRequestHandler(d);
-        await handle({ type: 'editor:update', docId: 'Query-1', value: 'SELECT Id' }, 'p1');
-        await handle({ type: 'editor:dispose', docId: 'Query-1' }, 'p1');
-        expect(d.editors.update).toHaveBeenCalledWith('p1', 'Query-1', 'SELECT Id');
-        expect(d.editors.close).toHaveBeenCalledWith('p1', 'Query-1');
+        expect(await handle({ type: 'editor:theme' }, 'p1')).toEqual({
+            name: 'Dark+',
+            tokenColors: [],
+        });
+        await handle({ type: 'editor:grammar', language: 'sql' }, 'p1');
+        expect(d.editors.getGrammar).toHaveBeenCalledWith({
+            language: 'sql',
+            scopeName: undefined,
+        });
+        const request = { type: 'editor:complete', language: 'sql', text: 'SELECT ', offset: 7 };
+        expect(await handle(request, 'p1')).toEqual([
+            { label: 'Name', kind: 'field', insertText: 'Name' },
+        ]);
+        expect(d.editors.complete).toHaveBeenCalledWith(request);
     });
 
     it('logs in with the chosen login URL and refreshes orgs on request', async () => {

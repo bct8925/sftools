@@ -1,6 +1,7 @@
 // Shared contract for the code editor used by the tool tabs.
-// Chrome renders it with Monaco (../monaco-editor/MonacoEditor.tsx); the VS Code
-// extension renders it with native VS Code documents (./NativeCodeEditor.tsx).
+// Both builds render it with Monaco (../monaco-editor/MonacoEditor.tsx). In the VS Code
+// build, ../monaco-editor/editor-host.vscode.ts takes its theme, syntax highlighting
+// and completions from VS Code.
 
 import type { CompletionSource } from '../../lib/completion';
 
@@ -57,10 +58,4 @@ export interface CodeEditorProps {
     'data-testid'?: string;
     /** Completion suggestions for this editor only */
     completionSource?: CompletionSource;
-    /**
-     * VS Code only: name for the native document (e.g. "Query"), and whether the
-     * native editor opens automatically when the tool opens.
-     */
-    documentName?: string;
-    openNativeEditor?: boolean;
 }

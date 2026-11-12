@@ -51,30 +51,6 @@ describe('createVsCodePlatform', () => {
         expect(onStorage).toHaveBeenCalledWith({ theme: { newValue: 'dark' } });
     });
 
-    it('answers host requests with the registered handler', async () => {
-        const { platform, posted, deliver } = setup();
-        platform.onRequest('editor:complete', async message => [{ label: String(message.docId) }]);
-
-        deliver({
-            kind: 'hostRequest',
-            id: 9,
-            message: { type: 'editor:complete', docId: 'Query-1' },
-        });
-        deliver({ kind: 'hostRequest', id: 10, message: { type: 'missing' } });
-        await vi.waitFor(() => expect(posted).toHaveLength(2));
-
-        expect(posted).toContainEqual({
-            kind: 'hostResponse',
-            id: 9,
-            result: [{ label: 'Query-1' }],
-        });
-        expect(posted).toContainEqual({
-            kind: 'hostResponse',
-            id: 10,
-            error: 'No handler for missing',
-        });
-    });
-
     it('wraps storage calls as host messages', async () => {
         const { platform, posted, deliver } = setup();
         const get = platform.storage.get('theme');
@@ -147,9 +123,5 @@ describe('chromePlatform', () => {
         expect(await chromePlatform.storage.get(['k'])).toEqual({ k: 1 });
         await chromePlatform.storage.remove('k');
         expect(await chromePlatform.storage.get(['k'])).toEqual({});
-    });
-
-    it('has no host requests', () => {
-        expect(chromePlatform.onRequest('x', () => 1)).toBeTypeOf('function');
     });
 });

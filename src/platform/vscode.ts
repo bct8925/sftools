@@ -15,7 +15,6 @@ import {
     type StorageChanges,
     type VsCodeBootstrap,
     type WebviewRequestEnvelope,
-    type WebviewResponseEnvelope,
 } from './protocol';
 import type { Platform, RecordLaunchParams, StorageItems } from './types';
 
@@ -51,26 +50,6 @@ export function createVsCodePlatform(
     const pending = new Map<number, PendingRequest>();
     const messageListeners = new Set<(message: HostMessage) => void>();
     const storageListeners = new Set<(changes: StorageChanges) => void>();
-    const requestHandlers = new Map<string, (message: HostMessage) => unknown>();
-
-    async function answerHostRequest(id: number, message: HostMessage): Promise<void> {
-        const handler = requestHandlers.get(message.type);
-        let response: WebviewResponseEnvelope;
-        if (!handler) {
-            response = { kind: 'hostResponse', id, error: `No handler for ${message.type}` };
-        } else {
-            try {
-                response = { kind: 'hostResponse', id, result: await handler(message) };
-            } catch (error) {
-                response = {
-                    kind: 'hostResponse',
-                    id,
-                    error: error instanceof Error ? error.message : String(error),
-                };
-            }
-        }
-        api.postMessage(response);
-    }
 
     target.addEventListener('message', (event: Event) => {
         const data = (event as MessageEvent).data;
@@ -85,8 +64,6 @@ export function createVsCodePlatform(
             } else {
                 request.resolve(data.result);
             }
-        } else if (data.kind === 'hostRequest') {
-            void answerHostRequest(data.id, data.message);
         } else if (data.kind === 'event') {
             for (const listener of messageListeners) listener(data.message);
         } else {
@@ -142,12 +119,6 @@ export function createVsCodePlatform(
         onMessage(listener: (message: HostMessage) => void): () => void {
             messageListeners.add(listener);
             return () => messageListeners.delete(listener);
-        },
-        onRequest(type: string, handler: (message: HostMessage) => unknown): () => void {
-            requestHandlers.set(type, handler);
-            return () => {
-                if (requestHandlers.get(type) === handler) requestHandlers.delete(type);
-            };
         },
         openExternal(url: string): void {
             fireAndForget({ type: OPEN_EXTERNAL, url });

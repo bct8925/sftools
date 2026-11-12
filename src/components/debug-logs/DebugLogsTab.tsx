@@ -312,7 +312,6 @@ export function DebugLogsTab() {
                         <div className={styles.viewerEditor}>
                             <CodeEditor
                                 ref={editorRef}
-                                documentName="Debug Log"
                                 language="apex"
                                 value="// Click ▶ to start monitoring debug logs"
                                 readonly

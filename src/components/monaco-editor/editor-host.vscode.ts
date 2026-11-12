@@ -1,6 +1,8 @@
 // VS Code build of ./editor-host.ts. Monaco keeps running inside the webview, but:
-// - its colors come from the active VS Code theme (CSS variables for the editor UI,
-//   the theme's tokenColors for syntax),
+// - with the sftools theme on System, its colors come from the active VS Code theme
+//   (CSS variables for the editor UI, the theme's tokenColors for syntax); on Light or
+//   Dark they are sftools' own (VS Code's Visual Studio Light/Dark token colors, which
+//   Monaco's own themes come from, on sftools' backgrounds),
 // - its syntax highlighting comes from the TextMate grammars VS Code has installed
 //   (Salesforce's SOQL and Apex grammars when those extensions are there), tokenized
 //   with vscode-textmate exactly as VS Code does,
@@ -78,44 +80,88 @@ function getRegistry(): Registry {
 
 // --- Theme -----------------------------------------------------------------------
 
-let tokenColors: Promise<EditorThemeInfo> | null = null;
+/**
+ * Which look the editors take, following the sftools theme setting: "system" matches
+ * VS Code (the html element carries data-vscode-theme, see lib/theme.ts); light and
+ * dark are sftools' own palettes.
+ */
+type EditorLook = 'vscode' | 'light' | 'dark';
 
-function defineTheme(rules: editor.ITokenThemeRule[]): void {
+function currentLook(): EditorLook {
+    const html = document.documentElement;
+    if (html.hasAttribute('data-vscode-theme')) return 'vscode';
+    return html.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+
+/** Monaco's own vs/vs-dark default text colors, for sftools' looks */
+const DEFAULT_TEXT: Record<'light' | 'dark', { foreground: string; background: string }> = {
+    light: { foreground: '#000000', background: '#FFFFFF' },
+    dark: { foreground: '#D4D4D4', background: '#1E1E1E' },
+};
+
+const tokenColors = new Map<EditorLook, Promise<EditorThemeInfo>>();
+
+function editorColors(look: EditorLook): Record<string, string> {
+    if (look === 'vscode') return readEditorColors(cssVariable);
+    // As sftools' own Monaco themes (useMonacoTheme.ts): the nav background
+    const navBg = cssVariable('--nav-bg');
+    return navBg ? { 'editor.background': navBg, 'editorGutter.background': navBg } : {};
+}
+
+function defineTheme(look: EditorLook, rules: editor.ITokenThemeRule[]): void {
     monaco.editor.defineTheme(THEME_NAME, {
-        base: baseThemeFor(document.body.classList),
+        base:
+            look === 'vscode'
+                ? baseThemeFor(document.body.classList)
+                : look === 'dark'
+                  ? 'vs-dark'
+                  : 'vs',
         inherit: true,
         rules,
-        colors: readEditorColors(cssVariable),
+        colors: editorColors(look),
     });
     monaco.editor.setTheme(THEME_NAME);
 }
 
+function requestTokenColors(look: EditorLook): Promise<EditorThemeInfo> {
+    let request = tokenColors.get(look);
+    if (!request) {
+        request = getPlatform().sendMessage<EditorThemeInfo>({
+            type: EDITOR_THEME,
+            variant: look === 'vscode' ? undefined : look,
+        });
+        tokenColors.set(look, request);
+    }
+    return request;
+}
+
 async function applyTheme(): Promise<void> {
-    tokenColors ??= getPlatform().sendMessage<EditorThemeInfo>({ type: EDITOR_THEME });
+    const look = currentLook();
     try {
-        const theme = await tokenColors;
+        const theme = await requestTokenColors(look);
+        // The setting changed while the host was answering; the newer apply wins
+        if (currentLook() !== look) return;
+        const defaults =
+            look === 'vscode'
+                ? {
+                      foreground: cssVariable('--vscode-editor-foreground') || undefined,
+                      background: cssVariable('--vscode-editor-background') || undefined,
+                  }
+                : DEFAULT_TEXT[look];
         const raw: IRawTheme = {
             name: theme.name,
-            settings: [
-                {
-                    settings: {
-                        foreground: cssVariable('--vscode-editor-foreground') || undefined,
-                        background: cssVariable('--vscode-editor-background') || undefined,
-                    },
-                },
-                ...theme.tokenColors,
-            ],
+            settings: [{ settings: defaults }, ...theme.tokenColors],
         };
         const reg = getRegistry();
         reg.setTheme(raw);
-        defineTheme(buildTokenRules(reg.getColorMap()));
+        defineTheme(look, buildTokenRules(reg.getColorMap()));
         // Token names map to colors by index, so everything needs tokenizing again
         for (const [language, grammar] of grammars) setTokensProvider(language, grammar);
     } catch (error) {
-        // Keep Monaco's own highlighting, in the theme's editor colors
-        console.warn('[sftools] Could not load the VS Code theme for editors:', error);
-        tokenColors = null;
-        defineTheme([]);
+        // Keep Monaco's own highlighting, in the look's editor colors
+        console.warn('[sftools] Could not load the theme for editors:', error);
+        tokenColors.delete(look);
+        defineTheme(look, []);
     }
 }
 
@@ -131,18 +177,22 @@ function startTheme(): void {
     if (themeStarted) return;
     themeStarted = true;
     // Colors from CSS straight away; syntax colors once the host answers
-    defineTheme([]);
+    defineTheme(currentLook(), []);
     void applyTheme();
 
     getPlatform().onMessage(message => {
         if (message.type === EDITOR_THEME_CHANGED) {
-            tokenColors = null;
+            tokenColors.delete('vscode');
             scheduleApply();
         }
     });
-    // VS Code updates the webview's CSS variables and body class on a theme change
+    // VS Code updates the webview's CSS variables and body class on a theme change;
+    // the sftools theme setting changes the html element's data attributes
     const observer = new MutationObserver(scheduleApply);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['style', 'data-theme', 'data-vscode-theme'],
+    });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 }
 

@@ -10,7 +10,12 @@ import type {
 } from '../../src/platform/protocol';
 import { toSuggestion, type CompletionItemLike } from './completion-items';
 import { GrammarCatalog, VSCODE_LANGUAGES, type GrammarContribution } from './editor-grammars';
-import { resolveEditorTheme, type ThemeContribution, type ThemeKind } from './editor-theme';
+import {
+    resolveEditorTheme,
+    resolveVariantTheme,
+    type ThemeContribution,
+    type ThemeKind,
+} from './editor-theme';
 import type { HostEditors } from './handlers';
 
 /** File extension of the hidden document completions are asked for */
@@ -59,6 +64,7 @@ function withTimeout<T>(promise: Thenable<T>, ms: number): Promise<T | undefined
 export class EditorServices implements HostEditors, vscode.Disposable {
     private readonly grammars: GrammarCatalog;
     private theme: Promise<EditorThemeInfo> | null = null;
+    private readonly variantThemes = new Map<'light' | 'dark', Promise<EditorThemeInfo>>();
     private readonly queues = new Map<string, Promise<CompletionSuggestion[]>>();
     private readonly latest = new Map<string, number>();
     private generation = 0;
@@ -103,11 +109,24 @@ export class EditorServices implements HostEditors, vscode.Disposable {
             }),
             vscode.extensions.onDidChange(() => {
                 this.theme = null;
+                this.variantThemes.clear();
             })
         );
     }
 
-    getTheme(): Promise<EditorThemeInfo> {
+    getTheme(variant?: 'light' | 'dark'): Promise<EditorThemeInfo> {
+        if (variant) {
+            let theme = this.variantThemes.get(variant);
+            if (!theme) {
+                theme = resolveVariantTheme(
+                    contributions<ThemeContribution>('themes'),
+                    variant,
+                    readText
+                );
+                this.variantThemes.set(variant, theme);
+            }
+            return theme;
+        }
         this.theme ??= this.loadTheme();
         return this.theme;
     }

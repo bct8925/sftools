@@ -4,6 +4,7 @@ import {
     findActiveTheme,
     readTokenColors,
     resolveEditorTheme,
+    resolveVariantTheme,
     userTokenColors,
     type ThemeContribution,
 } from '../../../vscode/src/editor-theme';
@@ -126,5 +127,41 @@ describe('editor theme', () => {
         );
         expect(info).toEqual({ name: 'Default Light Modern', tokenColors: [] });
         expect(userTokenColors(undefined, 'x')).toEqual([]);
+    });
+
+    it("serves sftools' light and dark from VS Code's Visual Studio themes", async () => {
+        const builtIn: ThemeContribution[] = [
+            ...themes,
+            {
+                extensionPath: '/ext/defaults',
+                id: 'Visual Studio Dark',
+                uiTheme: 'vs-dark',
+                path: 'themes/dark_vs.json',
+            },
+            { extensionPath: '/ext/defaults', uiTheme: 'vs', path: './themes/light_vs.json' },
+        ];
+        const lightFiles: Record<string, string> = {
+            ...files,
+            '/ext/defaults/themes/light_vs.json': `{ "tokenColors": [{ "scope": "keyword", "settings": { "foreground": "#0000ff" } }] }`,
+        };
+        const read = async (p: string) => {
+            if (!(p in lightFiles)) throw new Error(`ENOENT ${p}`);
+            return lightFiles[p];
+        };
+        const dark = await resolveVariantTheme(builtIn, 'dark', read);
+        expect(dark).toEqual({
+            name: 'Visual Studio Dark',
+            tokenColors: [{ settings: { foreground: '#D4D4D4' } }],
+        });
+        // Found by file name when the id differs
+        const light = await resolveVariantTheme(builtIn, 'light', read);
+        expect(light.tokenColors).toEqual([
+            { scope: 'keyword', settings: { foreground: '#0000ff' } },
+        ]);
+        // Missing built-in themes leave Monaco's defaults
+        expect(await resolveVariantTheme([], 'dark', read)).toEqual({
+            name: 'Visual Studio Dark',
+            tokenColors: [],
+        });
     });
 });

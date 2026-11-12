@@ -32,14 +32,26 @@ export function getSystemTheme(): EffectiveTheme {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+/**
+ * Apply a theme. In VS Code, "system" also sets data-vscode-theme, which switches
+ * sftools' colors to VS Code's (style.css) and the editors to the VS Code theme;
+ * light and dark keep sftools' own palettes.
+ */
 export function applyTheme(theme: Theme): void {
     currentTheme = theme;
     const effectiveTheme: EffectiveTheme = theme === 'system' ? getSystemTheme() : theme;
+    const root = document.documentElement;
 
     if (effectiveTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
+        root.setAttribute('data-theme', 'dark');
     } else {
-        document.documentElement.removeAttribute('data-theme');
+        root.removeAttribute('data-theme');
+    }
+
+    if (theme === 'system' && getVsCodeTheme()) {
+        root.setAttribute('data-vscode-theme', '');
+    } else {
+        root.removeAttribute('data-vscode-theme');
     }
 }
 

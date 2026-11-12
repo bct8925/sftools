@@ -171,6 +171,34 @@ export function userTokenColors(
     return rules;
 }
 
+/** VS Code's built-in themes that match Monaco's own vs and vs-dark */
+const BUILT_IN_VARIANTS = {
+    light: { id: 'Visual Studio Light', file: 'light_vs.json' },
+    dark: { id: 'Visual Studio Dark', file: 'dark_vs.json' },
+} as const;
+
+/** sftools' own editor colors for light or dark, ignoring the active theme and customizations */
+export async function resolveVariantTheme(
+    themes: ThemeContribution[],
+    variant: 'light' | 'dark',
+    readFile: ReadFile
+): Promise<EditorThemeInfo> {
+    const { id, file } = BUILT_IN_VARIANTS[variant];
+    const theme = themes.find(t => t.id === id) ?? themes.find(t => path.basename(t.path) === file);
+    if (!theme) return { name: id, tokenColors: [] };
+    try {
+        return {
+            name: id,
+            tokenColors: await readTokenColors(
+                path.join(theme.extensionPath, theme.path),
+                readFile
+            ),
+        };
+    } catch {
+        return { name: id, tokenColors: [] };
+    }
+}
+
 export async function resolveEditorTheme(
     themes: ThemeContribution[],
     settings: ThemeSettings,

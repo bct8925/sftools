@@ -73,7 +73,7 @@ export const RELOAD = 'host:reload';
  * Monaco editors in the VS Code webview take their look and suggestions from VS Code.
  * All three are webview -> host requests.
  */
-/** The active color theme's token colors. Answers EditorThemeInfo. */
+/** Token colors: the active VS Code theme, or sftools light/dark (EditorThemeRequest). Answers EditorThemeInfo. */
 export const EDITOR_THEME = 'editor:theme';
 /** A TextMate grammar, for an editor language or by scope name. Answers EditorGrammarInfo | null. */
 export const EDITOR_GRAMMAR = 'editor:grammar';
@@ -102,6 +102,16 @@ export interface EditorGrammarInfo {
     content: string;
     /** Scopes of grammars that inject into this one */
     injections: string[];
+}
+
+export interface EditorThemeRequest {
+    type: typeof EDITOR_THEME;
+    /**
+     * Omitted: the active VS Code theme, with the user's token color customizations.
+     * light/dark: sftools' own editor colors (VS Code's built-in Visual Studio
+     * Light/Dark themes, which Monaco's own vs/vs-dark themes come from).
+     */
+    variant?: 'light' | 'dark';
 }
 
 export interface EditorGrammarRequest {

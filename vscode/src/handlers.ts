@@ -18,6 +18,7 @@ import {
     type EditorGrammarInfo,
     type EditorGrammarRequest,
     type EditorThemeInfo,
+    type EditorThemeRequest,
     type HostMessage,
 } from '../../src/platform/protocol';
 import type { CompletionSuggestion } from '../../src/lib/completion';
@@ -39,7 +40,7 @@ export interface HostUi {
 
 /** What the webview's Monaco editors borrow from VS Code */
 export interface HostEditors {
-    getTheme(): Promise<EditorThemeInfo>;
+    getTheme(variant?: 'light' | 'dark'): Promise<EditorThemeInfo>;
     getGrammar(request: {
         language?: string;
         scopeName?: string;
@@ -153,7 +154,7 @@ export function createRequestHandler(deps: HandlerDeps): RequestHandler {
             }
 
             case EDITOR_THEME:
-                return editors.getTheme();
+                return editors.getTheme((message as unknown as EditorThemeRequest).variant);
             case EDITOR_GRAMMAR: {
                 const { language, scopeName } = message as unknown as EditorGrammarRequest;
                 return editors.getGrammar({ language, scopeName });

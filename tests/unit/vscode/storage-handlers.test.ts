@@ -139,6 +139,8 @@ describe('createRequestHandler', () => {
             name: 'Dark+',
             tokenColors: [],
         });
+        await handle({ type: 'editor:theme', variant: 'light' }, 'p1');
+        expect(d.editors.getTheme.mock.calls).toEqual([[undefined], ['light']]);
         await handle({ type: 'editor:grammar', language: 'sql' }, 'p1');
         expect(d.editors.getGrammar).toHaveBeenCalledWith({
             language: 'sql',

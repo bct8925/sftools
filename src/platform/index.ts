@@ -2,6 +2,7 @@
 
 import { chromePlatform } from './chrome';
 import { createVsCodePlatform } from './vscode';
+import { installWebviewBehaviors } from './vscode-dom';
 import type { Platform } from './types';
 
 export type {
@@ -29,6 +30,8 @@ export function getPlatform(): Platform {
             window,
             window.__SFTOOLS_VSCODE__
         );
+        const platform = vscodePlatform;
+        installWebviewBehaviors(window, url => platform.openExternal(url));
         return vscodePlatform;
     }
     return chromePlatform;

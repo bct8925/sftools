@@ -170,6 +170,11 @@ export function QueryResultsTable({
                     rel="noopener noreferrer"
                     className={`${styles.idLink} query-id-link`}
                     data-testid="query-id-link"
+                    // Adds "Copy Record ID" to the right-click menu in VS Code
+                    data-vscode-context={JSON.stringify({
+                        webviewSection: 'recordId',
+                        recordId: value,
+                    })}
                 >
                     {value}
                 </a>

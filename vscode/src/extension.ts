@@ -231,6 +231,12 @@ export function activate(context: vscode.ExtensionContext): void {
                 void vscode.window.showErrorMessage(`sftools: Login failed. ${message}`);
             }
         }),
+        // Right-click menu on a record ID in a webview; VS Code passes data-vscode-context
+        vscode.commands.registerCommand('sftools.copyRecordId', async (context?: unknown) => {
+            const recordId = (context as { recordId?: unknown } | undefined)?.recordId;
+            if (typeof recordId !== 'string' || !recordId) return;
+            await vscode.env.clipboard.writeText(recordId);
+        }),
         vscode.commands.registerCommand('sftools.openOrg', async () => {
             const org = await pickOrg('Open which org?');
             if (!org) return;

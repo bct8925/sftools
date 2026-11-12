@@ -110,8 +110,28 @@
                 "command": "sftools.openOrg",
                 "title": "Open Org",
                 "category": "sftools"
+            },
+            {
+                "command": "sftools.copyRecordId",
+                "title": "Copy Record ID",
+                "category": "sftools"
             }
         ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "sftools.copyRecordId",
+                    "when": "false"
+                }
+            ],
+            "webview/context": [
+                {
+                    "command": "sftools.copyRecordId",
+                    "when": "webviewSection == 'recordId'",
+                    "group": "9_cutcopypaste@0"
+                }
+            ]
+        },
         "configuration": {
             "title": "sftools",
             "properties": {

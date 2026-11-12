@@ -14,6 +14,8 @@
  * - SA-U-010: buildKeywordSuggestions() - Returns clause keywords
  * - SA-U-011: buildAggregateSuggestions() - Returns COUNT, SUM, etc.
  * - SA-U-012: buildDateLiteralSuggestions() - Returns TODAY, LAST_WEEK, etc. (internal function)
+ * - SA-U-019: Freeze regressions - no lookup-target fan-out, describe reuse, half-typed FROM
+ *   names, later-hop resolution, linear dot-chain scan on long lines, cancellation
  *
  * Note: Tests focus on exported functions and observable behavior since many functions are internal.
  */
@@ -1088,6 +1090,211 @@ describe('soql-autocomplete', () => {
             );
 
             consoleSpy.mockRestore();
+        });
+    });
+    describe('SA-U-019: Freeze regressions', () => {
+        type Provide = (
+            model: unknown,
+            position: unknown,
+            context?: unknown,
+            token?: { isCancellationRequested: boolean }
+        ) => Promise<{ suggestions: { label: string }[] }>;
+
+        interface Setup {
+            provide: Provide;
+            getObjectDescribe: ReturnType<typeof vi.fn>;
+            getGlobalDescribe: ReturnType<typeof vi.fn>;
+        }
+
+        async function setup(
+            describes: Record<string, unknown>,
+            globalDescribe: unknown = undefined
+        ): Promise<Setup> {
+            vi.resetModules();
+            vi.doMock('../../../src/components/monaco-editor/MonacoEditor', () => ({
+                monaco: {
+                    languages: {
+                        CompletionItemKind: {
+                            Field: 1,
+                            Class: 2,
+                            Module: 3,
+                            Function: 4,
+                            Keyword: 5,
+                        },
+                        CompletionItemInsertTextRule: { InsertAsSnippet: 1 },
+                        registerCompletionItemProvider: vi.fn(),
+                    },
+                },
+            }));
+            const getObjectDescribe = vi.fn((name: string) =>
+                Promise.resolve(describes[name] ?? null)
+            );
+            const getGlobalDescribe = vi.fn(() => Promise.resolve(globalDescribe));
+            vi.doMock('../../../src/api/salesforce.js', () => ({
+                getGlobalDescribe,
+                getObjectDescribe,
+            }));
+
+            const autocomplete = await import('../../../src/api/soql-autocomplete.js');
+            const monacoMock = await import('../../../src/components/monaco-editor/MonacoEditor');
+            autocomplete.activateSOQLAutocomplete();
+            autocomplete.registerSOQLCompletionProvider();
+            const calls = vi.mocked(monacoMock.monaco.languages.registerCompletionItemProvider).mock
+                .calls;
+            const provider = calls[0][1] as unknown as { provideCompletionItems: Provide };
+            return {
+                provide: provider.provideCompletionItems,
+                getObjectDescribe,
+                getGlobalDescribe,
+            };
+        }
+
+        // Build a model whose cursor sits at the end of `text`
+        function modelAtEnd(text: string) {
+            const lines = text.split('\n');
+            const column = lines[lines.length - 1].length + 1;
+            return {
+                model: {
+                    getValue: () => text,
+                    getOffsetAt: () => text.length,
+                    getWordUntilPosition: () => ({ startColumn: column, endColumn: column }),
+                },
+                position: { lineNumber: lines.length, column },
+            };
+        }
+
+        function lookup(name: string, target: string) {
+            return {
+                name: `${name}Id`,
+                type: 'reference',
+                label: name,
+                relationshipName: name,
+                referenceTo: [target],
+            };
+        }
+
+        it('describes only the FROM object, not every lookup target', async () => {
+            const lookups = Array.from({ length: 50 }, (_, i) =>
+                lookup(`Rel${i}`, `Target${i}__c`)
+            );
+            const { provide, getObjectDescribe } = await setup({
+                Account: { name: 'Account', fields: [{ name: 'Id', type: 'id' }, ...lookups] },
+            });
+
+            const { model, position } = modelAtEnd('SELECT Id FROM Account WHERE ');
+            const result = await provide(model, position);
+
+            expect(getObjectDescribe).toHaveBeenCalledTimes(1);
+            expect(getObjectDescribe).toHaveBeenCalledWith('Account');
+            const labels = result.suggestions.map(s => s.label);
+            expect(labels).toContain('Rel0');
+            expect(labels).toContain('Rel49');
+        });
+
+        it('reuses describes across keystrokes in a dot chain', async () => {
+            const { provide, getObjectDescribe } = await setup({
+                Account: { name: 'Account', fields: [lookup('Owner', 'User')] },
+                User: { name: 'User', fields: [{ name: 'Username', type: 'string' }] },
+            });
+
+            for (const text of ['SELECT Owner.', 'SELECT Owner.U', 'SELECT Owner.Us']) {
+                const { model, position } = modelAtEnd(`${text} FROM Account`);
+                // Cursor right after the typed text, before " FROM Account"
+                await provide(
+                    { ...model, getOffsetAt: () => text.length },
+                    { ...position, column: text.length + 1 }
+                );
+            }
+            const { model, position } = modelAtEnd('SELECT Id FROM Account WHERE Owner.');
+            const result = await provide(model, position);
+
+            expect(result.suggestions.map(s => s.label)).toContain('Username');
+            const userCalls = getObjectDescribe.mock.calls.filter(([n]) => n === 'User');
+            const accountCalls = getObjectDescribe.mock.calls.filter(([n]) => n === 'Account');
+            expect(accountCalls).toHaveLength(1);
+            expect(userCalls).toHaveLength(1);
+        });
+
+        it('does not describe partial FROM names the org does not have', async () => {
+            const { provide, getObjectDescribe } = await setup(
+                { Account: { name: 'Account', fields: [{ name: 'Name', type: 'string' }] } },
+                { sobjects: [{ name: 'Account', label: 'Account', queryable: true }] }
+            );
+
+            // Typing in FROM loads the global describe
+            for (const text of ['SELECT Id FROM ', 'SELECT Id FROM A', 'SELECT Id FROM Ac']) {
+                const { model, position } = modelAtEnd(text);
+                await provide(model, position);
+            }
+            expect(getObjectDescribe).not.toHaveBeenCalled();
+
+            const { model, position } = modelAtEnd('SELECT Id FROM account WHERE ');
+            const result = await provide(model, position);
+            expect(getObjectDescribe).toHaveBeenCalledTimes(1);
+            expect(getObjectDescribe).toHaveBeenCalledWith('Account');
+            expect(result.suggestions.map(s => s.label)).toContain('Name');
+
+            // A name the cached global describe doesn't know (e.g. a new object) still loads
+            const newObject = modelAtEnd('SELECT Id FROM Brand_New__c WHERE ');
+            await provide(newObject.model, newObject.position);
+            expect(getObjectDescribe).toHaveBeenCalledWith('Brand_New__c');
+        });
+
+        it('resolves later hops from the related object, not the FROM object', async () => {
+            const { provide } = await setup({
+                Case: {
+                    name: 'Case',
+                    fields: [lookup('Account', 'Account'), lookup('Owner', 'Group')],
+                },
+                Account: { name: 'Account', fields: [lookup('Owner', 'User')] },
+                User: { name: 'User', fields: [{ name: 'Username', type: 'string' }] },
+                Group: { name: 'Group', fields: [{ name: 'DeveloperName', type: 'string' }] },
+            });
+
+            const { model, position } = modelAtEnd('SELECT Id FROM Case WHERE Account.Owner.');
+            const result = await provide(model, position);
+
+            const labels = result.suggestions.map(s => s.label);
+            expect(labels).toContain('Username');
+            expect(labels).not.toContain('DeveloperName');
+        });
+
+        it('stays fast on a very long single line', async () => {
+            const { provide } = await setup({
+                Account: { name: 'Account', fields: [{ name: 'Name', type: 'string' }] },
+            });
+            const longLine = `SELECT Id FROM Account WHERE Name = ${'a'.repeat(100_000)} `;
+            const { model, position } = modelAtEnd(longLine);
+
+            const start = performance.now();
+            await provide(model, position);
+            expect(performance.now() - start).toBeLessThan(500);
+        });
+
+        it('still detects dot chains with trailing spaces and stray dots', async () => {
+            const { provide } = await setup({
+                Account: { name: 'Account', fields: [lookup('Owner', 'User')] },
+                User: { name: 'User', fields: [{ name: 'Username', type: 'string' }] },
+            });
+
+            const spaced = modelAtEnd('SELECT Id FROM Account WHERE x..Owner.  ');
+            const spacedResult = await provide(spaced.model, spaced.position);
+            expect(spacedResult.suggestions.map(s => s.label)).toContain('Username');
+
+            const doubleDot = modelAtEnd('SELECT Id FROM Account WHERE Owner..');
+            const doubleDotResult = await provide(doubleDot.model, doubleDot.position);
+            // Not a chain, so falls through to normal WHERE suggestions
+            expect(doubleDotResult.suggestions.map(s => s.label)).toContain('AND');
+        });
+
+        it('returns nothing once Monaco cancels the request', async () => {
+            const { provide } = await setup({
+                Account: { name: 'Account', fields: [{ name: 'Name', type: 'string' }] },
+            });
+            const { model, position } = modelAtEnd('SELECT Id FROM Account WHERE ');
+
+            const result = await provide(model, position, {}, { isCancellationRequested: true });
+            expect(result.suggestions).toEqual([]);
         });
     });
 });

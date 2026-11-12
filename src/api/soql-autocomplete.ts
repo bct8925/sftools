@@ -1,7 +1,11 @@
 // SOQL Autocomplete for Query Tab
 import { parseQuery } from '@jetstreamapp/soql-parser-js';
 import { monaco } from '../components/monaco-editor/MonacoEditor';
-import type { FieldDescribe, DescribeGlobalResult } from '../types/salesforce';
+import type {
+    FieldDescribe,
+    DescribeGlobalResult,
+    ObjectDescribeResult,
+} from '../types/salesforce';
 import { getGlobalDescribe, getObjectDescribe } from './salesforce';
 
 // Module state
@@ -14,11 +18,14 @@ interface AutocompleteState {
     fromObjectLoadId: number;
     fields: FieldDescribe[];
     relationships: Map<string, RelationshipMetadata>;
+    // In-memory describe results for this connection, keyed by lowercase object name.
+    // getObjectDescribe() reads (and on a miss rewrites) the whole per-connection
+    // describe cache in chrome.storage, so calling it on every keystroke is expensive.
+    describes: Map<string, Promise<ObjectDescribeResult | null>>;
 }
 
 interface RelationshipMetadata {
     targetObject: string;
-    fields: FieldDescribe[];
     relationshipName: string;
 }
 
@@ -31,6 +38,7 @@ const state: AutocompleteState = {
     fromObjectLoadId: 0,
     fields: [],
     relationships: new Map(),
+    describes: new Map(),
 };
 
 // SOQL Keywords
@@ -188,20 +196,32 @@ function detectClause(text: string, offset: number): string {
     return currentClause;
 }
 
-// Extract dot chain from current position (e.g., "Account.Owner." -> ["Account", "Owner"])
-function extractDotChain(text: string, offset: number): string[] | null {
-    // Get text before cursor on current line
-    const textBeforeCursor = text.substring(0, offset);
-    const lastNewline = textBeforeCursor.lastIndexOf('\n');
-    const lineText = textBeforeCursor.substring(lastNewline + 1);
+const WORD_CHAR = /\w/;
+const WHITESPACE = /\s/;
 
-    // Match a dot chain at the end (e.g., "Account.Owner." or "Account.")
-    const match = lineText.match(/(\w+(?:\.\w+)*)\.\s*$/);
-    if (match) {
-        return match[1].split('.');
+// Extract dot chain from current position (e.g., "Account.Owner." -> ["Account", "Owner"]).
+// Scans backwards from the cursor in linear time. A regex anchored with `$` here
+// backtracks quadratically on long lines (a 100k-character line took seconds).
+function extractDotChain(text: string, offset: number): string[] | null {
+    const lineStart = text.lastIndexOf('\n', offset - 1) + 1;
+
+    // Skip trailing whitespace, then require the dot that triggered completion
+    let end = offset;
+    while (end > lineStart && WHITESPACE.test(text[end - 1])) end--;
+    if (end === lineStart || text[end - 1] !== '.') return null;
+    const chainEnd = end - 1;
+
+    // Walk back over the chain itself (word characters and dots)
+    let start = chainEnd;
+    while (start > lineStart && (WORD_CHAR.test(text[start - 1]) || text[start - 1] === '.')) {
+        start--;
     }
 
-    return null;
+    // An empty segment ("a..b") breaks the chain; keep only what follows the last break
+    const parts = text.substring(start, chainEnd).split('.');
+    const lastEmpty = parts.lastIndexOf('');
+    const chain = parts.slice(lastEmpty + 1);
+    return chain.length > 0 ? chain : null;
 }
 
 // Map field types to Monaco completion item kinds
@@ -230,6 +250,43 @@ function getCompletionKind(field: FieldDescribe): monaco.languages.CompletionIte
     return monaco.languages.CompletionItemKind.Field;
 }
 
+// Describe an object once per connection. Concurrent and repeat callers share one
+// promise; failures resolve to null and are retried on the next request.
+function describeObject(objectName: string): Promise<ObjectDescribeResult | null> {
+    const key = objectName.toLowerCase();
+    const existing = state.describes.get(key);
+    if (existing) return existing;
+
+    const describes = state.describes;
+    const promise = getObjectDescribe(objectName)
+        .then(result => result ?? null)
+        .catch(error => {
+            console.error('Failed to load object describe:', error);
+            // Allow a retry later, unless the connection changed in the meantime
+            if (describes.get(key) === promise) describes.delete(key);
+            return null;
+        });
+    describes.set(key, promise);
+    return promise;
+}
+
+// Map a FROM name to the org's spelling of it. Returns null for a name that is only the
+// start of a known object (the user is still typing it, e.g. "Acc"), so each keystroke
+// doesn't fire a describe request. Unknown names are passed through, since the cached
+// global describe may predate a newly created object.
+function resolveObjectName(objectName: string): string | null {
+    const sobjects = state.globalDescribe?.sobjects;
+    if (!sobjects?.length) return objectName;
+    const lower = objectName.toLowerCase();
+    let isPrefix = false;
+    for (const obj of sobjects) {
+        const name = obj.name.toLowerCase();
+        if (name === lower) return obj.name;
+        if (name.startsWith(lower)) isPrefix = true;
+    }
+    return isPrefix ? null : objectName;
+}
+
 // Resolve a relationship chain to get the target object
 async function resolveRelationshipChain(
     baseObject: string,
@@ -237,16 +294,17 @@ async function resolveRelationshipChain(
 ): Promise<string | null> {
     let currentObject = baseObject;
 
-    for (const relationshipName of chain) {
-        // Check if we already have this relationship cached
-        const cached = state.relationships.get(relationshipName.toLowerCase());
+    for (const [index, relationshipName] of chain.entries()) {
+        // The relationship map only describes the FROM object, so it applies to the first hop
+        const cached =
+            index === 0 ? state.relationships.get(relationshipName.toLowerCase()) : undefined;
         if (cached) {
             currentObject = cached.targetObject;
             continue;
         }
 
         // Load the describe for current object
-        const describe = await getObjectDescribe(currentObject);
+        const describe = await describeObject(currentObject);
         if (!describe?.fields) return null;
 
         // Find the field with this relationship name
@@ -274,44 +332,27 @@ async function loadFromObject(objectName: string): Promise<void> {
     state.fields = [];
     state.relationships.clear();
 
-    try {
-        const describe = await getObjectDescribe(objectName);
+    const describe = await describeObject(objectName);
 
-        // Discard if a newer request started while we were loading
-        if (thisLoadId !== state.fromObjectLoadId) return;
+    // Discard if a newer request started while we were loading
+    if (thisLoadId !== state.fromObjectLoadId) return;
 
-        if (!describe?.fields) return;
+    if (!describe?.fields) return;
 
-        state.fields = describe.fields;
+    state.fields = describe.fields;
 
-        // Extract relationships and load target objects in parallel
-        const referenceFields = state.fields.filter(
-            f => f.type === 'reference' && f.relationshipName && f.referenceTo?.length
-        );
-
-        const targetObjects = [...new Set(referenceFields.flatMap(f => f.referenceTo))];
-        const describes = await Promise.all(
-            targetObjects.map(obj => getObjectDescribe(obj).catch(() => null))
-        );
-
-        // Discard if a newer request started while loading relationships
-        if (thisLoadId !== state.fromObjectLoadId) return;
-
-        // Build relationship map
-        for (const refField of referenceFields) {
-            const targetObj = refField.referenceTo[0];
-            const targetDescribe = describes.find(d => d?.name === targetObj);
-
-            if (refField.relationshipName) {
-                state.relationships.set(refField.relationshipName.toLowerCase(), {
-                    targetObject: targetObj,
-                    fields: targetDescribe?.fields || [],
-                    relationshipName: refField.relationshipName,
-                });
-            }
+    // Build the relationship map from the FROM object's own lookups. Related objects are
+    // described lazily when the user traverses into them: describing every lookup target
+    // up front (hundreds for objects like Task) froze the extension.
+    for (const refField of state.fields) {
+        if (refField.type === 'reference' && refField.relationshipName) {
+            const targetObject = refField.referenceTo?.[0];
+            if (!targetObject) continue;
+            state.relationships.set(refField.relationshipName.toLowerCase(), {
+                targetObject,
+                relationshipName: refField.relationshipName,
+            });
         }
-    } catch (error) {
-        console.error('Failed to load object describe:', error);
     }
 }
 
@@ -456,7 +497,7 @@ export function registerSOQLCompletionProvider(): void {
 
     monaco.languages.registerCompletionItemProvider('sql', {
         triggerCharacters: ['.', ' '],
-        provideCompletionItems: async (model, position) => {
+        provideCompletionItems: async (model, position, _context, token) => {
             if (!state.active) {
                 return { suggestions: [] };
             }
@@ -464,12 +505,18 @@ export function registerSOQLCompletionProvider(): void {
             const text = model.getValue();
             const offset = model.getOffsetAt(position);
 
-            // Extract FROM object (with regex fallback for partial queries)
-            const fromObject = extractFromObject(text);
+            // Extract FROM object, skipping names the org doesn't have (e.g. half-typed)
+            const parsedFrom = extractFromObject(text);
+            const fromObject = parsedFrom ? resolveObjectName(parsedFrom) : null;
 
             // Load object metadata if FROM object changed
             if (fromObject && fromObject !== state.fromObject) {
                 await loadFromObject(fromObject);
+            }
+
+            // Monaco has moved on (the user kept typing); skip building a stale list
+            if (token?.isCancellationRequested) {
+                return { suggestions: [] };
             }
 
             // Detect context
@@ -496,7 +543,10 @@ export function registerSOQLCompletionProvider(): void {
                 // Resolve the chain to get target object
                 const targetObject = await resolveRelationshipChain(state.fromObject, dotChain);
                 if (targetObject) {
-                    const describe = await getObjectDescribe(targetObject);
+                    const describe = await describeObject(targetObject);
+                    if (token?.isCancellationRequested) {
+                        return { suggestions: [] };
+                    }
                     if (describe?.fields) {
                         suggestions = buildFieldSuggestions(describe.fields, range);
 
@@ -526,6 +576,9 @@ export function registerSOQLCompletionProvider(): void {
             switch (clause) {
                 case 'FROM':
                     suggestions = await buildObjectSuggestions(range);
+                    if (token?.isCancellationRequested) {
+                        return { suggestions: [] };
+                    }
                     break;
 
                 case 'SELECT':
@@ -591,4 +644,6 @@ export function clearState(): void {
     state.relationships.clear();
     state.globalDescribe = null;
     state.globalDescribePromise = null;
+    state.fromObjectLoadId++;
+    state.describes = new Map();
 }

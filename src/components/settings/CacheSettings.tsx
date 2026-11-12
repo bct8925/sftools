@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { clearDescribeCache } from '../../api/salesforce';
+import { clearState as clearAutocompleteState } from '../../api/soql-autocomplete';
 import styles from './CacheSettings.module.css';
 
 export function CacheSettings() {
@@ -22,6 +23,8 @@ export function CacheSettings() {
 
         try {
             await clearDescribeCache();
+            // Drop the SOQL autocomplete's in-memory copies too
+            clearAutocompleteState();
             setStatus('Cache cleared successfully');
             setStatusType('success');
 

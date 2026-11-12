@@ -232,6 +232,17 @@
     --shadow-lg: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.4));
 
     --font-mono: var(--vscode-editor-font-family, 'SF Mono', Monaco, Consolas, monospace);
+
+    /* Buttons take VS Code's own button colors, which every theme keeps readable.
+       VS Code's secondary button is filled rather than outlined. */
+    --button-brand-text: var(--vscode-button-foreground);
+    --button-brand-border: var(--vscode-button-border, transparent);
+    --button-neutral-bg: var(--vscode-button-secondaryBackground);
+    --button-neutral-text: var(--vscode-button-secondaryForeground);
+    --button-neutral-border: var(--vscode-button-border, transparent);
+    --button-neutral-hover-bg: var(--vscode-button-secondaryHoverBackground);
+    --button-neutral-hover-text: var(--vscode-button-secondaryForeground);
+    --button-neutral-hover-border: var(--vscode-button-border, transparent);
 }
 
 :root[data-vscode-theme] body {
@@ -525,8 +536,8 @@ code,
 
 .button-brand {
     background-color: var(--primary-color);
-    color: #fff;
-    border: 1px solid var(--primary-color);
+    color: var(--button-brand-text, #fff);
+    border: 1px solid var(--button-brand-border, var(--primary-color));
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
@@ -537,7 +548,7 @@ code,
 
 .button-brand:hover {
     background-color: var(--primary-hover);
-    border-color: var(--primary-hover);
+    border-color: var(--button-brand-border, var(--primary-hover));
 }
 
 .button-brand:disabled {
@@ -546,9 +557,9 @@ code,
 }
 
 .button-neutral {
-    background-color: var(--card-bg);
-    color: var(--text-main);
-    border: 1px solid var(--border-color);
+    background-color: var(--button-neutral-bg, var(--card-bg));
+    color: var(--button-neutral-text, var(--text-main));
+    border: 1px solid var(--button-neutral-border, var(--border-color));
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
@@ -558,9 +569,9 @@ code,
 }
 
 .button-neutral:hover {
-    background-color: var(--bg-hover);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    background-color: var(--button-neutral-hover-bg, var(--bg-hover));
+    border-color: var(--button-neutral-hover-border, var(--primary-color));
+    color: var(--button-neutral-hover-text, var(--primary-color));
 }
 
 .m-top_small {

@@ -9,6 +9,7 @@ import {
     OPEN_FEATURE,
     OPEN_RECORD,
     REFRESH_ORGS,
+    SET_DEFAULT_ORG,
     RELOAD,
     SAVE_FILE,
     STORAGE_GET,
@@ -35,6 +36,8 @@ export interface HostUi {
     openRecord(params: { objectType: string; recordId: string; connectionId: string }): void;
     saveFile(filename: string, content: string, mimeType: string): Promise<void>;
     loginOrg(options: { instanceUrl?: string; alias?: string }): Promise<void>;
+    /** Make an org the sf CLI default; resolves with where it was set */
+    setDefaultOrg(username: string): Promise<{ scope: 'project' | 'global' }>;
     reload(panelId: string): void;
 }
 
@@ -143,6 +146,16 @@ export function createRequestHandler(deps: HandlerDeps): RequestHandler {
                     alias: (message.alias as string | undefined) || undefined,
                 });
                 return { success: true };
+            case SET_DEFAULT_ORG: {
+                const username = message.username;
+                if (typeof username !== 'string' || !username) {
+                    throw new Error('setDefaultOrg needs a username');
+                }
+                const { scope } = await ui.setDefaultOrg(username);
+                await orgs.refresh();
+                await storage.emitConnectionsChanged();
+                return { success: true, scope };
+            }
             case REFRESH_ORGS: {
                 const list = await orgs.refresh();
                 await storage.emitConnectionsChanged();

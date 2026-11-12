@@ -226,4 +226,28 @@ describe('SfCli', () => {
             { cwd: '/w' }
         );
     });
+
+    it('sets the default org for the project or globally', async () => {
+        const exec = vi
+            .fn<SfExec>()
+            .mockResolvedValue(
+                ok({ successes: [{ name: 'target-org', value: 'a@x.com' }], failures: [] })
+            );
+        const cli = new SfCli(exec);
+        await cli.setDefaultOrg('a@x.com', { cwd: '/w', global: false });
+        await cli.setDefaultOrg('a@x.com', { cwd: undefined, global: true });
+        expect(exec.mock.calls).toEqual([
+            [['config', 'set', 'target-org=a@x.com', '--json'], { cwd: '/w' }],
+            [['config', 'set', 'target-org=a@x.com', '--json', '--global'], { cwd: undefined }],
+        ]);
+    });
+
+    it('reports a default org the CLI would not set', async () => {
+        const exec = vi
+            .fn<SfExec>()
+            .mockResolvedValue(ok({ successes: [], failures: [{ message: 'No such org' }] }));
+        await expect(new SfCli(exec).setDefaultOrg('x@x.com', { global: true })).rejects.toThrow(
+            'No such org'
+        );
+    });
 });

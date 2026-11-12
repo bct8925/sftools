@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { getPlatform } from '../../platform';
-import { LOGIN_ORG, REFRESH_ORGS } from '../../platform/protocol';
+import { LOGIN_ORG, REFRESH_ORGS, SET_DEFAULT_ORG } from '../../platform/protocol';
 import { useToast } from '../../contexts/ToastContext';
 import styles from './ConnectionList.module.css';
 import cardStyles from './ConnectionCard.module.css';
@@ -11,8 +11,9 @@ const SANDBOX_LOGIN = 'https://test.salesforce.com';
 
 /**
  * Settings > Connections in VS Code.
- * Orgs come from the Salesforce CLI, so this lists them read-only and offers
- * "Refresh" and "Log in" (which runs `sf org login web` in the extension host).
+ * Orgs come from the Salesforce CLI, so this lists them and offers "Use",
+ * "Set as default" (sf config set target-org), "Refresh" and "Log in" (which runs
+ * `sf org login web` in the extension host).
  */
 export function SfCliOrgList() {
     const { connections, activeConnection, setActiveConnection } = useConnection();
@@ -22,6 +23,33 @@ export function SfCliOrgList() {
     const [customUrl, setCustomUrl] = useState('');
     const [alias, setAlias] = useState('');
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [settingDefault, setSettingDefault] = useState<string | null>(null);
+
+    const handleSetDefault = useCallback(
+        async (username: string, label: string) => {
+            setSettingDefault(username);
+            try {
+                const result = await getPlatform().sendMessage<{ scope?: string }>({
+                    type: SET_DEFAULT_ORG,
+                    username,
+                });
+                toast.show(
+                    result?.scope === 'project'
+                        ? `${label} is now this project's default org`
+                        : `${label} is now the default org`,
+                    'success'
+                );
+            } catch (error) {
+                toast.show(
+                    error instanceof Error ? error.message : 'Could not set the default org',
+                    'error'
+                );
+            } finally {
+                setSettingDefault(null);
+            }
+        },
+        [toast]
+    );
 
     const handleRefresh = useCallback(async () => {
         setIsRefreshing(true);
@@ -86,14 +114,30 @@ export function SfCliOrgList() {
                                         )}
                                     </div>
                                 </div>
-                                {!isActive && (
+                                {(!isActive || !conn.isDefault) && (
                                     <div className={cardStyles.connectionActions}>
-                                        <button
-                                            className="button-neutral"
-                                            onClick={() => setActiveConnection(conn)}
-                                        >
-                                            Use
-                                        </button>
+                                        {!conn.isDefault && conn.username && (
+                                            <button
+                                                className="button-neutral"
+                                                onClick={() =>
+                                                    handleSetDefault(conn.username!, conn.label)
+                                                }
+                                                disabled={settingDefault !== null}
+                                                data-testid="sf-cli-set-default"
+                                            >
+                                                {settingDefault === conn.username
+                                                    ? 'Setting...'
+                                                    : 'Set as Default'}
+                                            </button>
+                                        )}
+                                        {!isActive && (
+                                            <button
+                                                className="button-neutral"
+                                                onClick={() => setActiveConnection(conn)}
+                                            >
+                                                Use
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>

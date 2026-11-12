@@ -1,5 +1,7 @@
 // sftools for VS Code: the sftools tools in webview panels, with orgs from the sf CLI.
 
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { API_VERSION } from '../../src/api/constants';
 import { EDITOR_THEME_CHANGED, SF_CLI_ACCESS_TOKEN } from '../../src/platform/protocol';
@@ -137,6 +139,13 @@ export function activate(context: vscode.ExtensionContext): void {
                 void vscode.window.showErrorMessage(`sftools: Login failed. ${message}`);
                 throw error;
             }
+        },
+        async setDefaultOrg(username) {
+            // The project's own default when a Salesforce project is open, else the global one
+            const cwd = workspaceCwd();
+            const inProject = !!cwd && fs.existsSync(path.join(cwd, 'sfdx-project.json'));
+            await cli.setDefaultOrg(username, { cwd, global: !inProject });
+            return { scope: inProject ? 'project' : 'global' };
         },
         reload(panelId) {
             panels.reload(panelId);

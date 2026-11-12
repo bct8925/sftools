@@ -236,6 +236,24 @@ export class SfCli {
         parseSfJson(await this.exec(args, { cwd: options.cwd }));
     }
 
+    /**
+     * Make an org the default (target-org): for the project at `cwd`, or for every
+     * project without its own default when `global`.
+     */
+    async setDefaultOrg(
+        username: string,
+        options: { cwd?: string; global: boolean }
+    ): Promise<void> {
+        const args = ['config', 'set', `target-org=${username}`, '--json'];
+        if (options.global) args.push('--global');
+        const result = parseSfJson<{
+            failures?: Array<{ message?: string }>;
+        }>(await this.exec(args, { cwd: options.cwd }));
+        const failure = result.failures?.[0];
+        if (failure)
+            throw new SfCliError(failure.message || 'The sf CLI could not set the default org');
+    }
+
     /** URL that signs in to the org (frontdoor) and goes to `path` */
     async getOrgOpenUrl(username: string, path?: string): Promise<string> {
         const args = ['org', 'open', '--target-org', username, '--url-only', '--json'];

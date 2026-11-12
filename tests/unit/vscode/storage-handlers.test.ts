@@ -78,6 +78,7 @@ function deps(): HandlerDeps & { [K in keyof HandlerDeps]: any } {
             openRecord: vi.fn(),
             saveFile: vi.fn(async () => {}),
             loginOrg: vi.fn(async () => {}),
+            setDefaultOrg: vi.fn(async () => ({ scope: 'project' })),
             reload: vi.fn(),
         },
         editors: {
@@ -187,6 +188,19 @@ describe('createRequestHandler', () => {
             ['https://a.my.salesforce.com/001', false],
             ['https://a.my.salesforce.com/001', true],
         ]);
+    });
+
+    it('sets the default org and refreshes the org list', async () => {
+        const d = deps();
+        const refresh = vi.spyOn(d.orgs, 'refresh').mockResolvedValue([]);
+        const handle = createRequestHandler(d);
+        expect(await handle({ type: 'host:setDefaultOrg', username: 'a@x.com' }, 'p1')).toEqual({
+            success: true,
+            scope: 'project',
+        });
+        expect(d.ui.setDefaultOrg).toHaveBeenCalledWith('a@x.com');
+        expect(refresh).toHaveBeenCalled();
+        await expect(handle({ type: 'host:setDefaultOrg' }, 'p1')).rejects.toThrow();
     });
 
     it('rejects unknown requests', async () => {

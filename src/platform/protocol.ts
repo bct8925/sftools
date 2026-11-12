@@ -67,6 +67,8 @@ export const OPEN_RECORD = 'host:openRecord';
 export const SAVE_FILE = 'host:saveFile';
 export const LOGIN_ORG = 'host:loginOrg';
 export const REFRESH_ORGS = 'host:refreshOrgs';
+/** Make an org the sf CLI default (target-org). { username } */
+export const SET_DEFAULT_ORG = 'host:setDefaultOrg';
 export const RELOAD = 'host:reload';
 
 /**

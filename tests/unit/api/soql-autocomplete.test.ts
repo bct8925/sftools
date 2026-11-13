@@ -14,6 +14,8 @@
  * - SA-U-010: buildKeywordSuggestions() - Returns clause keywords
  * - SA-U-011: buildAggregateSuggestions() - Returns COUNT, SUM, etc.
  * - SA-U-012: buildDateLiteralSuggestions() - Returns TODAY, LAST_WEEK, etc. (internal function)
+ * - SA-U-019: Freeze regressions - no lookup-target fan-out, describe reuse, half-typed FROM
+ *   names, later-hop resolution, linear dot-chain scan on long lines
  *
  * Note: Tests focus on exported functions and observable behavior since many functions are internal.
  */
@@ -1113,6 +1115,145 @@ describe('soql-autocomplete', () => {
             );
 
             consoleSpy.mockRestore();
+        });
+    });
+    describe('SA-U-019: Freeze regressions', () => {
+        type Complete = (text: string, offset?: number) => Promise<{ label: string }[]>;
+
+        interface Setup {
+            complete: Complete;
+            getObjectDescribe: ReturnType<typeof vi.fn>;
+        }
+
+        async function setup(
+            describes: Record<string, unknown>,
+            globalDescribe: unknown = undefined
+        ): Promise<Setup> {
+            vi.resetModules();
+            const getObjectDescribe = vi.fn((name: string) =>
+                Promise.resolve(describes[name] ?? null)
+            );
+            vi.doMock('../../../src/api/salesforce.js', () => ({
+                getGlobalDescribe: vi.fn(() => Promise.resolve(globalDescribe)),
+                getObjectDescribe,
+            }));
+
+            const autocomplete = await import('../../../src/api/soql-autocomplete.js');
+            autocomplete.activateSOQLAutocomplete();
+            // Cursor at the end of the text unless an offset is given
+            const complete: Complete = (text, offset = text.length) =>
+                autocomplete.getSoqlCompletions(text, offset);
+            return { complete, getObjectDescribe };
+        }
+
+        function lookup(name: string, target: string) {
+            return {
+                name: `${name}Id`,
+                type: 'reference',
+                label: name,
+                relationshipName: name,
+                referenceTo: [target],
+            };
+        }
+
+        const labelsOf = (suggestions: { label: string }[]) => suggestions.map(s => s.label);
+
+        it('describes only the FROM object, not every lookup target', async () => {
+            const lookups = Array.from({ length: 50 }, (_, i) =>
+                lookup(`Rel${i}`, `Target${i}__c`)
+            );
+            const { complete, getObjectDescribe } = await setup({
+                Account: { name: 'Account', fields: [{ name: 'Id', type: 'id' }, ...lookups] },
+            });
+
+            const labels = labelsOf(await complete('SELECT Id FROM Account WHERE '));
+
+            expect(getObjectDescribe).toHaveBeenCalledTimes(1);
+            expect(getObjectDescribe).toHaveBeenCalledWith('Account');
+            expect(labels).toContain('Rel0');
+            expect(labels).toContain('Rel49');
+        });
+
+        it('reuses describes across keystrokes in a dot chain', async () => {
+            const { complete, getObjectDescribe } = await setup({
+                Account: { name: 'Account', fields: [lookup('Owner', 'User')] },
+                User: { name: 'User', fields: [{ name: 'Username', type: 'string' }] },
+            });
+
+            for (const typed of ['SELECT Owner.', 'SELECT Owner.U', 'SELECT Owner.Us']) {
+                await complete(`${typed} FROM Account`, typed.length);
+            }
+            const labels = labelsOf(await complete('SELECT Id FROM Account WHERE Owner.'));
+
+            expect(labels).toContain('Username');
+            const callsFor = (name: string) =>
+                getObjectDescribe.mock.calls.filter(([n]) => n === name);
+            expect(callsFor('Account')).toHaveLength(1);
+            expect(callsFor('User')).toHaveLength(1);
+        });
+
+        it('does not describe partial FROM names the org does not have', async () => {
+            const { complete, getObjectDescribe } = await setup(
+                { Account: { name: 'Account', fields: [{ name: 'Name', type: 'string' }] } },
+                { sobjects: [{ name: 'Account', label: 'Account', queryable: true }] }
+            );
+
+            // Typing in FROM loads the global describe
+            for (const text of ['SELECT Id FROM ', 'SELECT Id FROM A', 'SELECT Id FROM Ac']) {
+                await complete(text);
+            }
+            expect(getObjectDescribe).not.toHaveBeenCalled();
+
+            const labels = labelsOf(await complete('SELECT Id FROM account WHERE '));
+            expect(getObjectDescribe).toHaveBeenCalledTimes(1);
+            expect(getObjectDescribe).toHaveBeenCalledWith('Account');
+            expect(labels).toContain('Name');
+
+            // A name the cached global describe doesn't know (e.g. a new object) still loads
+            await complete('SELECT Id FROM Brand_New__c WHERE ');
+            expect(getObjectDescribe).toHaveBeenCalledWith('Brand_New__c');
+        });
+
+        it('resolves later hops from the related object, not the FROM object', async () => {
+            const { complete } = await setup({
+                Case: {
+                    name: 'Case',
+                    fields: [lookup('Account', 'Account'), lookup('Owner', 'Group')],
+                },
+                Account: { name: 'Account', fields: [lookup('Owner', 'User')] },
+                User: { name: 'User', fields: [{ name: 'Username', type: 'string' }] },
+                Group: { name: 'Group', fields: [{ name: 'DeveloperName', type: 'string' }] },
+            });
+
+            const labels = labelsOf(await complete('SELECT Id FROM Case WHERE Account.Owner.'));
+
+            expect(labels).toContain('Username');
+            expect(labels).not.toContain('DeveloperName');
+        });
+
+        it('stays fast on a very long single line', async () => {
+            const { complete } = await setup({
+                Account: { name: 'Account', fields: [{ name: 'Name', type: 'string' }] },
+            });
+            const longLine = `SELECT Id FROM Account WHERE Name = ${'a'.repeat(100_000)} `;
+
+            const start = performance.now();
+            await complete(longLine);
+            expect(performance.now() - start).toBeLessThan(500);
+        });
+
+        it('still detects dot chains with trailing spaces and stray dots', async () => {
+            const { complete } = await setup({
+                Account: { name: 'Account', fields: [lookup('Owner', 'User')] },
+                User: { name: 'User', fields: [{ name: 'Username', type: 'string' }] },
+            });
+
+            const spaced = await complete('SELECT Id FROM Account WHERE x..Owner.  ');
+            expect(labelsOf(spaced)).toContain('Username');
+
+            // Not a chain, so falls through to normal WHERE suggestions
+            const doubleDot = await complete('SELECT Id FROM Account WHERE Owner..');
+            expect(labelsOf(doubleDot)).toContain('AND');
         });
     });
 });

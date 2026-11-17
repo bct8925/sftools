@@ -21,6 +21,7 @@ import { createMockConnection } from '../mocks/salesforce.js';
 import { chromeMock } from '../mocks/chrome.js';
 import {
     getAccessToken,
+    getAuthorizationHeader,
     getInstanceUrl,
     isAuthenticated,
     getActiveConnectionId,
@@ -73,6 +74,35 @@ describe('auth', () => {
             expect(getAccessToken()).toBe('my-token');
             expect(getInstanceUrl()).toBe('https://my.salesforce.com');
             expect(isAuthenticated()).toBeTruthy();
+        });
+    });
+
+    describe('getAuthorizationHeader', () => {
+        it('uses the Bearer scheme for connections without a token type', () => {
+            setActiveConnection(createMockConnection({ accessToken: 'tok' }));
+            expect(getAuthorizationHeader()).toBe('Bearer tok');
+        });
+
+        it('uses the DPoP scheme for DPoP-bound connections', () => {
+            setActiveConnection(createMockConnection({ accessToken: 'tok', tokenType: 'DPoP' }));
+            expect(getAuthorizationHeader()).toBe('DPoP tok');
+        });
+
+        it('follows a token type change from storage', async () => {
+            const connection = createMockConnection({ id: 'tt', accessToken: 'tok' });
+            setActiveConnection(connection);
+
+            await chromeMock.storage.local.set({
+                connections: [{ ...connection, accessToken: 'tok2', tokenType: 'DPoP' }],
+            });
+
+            expect(getAuthorizationHeader()).toBe('DPoP tok2');
+        });
+
+        it('resets to Bearer when the connection is cleared', () => {
+            setActiveConnection(createMockConnection({ tokenType: 'DPoP' }));
+            setActiveConnection(null);
+            expect(getAuthorizationHeader()).toBe('Bearer ');
         });
     });
 

@@ -83,6 +83,19 @@ describe('app-utils', () => {
             expect(result).toContain(`state=${encodeURIComponent(state)}`);
         });
 
+        it('AS-U-001.6: adds the PKCE S256 challenge to the code flow', () => {
+            const result = buildOAuthUrl(loginDomain, clientId, redirectUri, state, true, 'abc-_1');
+
+            expect(result).toContain('code_challenge=abc-_1');
+            expect(result).toContain('code_challenge_method=S256');
+        });
+
+        it('AS-U-001.7: never sends a PKCE challenge with the implicit flow', () => {
+            const result = buildOAuthUrl(loginDomain, clientId, redirectUri, state, false, 'abc');
+
+            expect(result).not.toContain('code_challenge');
+        });
+
         it('AS-U-001.3: encodes redirect URI correctly', () => {
             const result = buildOAuthUrl(loginDomain, clientId, redirectUri, state);
 

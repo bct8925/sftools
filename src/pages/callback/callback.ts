@@ -1,5 +1,6 @@
 // OAuth Callback Handler
-// Supports both authorization code flow (with proxy) and implicit flow (without proxy)
+// Supports the authorization code flow (via the proxy, or directly with Salesforce site
+// access) and the implicit flow (fallback when neither is available)
 
 import {
     addConnection,
@@ -11,7 +12,7 @@ import {
 } from '../../auth/auth';
 import { escapeHtml } from '../../lib/text-utils';
 import { smartFetch } from '../../api/fetch';
-import type { SalesforceConnection, UserInfo } from '../../types/salesforce';
+import type { SalesforceConnection, TokenType, UserInfo } from '../../types/salesforce';
 
 interface _PendingAuth {
     loginDomain?: string;
@@ -25,6 +26,7 @@ interface TokenExchangeResponse {
     instanceUrl?: string;
     accessToken?: string;
     refreshToken?: string;
+    tokenType?: TokenType;
     error?: string;
 }
 
@@ -50,7 +52,7 @@ if (error) {
     // OAuth error - escape to prevent XSS
     statusEl.innerHTML = `<span class="error">Authorization denied: ${escapeHtml(errorDescription || error)}</span>`;
 } else if (authCode) {
-    // Authorization code flow - exchange via proxy
+    // Authorization code flow - exchange in the service worker
     handleCodeFlow(authCode, oauthState);
 } else if (hashAccessToken && hashInstanceUrl) {
     // Implicit flow - store tokens directly
@@ -61,7 +63,7 @@ if (error) {
 }
 
 /**
- * Handle authorization code flow - exchange code for tokens via proxy
+ * Handle authorization code flow - the service worker exchanges the code for tokens
  */
 async function handleCodeFlow(code: string, state: string | null): Promise<void> {
     statusEl.innerText = 'Validating authorization...';
@@ -95,6 +97,7 @@ async function handleCodeFlow(code: string, state: string | null): Promise<void>
             redirectUri: CALLBACK_URL,
             loginDomain,
             clientId,
+            codeVerifier: pendingAuth?.codeVerifier ?? undefined,
         })) as TokenExchangeResponse;
 
         if (response.success && response.instanceUrl && response.accessToken) {
@@ -109,6 +112,7 @@ async function handleCodeFlow(code: string, state: string | null): Promise<void>
                     instanceUrl: response.instanceUrl,
                     accessToken: response.accessToken,
                     refreshToken: response.refreshToken || null,
+                    tokenType: response.tokenType ?? 'Bearer',
                     loginDomain: savedLoginDomain,
                     clientId: pendingAuth?.clientId || null,
                 },
@@ -161,6 +165,7 @@ async function handleImplicitFlow(
                 instanceUrl: instanceUrl,
                 accessToken: accessToken,
                 refreshToken: null, // No refresh token in implicit flow
+                tokenType: 'Bearer',
                 loginDomain: loginDomain,
                 clientId: pendingAuth?.clientId || null,
             },
@@ -202,14 +207,19 @@ function deriveLoginDomain(instanceUrl: string): string {
  * Fetch username from Salesforce UserInfo endpoint
  * Returns username or null if fetch fails
  */
-async function fetchUsername(instanceUrl: string, accessToken: string): Promise<string | null> {
+async function fetchUsername(
+    instanceUrl: string,
+    accessToken: string,
+    tokenType: TokenType
+): Promise<string | null> {
     try {
         // Uses smartFetch instead of salesforceRequest because the connection is not yet
         // stored — there is no active connection for salesforceRequest to authenticate against.
         // We must pass the access token manually here.
         const response = await smartFetch(`${instanceUrl}/services/oauth2/userinfo`, {
             headers: {
-                Authorization: `Bearer ${accessToken}`,
+                // The host adds the DPoP proof for DPoP-bound tokens
+                Authorization: `${tokenType} ${accessToken}`,
             },
         });
 
@@ -236,6 +246,7 @@ async function addOrUpdateConnection(
         instanceUrl: string;
         accessToken: string;
         refreshToken: string | null;
+        tokenType: TokenType;
         loginDomain: string;
         clientId: string | null;
     },
@@ -246,6 +257,7 @@ async function addOrUpdateConnection(
         await updateConnection(existingConnectionId, {
             accessToken: data.accessToken,
             refreshToken: data.refreshToken,
+            tokenType: data.tokenType,
             loginDomain: data.loginDomain,
             clientId: data.clientId,
         });
@@ -257,13 +269,23 @@ async function addOrUpdateConnection(
             // Update existing connection with new tokens, preserve clientId if not provided
             await updateConnection(existing.id, {
                 accessToken: data.accessToken,
-                refreshToken: data.refreshToken || existing.refreshToken,
+                // A new token type means a new key binding, so an old refresh token can't carry over
+                refreshToken:
+                    data.refreshToken ||
+                    (data.tokenType === (existing.tokenType ?? 'Bearer')
+                        ? existing.refreshToken
+                        : null),
+                tokenType: data.tokenType,
                 loginDomain: data.loginDomain || existing.loginDomain,
                 clientId: data.clientId ?? existing.clientId,
             });
         } else {
             // Fetch username for new connection
-            const username = await fetchUsername(data.instanceUrl, data.accessToken);
+            const username = await fetchUsername(
+                data.instanceUrl,
+                data.accessToken,
+                data.tokenType
+            );
 
             // Add new connection with username
             const newConnection = await addConnection({

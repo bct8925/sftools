@@ -6,7 +6,9 @@
 import { detectLoginDomain, buildOAuthUrl } from '../lib/app-utils';
 import { getPlatform } from '../platform';
 import { LOGIN_ORG } from '../platform/protocol';
+import { ensureSalesforceHostAccess } from '../lib/host-access';
 import { setPendingAuth, generateOAuthState, getOAuthCredentials, CALLBACK_URL } from './auth';
+import { generatePkcePair } from './pkce';
 
 /**
  * Start OAuth authorization flow
@@ -46,13 +48,17 @@ export async function startAuthorization(
         }
     }
 
-    // Check proxy for code flow vs implicit flow
+    // Code flow needs the token endpoint: through the proxy, or directly once the user has
+    // granted Salesforce host access. The implicit flow is the fallback when neither works.
     let useCodeFlow = false;
     try {
         const proxyStatus = await chrome.runtime.sendMessage({ type: 'checkProxyConnection' });
         useCodeFlow = proxyStatus?.connected ?? false;
     } catch {
-        // Proxy not available, use implicit flow
+        // Proxy not available
+    }
+    if (!useCodeFlow) {
+        useCodeFlow = await ensureSalesforceHostAccess(loginDomain);
     }
 
     // Get client ID - use override, or fall back to default
@@ -61,15 +67,26 @@ export async function startAuthorization(
     // Generate state parameter for CSRF protection
     const state = generateOAuthState();
 
+    // PKCE: the verifier stays in pending auth until the callback exchanges the code
+    const pkce = useCodeFlow ? await generatePkcePair() : null;
+
     // Store pending auth state for callback to use
     await setPendingAuth({
         loginDomain,
         clientId: overrideClientId, // Store only if custom (null means use default)
         connectionId, // Set if re-authorizing existing connection
         state, // For CSRF validation
+        codeVerifier: pkce?.codeVerifier ?? null,
     });
 
     // Build OAuth URL and open in new tab
-    const authUrl = buildOAuthUrl(loginDomain, clientId, CALLBACK_URL, state, useCodeFlow);
+    const authUrl = buildOAuthUrl(
+        loginDomain,
+        clientId,
+        CALLBACK_URL,
+        state,
+        useCodeFlow,
+        pkce?.codeChallenge
+    );
     chrome.tabs.create({ url: authUrl });
 }

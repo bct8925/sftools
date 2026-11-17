@@ -21,7 +21,7 @@ interface ChromeMockStorage {
     [key: string]: unknown;
 }
 
-interface ChromeMock extends Omit<typeof chrome, 'runtime' | 'tabs'> {
+interface ChromeMock extends Omit<typeof chrome, 'runtime' | 'tabs' | 'permissions'> {
     runtime: Omit<typeof chrome.runtime, 'sendMessage'> & {
         sendMessage: ReturnType<typeof vi.fn>;
     };
@@ -29,6 +29,10 @@ interface ChromeMock extends Omit<typeof chrome, 'runtime' | 'tabs'> {
         create: ReturnType<typeof vi.fn>;
         query: ReturnType<typeof vi.fn>;
         update: ReturnType<typeof vi.fn>;
+    };
+    permissions: {
+        contains: ReturnType<typeof vi.fn>;
+        request: ReturnType<typeof vi.fn>;
     };
     contextMenus: {
         create: ReturnType<typeof vi.fn>;
@@ -177,6 +181,11 @@ export function createChromeMock(): ChromeMock {
             update: vi.fn().mockResolvedValue({}),
         },
 
+        permissions: {
+            contains: vi.fn().mockResolvedValue(false),
+            request: vi.fn().mockResolvedValue(false),
+        },
+
         contextMenus: {
             create: vi.fn(),
             update: vi.fn(),
@@ -191,6 +200,8 @@ export function createChromeMock(): ChromeMock {
             chrome.runtime.sendMessage.mockReset().mockResolvedValue({});
             chrome.tabs.create.mockReset().mockResolvedValue({ id: 1 });
             chrome.tabs.query.mockReset().mockResolvedValue([]);
+            chrome.permissions.contains.mockReset().mockResolvedValue(false);
+            chrome.permissions.request.mockReset().mockResolvedValue(false);
         },
 
         _resetListeners(): void {

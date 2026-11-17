@@ -13,7 +13,7 @@ import type {
     FlowDefinition,
     FlowVersion,
 } from '../types/salesforce';
-import { getAccessToken, getInstanceUrl, getActiveConnectionId } from '../auth/auth';
+import { getAuthorizationHeader, getInstanceUrl, getActiveConnectionId } from '../auth/auth';
 import { storage } from '../platform';
 import { API_VERSION } from './constants';
 import { smartFetch } from './fetch';
@@ -455,7 +455,7 @@ export async function executeRestRequest(
     const response = await smartFetch(`${getInstanceUrl()}${endpoint}`, {
         method,
         headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
+            Authorization: getAuthorizationHeader(),
             Accept: 'application/json',
             'Content-Type': 'application/json',
         },

@@ -224,7 +224,7 @@ await startAuthorization(
 #### Flow Details
 
 1. **Domain Detection**: Uses provided domain or detects from active tab URL
-2. **Flow Selection**: Checks proxy availability (code flow vs implicit flow)
+2. **Flow Selection**: Code flow (PKCE) when the proxy is connected, or when the user grants optional Salesforce host access (`ensureSalesforceHostAccess` in `src/lib/host-access.ts`, asked once from the click). Implicit flow only if both are unavailable or declined
 3. **Client ID**: Uses override or falls back to connection's clientId or manifest default
 4. **State Generation**: Generates CSRF state parameter via `generateOAuthState()`
 5. **Pending Auth**: Stores parameters via `setPendingAuth()` for callback

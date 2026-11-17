@@ -1,5 +1,6 @@
 // OAuth Callback Handler
-// Supports both authorization code flow (with proxy) and implicit flow (without proxy)
+// Supports the authorization code flow (via the proxy, or directly with Salesforce site
+// access) and the implicit flow (fallback when neither is available)
 
 import {
     addConnection,
@@ -51,7 +52,7 @@ if (error) {
     // OAuth error - escape to prevent XSS
     statusEl.innerHTML = `<span class="error">Authorization denied: ${escapeHtml(errorDescription || error)}</span>`;
 } else if (authCode) {
-    // Authorization code flow - exchange via proxy
+    // Authorization code flow - exchange in the service worker
     handleCodeFlow(authCode, oauthState);
 } else if (hashAccessToken && hashInstanceUrl) {
     // Implicit flow - store tokens directly
@@ -62,7 +63,7 @@ if (error) {
 }
 
 /**
- * Handle authorization code flow - exchange code for tokens via proxy
+ * Handle authorization code flow - the service worker exchanges the code for tokens
  */
 async function handleCodeFlow(code: string, state: string | null): Promise<void> {
     statusEl.innerText = 'Validating authorization...';

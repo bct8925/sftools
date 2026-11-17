@@ -227,6 +227,37 @@ describe('startAuthorization', () => {
             expect(challenge).toBe(await createCodeChallenge(codeVerifier!));
         });
 
+        it('uses the code flow without the proxy once Salesforce site access is granted', async () => {
+            chromeMock.runtime.sendMessage.mockResolvedValue({ connected: false });
+            chromeMock.permissions.request.mockResolvedValue(true);
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(chromeMock.permissions.request).toHaveBeenCalled();
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][4]).toBe(true);
+            expect(vi.mocked(setPendingAuth).mock.calls[0][0].codeVerifier).toMatch(
+                /^[A-Za-z0-9_-]{43}$/
+            );
+        });
+
+        it('does not ask for site access when the proxy is connected', async () => {
+            chromeMock.runtime.sendMessage.mockResolvedValue({ connected: true });
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(chromeMock.permissions.request).not.toHaveBeenCalled();
+            expect(chromeMock.permissions.contains).not.toHaveBeenCalled();
+        });
+
+        it('falls back to the implicit flow when site access is declined', async () => {
+            chromeMock.runtime.sendMessage.mockResolvedValue({ connected: false });
+            chromeMock.permissions.request.mockResolvedValue(false);
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][4]).toBe(false);
+        });
+
         it('stores no verifier in the implicit flow', async () => {
             chromeMock.runtime.sendMessage.mockResolvedValue({ connected: false });
 

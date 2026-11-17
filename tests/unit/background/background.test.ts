@@ -35,6 +35,7 @@ vi.mock('../../../src/background/auth', () => ({
     exchangeCodeForTokens: vi.fn(),
     refreshAccessToken: vi.fn(),
     isReplacedAccessToken: vi.fn().mockReturnValue(false),
+    canReachTokenEndpoint: vi.fn(),
 }));
 
 vi.mock('../../../src/background/debug', () => ({
@@ -57,6 +58,7 @@ import {
     exchangeCodeForTokens,
     refreshAccessToken,
     isReplacedAccessToken,
+    canReachTokenEndpoint,
 } from '../../../src/background/auth';
 import { parseLightningUrl, findConnectionByDomain } from '../../../src/lib/background-utils';
 import { setDpopKeyStore } from '../../../src/background/dpop.testing';
@@ -92,6 +94,10 @@ describe('background service worker', () => {
         vi.clearAllMocks();
         chromeMock._reset();
         vi.mocked(isProxyConnected).mockReturnValue(false);
+        // Token endpoint reachable through the proxy (host access covered in auth tests)
+        vi.mocked(canReachTokenEndpoint).mockImplementation(() =>
+            Promise.resolve(vi.mocked(isProxyConnected)())
+        );
         vi.mocked(getProxyInfo).mockReturnValue({
             connected: false,
             httpPort: null,
@@ -421,6 +427,31 @@ describe('background service worker', () => {
                 connectionId: 'c1',
                 error: 'Revoked',
             });
+        });
+
+        it('refreshes without the proxy when the token endpoint is reachable', async () => {
+            const conn = createMockConnection({ id: 'c1', refreshToken: 'rt' });
+            chromeMock._setStorageData({ connections: [conn] });
+            vi.mocked(canReachTokenEndpoint).mockResolvedValue(true);
+            vi.mocked(refreshAccessToken).mockResolvedValue({
+                success: true,
+                accessToken: 'new-tok',
+                tokenType: 'Bearer',
+            });
+            vi.mocked(globalThis.fetch)
+                .mockResolvedValueOnce(mockResponse(401, ''))
+                .mockResolvedValueOnce(mockResponse(200, '{}'));
+
+            const res = await sendMessage({
+                type: 'fetch',
+                url: 'https://org.sf.com/api',
+                options: { method: 'GET', headers: { Authorization: 'Bearer old' } },
+                connectionId: 'c1',
+            });
+
+            expect(res).toMatchObject({ success: true, status: 200 });
+            expect(canReachTokenEndpoint).toHaveBeenCalledWith(conn.loginDomain);
+            expect(refreshAccessToken).toHaveBeenCalled();
         });
 
         it('skips refresh when no refresh token', async () => {

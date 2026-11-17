@@ -51,7 +51,7 @@ describe('background/auth', () => {
             );
 
             expect(result.success).toBe(false);
-            if (!result.success) expect(result.error).toBe('Proxy not connected');
+            if (!result.success) expect(result.error).toContain('Proxy not connected');
         });
 
         it('sends correct OAuth request', async () => {
@@ -229,7 +229,7 @@ describe('background/auth', () => {
             const result = await refreshAccessToken(
                 mockConn({ id: 'no-proxy', refreshToken: 'rt' })
             );
-            if (!result.success) expect(result.error).toBe('Proxy not connected for token refresh');
+            if (!result.success) expect(result.error).toContain('Proxy not connected');
         });
 
         it('refreshes token successfully', async () => {
@@ -533,6 +533,139 @@ describe('background/auth', () => {
                 connections: { refreshToken: string }[];
             };
             expect(connections[0].refreshToken).toBe('rt-1');
+        });
+    });
+
+    describe('without the proxy, with Salesforce site access', () => {
+        const fetchMock = vi.fn();
+
+        beforeEach(() => {
+            setDpopKeyStore(createMemoryKeyStore());
+            mockIsProxyConnected.mockReturnValue(false);
+            chromeMock.permissions.contains.mockResolvedValue(true);
+            fetchMock.mockReset();
+            vi.stubGlobal('fetch', fetchMock);
+        });
+
+        afterEach(() => {
+            setDpopKeyStore(null);
+            vi.unstubAllGlobals();
+            Object.assign(globalThis, { chrome: chromeMock });
+        });
+
+        it('exchanges the code directly from the service worker', async () => {
+            fetchMock.mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        access_token: 'at',
+                        refresh_token: 'rt',
+                        instance_url: 'https://acme.my.salesforce.com',
+                        token_type: 'DPoP',
+                    }),
+                    { status: 200 }
+                )
+            );
+
+            const result = await exchangeCodeForTokens(
+                'code',
+                'https://redir',
+                'https://login.salesforce.com',
+                'cid',
+                'verifier'
+            );
+
+            expect(result).toMatchObject({ success: true, accessToken: 'at', tokenType: 'DPoP' });
+            expect(mockSendProxyRequest).not.toHaveBeenCalled();
+            const [url, init] = fetchMock.mock.calls[0];
+            expect(url).toBe('https://login.salesforce.com/services/oauth2/token');
+            expect(init.method).toBe('POST');
+            expect(new URLSearchParams(init.body).get('code_verifier')).toBe('verifier');
+            expect((await decodeProof(init.headers.DPoP)).signatureValid).toBe(true);
+        });
+
+        it('retries a direct token request with the DPoP nonce', async () => {
+            fetchMock
+                .mockResolvedValueOnce(
+                    new Response(JSON.stringify({ error: 'use_dpop_nonce' }), {
+                        status: 400,
+                        headers: { 'DPoP-Nonce': 'n-direct' },
+                    })
+                )
+                .mockResolvedValueOnce(
+                    new Response(JSON.stringify({ access_token: 'at' }), { status: 200 })
+                );
+
+            const result = await exchangeCodeForTokens(
+                'c',
+                'r',
+                'https://login.salesforce.com',
+                'cid',
+                'v'
+            );
+
+            expect(result.success).toBe(true);
+            const retryProof = await decodeProof(fetchMock.mock.calls[1][1].headers.DPoP);
+            expect(retryProof.payload.nonce).toBe('n-direct');
+        });
+
+        it('reports token errors from a direct request', async () => {
+            fetchMock.mockResolvedValue(
+                new Response(
+                    JSON.stringify({ error: 'invalid_grant', error_description: 'expired' }),
+                    { status: 400 }
+                )
+            );
+
+            const result = await exchangeCodeForTokens(
+                'c',
+                'r',
+                'https://login.salesforce.com',
+                'cid',
+                'v'
+            );
+
+            expect(result).toEqual({ success: false, error: 'expired' });
+        });
+
+        it('refreshes directly and saves the rotated refresh token', async () => {
+            chromeMock._setStorageData({
+                connections: [createMockConnection({ id: 'direct', refreshToken: 'rt-1' })],
+            });
+            fetchMock.mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        access_token: 'new',
+                        refresh_token: 'rt-2',
+                        token_type: 'DPoP',
+                    }),
+                    { status: 200 }
+                )
+            );
+
+            const result = await refreshAccessToken(
+                createMockConnection({ id: 'direct', refreshToken: 'rt-1' }) as never
+            );
+
+            expect(result).toEqual({ success: true, accessToken: 'new', tokenType: 'DPoP' });
+            const { connections } = chromeMock._getStorageData() as {
+                connections: { refreshToken: string }[];
+            };
+            expect(connections[0].refreshToken).toBe('rt-2');
+        });
+
+        it('does not call the token endpoint without proxy or site access', async () => {
+            chromeMock.permissions.contains.mockResolvedValue(false);
+
+            const result = await exchangeCodeForTokens(
+                'c',
+                'r',
+                'https://login.salesforce.com',
+                'cid',
+                'v'
+            );
+
+            expect(result.success).toBe(false);
+            expect(fetchMock).not.toHaveBeenCalled();
         });
     });
 });

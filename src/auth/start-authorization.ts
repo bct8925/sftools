@@ -6,6 +6,7 @@
 import { detectLoginDomain, buildOAuthUrl } from '../lib/app-utils';
 import { getPlatform } from '../platform';
 import { LOGIN_ORG } from '../platform/protocol';
+import { ensureSalesforceHostAccess } from '../lib/host-access';
 import { setPendingAuth, generateOAuthState, getOAuthCredentials, CALLBACK_URL } from './auth';
 import { generatePkcePair } from './pkce';
 
@@ -47,13 +48,17 @@ export async function startAuthorization(
         }
     }
 
-    // Check proxy for code flow vs implicit flow
+    // Code flow needs the token endpoint: through the proxy, or directly once the user has
+    // granted Salesforce host access. The implicit flow is the fallback when neither works.
     let useCodeFlow = false;
     try {
         const proxyStatus = await chrome.runtime.sendMessage({ type: 'checkProxyConnection' });
         useCodeFlow = proxyStatus?.connected ?? false;
     } catch {
-        // Proxy not available, use implicit flow
+        // Proxy not available
+    }
+    if (!useCodeFlow) {
+        useCodeFlow = await ensureSalesforceHostAccess(loginDomain);
     }
 
     // Get client ID - use override, or fall back to default

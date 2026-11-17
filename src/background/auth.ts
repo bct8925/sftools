@@ -3,9 +3,13 @@
 
 import { getOAuthCredentials } from '../auth/oauth-credentials';
 import type { SalesforceConnection, TokenType } from '../types/salesforce';
+import { hasHostAccess } from '../lib/host-access';
 import { isProxyConnected, sendProxyRequest } from './native-messaging';
 import { debugInfo } from './debug';
 import { createDpopProof, handleDpopNonce, normalizeTokenType } from './dpop';
+
+const NO_TOKEN_ROUTE =
+    'Proxy not connected and no Salesforce site access. Connect the proxy or sign in again to allow access.';
 
 interface TokenExchangeSuccess {
     success: true;
@@ -56,7 +60,45 @@ interface TokenResponseBody {
 }
 
 /**
- * POST to the Salesforce token endpoint via the proxy (CORS) with a DPoP proof.
+ * True when the token endpoint can be reached: through the proxy, or directly with
+ * granted Salesforce host access (no CORS)
+ */
+export async function canReachTokenEndpoint(loginDomain: string): Promise<boolean> {
+    return isProxyConnected() || hasHostAccess(`${loginDomain}/services/oauth2/token`);
+}
+
+async function sendTokenRequest(
+    tokenUrl: string,
+    headers: Record<string, string>,
+    body: string
+): Promise<ProxyRestResponse> {
+    if (isProxyConnected()) {
+        return (await sendProxyRequest({
+            type: 'rest',
+            url: tokenUrl,
+            method: 'POST',
+            headers,
+            body,
+        })) as ProxyRestResponse;
+    }
+
+    // Direct from the service worker: needs granted host access to skip CORS
+    const response = await fetch(tokenUrl, { method: 'POST', headers, body });
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+        responseHeaders[key.toLowerCase()] = value;
+    });
+    return {
+        success: response.ok,
+        status: response.status,
+        headers: responseHeaders,
+        data: await response.text(),
+        ...(!response.ok && { error: `HTTP ${response.status}` }),
+    };
+}
+
+/**
+ * POST to the Salesforce token endpoint with a DPoP proof, through the proxy or directly.
  * Retries once when the server asks for a DPoP nonce.
  */
 async function postTokenRequest(
@@ -76,13 +118,7 @@ async function postTokenRequest(
             console.warn('DPoP proof unavailable, requesting a Bearer token:', error);
         }
 
-        const response = (await sendProxyRequest({
-            type: 'rest',
-            url: tokenUrl,
-            method: 'POST',
-            headers,
-            body,
-        })) as ProxyRestResponse;
+        const response = await sendTokenRequest(tokenUrl, headers, body);
 
         const retry =
             attempt === 0 &&
@@ -118,12 +154,12 @@ export async function exchangeCodeForTokens(
     clientId: string,
     codeVerifier?: string
 ): Promise<TokenExchangeResult> {
-    if (!isProxyConnected()) {
-        return { success: false, error: 'Proxy not connected' };
+    const normalizedDomain = loginDomain || 'https://login.salesforce.com';
+    if (!(await canReachTokenEndpoint(normalizedDomain))) {
+        return { success: false, error: NO_TOKEN_ROUTE };
     }
 
     try {
-        const normalizedDomain = loginDomain || 'https://login.salesforce.com';
         const tokenUrl = `${normalizedDomain}/services/oauth2/token`;
 
         const params: Record<string, string> = {
@@ -214,11 +250,11 @@ export function refreshAccessToken(connection: SalesforceConnection): Promise<To
                 return { success: false, error: 'No refresh token available' };
             }
 
-            if (!isProxyConnected()) {
-                return { success: false, error: 'Proxy not connected for token refresh' };
+            const loginDomain = current.loginDomain || 'https://login.salesforce.com';
+            if (!(await canReachTokenEndpoint(loginDomain))) {
+                return { success: false, error: NO_TOKEN_ROUTE };
             }
 
-            const loginDomain = current.loginDomain || 'https://login.salesforce.com';
             const tokenUrl = `${loginDomain}/services/oauth2/token`;
             // Use connection's clientId if set, otherwise fall back to default
             const { clientId } = await getOAuthCredentials(connection.id);

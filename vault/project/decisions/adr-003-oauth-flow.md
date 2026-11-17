@@ -119,7 +119,7 @@ Both flows include CSRF protection via the `state` parameter, which is validated
 
 Salesforce now requires PKCE, refresh token rotation and a proof-of-possession control (DPoP or a refresh token IP allowlist) before a connected app can be installed in another org (enforced March 30, 2027). The code flow now sends a PKCE S256 challenge, keeps rotated refresh tokens, and binds tokens with DPoP (an IP allowlist can't work for a browser extension). See [[authentication-oauth]].
 
-The implicit flow (no proxy) is unchanged: it can't use PKCE, and its tokens can't be DPoP-bound because there is no token request. Salesforce is retiring the user-agent flow, so no-proxy sign-in needs a code-flow route that doesn't depend on the proxy (open decision).
+Without the proxy, sign-in asks Chrome once for optional host access to Salesforce sites (`optional_host_permissions` for `*.salesforce.com` and `*.force.com`). With it, the service worker calls the token endpoint (and the REST API) directly without CORS, so the code flow with PKCE, DPoP and refresh works without the proxy. The implicit flow remains only as a fallback when the user declines; it can't use PKCE or DPoP, and Salesforce is retiring the user-agent flow.
 
 ## Related
 

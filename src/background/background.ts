@@ -12,7 +12,12 @@ import {
     isProxyConnected,
     getProxyInfo,
 } from './native-messaging';
-import { exchangeCodeForTokens, isReplacedAccessToken, refreshAccessToken } from './auth';
+import {
+    canReachTokenEndpoint,
+    exchangeCodeForTokens,
+    isReplacedAccessToken,
+    refreshAccessToken,
+} from './auth';
 import { DPOP_SCHEME, getTokenScheme, handleDpopNonce, withDpopProof } from './dpop';
 import { debugInfo } from './debug';
 
@@ -392,7 +397,11 @@ async function handle401WithRefresh(
         return retryFn(connection.accessToken, connection.tokenType ?? 'Bearer');
     }
 
-    if (connection?.refreshToken && isProxyConnected()) {
+    const canRefresh =
+        !!connection?.refreshToken &&
+        (await canReachTokenEndpoint(connection.loginDomain || 'https://login.salesforce.com'));
+
+    if (connection && canRefresh) {
         debugInfo('Got 401, attempting token refresh for connection:', connectionId);
         const refreshResult = await refreshAccessToken(connection);
 
@@ -413,8 +422,8 @@ async function handle401WithRefresh(
     debugInfo(
         'Cannot refresh - refreshToken:',
         !!connection?.refreshToken,
-        'proxy:',
-        isProxyConnected()
+        'token endpoint reachable:',
+        canRefresh
     );
     return {
         success: false,

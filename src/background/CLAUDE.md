@@ -270,7 +270,7 @@ The service worker automatically handles 401 responses:
 
 ### DPoP and refresh token rotation
 
-- Token requests (`exchangeCodeForTokens`, `refreshAccessToken`) send a `DPoP` proof; a `use_dpop_nonce` answer is retried once with the server nonce. `token_type` from the response is stored on the connection as `tokenType`.
+- Token requests (`exchangeCodeForTokens`, `refreshAccessToken`) go through the proxy, or directly when the user granted Salesforce host access (`canReachTokenEndpoint`). They send a `DPoP` proof; a `use_dpop_nonce` answer is retried once with the server nonce. `token_type` from the response is stored on the connection as `tokenType`.
 - `fetch` and `proxyFetch` wrap their request function in `withDpop`: a request with `Authorization: DPoP <token>` gets a fresh proof (with `ath`), and a 401 `use_dpop_nonce` challenge is retried once. Bearer requests are untouched.
 - Refresh tokens are single-use (rotation). `refreshAccessToken` reads the newest refresh token from storage and saves the rotated tokens inside the mutex. `handle401WithRefresh` retries with the stored token when the failed request used a token a refresh already replaced (`isReplacedAccessToken`), instead of refreshing again.
 

@@ -34,7 +34,7 @@ vi.mock('../../../src/background/native-messaging', () => ({
 vi.mock('../../../src/background/auth', () => ({
     exchangeCodeForTokens: vi.fn(),
     refreshAccessToken: vi.fn(),
-    updateConnectionToken: vi.fn(),
+    isReplacedAccessToken: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock('../../../src/background/debug', () => ({
@@ -56,9 +56,11 @@ import {
 import {
     exchangeCodeForTokens,
     refreshAccessToken,
-    updateConnectionToken,
+    isReplacedAccessToken,
 } from '../../../src/background/auth';
 import { parseLightningUrl, findConnectionByDomain } from '../../../src/lib/background-utils';
+import { setDpopKeyStore } from '../../../src/background/dpop.testing';
+import { createMemoryKeyStore, decodeProof, sha256Base64Url } from '../mocks/dpop';
 
 // Capture the message listener registered by background.ts
 let messageListener: (
@@ -156,6 +158,7 @@ describe('background service worker', () => {
                 refreshToken: 'rt',
                 instanceUrl: 'https://org.sf.com',
                 loginDomain: 'https://login.salesforce.com',
+                tokenType: 'Bearer',
             });
 
             const res = await sendMessage({
@@ -164,6 +167,7 @@ describe('background service worker', () => {
                 redirectUri: 'redir',
                 loginDomain: 'https://login.salesforce.com',
                 clientId: 'cid',
+                codeVerifier: 'verifier',
             });
 
             expect(res).toMatchObject({ success: true, accessToken: 'at' });
@@ -171,7 +175,8 @@ describe('background service worker', () => {
                 'code',
                 'redir',
                 'https://login.salesforce.com',
-                'cid'
+                'cid',
+                'verifier'
             );
         });
 
@@ -301,6 +306,7 @@ describe('background service worker', () => {
             vi.mocked(refreshAccessToken).mockResolvedValue({
                 success: true,
                 accessToken: 'new-tok',
+                tokenType: 'Bearer',
             });
             vi.mocked(globalThis.fetch)
                 .mockRejectedValueOnce(new TypeError('Failed to fetch'))
@@ -315,7 +321,9 @@ describe('background service worker', () => {
             });
 
             expect(res).toMatchObject({ success: true, status: 200 });
-            expect(updateConnectionToken).toHaveBeenCalledWith('c1', 'new-tok');
+            expect(vi.mocked(globalThis.fetch).mock.calls[2][1]?.headers).toMatchObject({
+                Authorization: 'Bearer new-tok',
+            });
         });
 
         it('keeps the CORS network error when the probe also fails', async () => {
@@ -369,6 +377,7 @@ describe('background service worker', () => {
             vi.mocked(refreshAccessToken).mockResolvedValue({
                 success: true,
                 accessToken: 'new-tok',
+                tokenType: 'Bearer',
             });
 
             vi.mocked(globalThis.fetch)
@@ -384,8 +393,10 @@ describe('background service worker', () => {
 
             expect(res).toMatchObject({ success: true, status: 200 });
             expect(refreshAccessToken).toHaveBeenCalled();
-            expect(updateConnectionToken).toHaveBeenCalledWith('c1', 'new-tok');
             expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+            expect(vi.mocked(globalThis.fetch).mock.calls[1][1]?.headers).toMatchObject({
+                Authorization: 'Bearer new-tok',
+            });
         });
 
         it('returns authExpired when refresh fails', async () => {
@@ -568,6 +579,132 @@ describe('background service worker', () => {
             const res = await sendMessage({ type: 'connectProxy' });
 
             expect(res).toEqual({ success: false, error: 'Connection failed' });
+        });
+    });
+
+    describe('DPoP-bound requests', () => {
+        beforeEach(() => {
+            setDpopKeyStore(createMemoryKeyStore());
+        });
+
+        afterEach(() => {
+            setDpopKeyStore(null);
+        });
+
+        function sentHeaders(call: number): Record<string, string> {
+            return vi.mocked(globalThis.fetch).mock.calls[call][1]?.headers as Record<
+                string,
+                string
+            >;
+        }
+
+        it('adds a proof bound to the access token', async () => {
+            vi.mocked(globalThis.fetch).mockResolvedValueOnce(mockResponse(200, '{}'));
+
+            await sendMessage({
+                type: 'fetch',
+                url: 'https://org.my.salesforce.com/services/data/v62.0/query?q=x',
+                options: { method: 'GET', headers: { Authorization: 'DPoP tok' } },
+                connectionId: 'c1',
+            });
+
+            const headers = sentHeaders(0);
+            expect(headers.Authorization).toBe('DPoP tok');
+            const { payload, signatureValid } = await decodeProof(headers.DPoP);
+            expect(signatureValid).toBe(true);
+            expect(payload).toMatchObject({
+                htm: 'GET',
+                htu: 'https://org.my.salesforce.com/services/data/v62.0/query',
+                ath: await sha256Base64Url('tok'),
+            });
+        });
+
+        it('sends no proof with a Bearer token', async () => {
+            vi.mocked(globalThis.fetch).mockResolvedValueOnce(mockResponse(200, '{}'));
+
+            await sendMessage({
+                type: 'fetch',
+                url: 'https://org.my.salesforce.com/x',
+                options: { method: 'GET', headers: { Authorization: 'Bearer tok' } },
+            });
+
+            expect(sentHeaders(0).DPoP).toBeUndefined();
+        });
+
+        it('retries once with the nonce from a use_dpop_nonce challenge', async () => {
+            vi.mocked(globalThis.fetch)
+                .mockResolvedValueOnce(
+                    mockResponse(401, '', {
+                        'WWW-Authenticate': 'DPoP error="use_dpop_nonce"',
+                        'DPoP-Nonce': 'n-1',
+                    })
+                )
+                .mockResolvedValueOnce(mockResponse(200, '{"ok":true}'));
+
+            const res = await sendMessage({
+                type: 'fetch',
+                url: 'https://org.my.salesforce.com/x',
+                options: { method: 'GET', headers: { Authorization: 'DPoP tok' } },
+                connectionId: 'c1',
+            });
+
+            expect(res).toMatchObject({ success: true, status: 200 });
+            expect(refreshAccessToken).not.toHaveBeenCalled();
+            const { payload } = await decodeProof(sentHeaders(1).DPoP);
+            expect(payload.nonce).toBe('n-1');
+        });
+
+        it('retries with the refreshed DPoP token and a new proof', async () => {
+            const conn = createMockConnection({ id: 'c1', refreshToken: 'rt' });
+            chromeMock._setStorageData({ connections: [conn] });
+            vi.mocked(isProxyConnected).mockReturnValue(true);
+            vi.mocked(refreshAccessToken).mockResolvedValue({
+                success: true,
+                accessToken: 'new-tok',
+                tokenType: 'DPoP',
+            });
+            vi.mocked(globalThis.fetch)
+                .mockResolvedValueOnce(mockResponse(401, ''))
+                .mockResolvedValueOnce(mockResponse(200, '{}'));
+
+            await sendMessage({
+                type: 'fetch',
+                url: 'https://org.my.salesforce.com/x',
+                options: { method: 'GET', headers: { Authorization: 'DPoP old' } },
+                connectionId: 'c1',
+            });
+
+            const retry = sentHeaders(1);
+            expect(retry.Authorization).toBe('DPoP new-tok');
+            const { payload } = await decodeProof(retry.DPoP);
+            expect(payload.ath).toBe(await sha256Base64Url('new-tok'));
+        });
+
+        it('retries with the stored token instead of refreshing again after a rotation', async () => {
+            const conn = createMockConnection({
+                id: 'c1',
+                accessToken: 'current',
+                refreshToken: 'rt',
+                tokenType: 'DPoP',
+            });
+            chromeMock._setStorageData({ connections: [conn] });
+            vi.mocked(isProxyConnected).mockReturnValue(true);
+            vi.mocked(isReplacedAccessToken).mockReturnValueOnce(true);
+            vi.mocked(globalThis.fetch)
+                .mockResolvedValueOnce(mockResponse(401, ''))
+                .mockResolvedValueOnce(mockResponse(200, '{}'));
+
+            const res = await sendMessage({
+                type: 'fetch',
+                url: 'https://org.my.salesforce.com/x',
+                options: { method: 'GET', headers: { Authorization: 'DPoP replaced' } },
+                connectionId: 'c1',
+            });
+
+            expect(res).toMatchObject({ success: true });
+            expect(refreshAccessToken).not.toHaveBeenCalled();
+            expect(isReplacedAccessToken).toHaveBeenCalledWith('c1', 'replaced');
+            expect(sentHeaders(1).Authorization).toBe('DPoP current');
         });
     });
 });

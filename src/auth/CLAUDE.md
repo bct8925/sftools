@@ -12,6 +12,7 @@ The `auth/` directory contains authentication, OAuth flow, and multi-connection 
 auth/
 ├── auth.ts                # Multi-connection storage and state
 ├── start-authorization.ts # OAuth flow initiation
+├── pkce.ts                # PKCE verifier and S256 challenge
 └── oauth-credentials.ts   # OAuth client configuration
 ```
 
@@ -80,6 +81,7 @@ let ACTIVE_CONNECTION_ID: string | null = null;
 
 // Synchronous access (no async calls needed)
 const token = getAccessToken();      // Returns cached token
+const auth = getAuthorizationHeader(); // "Bearer <token>" or "DPoP <token>" (use for Authorization headers)
 const url = getInstanceUrl();        // Returns cached instance URL
 const authenticated = isAuthenticated(); // Returns !!(ACCESS_TOKEN && INSTANCE_URL)
 const connectionId = getActiveConnectionId(); // Returns active connection ID
@@ -95,6 +97,7 @@ interface SalesforceConnection {
   loginDomain?: string;    // login.salesforce.com or test.salesforce.com
   accessToken: string;
   refreshToken: string | null;
+  tokenType?: 'Bearer' | 'DPoP'; // absent = Bearer; DPoP tokens need a proof per request (added by the service worker)
   clientId: string | null; // Per-connection OAuth Client ID
   createdAt?: number;
   lastUsedAt?: number;

@@ -2,9 +2,10 @@
 // Handles OAuth token exchange and refresh in the service worker
 
 import { getOAuthCredentials } from '../auth/oauth-credentials';
-import type { SalesforceConnection } from '../types/salesforce';
+import type { SalesforceConnection, TokenType } from '../types/salesforce';
 import { isProxyConnected, sendProxyRequest } from './native-messaging';
 import { debugInfo } from './debug';
+import { createDpopProof, handleDpopNonce, normalizeTokenType } from './dpop';
 
 interface TokenExchangeSuccess {
     success: true;
@@ -12,6 +13,7 @@ interface TokenExchangeSuccess {
     refreshToken: string;
     instanceUrl: string;
     loginDomain: string;
+    tokenType: TokenType;
     [key: string]: unknown;
 }
 
@@ -26,6 +28,7 @@ type TokenExchangeResult = TokenExchangeSuccess | TokenExchangeError;
 interface TokenRefreshSuccess {
     success: true;
     accessToken: string;
+    tokenType: TokenType;
 }
 
 interface TokenRefreshError {
@@ -37,19 +40,83 @@ type TokenRefreshResult = TokenRefreshSuccess | TokenRefreshError;
 
 interface ProxyRestResponse {
     success: boolean;
+    status?: number;
+    headers?: Record<string, string>;
     data: string;
     error?: string;
+}
+
+interface TokenResponseBody {
+    access_token?: string;
+    refresh_token?: string;
+    instance_url?: string;
+    token_type?: string;
+    error_description?: string;
+    error?: string;
+}
+
+/**
+ * POST to the Salesforce token endpoint via the proxy (CORS) with a DPoP proof.
+ * Retries once when the server asks for a DPoP nonce.
+ */
+async function postTokenRequest(
+    tokenUrl: string,
+    params: Record<string, string>
+): Promise<ProxyRestResponse> {
+    const body = new URLSearchParams(params).toString();
+    for (let attempt = 0; ; attempt++) {
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        };
+        try {
+            headers.DPoP = await createDpopProof({ method: 'POST', url: tokenUrl });
+        } catch (error) {
+            // Without a key the server issues a Bearer token, which still works unless
+            // the connected app requires DPoP
+            console.warn('DPoP proof unavailable, requesting a Bearer token:', error);
+        }
+
+        const response = (await sendProxyRequest({
+            type: 'rest',
+            url: tokenUrl,
+            method: 'POST',
+            headers,
+            body,
+        })) as ProxyRestResponse;
+
+        const retry =
+            attempt === 0 &&
+            !response.success &&
+            handleDpopNonce(tokenUrl, response.status ?? 0, response.headers, response.data);
+        if (!retry) return response;
+        debugInfo('Token endpoint asked for a DPoP nonce, retrying');
+    }
+}
+
+function parseTokenError(response: ProxyRestResponse, fallback: string): string {
+    let errorMsg = response.error || fallback;
+    if (response.data) {
+        try {
+            const errData = JSON.parse(response.data) as TokenResponseBody;
+            errorMsg = errData.error_description || errData.error || errorMsg;
+        } catch {
+            errorMsg = response.data.substring(0, 200) || errorMsg;
+        }
+    }
+    return errorMsg;
 }
 
 /**
  * Exchange authorization code for tokens via proxy
  * Returns token data for the callback page to handle storage
+ * @param codeVerifier - PKCE code verifier for the code challenge sent to /authorize
  */
 export async function exchangeCodeForTokens(
     code: string,
     redirectUri: string,
     loginDomain: string,
-    clientId: string
+    clientId: string,
+    codeVerifier?: string
 ): Promise<TokenExchangeResult> {
     if (!isProxyConnected()) {
         return { success: false, error: 'Proxy not connected' };
@@ -59,44 +126,24 @@ export async function exchangeCodeForTokens(
         const normalizedDomain = loginDomain || 'https://login.salesforce.com';
         const tokenUrl = `${normalizedDomain}/services/oauth2/token`;
 
-        const body = new URLSearchParams({
+        const params: Record<string, string> = {
             grant_type: 'authorization_code',
             client_id: clientId,
             code: code,
             redirect_uri: redirectUri,
-        }).toString();
+        };
+        if (codeVerifier) params.code_verifier = codeVerifier;
 
-        const response = (await sendProxyRequest({
-            type: 'rest',
-            url: tokenUrl,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body,
-        })) as ProxyRestResponse;
+        const response = await postTokenRequest(tokenUrl, params);
 
         if (!response.success) {
-            let errorMsg = response.error || 'Token exchange request failed';
-            if (response.data) {
-                try {
-                    const errData = JSON.parse(response.data) as {
-                        error_description?: string;
-                        error?: string;
-                    };
-                    errorMsg = errData.error_description || errData.error || errorMsg;
-                } catch {
-                    errorMsg = response.data.substring(0, 200) || errorMsg;
-                }
-            }
-            return { success: false, error: errorMsg };
+            return {
+                success: false,
+                error: parseTokenError(response, 'Token exchange request failed'),
+            };
         }
 
-        const tokenData = JSON.parse(response.data) as {
-            access_token?: string;
-            refresh_token?: string;
-            instance_url?: string;
-            error_description?: string;
-            error?: string;
-        };
+        const tokenData = JSON.parse(response.data) as TokenResponseBody;
 
         if (tokenData.access_token) {
             debugInfo('OAuth token exchange successful');
@@ -106,6 +153,7 @@ export async function exchangeCodeForTokens(
                 refreshToken: tokenData.refresh_token || '',
                 instanceUrl: tokenData.instance_url || '',
                 loginDomain: normalizedDomain,
+                tokenType: normalizeTokenType(tokenData.token_type),
             };
         }
         return {
@@ -120,10 +168,34 @@ export async function exchangeCodeForTokens(
 // Track refresh promises per connection to prevent concurrent refreshes
 const refreshPromises = new Map<string, Promise<TokenRefreshResult>>();
 
+// Access token each connection had before its last refresh
+const replacedAccessTokens = new Map<string, string>();
+
+/**
+ * True when the token is one a refresh already replaced for this connection,
+ * so a request that failed with it should retry with the stored token instead of
+ * refreshing again (which would reuse a rotated refresh token)
+ */
+export function isReplacedAccessToken(connectionId: string, accessToken: string): boolean {
+    return replacedAccessTokens.get(connectionId) === accessToken;
+}
+
+async function getStoredConnection(connectionId: string): Promise<SalesforceConnection | null> {
+    const { connections } = await chrome.storage.local.get(['connections']);
+    return (
+        (connections as SalesforceConnection[] | undefined)?.find(c => c.id === connectionId) ??
+        null
+    );
+}
+
 /**
  * Refresh the access token for a specific connection.
  * Uses mutex pattern per connection to prevent concurrent refreshes.
  * Routes through proxy to bypass CORS.
+ *
+ * Salesforce refresh token rotation makes each refresh token single-use: reusing an old
+ * one revokes every token for the connection. So the refresh reads the newest refresh
+ * token from storage and saves the rotated tokens before releasing the mutex.
  */
 export function refreshAccessToken(connection: SalesforceConnection): Promise<TokenRefreshResult> {
     if (!connection || !connection.id) {
@@ -137,7 +209,8 @@ export function refreshAccessToken(connection: SalesforceConnection): Promise<To
 
     const promise = (async (): Promise<TokenRefreshResult> => {
         try {
-            if (!connection.refreshToken) {
+            const current = (await getStoredConnection(connection.id)) ?? connection;
+            if (!current.refreshToken) {
                 return { success: false, error: 'No refresh token available' };
             }
 
@@ -145,38 +218,34 @@ export function refreshAccessToken(connection: SalesforceConnection): Promise<To
                 return { success: false, error: 'Proxy not connected for token refresh' };
             }
 
-            const loginDomain = connection.loginDomain || 'https://login.salesforce.com';
+            const loginDomain = current.loginDomain || 'https://login.salesforce.com';
             const tokenUrl = `${loginDomain}/services/oauth2/token`;
             // Use connection's clientId if set, otherwise fall back to default
             const { clientId } = await getOAuthCredentials(connection.id);
 
-            const body = new URLSearchParams({
+            const response = await postTokenRequest(tokenUrl, {
                 grant_type: 'refresh_token',
                 client_id: clientId,
-                refresh_token: connection.refreshToken,
-            }).toString();
-
-            const response = (await sendProxyRequest({
-                type: 'rest',
-                url: tokenUrl,
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: body,
-            })) as ProxyRestResponse;
+                refresh_token: current.refreshToken,
+            });
 
             if (!response.success) {
-                console.error('Token refresh request failed:', response.error);
-                return { success: false, error: response.error || 'Refresh failed' };
+                const error = parseTokenError(response, 'Refresh failed');
+                console.error('Token refresh request failed:', error);
+                return { success: false, error };
             }
 
-            const tokenData = JSON.parse(response.data) as {
-                access_token?: string;
-                error_description?: string;
-            };
+            const tokenData = JSON.parse(response.data) as TokenResponseBody;
 
             if (tokenData.access_token) {
                 debugInfo('Token refreshed successfully for connection:', connection.id);
-                return { success: true, accessToken: tokenData.access_token };
+                const tokenType = normalizeTokenType(tokenData.token_type);
+                replacedAccessTokens.set(connection.id, current.accessToken);
+                await updateConnectionToken(connection.id, tokenData.access_token, {
+                    refreshToken: tokenData.refresh_token,
+                    tokenType,
+                });
+                return { success: true, accessToken: tokenData.access_token, tokenType };
             }
             return { success: false, error: tokenData.error_description || 'Refresh failed' };
         } catch (error) {
@@ -193,10 +262,12 @@ export function refreshAccessToken(connection: SalesforceConnection): Promise<To
 
 /**
  * Update a specific connection's access token in storage
+ * @param rotated - rotated refresh token and token type from a refresh response, if any
  */
 export async function updateConnectionToken(
     connectionId: string,
-    accessToken: string
+    accessToken: string,
+    rotated: { refreshToken?: string; tokenType?: TokenType } = {}
 ): Promise<void> {
     const data = await chrome.storage.local.get(['connections']);
     const connections = (data.connections || []) as SalesforceConnection[];
@@ -204,6 +275,8 @@ export async function updateConnectionToken(
 
     if (index !== -1) {
         connections[index].accessToken = accessToken;
+        if (rotated.refreshToken) connections[index].refreshToken = rotated.refreshToken;
+        if (rotated.tokenType) connections[index].tokenType = rotated.tokenType;
         connections[index].lastUsedAt = Date.now();
         await chrome.storage.local.set({ connections });
     }

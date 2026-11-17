@@ -115,6 +115,12 @@ Both flows include CSRF protection via the `state` parameter, which is validated
 **Cons**: Not suitable for interactive browser extension, poor UX (requires separate device/browser)
 **Rejected**: Wrong use case
 
+## Update 2026-11-17: PKCE, refresh token rotation, DPoP
+
+Salesforce now requires PKCE, refresh token rotation and a proof-of-possession control (DPoP or a refresh token IP allowlist) before a connected app can be installed in another org (enforced March 30, 2027). The code flow now sends a PKCE S256 challenge, keeps rotated refresh tokens, and binds tokens with DPoP (an IP allowlist can't work for a browser extension). See [[authentication-oauth]].
+
+The implicit flow (no proxy) is unchanged: it can't use PKCE, and its tokens can't be DPoP-bound because there is no token request. Salesforce is retiring the user-agent flow, so no-proxy sign-in needs a code-flow route that doesn't depend on the proxy (open decision).
+
 ## Related
 
 - [[authentication-oauth]] - OAuth implementation details

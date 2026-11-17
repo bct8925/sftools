@@ -32,7 +32,7 @@ vi.mock('../../../src/api/fetch.js', () => ({
 }));
 
 vi.mock('../../../src/auth/auth.js', () => ({
-    getAccessToken: vi.fn(),
+    getAuthorizationHeader: vi.fn(),
     getInstanceUrl: vi.fn(),
     getActiveConnectionId: vi.fn(),
     triggerAuthExpired: vi.fn(),
@@ -47,7 +47,7 @@ vi.mock('../../../src/api/cors-detection.js', () => ({
 import { salesforceRequest } from '../../../src/api/salesforce-request.js';
 import { smartFetch } from '../../../src/api/fetch.js';
 import {
-    getAccessToken,
+    getAuthorizationHeader,
     getInstanceUrl,
     getActiveConnectionId,
     triggerAuthExpired,
@@ -57,7 +57,7 @@ import { isCorsError, showCorsErrorModal } from '../../../src/api/cors-detection
 describe('salesforce-request', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        getAccessToken.mockReturnValue('test-token');
+        getAuthorizationHeader.mockReturnValue('Bearer test-token');
         getInstanceUrl.mockReturnValue('https://test.salesforce.com');
         getActiveConnectionId.mockReturnValue('conn-123');
         isCorsError.mockReturnValue(false);

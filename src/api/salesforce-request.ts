@@ -1,7 +1,7 @@
 // Salesforce REST API request wrapper
 
 import {
-    getAccessToken,
+    getAuthorizationHeader,
     getInstanceUrl,
     getActiveConnectionId,
     triggerAuthExpired,
@@ -41,7 +41,7 @@ export async function salesforceRequest<T = unknown>(
     const response = await smartFetch(url, {
         method: options.method || 'GET',
         headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
+            Authorization: getAuthorizationHeader(),
             'Content-Type': 'application/json',
             Accept: 'application/json',
             ...options.headers,

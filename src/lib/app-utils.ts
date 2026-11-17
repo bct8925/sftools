@@ -44,7 +44,8 @@ export function buildOAuthUrl(
     clientId: string,
     redirectUri: string,
     state: string,
-    useCodeFlow = false
+    useCodeFlow = false,
+    codeChallenge?: string
 ): string {
     const responseType = useCodeFlow ? 'code' : 'token';
     const isStandardDomain =
@@ -56,6 +57,11 @@ export function buildOAuthUrl(
         `&response_type=${responseType}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}` +
         `&state=${encodeURIComponent(state)}`;
+
+    // PKCE applies to the code flow only
+    if (useCodeFlow && codeChallenge) {
+        url += `&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256`;
+    }
 
     if (isStandardDomain) {
         url += '&prompt=login';

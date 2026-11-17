@@ -37,7 +37,7 @@ vi.mock('../../../src/api/fetch.js', () => ({
 }));
 
 vi.mock('../../../src/auth/auth.js', () => ({
-    getAccessToken: vi.fn(),
+    getAuthorizationHeader: vi.fn(),
     getInstanceUrl: vi.fn(),
 }));
 
@@ -61,13 +61,13 @@ import {
 } from '../../../src/api/debug-logs.js';
 import { salesforceRequest } from '../../../src/api/salesforce-request.js';
 import { smartFetch } from '../../../src/api/fetch.js';
-import { getAccessToken, getInstanceUrl } from '../../../src/auth/auth.js';
+import { getAuthorizationHeader, getInstanceUrl } from '../../../src/auth/auth.js';
 import { getNowISO, getISODateFromNow, getFutureDate } from '../../../src/lib/date-utils.js';
 
 describe('debug-logs', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        getAccessToken.mockReturnValue('test-token');
+        getAuthorizationHeader.mockReturnValue('Bearer test-token');
         getInstanceUrl.mockReturnValue('https://test.salesforce.com');
         getNowISO.mockReturnValue('2024-01-26T22:00:00.000Z');
         getISODateFromNow.mockReturnValue('2024-02-25T22:00:00.000Z');

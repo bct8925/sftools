@@ -15,6 +15,7 @@ import {
 import {
     canReachTokenEndpoint,
     exchangeCodeForTokens,
+    getAuthorizationDpopJkt,
     isReplacedAccessToken,
     refreshAccessToken,
 } from './auth';
@@ -46,6 +47,10 @@ interface DisconnectProxyRequest {
 
 interface CheckProxyConnectionRequest {
     type: 'checkProxyConnection';
+}
+
+interface GetDpopJktRequest {
+    type: 'getDpopJkt';
 }
 
 interface GetProxyInfoRequest {
@@ -105,6 +110,7 @@ type BackgroundRequest =
     | ConnectProxyRequest
     | DisconnectProxyRequest
     | CheckProxyConnectionRequest
+    | GetDpopJktRequest
     | GetProxyInfoRequest
     | TokenExchangeRequest
     | ProxyFetchRequest
@@ -486,6 +492,9 @@ const handlers: Record<string, (request: BackgroundRequest) => Promise<ProxyResp
         return Promise.resolve({ success: true, ...info });
     },
 
+    // Thumbprint of the DPoP key, sent as dpop_jkt on /authorize (the key lives here)
+    getDpopJkt: async () => ({ success: true, jkt: await getAuthorizationDpopJkt() }),
+
     getProxyInfo: () => {
         const info = getProxyInfo();
         return Promise.resolve({ success: true, ...info });
@@ -564,6 +573,7 @@ const handlers: Record<string, (request: BackgroundRequest) => Promise<ProxyResp
             tenantId: req.tenantId,
         });
     }),
+
 };
 
 chrome.runtime.onMessage.addListener(

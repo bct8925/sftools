@@ -119,7 +119,8 @@ describe('startAuthorization', () => {
                 expect.any(String),
                 expect.any(String),
                 true,
-                expect.any(String) // PKCE code challenge
+                expect.any(String), // PKCE code challenge
+                undefined // dpop_jkt (mock gives no thumbprint)
             );
         });
 
@@ -134,6 +135,7 @@ describe('startAuthorization', () => {
                 expect.any(String),
                 expect.any(String),
                 false,
+                undefined,
                 undefined
             );
         });
@@ -149,6 +151,7 @@ describe('startAuthorization', () => {
                 expect.any(String),
                 expect.any(String),
                 false,
+                undefined,
                 undefined
             );
         });
@@ -265,6 +268,44 @@ describe('startAuthorization', () => {
 
             expect(vi.mocked(setPendingAuth).mock.calls[0][0].codeVerifier).toBeNull();
             expect(vi.mocked(buildOAuthUrl).mock.calls[0][5]).toBeUndefined();
+        });
+    });
+
+    describe('DPoP code binding', () => {
+        it('sends the service worker key thumbprint as dpop_jkt in the code flow', async () => {
+            chromeMock.runtime.sendMessage.mockImplementation((message: { type: string }) =>
+                Promise.resolve(
+                    message.type === 'getDpopJkt'
+                        ? { success: true, jkt: 'thumb' }
+                        : { connected: true }
+                )
+            );
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(chromeMock.runtime.sendMessage).toHaveBeenCalledWith({ type: 'getDpopJkt' });
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][6]).toBe('thumb');
+        });
+
+        it('authorizes without dpop_jkt when the service worker has no key', async () => {
+            chromeMock.runtime.sendMessage.mockImplementation((message: { type: string }) =>
+                message.type === 'getDpopJkt'
+                    ? Promise.reject(new Error('no key'))
+                    : Promise.resolve({ connected: true })
+            );
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][4]).toBe(true);
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][6]).toBeUndefined();
+        });
+
+        it('does not ask for a thumbprint in the implicit flow', async () => {
+            chromeMock.runtime.sendMessage.mockResolvedValue({ connected: false });
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(chromeMock.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'getDpopJkt' });
         });
     });
 });

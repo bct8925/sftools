@@ -23,9 +23,10 @@ import {
     updateConnectionToken,
     clearAuthTokens,
     isReplacedAccessToken,
+    getAuthorizationDpopJkt,
 } from '../../../src/background/auth';
 import { setDpopKeyStore } from '../../../src/background/dpop.testing';
-import { createMemoryKeyStore, decodeProof } from '../mocks/dpop';
+import { createMemoryKeyStore, decodeProof, sha256Base64Url } from '../mocks/dpop';
 import { isProxyConnected, sendProxyRequest } from '../../../src/background/native-messaging';
 
 const mockIsProxyConnected = vi.mocked(isProxyConnected);
@@ -533,6 +534,24 @@ describe('background/auth', () => {
                 connections: { refreshToken: string }[];
             };
             expect(connections[0].refreshToken).toBe('rt-1');
+        });
+
+        it('gives the dpop_jkt of the key that signs the token request', async () => {
+            const jkt = await getAuthorizationDpopJkt();
+            mockSendProxyRequest.mockResolvedValue({
+                success: true,
+                data: JSON.stringify({ access_token: 'at', token_type: 'DPoP' }),
+            });
+
+            await exchangeCodeForTokens('code', 'redirect', 'https://login.salesforce.com', 'cid');
+
+            const { header } = await decodeProof(
+                (mockSendProxyRequest.mock.calls[0][0].headers as Record<string, string>).DPoP
+            );
+            const { crv, kty, x, y } = header.jwk;
+            expect(jkt).toBe(
+                await sha256Base64Url(`{"crv":"${crv}","kty":"${kty}","x":"${x}","y":"${y}"}`)
+            );
         });
     });
 

@@ -70,6 +70,17 @@ export async function startAuthorization(
     // PKCE: the verifier stays in pending auth until the callback exchanges the code
     const pkce = useCodeFlow ? await generatePkcePair() : null;
 
+    // DPoP: bind the code to the service worker's DPoP key (required when the app requires DPoP)
+    let dpopJkt: string | undefined;
+    if (useCodeFlow) {
+        try {
+            const response = await chrome.runtime.sendMessage({ type: 'getDpopJkt' });
+            dpopJkt = response?.jkt ?? undefined;
+        } catch {
+            // No key: the token request goes out without a proof and gets a Bearer token
+        }
+    }
+
     // Store pending auth state for callback to use
     await setPendingAuth({
         loginDomain,
@@ -86,7 +97,8 @@ export async function startAuthorization(
         CALLBACK_URL,
         state,
         useCodeFlow,
-        pkce?.codeChallenge
+        pkce?.codeChallenge,
+        dpopJkt
     );
     chrome.tabs.create({ url: authUrl });
 }

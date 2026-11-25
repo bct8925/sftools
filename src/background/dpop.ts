@@ -121,6 +121,18 @@ export function dpopTargetUri(url: string): string {
     return `${parsed.origin}${parsed.pathname}`;
 }
 
+/**
+ * JWK SHA-256 thumbprint (RFC 7638) of the DPoP public key. Sent as dpop_jkt on
+ * /authorize to bind the authorization code to this key (RFC 9449 section 10);
+ * Salesforce requires it when the app requires DPoP.
+ */
+export async function getDpopJkt(): Promise<string> {
+    const { publicJwk } = await getKey();
+    // Required EC members in lexicographic order, no whitespace
+    const { crv, kty, x, y } = publicJwk;
+    return sha256Base64Url(JSON.stringify({ crv, kty, x, y }));
+}
+
 export interface DpopProofOptions {
     method: string;
     url: string;

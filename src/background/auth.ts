@@ -6,7 +6,7 @@ import type { SalesforceConnection, TokenType } from '../types/salesforce';
 import { hasHostAccess } from '../lib/host-access';
 import { isProxyConnected, sendProxyRequest } from './native-messaging';
 import { debugInfo } from './debug';
-import { createDpopProof, handleDpopNonce, normalizeTokenType } from './dpop';
+import { createDpopProof, getDpopJkt, handleDpopNonce, normalizeTokenType } from './dpop';
 
 const NO_TOKEN_ROUTE =
     'Proxy not connected and no Salesforce site access. Connect the proxy or sign in again to allow access.';
@@ -95,6 +95,19 @@ async function sendTokenRequest(
         data: await response.text(),
         ...(!response.ok && { error: `HTTP ${response.status}` }),
     };
+}
+
+/**
+ * dpop_jkt for /authorize: the thumbprint of the key that will sign the token request's
+ * DPoP proof. Null when no key is available (the token request then gets a Bearer token).
+ */
+export async function getAuthorizationDpopJkt(): Promise<string | null> {
+    try {
+        return await getDpopJkt();
+    } catch (error) {
+        console.warn('DPoP key unavailable, authorizing without dpop_jkt:', error);
+        return null;
+    }
 }
 
 /**

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
     createDpopProof,
+    getDpopJkt,
     getTokenScheme,
     handleDpopNonce,
     normalizeTokenType,
@@ -79,6 +80,25 @@ describe('background/dpop', () => {
     describe('dpopTargetUri', () => {
         it('drops query and fragment', () => {
             expect(dpopTargetUri('https://x.com/a/b?c=1#d')).toBe('https://x.com/a/b');
+        });
+    });
+
+    describe('getDpopJkt', () => {
+        it('is the RFC 7638 thumbprint of the key that signs proofs', async () => {
+            const { header } = await decodeProof(
+                await createDpopProof({ method: 'POST', url: 'https://a.com/token' })
+            );
+            const { crv, kty, x, y } = header.jwk;
+            const canonical = `{"crv":"${crv}","kty":"${kty}","x":"${x}","y":"${y}"}`;
+
+            expect(await getDpopJkt()).toBe(await sha256Base64Url(canonical));
+        });
+
+        it('stays the same while the stored key does', async () => {
+            const first = await getDpopJkt();
+            setDpopKeyStore(store); // forget the cached key, keep the store
+            expect(await getDpopJkt()).toBe(first);
+            expect(first).toMatch(/^[A-Za-z0-9_-]{43}$/);
         });
     });
 

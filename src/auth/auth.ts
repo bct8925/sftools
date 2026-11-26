@@ -22,6 +22,8 @@ export interface PendingAuth {
     state: string;
     /** PKCE code verifier (code flow only) */
     codeVerifier?: string | null;
+    /** Session type to request: DPoP (default) or Bearer */
+    sessionType?: TokenType;
     createdAt?: number;
 }
 
@@ -77,6 +79,13 @@ export function getAuthorizationHeader(): string {
 
 export function getInstanceUrl(): string {
     return INSTANCE_URL;
+}
+
+/** Session type to request when (re-)authorizing a connection: DPoP unless the user chose Bearer */
+export function getSessionType(
+    connection: Pick<SalesforceConnection, 'sessionType'> | null | undefined
+): TokenType {
+    return connection?.sessionType ?? 'DPoP';
 }
 
 export function isAuthenticated(): boolean {
@@ -179,6 +188,7 @@ export async function addConnection(connectionData: ConnectionData): Promise<Sal
         accessToken: connectionData.accessToken,
         refreshToken: connectionData.refreshToken || null,
         ...(connectionData.tokenType && { tokenType: connectionData.tokenType }),
+        ...(connectionData.sessionType && { sessionType: connectionData.sessionType }),
         clientId: connectionData.clientId || null,
         createdAt: Date.now(),
         lastUsedAt: Date.now(),

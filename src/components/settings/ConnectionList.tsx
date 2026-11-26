@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { startAuthorization } from '../../auth/start-authorization';
+import { getSessionType } from '../../auth/auth';
+import type { TokenType } from '../../types/salesforce';
 import { ConnectionCard } from './ConnectionCard';
 import styles from './ConnectionList.module.css';
 
@@ -15,6 +17,7 @@ export function ConnectionList({ onEditConnection }: ConnectionListProps) {
     const [loginDomain, setLoginDomain] = useState('auto');
     const [customDomain, setCustomDomain] = useState('');
     const [newClientId, setNewClientId] = useState('');
+    const [newSessionType, setNewSessionType] = useState<TokenType>('DPoP');
 
     const handleAddConnection = async () => {
         let domain: string | null = loginDomain;
@@ -34,12 +37,13 @@ export function ConnectionList({ onEditConnection }: ConnectionListProps) {
 
         const clientId = newClientId.trim() || null;
 
-        await startAuthorization(domain, clientId, null);
+        await startAuthorization(domain, clientId, null, newSessionType);
 
         setShowAddForm(false);
         setLoginDomain('auto');
         setCustomDomain('');
         setNewClientId('');
+        setNewSessionType('DPoP');
     };
 
     const handleReauth = useCallback(
@@ -47,7 +51,12 @@ export function ConnectionList({ onEditConnection }: ConnectionListProps) {
             const connection = connections.find(c => c.id === connectionId);
             if (!connection) return;
 
-            await startAuthorization(connection.instanceUrl, connection.clientId, connectionId);
+            await startAuthorization(
+                connection.instanceUrl,
+                connection.clientId,
+                connectionId,
+                getSessionType(connection)
+            );
         },
         [connections]
     );
@@ -131,6 +140,22 @@ export function ConnectionList({ onEditConnection }: ConnectionListProps) {
                         />
                         <span className={styles.fieldHint}>
                             External Client App or Connected App client ID for this org
+                        </span>
+                    </div>
+                    <div className="form-element">
+                        <label>SESSION TYPE</label>
+                        <select
+                            className="select"
+                            value={newSessionType}
+                            onChange={e => setNewSessionType(e.target.value as TokenType)}
+                            data-testid="add-connection-session-type"
+                        >
+                            <option value="DPoP">DPoP (recommended)</option>
+                            <option value="Bearer">Bearer (allows streaming)</option>
+                        </select>
+                        <span className={styles.fieldHint}>
+                            DPoP binds the session to this browser. Bearer is needed for streaming,
+                            if the app allows it.
                         </span>
                     </div>
                     <div className={styles.buttonRow}>

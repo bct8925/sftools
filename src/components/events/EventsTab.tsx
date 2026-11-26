@@ -10,6 +10,7 @@ import { ButtonIcon } from '../button-icon/ButtonIcon';
 import { Modal } from '../modal/Modal';
 import { EventsSettingsModal } from './EventsSettingsModal';
 import { useStreamSubscription } from './useStreamSubscription';
+import { DPOP_STREAMING_UNSUPPORTED, supportsStreaming } from '../../lib/streaming-support';
 import styles from './EventsTab.module.css';
 
 interface StreamingChannels {
@@ -88,6 +89,7 @@ const MAX_SYSTEM_EVENTS = 50;
 export function EventsTab() {
     const { isAuthenticated, activeConnection } = useConnection();
     const { isConnected: isProxyConnected } = useProxy();
+    const isStreamingSupported = supportsStreaming(activeConnection);
 
     const streamEditorRef = useRef<CodeEditorRef>(null);
 
@@ -218,6 +220,7 @@ export function EventsTab() {
         replayId,
         isAuthenticated,
         isProxyConnected,
+        isStreamingSupported,
         onEventReceived: handleEventReceived,
     });
 
@@ -269,9 +272,19 @@ export function EventsTab() {
                         <div className={styles.headerControls}>
                             <ButtonIcon
                                 icon={isSubscribed ? 'stop' : 'play'}
-                                title={isSubscribed ? 'Unsubscribe' : 'Subscribe'}
+                                title={
+                                    !isStreamingSupported
+                                        ? DPOP_STREAMING_UNSUPPORTED
+                                        : isSubscribed
+                                          ? 'Unsubscribe'
+                                          : 'Subscribe'
+                                }
                                 onClick={toggleSubscription}
-                                disabled={!isAuthenticated || !selectedChannel}
+                                disabled={
+                                    !isAuthenticated ||
+                                    !selectedChannel ||
+                                    (!isStreamingSupported && !isSubscribed)
+                                }
                                 data-testid="event-subscribe-btn"
                             />
                             <ButtonIcon
@@ -293,6 +306,11 @@ export function EventsTab() {
                     className={`card-body ${styles.streamingCardBody}`}
                     hidden={isStreamingCollapsed}
                 >
+                    {!isStreamingSupported && (
+                        <p className={styles.notice} data-testid="event-streaming-unsupported">
+                            {DPOP_STREAMING_UNSUPPORTED} Publishing still works.
+                        </p>
+                    )}
                     <div className="form-element">
                         <label htmlFor="event-channel-select">Channel</label>
                         <ChannelSelector

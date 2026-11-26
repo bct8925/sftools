@@ -196,6 +196,7 @@ describe('startAuthorization', () => {
                 connectionId: 'conn-1',
                 state: 'mock-state-123',
                 codeVerifier: null,
+                sessionType: 'DPoP',
             });
         });
 
@@ -298,6 +299,22 @@ describe('startAuthorization', () => {
 
             expect(vi.mocked(buildOAuthUrl).mock.calls[0][4]).toBe(true);
             expect(vi.mocked(buildOAuthUrl).mock.calls[0][6]).toBeUndefined();
+        });
+
+        it('sends no dpop_jkt for a Bearer session and remembers the choice', async () => {
+            chromeMock.runtime.sendMessage.mockImplementation((message: { type: string }) =>
+                Promise.resolve(
+                    message.type === 'getDpopJkt'
+                        ? { success: true, jkt: 'thumb' }
+                        : { connected: true }
+                )
+            );
+
+            await startAuthorization('https://login.salesforce.com', null, 'conn-1', 'Bearer');
+
+            expect(chromeMock.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'getDpopJkt' });
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][6]).toBeUndefined();
+            expect(vi.mocked(setPendingAuth).mock.calls[0][0].sessionType).toBe('Bearer');
         });
 
         it('does not ask for a thumbprint in the implicit flow', async () => {

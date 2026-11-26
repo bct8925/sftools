@@ -38,6 +38,7 @@ import {
     generateOAuthState,
     migrateFromSingleConnection,
     migrateCustomConnectedApp,
+    getSessionType,
 } from '../../../src/auth/auth.js';
 import {
     saveConnections,
@@ -188,7 +189,29 @@ describe('auth', () => {
         });
     });
 
+    describe('getSessionType', () => {
+        it('defaults to DPoP, including connections made before session types', () => {
+            expect(getSessionType({})).toBe('DPoP');
+            expect(getSessionType(null)).toBe('DPoP');
+        });
+
+        it('keeps a Bearer choice', () => {
+            expect(getSessionType({ sessionType: 'Bearer' })).toBe('Bearer');
+        });
+    });
+
     describe('addConnection', () => {
+        it('saves the chosen session type', async () => {
+            const result = await addConnection({
+                instanceUrl: 'https://test.salesforce.com',
+                accessToken: 'token',
+                tokenType: 'Bearer',
+                sessionType: 'Bearer',
+            });
+
+            expect(result).toMatchObject({ tokenType: 'Bearer', sessionType: 'Bearer' });
+        });
+
         it('OA-U-013: creates new connection when connectionId is null', async () => {
             const result = await addConnection({
                 instanceUrl: 'https://test.salesforce.com',

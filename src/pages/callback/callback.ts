@@ -50,7 +50,7 @@ const oauthState = stateFromQuery || stateFromHash;
 
 if (error) {
     // OAuth error - escape to prevent XSS
-    statusEl.innerHTML = `<span class="error">Authorization denied: ${escapeHtml(errorDescription || error)}</span>`;
+    statusEl.innerHTML = `<span class="error">Authorization denied: ${escapeHtml(explainAuthError(errorDescription || error))}</span>`;
 } else if (authCode) {
     // Authorization code flow - exchange in the service worker
     handleCodeFlow(authCode, oauthState);
@@ -60,6 +60,18 @@ if (error) {
 } else {
     statusEl.innerHTML =
         '<span class="error">No authorization response received.</span><br>Please try authorizing again.';
+}
+
+/**
+ * Explain errors from apps that require DPoP when a Bearer session was requested
+ * (Salesforce: "missing required dpop_jkt for code binding")
+ */
+function explainAuthError(message: string): string {
+    if (!/dpop/i.test(message)) return message;
+    return (
+        `${message}. This app requires DPoP sessions. In sftools Settings, edit the connection ` +
+        'and set Session type to DPoP, or use a client ID whose app allows Bearer sessions.'
+    );
 }
 
 /**
@@ -98,6 +110,7 @@ async function handleCodeFlow(code: string, state: string | null): Promise<void>
             loginDomain,
             clientId,
             codeVerifier: pendingAuth?.codeVerifier ?? undefined,
+            useDpop: pendingAuth?.sessionType !== 'Bearer',
         })) as TokenExchangeResponse;
 
         if (response.success && response.instanceUrl && response.accessToken) {
@@ -113,6 +126,7 @@ async function handleCodeFlow(code: string, state: string | null): Promise<void>
                     accessToken: response.accessToken,
                     refreshToken: response.refreshToken || null,
                     tokenType: response.tokenType ?? 'Bearer',
+                    sessionType: pendingAuth?.sessionType,
                     loginDomain: savedLoginDomain,
                     clientId: pendingAuth?.clientId || null,
                 },
@@ -122,7 +136,7 @@ async function handleCodeFlow(code: string, state: string | null): Promise<void>
             statusEl.innerText = 'Connection saved. You can close this tab.';
             setTimeout(() => window.close(), 1000);
         } else {
-            statusEl.innerHTML = `<span class="error">Token exchange failed: ${escapeHtml(response.error || 'Unknown error')}</span>`;
+            statusEl.innerHTML = `<span class="error">Token exchange failed: ${escapeHtml(explainAuthError(response.error || 'Unknown error'))}</span>`;
         }
     } catch (err) {
         statusEl.innerHTML = `<span class="error">Error: ${escapeHtml((err as Error).message)}</span>`;
@@ -166,6 +180,7 @@ async function handleImplicitFlow(
                 accessToken: accessToken,
                 refreshToken: null, // No refresh token in implicit flow
                 tokenType: 'Bearer',
+                sessionType: pendingAuth?.sessionType,
                 loginDomain: loginDomain,
                 clientId: pendingAuth?.clientId || null,
             },
@@ -258,6 +273,7 @@ async function addOrUpdateConnection(
             accessToken: data.accessToken,
             refreshToken: data.refreshToken,
             tokenType: data.tokenType,
+            ...(data.sessionType && { sessionType: data.sessionType }),
             loginDomain: data.loginDomain,
             clientId: data.clientId,
         });
@@ -276,6 +292,7 @@ async function addOrUpdateConnection(
                         ? existing.refreshToken
                         : null),
                 tokenType: data.tokenType,
+                ...(data.sessionType && { sessionType: data.sessionType }),
                 loginDomain: data.loginDomain || existing.loginDomain,
                 clientId: data.clientId ?? existing.clientId,
             });

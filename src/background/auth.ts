@@ -111,24 +111,28 @@ export async function getAuthorizationDpopJkt(): Promise<string | null> {
 }
 
 /**
- * POST to the Salesforce token endpoint with a DPoP proof, through the proxy or directly.
- * Retries once when the server asks for a DPoP nonce.
+ * POST to the Salesforce token endpoint, through the proxy or directly.
+ * With useDpop, sends a DPoP proof (Salesforce then issues DPoP-bound tokens) and retries
+ * once when the server asks for a DPoP nonce. Without it, the tokens are Bearer.
  */
 async function postTokenRequest(
     tokenUrl: string,
-    params: Record<string, string>
+    params: Record<string, string>,
+    useDpop: boolean
 ): Promise<ProxyRestResponse> {
     const body = new URLSearchParams(params).toString();
     for (let attempt = 0; ; attempt++) {
         const headers: Record<string, string> = {
             'Content-Type': 'application/x-www-form-urlencoded',
         };
-        try {
-            headers.DPoP = await createDpopProof({ method: 'POST', url: tokenUrl });
-        } catch (error) {
-            // Without a key the server issues a Bearer token, which still works unless
-            // the connected app requires DPoP
-            console.warn('DPoP proof unavailable, requesting a Bearer token:', error);
+        if (useDpop) {
+            try {
+                headers.DPoP = await createDpopProof({ method: 'POST', url: tokenUrl });
+            } catch (error) {
+                // Without a key the server issues a Bearer token, which still works unless
+                // the connected app requires DPoP
+                console.warn('DPoP proof unavailable, requesting a Bearer token:', error);
+            }
         }
 
         const response = await sendTokenRequest(tokenUrl, headers, body);
@@ -159,13 +163,15 @@ function parseTokenError(response: ProxyRestResponse, fallback: string): string 
  * Exchange authorization code for tokens via proxy
  * Returns token data for the callback page to handle storage
  * @param codeVerifier - PKCE code verifier for the code challenge sent to /authorize
+ * @param useDpop - request DPoP-bound tokens (default); false for a Bearer session
  */
 export async function exchangeCodeForTokens(
     code: string,
     redirectUri: string,
     loginDomain: string,
     clientId: string,
-    codeVerifier?: string
+    codeVerifier?: string,
+    useDpop = true
 ): Promise<TokenExchangeResult> {
     const normalizedDomain = loginDomain || 'https://login.salesforce.com';
     if (!(await canReachTokenEndpoint(normalizedDomain))) {
@@ -183,7 +189,7 @@ export async function exchangeCodeForTokens(
         };
         if (codeVerifier) params.code_verifier = codeVerifier;
 
-        const response = await postTokenRequest(tokenUrl, params);
+        const response = await postTokenRequest(tokenUrl, params, useDpop);
 
         if (!response.success) {
             return {
@@ -272,11 +278,17 @@ export function refreshAccessToken(connection: SalesforceConnection): Promise<To
             // Use connection's clientId if set, otherwise fall back to default
             const { clientId } = await getOAuthCredentials(connection.id);
 
-            const response = await postTokenRequest(tokenUrl, {
-                grant_type: 'refresh_token',
-                client_id: clientId,
-                refresh_token: current.refreshToken,
-            });
+            // Refresh keeps the connection's binding: a DPoP-bound refresh token needs a
+            // proof, and a Bearer one gets none, so a Bearer session never turns into DPoP
+            const response = await postTokenRequest(
+                tokenUrl,
+                {
+                    grant_type: 'refresh_token',
+                    client_id: clientId,
+                    refresh_token: current.refreshToken,
+                },
+                current.tokenType === 'DPoP'
+            );
 
             if (!response.success) {
                 const error = parseTokenError(response, 'Refresh failed');

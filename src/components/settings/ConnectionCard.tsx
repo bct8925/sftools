@@ -32,6 +32,17 @@ export function ConnectionCard({
                         </span>
                     )}
                     {connection.clientId && <span className={styles.badge}>Custom App</span>}
+                    <span
+                        className={styles.badge}
+                        title={
+                            connection.tokenType === 'DPoP'
+                                ? 'DPoP session: bound to this browser; streaming unavailable'
+                                : 'Bearer session'
+                        }
+                        data-testid="connection-session-badge"
+                    >
+                        {connection.tokenType ?? 'Bearer'}
+                    </span>
                 </div>
             </div>
             <div className={styles.connectionActions}>

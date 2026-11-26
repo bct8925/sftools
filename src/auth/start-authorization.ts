@@ -7,6 +7,7 @@ import { detectLoginDomain, buildOAuthUrl } from '../lib/app-utils';
 import { getPlatform } from '../platform';
 import { LOGIN_ORG } from '../platform/protocol';
 import { ensureSalesforceHostAccess } from '../lib/host-access';
+import type { TokenType } from '../types/salesforce';
 import { setPendingAuth, generateOAuthState, getOAuthCredentials, CALLBACK_URL } from './auth';
 import { generatePkcePair } from './pkce';
 
@@ -15,11 +16,13 @@ import { generatePkcePair } from './pkce';
  * @param overrideLoginDomain - Login domain to use, or null to auto-detect from current tab
  * @param overrideClientId - Custom client ID, or null to use default
  * @param connectionId - Connection ID if re-authorizing existing connection
+ * @param sessionType - DPoP (default) or Bearer; Bearer sends no DPoP binding or proof
  */
 export async function startAuthorization(
     overrideLoginDomain: string | null,
     overrideClientId: string | null,
-    connectionId: string | null
+    connectionId: string | null,
+    sessionType: TokenType = 'DPoP'
 ): Promise<void> {
     // VS Code: authorization belongs to the sf CLI (`sf org login web` in the extension host)
     if (!getPlatform().capabilities.oauth) {
@@ -72,7 +75,7 @@ export async function startAuthorization(
 
     // DPoP: bind the code to the service worker's DPoP key (required when the app requires DPoP)
     let dpopJkt: string | undefined;
-    if (useCodeFlow) {
+    if (useCodeFlow && sessionType === 'DPoP') {
         try {
             const response = await chrome.runtime.sendMessage({ type: 'getDpopJkt' });
             dpopJkt = response?.jkt ?? undefined;
@@ -88,6 +91,7 @@ export async function startAuthorization(
         connectionId, // Set if re-authorizing existing connection
         state, // For CSRF validation
         codeVerifier: pkce?.codeVerifier ?? null,
+        sessionType,
     });
 
     // Build OAuth URL and open in new tab

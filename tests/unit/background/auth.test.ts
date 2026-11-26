@@ -471,6 +471,7 @@ describe('background/auth', () => {
                         id: 'rot',
                         accessToken: 'old-at',
                         refreshToken: 'rt-1',
+                        tokenType: 'DPoP',
                     }),
                 ],
             });
@@ -553,6 +554,59 @@ describe('background/auth', () => {
                 await sha256Base64Url(`{"crv":"${crv}","kty":"${kty}","x":"${x}","y":"${y}"}`)
             );
         });
+
+        it('sends no DPoP proof for a Bearer session', async () => {
+            mockSendProxyRequest.mockResolvedValue({
+                success: true,
+                data: JSON.stringify({ access_token: 'at', token_type: 'Bearer' }),
+            });
+
+            const result = await exchangeCodeForTokens(
+                'code',
+                'redirect',
+                'https://login.salesforce.com',
+                'cid',
+                'verifier',
+                false
+            );
+
+            expect(result).toMatchObject({ success: true, tokenType: 'Bearer' });
+            expect(sentRequest().headers.DPoP).toBeUndefined();
+            expect(sentRequest().params.get('code_verifier')).toBe('verifier');
+        });
+
+        it.each([
+            ['Bearer', 'Bearer' as const],
+            ['made before DPoP (no token type)', undefined],
+        ])(
+            'refreshes a %s connection without a DPoP proof, so it stays Bearer',
+            async (_label, tokenType) => {
+                chromeMock._setStorageData({
+                    connections: [
+                        createMockConnection({ id: 'bearer', refreshToken: 'rt-1', tokenType }),
+                    ],
+                });
+                mockSendProxyRequest.mockResolvedValue({
+                    success: true,
+                    data: JSON.stringify({
+                        access_token: 'new-at',
+                        refresh_token: 'rt-2',
+                        token_type: 'Bearer',
+                    }),
+                });
+
+                const result = await refreshAccessToken(
+                    createMockConnection({ id: 'bearer', refreshToken: 'rt-1' }) as never
+                );
+
+                expect(result).toEqual({
+                    success: true,
+                    accessToken: 'new-at',
+                    tokenType: 'Bearer',
+                });
+                expect(sentRequest().headers.DPoP).toBeUndefined();
+            }
+        );
     });
 
     describe('without the proxy, with Salesforce site access', () => {

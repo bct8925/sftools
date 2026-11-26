@@ -182,7 +182,8 @@ describe('background service worker', () => {
                 'redir',
                 'https://login.salesforce.com',
                 'cid',
-                'verifier'
+                'verifier',
+                true
             );
         });
 

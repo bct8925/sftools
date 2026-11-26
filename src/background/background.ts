@@ -64,6 +64,8 @@ interface TokenExchangeRequest {
     loginDomain: string;
     clientId: string;
     codeVerifier?: string;
+    /** False for a Bearer session (no DPoP proof); absent means DPoP */
+    useDpop?: boolean;
 }
 
 interface ProxyFetchRequest {
@@ -507,7 +509,8 @@ const handlers: Record<string, (request: BackgroundRequest) => Promise<ProxyResp
             req.redirectUri,
             req.loginDomain,
             req.clientId,
-            req.codeVerifier
+            req.codeVerifier,
+            req.useDpop !== false
         );
     },
 

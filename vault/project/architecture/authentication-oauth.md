@@ -52,7 +52,11 @@ User clicks "Authorize" → Salesforce login (response_type=code)
   → Service worker exchanges code via proxy → Store tokens → Close tab
 ```
 - Includes refresh token — automatic token refresh on 401
-- Requires native proxy for CORS bypass on token endpoint
+- Token endpoint through the native proxy, or directly from the service worker when the user granted optional Salesforce host access (asked once at sign-in when the proxy isn't connected; `src/lib/host-access.ts`)
+- PKCE (S256): `startAuthorization` stores a fresh verifier in pending auth and sends its challenge; the callback passes the verifier to `tokenExchange`
+- DPoP (RFC 9449): token requests carry a proof signed by a per-install, non-extractable ES256 key (`src/background/dpop.ts`, IndexedDB). When the response says `token_type: DPoP`, the connection stores `tokenType: 'DPoP'`, the frontend sends `Authorization: DPoP <token>` (`getAuthorizationHeader()`), and the service worker adds a fresh proof (with `ath`) to every such request. `use_dpop_nonce` challenges are retried once with the server nonce.
+- Refresh token rotation: the refresh reads the newest refresh token from storage and saves the rotated one before releasing the per-connection mutex. A 401 carrying a token that a refresh already replaced retries with the stored token instead of refreshing again (reusing a rotated refresh token makes Salesforce revoke the connection's tokens).
+- Streaming through the proxy (CometD, Pub/Sub gRPC) still sends the token as Bearer; not checked against DPoP-bound tokens.
 
 ### Module-Level Auth State
 

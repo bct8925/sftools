@@ -1,7 +1,7 @@
 // Streaming Channels - Functions for discovering and publishing to streaming channels
 
 import type { QueryResult } from '../types/salesforce';
-import { getInstanceUrl, getAccessToken } from '../auth/auth';
+import { getInstanceUrl, getAuthorizationHeader } from '../auth/auth';
 import { API_VERSION } from './constants';
 import { smartFetch } from './fetch';
 import { salesforceRequest } from './salesforce-request';
@@ -106,7 +106,7 @@ export async function publishPlatformEvent(
         {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${getAccessToken()}`,
+                Authorization: getAuthorizationHeader(),
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),

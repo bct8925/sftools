@@ -12,6 +12,7 @@ The `auth/` directory contains authentication, OAuth flow, and multi-connection 
 auth/
 ├── auth.ts                # Multi-connection storage and state
 ├── start-authorization.ts # OAuth flow initiation
+├── pkce.ts                # PKCE verifier and S256 challenge
 └── oauth-credentials.ts   # OAuth client configuration
 ```
 
@@ -80,6 +81,7 @@ let ACTIVE_CONNECTION_ID: string | null = null;
 
 // Synchronous access (no async calls needed)
 const token = getAccessToken();      // Returns cached token
+const auth = getAuthorizationHeader(); // "Bearer <token>" or "DPoP <token>" (use for Authorization headers)
 const url = getInstanceUrl();        // Returns cached instance URL
 const authenticated = isAuthenticated(); // Returns !!(ACCESS_TOKEN && INSTANCE_URL)
 const connectionId = getActiveConnectionId(); // Returns active connection ID
@@ -95,6 +97,7 @@ interface SalesforceConnection {
   loginDomain?: string;    // login.salesforce.com or test.salesforce.com
   accessToken: string;
   refreshToken: string | null;
+  tokenType?: 'Bearer' | 'DPoP'; // absent = Bearer; DPoP tokens need a proof per request (added by the service worker)
   clientId: string | null; // Per-connection OAuth Client ID
   createdAt?: number;
   lastUsedAt?: number;
@@ -221,7 +224,7 @@ await startAuthorization(
 #### Flow Details
 
 1. **Domain Detection**: Uses provided domain or detects from active tab URL
-2. **Flow Selection**: Checks proxy availability (code flow vs implicit flow)
+2. **Flow Selection**: Code flow (PKCE) when the proxy is connected, or when the user grants optional Salesforce host access (`ensureSalesforceHostAccess` in `src/lib/host-access.ts`, asked once from the click). Implicit flow only if both are unavailable or declined
 3. **Client ID**: Uses override or falls back to connection's clientId or manifest default
 4. **State Generation**: Generates CSRF state parameter via `generateOAuthState()`
 5. **Pending Auth**: Stores parameters via `setPendingAuth()` for callback

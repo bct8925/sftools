@@ -4,6 +4,7 @@ import { formatEventEntry } from '../../lib/events-utils';
 import type { CodeEditorRef } from '../code-editor/CodeEditor';
 import { useToast } from '../../contexts/ToastContext';
 import { getPlatform, type SubscribeResponse } from '../../platform';
+import { DPOP_STREAMING_UNSUPPORTED } from '../../lib/streaming-support';
 
 interface StreamMessage {
     subscriptionId: string;
@@ -32,6 +33,8 @@ interface UseStreamSubscriptionOptions {
     replayId: string;
     isAuthenticated: boolean;
     isProxyConnected: boolean;
+    /** False for DPoP connections: the streaming APIs reject DPoP-bound tokens */
+    isStreamingSupported?: boolean;
     appendSystemMessage?: (msg: string) => void;
     onEventReceived?: (eventData: EventData, isSystemMessage: boolean) => void;
     streamEditorRef?: React.RefObject<CodeEditorRef | null>;
@@ -62,6 +65,7 @@ export function useStreamSubscription({
     replayId,
     isAuthenticated,
     isProxyConnected,
+    isStreamingSupported = true,
     appendSystemMessage,
     onEventReceived,
     streamEditorRef,
@@ -185,6 +189,17 @@ export function useStreamSubscription({
             return;
         }
 
+        if (!isStreamingSupported) {
+            toast.show('Streaming unavailable', 'error');
+            if (onEventReceived) {
+                onEventReceived({ error: DPOP_STREAMING_UNSUPPORTED }, true);
+            }
+            if (appendSystemMessage) {
+                appendSystemMessage(DPOP_STREAMING_UNSUPPORTED);
+            }
+            return;
+        }
+
         if (!isProxyConnected) {
             toast.show('Proxy required', 'error');
             const msg = 'Streaming requires the local proxy. Open Settings to connect.';
@@ -236,6 +251,7 @@ export function useStreamSubscription({
         selectedChannel,
         isAuthenticated,
         isProxyConnected,
+        isStreamingSupported,
         replayPreset,
         replayId,
         toast,

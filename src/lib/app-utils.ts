@@ -44,7 +44,9 @@ export function buildOAuthUrl(
     clientId: string,
     redirectUri: string,
     state: string,
-    useCodeFlow = false
+    useCodeFlow = false,
+    codeChallenge?: string,
+    dpopJkt?: string
 ): string {
     const responseType = useCodeFlow ? 'code' : 'token';
     const isStandardDomain =
@@ -56,6 +58,16 @@ export function buildOAuthUrl(
         `&response_type=${responseType}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}` +
         `&state=${encodeURIComponent(state)}`;
+
+    // PKCE applies to the code flow only
+    if (useCodeFlow && codeChallenge) {
+        url += `&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256`;
+    }
+
+    // DPoP code binding (RFC 9449 section 10): the token request must be signed by this key
+    if (useCodeFlow && dpopJkt) {
+        url += `&dpop_jkt=${encodeURIComponent(dpopJkt)}`;
+    }
 
     if (isStandardDomain) {
         url += '&prompt=login';

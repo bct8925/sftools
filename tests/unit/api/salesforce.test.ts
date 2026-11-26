@@ -44,7 +44,7 @@ vi.mock('../../../src/api/fetch.js', () => ({
 }));
 
 vi.mock('../../../src/auth/auth.js', () => ({
-    getAccessToken: vi.fn(),
+    getAuthorizationHeader: vi.fn(),
     getInstanceUrl: vi.fn(),
     getActiveConnectionId: vi.fn(),
 }));
@@ -81,12 +81,16 @@ import {
 } from '../../../src/api/salesforce.js';
 import { salesforceRequest } from '../../../src/api/salesforce-request.js';
 import { smartFetch } from '../../../src/api/fetch.js';
-import { getAccessToken, getInstanceUrl, getActiveConnectionId } from '../../../src/auth/auth.js';
+import {
+    getAuthorizationHeader,
+    getInstanceUrl,
+    getActiveConnectionId,
+} from '../../../src/auth/auth.js';
 
 describe('salesforce', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
-        getAccessToken.mockReturnValue('test-token');
+        getAuthorizationHeader.mockReturnValue('Bearer test-token');
         getInstanceUrl.mockReturnValue('https://test.salesforce.com');
         getActiveConnectionId.mockReturnValue('conn-123');
 

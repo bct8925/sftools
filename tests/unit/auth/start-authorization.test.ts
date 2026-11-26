@@ -23,6 +23,7 @@ vi.mock('../../../src/auth/auth', () => ({
 import { startAuthorization } from '../../../src/auth/start-authorization';
 import { detectLoginDomain, buildOAuthUrl } from '../../../src/lib/app-utils';
 import { setPendingAuth, generateOAuthState, getOAuthCredentials } from '../../../src/auth/auth';
+import { createCodeChallenge } from '../../../src/auth/pkce';
 
 describe('startAuthorization', () => {
     beforeEach(() => {
@@ -34,13 +35,13 @@ describe('startAuthorization', () => {
         it('uses override domain when provided', async () => {
             await startAuthorization('https://test.salesforce.com', null, null);
 
-            expect(buildOAuthUrl).toHaveBeenCalledWith(
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0].slice(0, 5)).toEqual([
                 'https://test.salesforce.com',
                 expect.any(String),
                 expect.any(String),
                 expect.any(String),
-                expect.any(Boolean)
-            );
+                expect.any(Boolean),
+            ]);
             expect(detectLoginDomain).not.toHaveBeenCalled();
         });
 
@@ -53,13 +54,13 @@ describe('startAuthorization', () => {
             await startAuthorization(null, null, null);
 
             expect(detectLoginDomain).toHaveBeenCalledWith('https://myorg.my.salesforce.com/page');
-            expect(buildOAuthUrl).toHaveBeenCalledWith(
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0].slice(0, 5)).toEqual([
                 'https://myorg.my.salesforce.com',
                 expect.any(String),
                 expect.any(String),
                 expect.any(String),
-                expect.any(Boolean)
-            );
+                expect.any(Boolean),
+            ]);
         });
 
         it('falls back to login.salesforce.com when tab has no URL', async () => {
@@ -67,13 +68,13 @@ describe('startAuthorization', () => {
 
             await startAuthorization(null, null, null);
 
-            expect(buildOAuthUrl).toHaveBeenCalledWith(
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0].slice(0, 5)).toEqual([
                 'https://login.salesforce.com',
                 expect.any(String),
                 expect.any(String),
                 expect.any(String),
-                expect.any(Boolean)
-            );
+                expect.any(Boolean),
+            ]);
         });
 
         it('falls back to login.salesforce.com when tab query fails', async () => {
@@ -81,13 +82,13 @@ describe('startAuthorization', () => {
 
             await startAuthorization(null, null, null);
 
-            expect(buildOAuthUrl).toHaveBeenCalledWith(
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0].slice(0, 5)).toEqual([
                 'https://login.salesforce.com',
                 expect.any(String),
                 expect.any(String),
                 expect.any(String),
-                expect.any(Boolean)
-            );
+                expect.any(Boolean),
+            ]);
         });
 
         it('falls back when detectLoginDomain returns null', async () => {
@@ -96,13 +97,13 @@ describe('startAuthorization', () => {
 
             await startAuthorization(null, null, null);
 
-            expect(buildOAuthUrl).toHaveBeenCalledWith(
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0].slice(0, 5)).toEqual([
                 'https://login.salesforce.com',
                 expect.any(String),
                 expect.any(String),
                 expect.any(String),
-                expect.any(Boolean)
-            );
+                expect.any(Boolean),
+            ]);
         });
     });
 
@@ -117,7 +118,9 @@ describe('startAuthorization', () => {
                 expect.any(String),
                 expect.any(String),
                 expect.any(String),
-                true
+                true,
+                expect.any(String), // PKCE code challenge
+                undefined // dpop_jkt (mock gives no thumbprint)
             );
         });
 
@@ -131,7 +134,9 @@ describe('startAuthorization', () => {
                 expect.any(String),
                 expect.any(String),
                 expect.any(String),
-                false
+                false,
+                undefined,
+                undefined
             );
         });
 
@@ -145,7 +150,9 @@ describe('startAuthorization', () => {
                 expect.any(String),
                 expect.any(String),
                 expect.any(String),
-                false
+                false,
+                undefined,
+                undefined
             );
         });
     });
@@ -154,13 +161,13 @@ describe('startAuthorization', () => {
         it('uses override client ID when provided', async () => {
             await startAuthorization('https://login.salesforce.com', 'custom-id', null);
 
-            expect(buildOAuthUrl).toHaveBeenCalledWith(
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0].slice(0, 5)).toEqual([
                 expect.any(String),
                 'custom-id',
                 expect.any(String),
                 expect.any(String),
-                expect.any(Boolean)
-            );
+                expect.any(Boolean),
+            ]);
             expect(getOAuthCredentials).not.toHaveBeenCalled();
         });
 
@@ -168,13 +175,13 @@ describe('startAuthorization', () => {
             await startAuthorization('https://login.salesforce.com', null, null);
 
             expect(getOAuthCredentials).toHaveBeenCalled();
-            expect(buildOAuthUrl).toHaveBeenCalledWith(
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0].slice(0, 5)).toEqual([
                 expect.any(String),
                 'default-client-id',
                 expect.any(String),
                 expect.any(String),
-                expect.any(Boolean)
-            );
+                expect.any(Boolean),
+            ]);
         });
     });
 
@@ -188,6 +195,8 @@ describe('startAuthorization', () => {
                 clientId: 'cid',
                 connectionId: 'conn-1',
                 state: 'mock-state-123',
+                codeVerifier: null,
+                sessionType: 'DPoP',
             });
         });
 
@@ -207,6 +216,113 @@ describe('startAuthorization', () => {
             expect(chromeMock.tabs.create).toHaveBeenCalledWith({
                 url: 'https://login.salesforce.com/services/oauth2/authorize?mock',
             });
+        });
+    });
+
+    describe('PKCE', () => {
+        it('stores the verifier and sends its challenge in the code flow', async () => {
+            chromeMock.runtime.sendMessage.mockResolvedValue({ connected: true });
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            const { codeVerifier } = vi.mocked(setPendingAuth).mock.calls[0][0];
+            const challenge = vi.mocked(buildOAuthUrl).mock.calls[0][5];
+            expect(codeVerifier).toMatch(/^[A-Za-z0-9_-]{43}$/);
+            expect(challenge).toBe(await createCodeChallenge(codeVerifier!));
+        });
+
+        it('uses the code flow without the proxy once Salesforce site access is granted', async () => {
+            chromeMock.runtime.sendMessage.mockResolvedValue({ connected: false });
+            chromeMock.permissions.request.mockResolvedValue(true);
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(chromeMock.permissions.request).toHaveBeenCalled();
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][4]).toBe(true);
+            expect(vi.mocked(setPendingAuth).mock.calls[0][0].codeVerifier).toMatch(
+                /^[A-Za-z0-9_-]{43}$/
+            );
+        });
+
+        it('does not ask for site access when the proxy is connected', async () => {
+            chromeMock.runtime.sendMessage.mockResolvedValue({ connected: true });
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(chromeMock.permissions.request).not.toHaveBeenCalled();
+            expect(chromeMock.permissions.contains).not.toHaveBeenCalled();
+        });
+
+        it('falls back to the implicit flow when site access is declined', async () => {
+            chromeMock.runtime.sendMessage.mockResolvedValue({ connected: false });
+            chromeMock.permissions.request.mockResolvedValue(false);
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][4]).toBe(false);
+        });
+
+        it('stores no verifier in the implicit flow', async () => {
+            chromeMock.runtime.sendMessage.mockResolvedValue({ connected: false });
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(vi.mocked(setPendingAuth).mock.calls[0][0].codeVerifier).toBeNull();
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][5]).toBeUndefined();
+        });
+    });
+
+    describe('DPoP code binding', () => {
+        it('sends the service worker key thumbprint as dpop_jkt in the code flow', async () => {
+            chromeMock.runtime.sendMessage.mockImplementation((message: { type: string }) =>
+                Promise.resolve(
+                    message.type === 'getDpopJkt'
+                        ? { success: true, jkt: 'thumb' }
+                        : { connected: true }
+                )
+            );
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(chromeMock.runtime.sendMessage).toHaveBeenCalledWith({ type: 'getDpopJkt' });
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][6]).toBe('thumb');
+        });
+
+        it('authorizes without dpop_jkt when the service worker has no key', async () => {
+            chromeMock.runtime.sendMessage.mockImplementation((message: { type: string }) =>
+                message.type === 'getDpopJkt'
+                    ? Promise.reject(new Error('no key'))
+                    : Promise.resolve({ connected: true })
+            );
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][4]).toBe(true);
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][6]).toBeUndefined();
+        });
+
+        it('sends no dpop_jkt for a Bearer session and remembers the choice', async () => {
+            chromeMock.runtime.sendMessage.mockImplementation((message: { type: string }) =>
+                Promise.resolve(
+                    message.type === 'getDpopJkt'
+                        ? { success: true, jkt: 'thumb' }
+                        : { connected: true }
+                )
+            );
+
+            await startAuthorization('https://login.salesforce.com', null, 'conn-1', 'Bearer');
+
+            expect(chromeMock.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'getDpopJkt' });
+            expect(vi.mocked(buildOAuthUrl).mock.calls[0][6]).toBeUndefined();
+            expect(vi.mocked(setPendingAuth).mock.calls[0][0].sessionType).toBe('Bearer');
+        });
+
+        it('does not ask for a thumbprint in the implicit flow', async () => {
+            chromeMock.runtime.sendMessage.mockResolvedValue({ connected: false });
+
+            await startAuthorization('https://login.salesforce.com', null, null);
+
+            expect(chromeMock.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'getDpopJkt' });
         });
     });
 });

@@ -12,7 +12,14 @@ import {
     isProxyConnected,
     getProxyInfo,
 } from './native-messaging';
-import { exchangeCodeForTokens, refreshAccessToken, updateConnectionToken } from './auth';
+import {
+    canReachTokenEndpoint,
+    exchangeCodeForTokens,
+    getAuthorizationDpopJkt,
+    isReplacedAccessToken,
+    refreshAccessToken,
+} from './auth';
+import { DPOP_SCHEME, getTokenScheme, handleDpopNonce, withDpopProof } from './dpop';
 import { debugInfo } from './debug';
 
 // ============================================================================
@@ -42,6 +49,10 @@ interface CheckProxyConnectionRequest {
     type: 'checkProxyConnection';
 }
 
+interface GetDpopJktRequest {
+    type: 'getDpopJkt';
+}
+
 interface GetProxyInfoRequest {
     type: 'getProxyInfo';
 }
@@ -52,6 +63,9 @@ interface TokenExchangeRequest {
     redirectUri: string;
     loginDomain: string;
     clientId: string;
+    codeVerifier?: string;
+    /** False for a Bearer session (no DPoP proof); absent means DPoP */
+    useDpop?: boolean;
 }
 
 interface ProxyFetchRequest {
@@ -98,6 +112,7 @@ type BackgroundRequest =
     | ConnectProxyRequest
     | DisconnectProxyRequest
     | CheckProxyConnectionRequest
+    | GetDpopJktRequest
     | GetProxyInfoRequest
     | TokenExchangeRequest
     | ProxyFetchRequest
@@ -263,6 +278,40 @@ async function isOriginAllowed(url: string): Promise<boolean> {
     }
 }
 
+function responseMeta(response: Response | ProxyResponse): {
+    status: number;
+    headers: Record<string, string> | undefined;
+} {
+    if (response instanceof Response) {
+        const headers: Record<string, string> = {};
+        response.headers.forEach((value, key) => {
+            headers[key.toLowerCase()] = value;
+        });
+        return { status: response.status, headers };
+    }
+    const proxyResponse = response as { status?: number; headers?: Record<string, string> };
+    return { status: proxyResponse.status ?? 0, headers: proxyResponse.headers };
+}
+
+/**
+ * Wrap a request function so requests with a DPoP-bound token (Authorization: DPoP)
+ * carry a fresh proof, and are retried once when the server asks for a DPoP nonce.
+ */
+function withDpop(
+    send: (headers: Record<string, string>) => Promise<Response | ProxyResponse>,
+    method: string,
+    url: string
+): (headers: Record<string, string>) => Promise<Response | ProxyResponse> {
+    return async headers => {
+        const response = await send(await withDpopProof(headers, method, url));
+        if (getTokenScheme(headers) !== DPOP_SCHEME) return response;
+        const { status, headers: responseHeaders } = responseMeta(response);
+        if (!handleDpopNonce(url, status, responseHeaders)) return response;
+        debugInfo('Server asked for a DPoP nonce, retrying');
+        return send(await withDpopProof(headers, method, url));
+    };
+}
+
 /**
  * Generic fetch wrapper with 401 retry logic
  * @param probeUrl - when set, a network failure on an authenticated request probes this
@@ -276,10 +325,14 @@ async function fetchWithRetry(
     probeUrl?: string
 ): Promise<FetchResponse> {
     const hasAuth = !!headers?.Authorization;
-    const retryWithToken = async (newAccessToken: string): Promise<FetchResponse> => {
+    const usedToken = headers?.Authorization?.split(' ')[1];
+    const retryWithToken = async (
+        newAccessToken: string,
+        tokenType: string
+    ): Promise<FetchResponse> => {
         const retryResponse = await fetchFn({
             ...headers,
-            Authorization: `Bearer ${newAccessToken}`,
+            Authorization: `${tokenType} ${newAccessToken}`,
         });
         return convertFn(retryResponse);
     };
@@ -287,7 +340,13 @@ async function fetchWithRetry(
     try {
         const response = await fetchFn(headers || {});
         const converted = await convertFn(response);
-        return await handle401WithRefresh(converted, connectionId, hasAuth, retryWithToken);
+        return await handle401WithRefresh(
+            converted,
+            connectionId,
+            hasAuth,
+            retryWithToken,
+            usedToken
+        );
     } catch (error) {
         // CORS errors manifest as network failures with status 0
         // Include status: 0 so CORS detection logic can identify these errors
@@ -305,7 +364,8 @@ async function fetchWithRetry(
                 { success: false, status: 401, statusText: 'Unauthorized' },
                 connectionId,
                 hasAuth,
-                retryWithToken
+                retryWithToken,
+                usedToken
             );
         } catch {
             return networkError;
@@ -321,7 +381,8 @@ async function handle401WithRefresh(
     response: FetchResponse,
     connectionId: string | undefined,
     hasAuth: boolean,
-    retryFn: (newAccessToken: string) => Promise<FetchResponse>
+    retryFn: (newAccessToken: string, tokenType: string) => Promise<FetchResponse>,
+    usedToken?: string
 ): Promise<FetchResponse> {
     if (response.status !== 401 || !connectionId || !hasAuth) {
         return response;
@@ -332,14 +393,29 @@ async function handle401WithRefresh(
         c => c.id === connectionId
     );
 
-    if (connection?.refreshToken && isProxyConnected()) {
+    // Another request already refreshed this connection: retry with the stored token.
+    // Refreshing again would reuse a rotated refresh token.
+    if (
+        connection &&
+        usedToken &&
+        connection.accessToken !== usedToken &&
+        isReplacedAccessToken(connectionId, usedToken)
+    ) {
+        debugInfo('Got 401 with an old token, retrying with the stored token');
+        return retryFn(connection.accessToken, connection.tokenType ?? 'Bearer');
+    }
+
+    const canRefresh =
+        !!connection?.refreshToken &&
+        (await canReachTokenEndpoint(connection.loginDomain || 'https://login.salesforce.com'));
+
+    if (connection && canRefresh) {
         debugInfo('Got 401, attempting token refresh for connection:', connectionId);
         const refreshResult = await refreshAccessToken(connection);
 
         if (refreshResult.success) {
             debugInfo('Token refresh succeeded, retrying request');
-            await updateConnectionToken(connectionId, refreshResult.accessToken);
-            return retryFn(refreshResult.accessToken);
+            return retryFn(refreshResult.accessToken, refreshResult.tokenType);
         }
         debugInfo('Token refresh failed:', refreshResult.error);
         return {
@@ -354,8 +430,8 @@ async function handle401WithRefresh(
     debugInfo(
         'Cannot refresh - refreshToken:',
         !!connection?.refreshToken,
-        'proxy:',
-        isProxyConnected()
+        'token endpoint reachable:',
+        canRefresh
     );
     return {
         success: false,
@@ -375,11 +451,15 @@ const handlers: Record<string, (request: BackgroundRequest) => Promise<ProxyResp
     fetch: (request: BackgroundRequest) => {
         const req = request as FetchRequest;
         return fetchWithRetry(
-            headers =>
-                fetch(req.url, {
-                    ...req.options,
-                    headers,
-                }),
+            withDpop(
+                headers =>
+                    fetch(req.url, {
+                        ...req.options,
+                        headers,
+                    }),
+                req.options.method || 'GET',
+                req.url
+            ),
             async (response: Response | ProxyResponse) => {
                 if (response instanceof Response) {
                     const headers: Record<string, string> = {};
@@ -414,6 +494,9 @@ const handlers: Record<string, (request: BackgroundRequest) => Promise<ProxyResp
         return Promise.resolve({ success: true, ...info });
     },
 
+    // Thumbprint of the DPoP key, sent as dpop_jkt on /authorize (the key lives here)
+    getDpopJkt: async () => ({ success: true, jkt: await getAuthorizationDpopJkt() }),
+
     getProxyInfo: () => {
         const info = getProxyInfo();
         return Promise.resolve({ success: true, ...info });
@@ -421,20 +504,31 @@ const handlers: Record<string, (request: BackgroundRequest) => Promise<ProxyResp
 
     tokenExchange: (request: BackgroundRequest) => {
         const req = request as TokenExchangeRequest;
-        return exchangeCodeForTokens(req.code, req.redirectUri, req.loginDomain, req.clientId);
+        return exchangeCodeForTokens(
+            req.code,
+            req.redirectUri,
+            req.loginDomain,
+            req.clientId,
+            req.codeVerifier,
+            req.useDpop !== false
+        );
     },
 
     proxyFetch: proxyRequired((request: BackgroundRequest) => {
         const req = request as ProxyFetchRequest;
         return fetchWithRetry(
-            headers =>
-                sendProxyRequest({
-                    type: 'rest',
-                    url: req.url,
-                    method: req.method,
-                    headers,
-                    body: req.body,
-                }),
+            withDpop(
+                headers =>
+                    sendProxyRequest({
+                        type: 'rest',
+                        url: req.url,
+                        method: req.method,
+                        headers,
+                        body: req.body,
+                    }),
+                req.method || 'GET',
+                req.url
+            ),
             response => Promise.resolve(response as unknown as FetchResponse),
             req.headers,
             req.connectionId
@@ -482,6 +576,7 @@ const handlers: Record<string, (request: BackgroundRequest) => Promise<ProxyResp
             tenantId: req.tenantId,
         });
     }),
+
 };
 
 chrome.runtime.onMessage.addListener(

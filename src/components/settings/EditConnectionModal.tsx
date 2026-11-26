@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import type { SalesforceConnection } from '../../types/salesforce';
+import type { SalesforceConnection, TokenType } from '../../types/salesforce';
 import { useConnection } from '../../contexts/ConnectionContext';
 import { startAuthorization } from '../../auth/start-authorization';
+import { getSessionType } from '../../auth/auth';
+import { getPlatform } from '../../platform';
 import styles from './EditConnectionModal.module.css';
 
 interface EditConnectionModalProps {
@@ -13,7 +15,10 @@ export function EditConnectionModal({ connectionId, onClose }: EditConnectionMod
     const { connections, updateConnection } = useConnection();
     const [label, setLabel] = useState('');
     const [clientId, setClientId] = useState('');
+    const [sessionType, setSessionType] = useState<TokenType>('DPoP');
     const [connection, setConnection] = useState<SalesforceConnection | null>(null);
+    // Session type only applies to sftools' own OAuth (not sf CLI orgs in VS Code)
+    const canChooseSessionType = getPlatform().capabilities.oauth;
 
     useEffect(() => {
         if (connectionId) {
@@ -22,6 +27,7 @@ export function EditConnectionModal({ connectionId, onClose }: EditConnectionMod
                 setConnection(conn);
                 setLabel(conn.label);
                 setClientId(conn.clientId || '');
+                setSessionType(getSessionType(conn));
             }
         }
     }, [connectionId, connections]);
@@ -36,21 +42,38 @@ export function EditConnectionModal({ connectionId, onClose }: EditConnectionMod
 
         const newClientId = clientId.trim() || null;
         const clientIdChanged = connection.clientId !== newClientId;
+        const sessionTypeChanged =
+            canChooseSessionType && getSessionType(connection) !== sessionType;
 
         await updateConnection(connectionId, {
             label: label.trim(),
             clientId: newClientId,
+            ...(canChooseSessionType && { sessionType }),
         });
 
         onClose();
 
-        if (clientIdChanged) {
-            const message = newClientId
-                ? 'Client ID changed. Re-authorize now to use the new Connected App?'
-                : 'Client ID removed. Re-authorize now to use the default Connected App?';
+        if (clientIdChanged || sessionTypeChanged) {
+            const changes: string[] = [];
+            if (clientIdChanged) {
+                changes.push(newClientId ? 'Client ID changed' : 'Client ID removed');
+            }
+            if (sessionTypeChanged) {
+                changes.push(`Session type changed to ${sessionType}`);
+            }
+            const target = clientIdChanged
+                ? newClientId
+                    ? 'use the new Connected App'
+                    : 'use the default Connected App'
+                : `switch to a ${sessionType} session`;
 
-            if (confirm(message)) {
-                await startAuthorization(connection.instanceUrl, newClientId, connectionId);
+            if (confirm(`${changes.join(' and ')}. Re-authorize now to ${target}?`)) {
+                await startAuthorization(
+                    connection.instanceUrl,
+                    newClientId,
+                    connectionId,
+                    sessionType
+                );
             }
         }
     };
@@ -62,6 +85,8 @@ export function EditConnectionModal({ connectionId, onClose }: EditConnectionMod
     };
 
     if (!connectionId) return null;
+
+    const currentSession = connection?.tokenType ?? 'Bearer';
 
     return (
         <div className={styles.modalOverlay} onClick={handleBackdropClick}>
@@ -89,6 +114,25 @@ export function EditConnectionModal({ connectionId, onClose }: EditConnectionMod
                         Changing Client ID requires re-authorization
                     </span>
                 </div>
+                {canChooseSessionType && (
+                    <div className="form-element">
+                        <label>SESSION TYPE</label>
+                        <select
+                            className="select"
+                            value={sessionType}
+                            onChange={e => setSessionType(e.target.value as TokenType)}
+                            data-testid="edit-connection-session-type"
+                        >
+                            <option value="DPoP">DPoP (recommended)</option>
+                            <option value="Bearer">Bearer (allows streaming)</option>
+                        </select>
+                        <span className={styles.fieldHint}>
+                            Current session: {currentSession}. DPoP binds the session to this
+                            browser; Bearer is needed for streaming, if the app allows it. Changing
+                            it requires re-authorization.
+                        </span>
+                    </div>
+                )}
                 <div className={styles.buttonRow}>
                     <button className="button-brand" onClick={handleSave}>
                         Save

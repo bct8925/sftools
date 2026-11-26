@@ -1,7 +1,7 @@
 // Debug Logs - Trace flag and debug log management
 
 import type { QueryResult } from '../types/salesforce';
-import { getInstanceUrl, getAccessToken } from '../auth/auth';
+import { getInstanceUrl, getAuthorizationHeader } from '../auth/auth';
 import { getNowISO, getISODateFromNow, getFutureDate } from '../lib/date-utils';
 import { API_VERSION } from './constants';
 import { smartFetch } from './fetch';
@@ -361,7 +361,7 @@ export async function getLogBody(logId: string): Promise<string> {
     const response = await smartFetch(url, {
         method: 'GET',
         headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
+            Authorization: getAuthorizationHeader(),
             Accept: 'text/plain',
         },
     });

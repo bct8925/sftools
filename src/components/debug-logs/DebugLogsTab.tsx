@@ -12,8 +12,14 @@ import { filterLines } from '../../lib/apex-utils';
 import { getNowISO } from '../../lib/date-utils';
 import styles from './DebugLogsTab.module.css';
 import { getPlatform, type SubscribeResponse } from '../../platform';
+import { STREAMING_FALLBACK_POLL_MS, supportsStreaming } from '../../lib/streaming-support';
 
 const LOGGING_CHANNEL = '/systemTopic/Logging';
+
+const watchingHint = (isStreamingSupported: boolean): string =>
+    isStreamingSupported
+        ? '// Watching for new debug logs...\n// Click Refresh to fetch logs or wait for auto-refresh (if proxy connected)'
+        : `// Watching for new debug logs...\n// Checks every ${STREAMING_FALLBACK_POLL_MS / 1000}s (streaming is unavailable for DPoP sessions), or click Refresh`;
 
 // Format date for display
 const formatTime = (isoString: string): string => {
@@ -40,6 +46,8 @@ const formatBytes = (bytes: number): string => {
 export function DebugLogsTab() {
     const { activeConnection, isAuthenticated } = useConnection();
     const { isConnected: isProxyConnected } = useProxy();
+    // DPoP connections can't use CometD, so auto-refresh polls over REST instead
+    const isStreamingSupported = supportsStreaming(activeConnection);
 
     // Viewer state
     const [watchingSince, setWatchingSince] = useState<string | null>(null);
@@ -120,10 +128,8 @@ export function DebugLogsTab() {
         setWatchingSince(now);
         setLogs([]);
         setSelectedLogBody('');
-        editorRef.current?.setValue(
-            '// Watching for new debug logs...\n// Click Refresh to fetch logs or wait for auto-refresh (if proxy connected)'
-        );
-    }, []);
+        editorRef.current?.setValue(watchingHint(isStreamingSupported));
+    }, [isStreamingSupported]);
 
     // Handle Stop button
     const handleStop = useCallback(async () => {
@@ -168,10 +174,10 @@ export function DebugLogsTab() {
         setOpenedLogIds(new Set());
         editorRef.current?.setValue(
             watchingSince
-                ? '// Watching for new debug logs...\n// Click Refresh to fetch logs or wait for auto-refresh (if proxy connected)'
+                ? watchingHint(isStreamingSupported)
                 : '// Click ▶ to start monitoring debug logs'
         );
-    }, [watchingSince]);
+    }, [watchingSince, isStreamingSupported]);
 
     // Handle Open Log button
     const handleOpenLog = useCallback(
@@ -196,7 +202,7 @@ export function DebugLogsTab() {
 
     // CometD subscription for auto-refresh
     useEffect(() => {
-        if (!watchingSince || !isProxyConnected || !isAuthenticated) {
+        if (!watchingSince || !isProxyConnected || !isAuthenticated || !isStreamingSupported) {
             return;
         }
 
@@ -235,7 +241,30 @@ export function DebugLogsTab() {
                     .catch(() => {});
             }
         };
-    }, [watchingSince, isProxyConnected, isAuthenticated]);
+    }, [watchingSince, isProxyConnected, isAuthenticated, isStreamingSupported]);
+
+    // REST polling for auto-refresh when CometD isn't available (DPoP connections)
+    useEffect(() => {
+        if (!watchingSince || !isAuthenticated || isStreamingSupported) {
+            return;
+        }
+
+        let inFlight = false;
+        const poll = async () => {
+            if (inFlight || document.hidden || !watchingRef.current) return;
+            inFlight = true;
+            try {
+                setLogs(await getDebugLogsSince(watchingRef.current));
+            } catch {
+                // Quiet: the next poll or a manual Refresh will surface persistent errors
+            } finally {
+                inFlight = false;
+            }
+        };
+
+        const intervalId = window.setInterval(poll, STREAMING_FALLBACK_POLL_MS);
+        return () => window.clearInterval(intervalId);
+    }, [watchingSince, isAuthenticated, isStreamingSupported]);
 
     // Listen for stream events to trigger refresh
     useEffect(() => {

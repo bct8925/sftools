@@ -9,7 +9,7 @@ vi.mock('../../../src/api/fetch.js', () => ({
 }));
 
 vi.mock('../../../src/auth/auth.js', () => ({
-    getAccessToken: vi.fn().mockReturnValue('test-token'),
+    getAuthorizationHeader: vi.fn().mockReturnValue('Bearer test-token'),
     getInstanceUrl: vi.fn().mockReturnValue('https://test.salesforce.com'),
 }));
 

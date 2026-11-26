@@ -21,6 +21,7 @@ import { createMockConnection } from '../mocks/salesforce.js';
 import { chromeMock } from '../mocks/chrome.js';
 import {
     getAccessToken,
+    getAuthorizationHeader,
     getInstanceUrl,
     isAuthenticated,
     getActiveConnectionId,
@@ -37,6 +38,7 @@ import {
     generateOAuthState,
     migrateFromSingleConnection,
     migrateCustomConnectedApp,
+    getSessionType,
 } from '../../../src/auth/auth.js';
 import {
     saveConnections,
@@ -73,6 +75,35 @@ describe('auth', () => {
             expect(getAccessToken()).toBe('my-token');
             expect(getInstanceUrl()).toBe('https://my.salesforce.com');
             expect(isAuthenticated()).toBeTruthy();
+        });
+    });
+
+    describe('getAuthorizationHeader', () => {
+        it('uses the Bearer scheme for connections without a token type', () => {
+            setActiveConnection(createMockConnection({ accessToken: 'tok' }));
+            expect(getAuthorizationHeader()).toBe('Bearer tok');
+        });
+
+        it('uses the DPoP scheme for DPoP-bound connections', () => {
+            setActiveConnection(createMockConnection({ accessToken: 'tok', tokenType: 'DPoP' }));
+            expect(getAuthorizationHeader()).toBe('DPoP tok');
+        });
+
+        it('follows a token type change from storage', async () => {
+            const connection = createMockConnection({ id: 'tt', accessToken: 'tok' });
+            setActiveConnection(connection);
+
+            await chromeMock.storage.local.set({
+                connections: [{ ...connection, accessToken: 'tok2', tokenType: 'DPoP' }],
+            });
+
+            expect(getAuthorizationHeader()).toBe('DPoP tok2');
+        });
+
+        it('resets to Bearer when the connection is cleared', () => {
+            setActiveConnection(createMockConnection({ tokenType: 'DPoP' }));
+            setActiveConnection(null);
+            expect(getAuthorizationHeader()).toBe('Bearer ');
         });
     });
 
@@ -158,7 +189,29 @@ describe('auth', () => {
         });
     });
 
+    describe('getSessionType', () => {
+        it('defaults to DPoP, including connections made before session types', () => {
+            expect(getSessionType({})).toBe('DPoP');
+            expect(getSessionType(null)).toBe('DPoP');
+        });
+
+        it('keeps a Bearer choice', () => {
+            expect(getSessionType({ sessionType: 'Bearer' })).toBe('Bearer');
+        });
+    });
+
     describe('addConnection', () => {
+        it('saves the chosen session type', async () => {
+            const result = await addConnection({
+                instanceUrl: 'https://test.salesforce.com',
+                accessToken: 'token',
+                tokenType: 'Bearer',
+                sessionType: 'Bearer',
+            });
+
+            expect(result).toMatchObject({ tokenType: 'Bearer', sessionType: 'Bearer' });
+        });
+
         it('OA-U-013: creates new connection when connectionId is null', async () => {
             const result = await addConnection({
                 instanceUrl: 'https://test.salesforce.com',

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useConnection } from '../contexts/ConnectionContext';
-import { onAuthExpired, loadConnections } from '../auth/auth';
+import { onAuthExpired, loadConnections, getSessionType } from '../auth/auth';
 import { startAuthorization } from '../auth/start-authorization';
 import { Modal } from '../components/modal/Modal';
 import { getPlatform } from '../platform';
@@ -43,7 +43,8 @@ export function AuthExpirationHandler() {
         await startAuthorization(
             expiredConnection.instanceUrl,
             expiredConnection.clientId,
-            expiredConnection.id
+            expiredConnection.id,
+            getSessionType(expiredConnection)
         );
 
         setIsOpen(false);

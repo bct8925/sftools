@@ -1,3 +1,6 @@
+// OAuth token type. DPoP tokens are bound to the extension's key and need a proof per request.
+export type TokenType = 'Bearer' | 'DPoP';
+
 // Salesforce Connection
 export interface SalesforceConnection {
     id: string;
@@ -6,6 +9,14 @@ export interface SalesforceConnection {
     loginDomain: string;
     accessToken: string;
     refreshToken: string | null;
+    /** Token scheme; absent means Bearer (connections made before DPoP) */
+    tokenType?: TokenType;
+    /**
+     * Session type the user asked for; absent means DPoP (the default). Bearer gives up
+     * token binding but works with the streaming APIs, which don't accept DPoP yet.
+     * Takes effect at the next authorization; tokenType is what Salesforce issued.
+     */
+    sessionType?: TokenType;
     clientId: string | null;
     createdAt: number;
     lastUsedAt: number;

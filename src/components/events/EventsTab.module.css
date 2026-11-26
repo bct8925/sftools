@@ -22,6 +22,12 @@
     overflow: hidden;
 }
 
+.notice {
+    margin: 0 0 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
 /* ============================================================
    Header Layout (Two-row pattern)
    ============================================================ */

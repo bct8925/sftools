@@ -25,6 +25,7 @@
         "notifications",
         "nativeMessaging"
     ],
+    "optional_host_permissions": ["https://*.salesforce.com/*", "https://*.force.com/*"],
     "side_panel": {
         "default_path": "dist/pages/app/app.html"
     },
